@@ -1,0 +1,59 @@
++ timeout --foreground 15s bash -lc cd\ formal\ \&\&\ sby\ -f\ gf8_mul_depth22_z3.sby 
+SBY 22:40:59 [gf8_mul_depth22_z3] Removing directory '/workspaces/mission-fcef4e99/gf8-bounded-worker/formal/gf8_mul_depth22_z3'.
+SBY 22:40:59 [gf8_mul_depth22_z3] Copy '/workspaces/mission-fcef4e99/gf8-bounded-worker/formal/../src/gf2n_mul_bitstream.sv' to '/workspaces/mission-fcef4e99/gf8-bounded-worker/formal/gf8_mul_depth22_z3/src/gf2n_mul_bitstream.sv'.
+SBY 22:40:59 [gf8_mul_depth22_z3] Copy '/workspaces/mission-fcef4e99/gf8-bounded-worker/formal/gf8_mul_formal.sv' to '/workspaces/mission-fcef4e99/gf8-bounded-worker/formal/gf8_mul_depth22_z3/src/gf8_mul_formal.sv'.
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: smtbmc z3
+SBY 22:40:59 [gf8_mul_depth22_z3] base: starting process "cd gf8_mul_depth22_z3/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY 22:40:59 [gf8_mul_depth22_z3] base: finished (returncode=0)
+SBY 22:40:59 [gf8_mul_depth22_z3] prep: starting process "cd gf8_mul_depth22_z3/model; yosys -ql design_prep.log design_prep.ys"
+SBY 22:40:59 [gf8_mul_depth22_z3] prep: finished (returncode=0)
+SBY 22:40:59 [gf8_mul_depth22_z3] smt2: starting process "cd gf8_mul_depth22_z3/model; yosys -ql design_smt2.log design_smt2.ys"
+SBY 22:40:59 [gf8_mul_depth22_z3] smt2: finished (returncode=0)
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: starting process "cd gf8_mul_depth22_z3; yosys-smtbmc -s z3 --presat --noprogress -t 22  --append 0 --dump-vcd engine_0/trace.vcd --dump-yw engine_0/trace.yw --dump-vlogtb engine_0/trace_tb.v --dump-smtc engine_0/trace.smtc model/design_smt2.smt2"
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Solver: z3
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 0..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 0..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 1..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 1..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 2..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 2..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 3..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 3..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 4..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 4..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 5..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 5..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 6..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 6..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 7..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 7..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 8..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 8..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 9..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 9..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 10..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 10..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 11..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 11..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 12..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 12..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 13..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 13..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 14..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 14..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 15..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 15..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 16..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 16..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 17..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 17..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 18..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 18..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 19..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 19..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 20..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 20..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assumptions in step 21..
+SBY 22:40:59 [gf8_mul_depth22_z3] engine_0: ##   0:00:00  Checking assertions in step 21..
+SBY ---- Keyboard interrupt or external termination signal ----
+SBY 22:41:14 [gf8_mul_depth22_z3] engine_0: terminating process

@@ -1,0 +1,5 @@
+baseline-original-cvc5-timeout	124
+depth22-boolector-incompatible	16
+depth22-z3-timeout	124
+bounded-depth22-yosys-sat	0
+formal-elaboration	0

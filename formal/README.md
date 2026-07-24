@@ -1,9 +1,9 @@
 # RTL formal check
 
-Run from this directory:
+The reliable M0 finite check, run from this directory, is:
 
 ```sh
-sby -f gf8_mul.sby
+yosys -s gf8_mul_bounded.ys
 ```
 
 The harness quantifies over every pair of 8-bit operands. It drives the exact
@@ -15,9 +15,18 @@ The Lean proof in `lean/LeanVMBMinCore/GF8.lean` checks the same simplified
 algorithm through a separate formalization. This creates two independent proof
 paths: Lean bit-blasting and RTL model checking.
 
-The bound is 32 global formal steps. The harness toggles its generated clock on
-each global step, so this covers more than the eleven positive edges needed to
-reset, load A, consume all eight B bits, and exercise the result assertion. A
-cover point is placed beside the assertion to make reachability visible in the
-formal report. This is a bounded equivalence check, not an inductive proof of
-an unconstrained stream protocol.
+The finite SAT script checks frames 0 through 22. The harness toggles its
+generated clock on each global step; its assertion first evaluates at frame 21,
+after the reset, A-load, and eight multiplier-bit positive edges. The script
+does not alter the RTL or assertion. It removes only the non-constraining cover
+cell because the Yosys SAT backend cannot import cover cells. `SUCCESS` means
+there is no counterexample through this finite bound; it is a bounded check,
+never an unbounded proof of an unconstrained stream protocol.
+
+`sby -f gf8_mul.sby` is retained as the assertion-preserving legacy SBY
+baseline. On the recorded M0 toolchain, cvc5 reaches frame 21 but does not
+finish within the cap. `gf8_mul_depth22_z3.sby` and
+`gf8_mul_bounded_boolector.sby` are diagnostic reproductions of, respectively,
+the same frame-21 timeout and Boolector's incompatibility with SBY's universal
+`anyconst` encoding. Use the versioned driver under `results/` to reproduce all
+of these outcomes and their time limits.

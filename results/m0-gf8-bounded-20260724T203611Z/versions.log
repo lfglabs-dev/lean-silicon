@@ -1,0 +1,17 @@
+2026-07-24T20:40:46Z
+ddc6b5249ba21e03a5e40bfabdaa8040d0454818
+?? .codex/
+?? .yosys_history
+?? formal/gf8_mul_bounded.ys
+?? formal/gf8_mul_bounded/
+?? formal/gf8_mul_bounded_boolector.sby
+?? formal/gf8_mul_bounded_boolector/
+?? formal/gf8_mul_depth22_z3.sby
+?? results/m0-gf8-bounded-20260724T203611Z/
+SBY v0.59
+Yosys 0.33 (git sha1 2584903a060)
+yosys-smtbmc [options] <yosys_smt2_output>
+1.5.118
+This is cvc5 version 1.1.2
+Z3 version 4.8.12 - 64 bit
+timeout (GNU coreutils) 9.4
