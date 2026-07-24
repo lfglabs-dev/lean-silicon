@@ -1,0 +1,54 @@
++ make check 
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s sim -v
+test_commands (test_cycle_model.RandomBackpressureTests.test_commands) ... ok
+test_exact_no_stall_latencies (test_cycle_model.RandomBackpressureTests.test_exact_no_stall_latencies) ... ok
+test_invalid_command (test_cycle_model.RandomBackpressureTests.test_invalid_command) ... ok
+test_exhaustive_simplified_gf8 (test_model.FieldTests.test_exhaustive_simplified_gf8) ... ok
+test_known_identities (test_model.FieldTests.test_known_identities) ... ok
+test_random_gf128_against_independent_reference (test_model.FieldTests.test_random_gf128_against_independent_reference) ... ok
+test_mul_stream (test_model.ProtocolTests.test_mul_stream) ... ok
+test_nonzero (test_model.ProtocolTests.test_nonzero) ... ok
+test_status (test_model.ProtocolTests.test_status) ... ok
+test_xor_stream (test_model.ProtocolTests.test_xor_stream) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 8.456s
+
+OK
+python3 tools/design_space.py
+radix=1: state=273 bits, step=259 simple gates, transaction=161 cycles [minimum-logic pareto]
+radix=2: state=273 bits, step=518 simple gates, transaction=97 cycles [pareto]
+radix=4: state=273 bits, step=1036 simple gates, transaction=65 cycles [pareto]
+radix=8: state=273 bits, step=2072 simple gates, transaction=49 cycles [minimum-latency pareto]
+python3 tools/exact_linear_xor.py
+Exact GHASH xtime reduction-tap XOR2 minimum: 3 gates
+Construction:
+  g0 = (a0) xor (carry) = a0 xor carry
+  g1 = (a1) xor (carry) = a1 xor carry
+  g2 = (a6) xor (carry) = a6 xor carry
+Required outputs:
+  a0 xor carry
+  a1 xor carry
+  a6 xor carry
+python3 tools/interface_consistency.py
+Interface constants agree across RTL, Python, and info.yaml
+  commands: 6
+  status:   01 01 0f 08
+  top:      tt_um_leanvm_b_mincore
+  sources:  4
+python3 tools/rtl_state_count.py
+Explicit source-level sequential state
+  FSM state                  4 bits
+  byte index                 4 bits
+  shared scratch             8 bits
+  sticky fault               1 bits
+  shifted multiplicand     128 bits
+  accumulator              128 bits
+  TOTAL                    273 bits
+python3 tools/sv_smoke_check.py src/*.sv formal/*.sv test/tb_stream_alu.sv
+src/gf128_mul_bitstream.sv: structurally balanced
+src/gf2n_mul_bitstream.sv: structurally balanced
+src/leanvm_b_stream_alu.sv: structurally balanced
+src/tt_um_leanvm_b_mincore.sv: structurally balanced
+formal/gf8_mul_formal.sv: structurally balanced
+test/tb_stream_alu.sv: structurally balanced

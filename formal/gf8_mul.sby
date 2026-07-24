@@ -1,9 +1,11 @@
 [options]
-mode prove
+mode bmc
 depth 32
+multiclock on
+timeout 45
 
 [engines]
-smtbmc boolector
+smtbmc cvc5
 
 [script]
 read -formal ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv

@@ -1,0 +1,59 @@
++ timeout --foreground 45s bash -lc cd\ formal\ \&\&\ sby\ -f\ gf8_mul.sby 
+SBY 22:13:34 [gf8_mul] Removing directory '/workspaces/mission-fcef4e99/leanvm-b-scalar-core/formal/gf8_mul'.
+SBY 22:13:34 [gf8_mul] Copy '/workspaces/mission-fcef4e99/leanvm-b-scalar-core/formal/../src/gf2n_mul_bitstream.sv' to '/workspaces/mission-fcef4e99/leanvm-b-scalar-core/formal/gf8_mul/src/gf2n_mul_bitstream.sv'.
+SBY 22:13:34 [gf8_mul] Copy '/workspaces/mission-fcef4e99/leanvm-b-scalar-core/formal/gf8_mul_formal.sv' to '/workspaces/mission-fcef4e99/leanvm-b-scalar-core/formal/gf8_mul/src/gf8_mul_formal.sv'.
+SBY 22:13:34 [gf8_mul] engine_0: smtbmc cvc5
+SBY 22:13:34 [gf8_mul] base: starting process "cd gf8_mul/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY 22:13:34 [gf8_mul] base: finished (returncode=0)
+SBY 22:13:34 [gf8_mul] prep: starting process "cd gf8_mul/model; yosys -ql design_prep.log design_prep.ys"
+SBY 22:13:34 [gf8_mul] prep: finished (returncode=0)
+SBY 22:13:34 [gf8_mul] smt2: starting process "cd gf8_mul/model; yosys -ql design_smt2.log design_smt2.ys"
+SBY 22:13:34 [gf8_mul] smt2: finished (returncode=0)
+SBY 22:13:34 [gf8_mul] engine_0: starting process "cd gf8_mul; yosys-smtbmc -s cvc5 --presat --unroll --noprogress -t 32  --append 0 --dump-vcd engine_0/trace.vcd --dump-yw engine_0/trace.yw --dump-vlogtb engine_0/trace_tb.v --dump-smtc engine_0/trace.smtc model/design_smt2.smt2"
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Solver: cvc5
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 0..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 0..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 1..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 1..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 2..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 2..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 3..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 3..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 4..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 4..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 5..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 5..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 6..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 6..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 7..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 7..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 8..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 8..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 9..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 9..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 10..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 10..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 11..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 11..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 12..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 12..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 13..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 13..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 14..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 14..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 15..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 15..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 16..
+SBY 22:13:34 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 16..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 17..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 17..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:00  Checking assumptions in step 18..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:00  Checking assertions in step 18..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assumptions in step 19..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assertions in step 19..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assumptions in step 20..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assertions in step 20..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assumptions in step 21..
+SBY 22:13:35 [gf8_mul] engine_0: ##   0:00:01  Checking assertions in step 21..
+SBY ---- Keyboard interrupt or external termination signal ----
+SBY 22:14:18 [gf8_mul] engine_0: terminating process

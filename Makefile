@@ -1,22 +1,24 @@
+PYTHON ?= python3
+
 .PHONY: check python design-space exact-xor interface-check smoke placeholders sim lean formal clean package
 
 python:
-	PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s sim -v
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
 
 design-space:
-	python tools/design_space.py
+	$(PYTHON) tools/design_space.py
 
 exact-xor:
-	python tools/exact_linear_xor.py
+	$(PYTHON) tools/exact_linear_xor.py
 
 interface-check:
-	python tools/interface_consistency.py
+	$(PYTHON) tools/interface_consistency.py
 
 gate-count:
-	python tools/rtl_state_count.py
+	$(PYTHON) tools/rtl_state_count.py
 
 smoke:
-	python tools/sv_smoke_check.py src/*.sv formal/*.sv test/tb_stream_alu.sv
+	$(PYTHON) tools/sv_smoke_check.py src/*.sv formal/*.sv test/tb_stream_alu.sv
 
 placeholders:
 	@! grep -RInE '\\b(sorry|admit|axiom)\\b' lean/LeanVMBMinCore*.lean lean/LeanVMBMinCore || \
