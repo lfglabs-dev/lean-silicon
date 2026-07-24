@@ -33,12 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: leanprover/lean-action@v1
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9
         with:
           lake-package-directory: lean
           build: true
-          nanoda: true
-          nanoda-allow-sorry: false
 
   formal-and-lint:
     runs-on: ubuntu-latest

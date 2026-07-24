@@ -12,8 +12,8 @@ then M0 green on the pinned toolchain.
 | Item | Owner | Status | Evidence / exit criterion |
 |---|---|---|---|
 | Seed inventory and frozen-source audit | manager | complete | `results/m0-20260724T200511Z/audit.log` |
-| Reproducible commands and versions | manager | complete | `results/m0-20260724T200511Z/` |
-| M0 verification suite | manager | partial | GF(2^8) finite SAT check passes; legacy SBY/cvc5 baseline still times out |
+| Reproducible commands and versions | manager | complete | `results/m0-merge-20260724T210000Z/` |
+| M0 verification suite | manager | complete | all six M0 commands pass at `741b14f`; GF(2^8) is a 32-frame bounded BMC proof |
 | Written semantic profile | semantic-profile owner (unassigned) | blocked | executable profile reconciles Rust interpreter and prose |
 | RTL controller | unassigned | gated | prohibited until prior row is merged and M0 green |
 
@@ -39,13 +39,12 @@ M0 corrected two executable seed defects: `Makefile` now uses configurable
 32-step check is now explicitly bounded BMC; it must not be presented as an
 unbounded induction proof.
 
-The legacy SBY/cvc5 invocation reaches assertion frame 21 but does not
-discharge it within a deterministic cap. This is solver behavior, not an
-assertion failure: the separate finite Yosys SAT check bit-blasts the same RTL
-and assertion through frame 22 and passes. Boolector instead fails immediately
-because SBY emits universal quantifiers for the harness `anyconst` values. The
-M0 record therefore distinguishes a passing finite check from the unresolved
-legacy SBY solver-performance issue; neither is an unbounded proof.
+The historic SBY/cvc5 invocation reached assertion frame 21 but did not
+discharge it within a deterministic cap.  The current `gf8_mul.sby` instead
+uses ABC `bmc3`, which bit-blasts the unchanged symbolic-input harness and
+discharges all 32 frames inside the same 45-second cap.  This is a sound
+bounded result, not an unbounded induction proof.  The earlier CVC5,
+Boolector, and Z3 outcomes are retained as diagnostic evidence only.
 
 ## Dependency graph and ownership
 
@@ -91,14 +90,16 @@ lines/commit | owner | consequence | revisit trigger`.
 |---|---|---|---|---|
 | 2026-07-24 | M0-001 | Freeze semantics at the supplied upstream commit. | `docs/SOURCE_AUDIT.md`; upstream checkout | Do not infer behavior from moving `main`. |
 | 2026-07-24 | M0-002 | Do not begin controller RTL. | semantic blockers above | Controller remains gated. |
-| 2026-07-24 | M0-003 | Use bounded, multi-clock BMC for the existing harness. | `results/m0-20260724T200511Z/formal-sby.log` | Not an unbounded correctness claim; M0 remains red on timeout. |
-| 2026-07-24 | M0-004 | Use finite Yosys SAT depth 22 as the reproducible GF(2^8) M0 check; retain SBY as a diagnostic baseline. | `results/m0-gf8-bounded-20260724T203611Z/` | No counterexample through the assertion frame; legacy SBY/cvc5 timeout remains a tool-performance issue. |
+| 2026-07-24 | M0-003 | Use bounded, multi-clock BMC for the existing harness. | `results/m0-merge-20260724T210000Z/formal-sby.log` | ABC `bmc3` proves all 32 configured frames; this is not an unbounded claim. |
+| 2026-07-24 | M0-004 | Retain alternate-engine observations as diagnostics, while the required SBY invocation uses ABC BMC. | `results/m0-gf8-bounded-20260724T203611Z/`; `results/m0-merge-20260724T210000Z/` | Historical CVC5/Z3 timeouts and Boolector incompatibility do not represent the current required check. |
+| 2026-07-24 | M0-005 | Merge current `main` with a normal merge commit and rerun every M0 command. | `741b14f`; `results/m0-merge-20260724T210000Z/` | PR remains linear-history-safe (no rebase/force-push); M0 is green at this head. |
 
 ## Reproducible results
 
-Each run lives under `results/m0-20260724T200511Z/`: `run.sh` is the exact
-driver, `versions.log` records tool versions, and one `*.log` file is produced
-per command.  Logs are intentionally retained as review evidence.
+The current merged-head run lives under `results/m0-merge-20260724T210000Z/`:
+`run.sh` is the exact driver, `versions.log` records tool versions, and one
+`*.log` file is produced per command.  Logs are intentionally retained as
+review evidence.
 
 The GF(2^8) diagnosis is separately recorded in
 `results/m0-gf8-bounded-20260724T203611Z/`. Its executable `run.sh` captures
