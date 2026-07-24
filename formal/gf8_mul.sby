@@ -5,7 +5,7 @@ multiclock on
 timeout 45
 
 [engines]
-smtbmc cvc5
+abc bmc3
 
 [script]
 read -formal ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv

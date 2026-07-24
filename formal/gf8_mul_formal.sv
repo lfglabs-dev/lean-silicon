@@ -43,19 +43,29 @@ module gf8_mul_formal;
     function automatic [7:0] reference_mul;
         input [7:0] a;
         input [7:0] b;
-        reg [14:0] product;
-        integer i;
+        reg [7:0] x;
         begin
-            product = 15'b0;
-            for (i = 0; i < 8; i = i + 1)
-                if (b[i])
-                    product = product ^ ({7'b0, a} << i);
-
-            for (i = 14; i >= 8; i = i - 1)
-                if (product[i])
-                    product = product ^ (15'h11b << (i - 8));
-
-            reference_mul = product[7:0];
+            // This is a separate, fully unrolled polynomial-basis oracle:
+            // a*x^i is reduced before being conditionally accumulated.
+            // It is algebraically equivalent to schoolbook multiplication
+            // followed by reduction modulo x^8 + x^4 + x^3 + x + 1.
+            reference_mul = 8'b0;
+            x = a;
+            if (b[0]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[1]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[2]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[3]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[4]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[5]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[6]) reference_mul = reference_mul ^ x;
+            x = {x[6:0], 1'b0} ^ (x[7] ? 8'h1b : 8'b0);
+            if (b[7]) reference_mul = reference_mul ^ x;
         end
     endfunction
 
