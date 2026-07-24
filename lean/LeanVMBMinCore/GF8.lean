@@ -90,14 +90,14 @@ def specMul (a b : Word) : Word :=
   reduceProduct (carrylessProduct a b)
 
 /-- Exhaustive symbolic proof for all 65,536 input pairs. -/
-theorem serialMul_correct (a b : Word) : serialMul a b = specMul a b := by
-  bv_decide
+theorem serialMul_correct : ∀ (a b : Word), serialMul a b = specMul a b := by
+  native_decide
 
 /-- The serial circuit has the expected zero and one identities. -/
-theorem serialMul_zero_right (a : Word) : serialMul a 0#8 = 0#8 := by
-  bv_decide
+theorem serialMul_zero_right : ∀ (a : Word), serialMul a 0#8 = 0#8 := by
+  native_decide
 
-theorem serialMul_one_right (a : Word) : serialMul a 1#8 = a := by
-  bv_decide
+theorem serialMul_one_right : ∀ (a : Word), serialMul a 1#8 = a := by
+  native_decide
 
 end LeanVMBMinCore.GF8

@@ -27,8 +27,8 @@ def writeRaw (m : Mem) (address : Nat) (value : Word) : Mem :=
       m query
 
 /-- A write is legal when the cell is fresh or already contains the same value. -/
-def compatible (m : Mem) (address : Nat) (value : Word) : Prop :=
-  (m address).written = false ∨ (m address).value = value
+def compatible (m : Mem) (address : Nat) (value : Word) : Bool :=
+  !(m address).written || (m address).value == value
 
 /-- Checked write-once update. -/
 def writeOnce (m : Mem) (address : Nat) (value : Word) : Option Mem :=
@@ -72,7 +72,7 @@ theorem writeRaw_commute (m : Mem) (a b : Nat) (va vb : Word) (hab : a ≠ b) :
     simp [writeRaw, hab]
   · by_cases hqb : q = b
     · subst q
-      simp [writeRaw, hab, hqa]
+      simp [writeRaw, hqa]
     · simp [writeRaw, hqa, hqb]
 
 end LeanVMBMinCore.Memory

@@ -31,6 +31,7 @@ sim:
 
 lean:
 	cd lean && lake build
+	cd lean && lake build LeanVMBMinCore
 
 formal:
 	cd formal && sby -f gf8_mul.sby

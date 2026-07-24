@@ -89,11 +89,12 @@ Run the checks that do not require external EDA tools:
 make check
 ```
 
-With Lean installed:
+With the pinned Lean toolchain installed (both commands must pass):
 
 ```sh
 cd lean
 lake build
+lake build LeanVMBMinCore
 ```
 
 With Icarus Verilog installed:
@@ -155,11 +156,11 @@ tools/     design-space and structural-check scripts
 docs/      interface, architecture, full-core, and optimality specifications
 ```
 
-## Verification status caveat
+## Verification evidence
 
-This execution environment did not contain Lean, Icarus, Verilator, Yosys, or
-SymbiYosys, and outbound package installation was unavailable. Consequently,
-the Lean and SystemVerilog files have been structurally reviewed but were not
-compiled here. The Python models and tests were executed successfully. The
-included CI workflow performs the missing Lean and HDL checks on a normal
-GitHub runner.
+The recovery evidence under `results/` records commands, real exit statuses,
+tool versions, and the tested Git parent/tree/head. It is generated only after
+the tested content is fixed. If an evidence-only commit changes the head SHA,
+the record calls that out explicitly rather than claiming the new commit was
+tested. GitHub CI repeats the executable, RTL, Lean default-target, explicit
+Lean-target, formal, and Yosys gates.

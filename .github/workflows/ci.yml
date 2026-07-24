@@ -37,6 +37,8 @@ jobs:
         with:
           lake-package-directory: lean
           build: true
+      - name: Explicit Lean library target
+        run: cd lean && lake build LeanVMBMinCore
 
   formal-and-lint:
     runs-on: ubuntu-latest
