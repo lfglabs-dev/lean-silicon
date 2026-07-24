@@ -71,8 +71,9 @@ All offsets are `u32`; `L(o)=fp+o` after checked addition.
 | BLAKE3(ins[4],cv,out,metadata) | Read four independently addressed input words, two consecutive CV words, and write two consecutive output words. Bytes and metadata are little-endian. Compression is an external/optional service in this scalar profile; the upstream witness uses flock. It makes eight memory accesses and `pc+1`. |
 
 Deferred Cell equalities are resolved after execution to a fixpoint. A later
-write to either side supplies the other; a component with no later write is
-materialized as zero on both sides. Rows are patched with the reconciled values
+write to `a2` supplies `a3`; a later write only to `a3` does not reconcile and
+conflicts with zero finalization. A component with no later write is materialized
+as zero on both sides. Rows are patched with the reconciled values
 but retain their original access counts. This is specifically upstream witness
 construction; a strict live executor may hold the equality obligation instead
 of prematurely writing zero.
