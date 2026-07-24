@@ -9,3 +9,8 @@ not claim to implement upstream flock compression in M0.
 adapter: feed it the decoded operation and compare result/fault, access count,
 and checked-index result. It does not try to mimic upstream private types or
 turn witness-generation conveniences into hardware requirements.
+
+The deferred-Cell cases intentionally preserve the frozen runner's asymmetric
+finalization: a later write to the indirect (`a2`) side is propagated, while a
+later nonzero write only to the local (`a3`) side ends in a write-once conflict.
+This is runner behavior, not a symmetric equality solver.

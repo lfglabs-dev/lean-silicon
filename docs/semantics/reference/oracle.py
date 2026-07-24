@@ -35,7 +35,7 @@ def encode(i):
     out = 1
     for _ in range(i): out = xtime(out)
     return out
-def reverse(v, limit=1 << 16):
+def reverse(v, limit):
     p = 1
     for i in range(limit):
         if p == v: return i
@@ -69,16 +69,27 @@ def execute(v):
         l = None if v["left"] is None else word(v["left"])
         r = None if v["right"] is None else word(v["right"])
         if l is not None and r is not None and l != r: raise Fault("deref_mismatch")
-        if l is None and r is None: return "deferred_then_zero"
+        if l is None and r is None:
+            # Frozen execute.rs finalization only observes a later a2 (left)
+            # write. A later nonzero a3-only write conflicts when both sides
+            # are subsequently materialized as zero.
+            later_l = None if v.get("later_left") is None else word(v["later_left"])
+            later_r = None if v.get("later_right") is None else word(v["later_right"])
+            if later_l is not None:
+                if later_r is not None and later_l != later_r: raise Fault("write_conflict")
+                return [later_l, later_l]
+            if later_r not in (None, 0): raise Fault("write_conflict")
+            return [0, 0]
         return [l if l is not None else r, r if r is not None else l]
-    if op == "deref_pc": return checked_add(v["pc"], 2)
-    if op == "deref_fp": return v["fp"]
-    if op == "reverse": return reverse(word(v["value"]))
+    if op == "deref_pc": return encode(checked_add(v["pc"], 2))
+    if op == "deref_fp": return encode(v["fp"])
+    if op == "reverse": return reverse(word(v["value"]), v["indexed_through"] + 1)
     if op == "jump":
         if word(v["c"]) == 0: return [checked_add(v["pc"], 1), v["fp"]]
         try:
-            d = v["d_index"] if "d_index" in v else reverse(word(v["d"]))
-            f = v["f_index"] if "f_index" in v else reverse(word(v["f"]))
+            limit = v["indexed_through"] + 1
+            d = reverse(word(v["d"]), limit)
+            f = reverse(word(v["f"]), limit)
             return [d, f]
         except Fault: raise Fault("invalid_jump_target")
     if op == "blake3": raise Fault("external_blake3_required")
@@ -94,6 +105,14 @@ def main():
     failures = []
     for v in vectors:
         try:
+            access_counts = {
+                "xor": 3, "xor_backsolve": 3, "mul": 3,
+                "mul_backsolve": 3, "write_once": 1, "deref_cell": 3,
+                "deref_pc": 3, "deref_fp": 3, "jump": 3, "blake3": 8,
+            }
+            if "accesses" in v and v["accesses"] != access_counts.get(v["op"]):
+                failures.append((v["id"], v["accesses"], access_counts.get(v["op"])))
+                continue
             got = execute(v)
             want = expected(v)
             if "fault" in v or got != want: failures.append((v["id"], got, v.get("fault", want)))
