@@ -13,7 +13,7 @@ then M0 green on the pinned toolchain.
 |---|---|---|---|
 | Seed inventory and frozen-source audit | manager | complete | `results/m0-20260724T200511Z/audit.log` |
 | Reproducible commands and versions | manager | complete | `results/m0-merge-20260724T210000Z/` |
-| M0 verification suite | manager | complete | all six M0 commands pass at `741b14f`; GF(2^8) is a 32-frame bounded BMC proof |
+| M0 verification suite | manager | complete | all six M0 commands pass at `8e1de43`; GF(2^8) is a 32-frame bounded BMC proof |
 | Written semantic profile | semantic-profile owner (unassigned) | blocked | executable profile reconciles Rust interpreter and prose |
 | RTL controller | unassigned | gated | prohibited until prior row is merged and M0 green |
 
@@ -92,7 +92,7 @@ lines/commit | owner | consequence | revisit trigger`.
 | 2026-07-24 | M0-002 | Do not begin controller RTL. | semantic blockers above | Controller remains gated. |
 | 2026-07-24 | M0-003 | Use bounded, multi-clock BMC for the existing harness. | `results/m0-merge-20260724T210000Z/formal-sby.log` | ABC `bmc3` proves all 32 configured frames; this is not an unbounded claim. |
 | 2026-07-24 | M0-004 | Retain alternate-engine observations as diagnostics, while the required SBY invocation uses ABC BMC. | `results/m0-gf8-bounded-20260724T203611Z/`; `results/m0-merge-20260724T210000Z/` | Historical CVC5/Z3 timeouts and Boolector incompatibility do not represent the current required check. |
-| 2026-07-24 | M0-005 | Merge current `main` with a normal merge commit and rerun every M0 command. | `741b14f`; `results/m0-merge-20260724T210000Z/` | PR remains linear-history-safe (no rebase/force-push); M0 is green at this head. |
+| 2026-07-24 | M0-005 | Merge current `main` with a normal merge commit and rerun every M0 command. | `8e1de43`; `results/m0-merge-20260724T210000Z/` | PR remains linear-history-safe (no rebase/force-push); M0 is green at this head. |
 
 ## Reproducible results
 

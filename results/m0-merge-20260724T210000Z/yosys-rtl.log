@@ -1,0 +1,1 @@
++ yosys -ql /workspaces/mission-c93c0194/leanvm-b-scalar-core/results/m0-merge-20260724T210000Z/yosys-rtl.internal.log -p read_verilog\ -sv\ src/gf2n_mul_bitstream.sv\ src/gf128_mul_bitstream.sv\ src/leanvm_b_stream_alu.sv\ src/tt_um_leanvm_b_mincore.sv\;\ hierarchy\ -check\ -top\ tt_um_leanvm_b_mincore\;\ proc\;\ check\;\ synth\ -top\ tt_um_leanvm_b_mincore\;\ stat 

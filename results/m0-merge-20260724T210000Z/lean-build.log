@@ -1,0 +1,5 @@
++ bash -lc cd\ lean\ \&\&\ lake\ build 
+warning: no targets specified and no default targets configured
+  Note: This will be an error in a future version of Lake.
+  Hint: This warning (or error) can be suppressed with '--allow-empty'.
+Nothing to build.

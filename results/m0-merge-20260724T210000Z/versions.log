@@ -1,0 +1,12 @@
+2026-07-24T21:05:09Z
+8e1de43b626906a0ea246247989ac23273f5a0ef
+Python 3.12.3
+GNU Make 4.3
+Icarus Verilog version 12.0 (stable) ()
+
+Unable to get version from "/usr/lib/x86_64-linux-gnu/ivl/ivlpp -V"
+Unable to get version from "/usr/lib/x86_64-linux-gnu/ivl/ivl -V -C"/tmp/ivrlhba9c046" -C"/usr/lib/x86_64-linux-gnu/ivl/vvp.conf""
+Yosys 0.33 (git sha1 2584903a060)
+SBY v0.59
+1.5.118
+error: no default toolchain configured. run `elan default stable` to install & configure the latest Lean 4 stable release.
