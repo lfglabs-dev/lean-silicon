@@ -1,9 +1,9 @@
 # RTL formal check
 
-The reliable M0 finite check, run from this directory, is:
+The required M0 finite check, run from this directory, is:
 
 ```sh
-yosys -s gf8_mul_bounded.ys
+sby -f gf8_mul.sby
 ```
 
 The harness quantifies over every pair of 8-bit operands. It drives the exact
@@ -23,9 +23,13 @@ cell because the Yosys SAT backend cannot import cover cells. `SUCCESS` means
 there is no counterexample through this finite bound; it is a bounded check,
 never an unbounded proof of an unconstrained stream protocol.
 
-`sby -f gf8_mul.sby` is retained as the assertion-preserving legacy SBY
-baseline. On the recorded M0 toolchain, cvc5 reaches frame 21 but does not
-finish within the cap. `gf8_mul_depth22_z3.sby` and
+The required SBY check uses ABC's `bmc3` engine, preserves the assertion, and
+passes at depth 32. The separate `yosys -s gf8_mul_bounded.ys` script is a
+finite SAT cross-check through frame 22; it removes only the non-constraining
+cover cell because the Yosys SAT backend cannot import cover cells.
+
+The historical cvc5 baseline reached frame 21 but did not finish within its
+recorded cap. `gf8_mul_depth22_z3.sby` and
 `gf8_mul_bounded_boolector.sby` are diagnostic reproductions of, respectively,
 the same frame-21 timeout and Boolector's incompatibility with SBY's universal
 `anyconst` encoding. Use the versioned driver under `results/` to reproduce all
