@@ -51,6 +51,8 @@ def main() -> None:
     parser.add_argument("--cases", type=int, default=64)
     parser.add_argument("--record", type=pathlib.Path)
     args = parser.parse_args()
+    if args.cases <= 0:
+        raise SystemExit("--cases must be positive")
     require_checkout(args.upstream)
     if shutil.which("cargo") is None:
         raise SystemExit("cargo is required to compile the pinned upstream probe")
