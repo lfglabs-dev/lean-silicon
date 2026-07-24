@@ -1,0 +1,5 @@
+radix,sequential_bits,and2_digit_step,xor2_digit_step,simple_gate_total,multiplication_cycles,transaction_cycles,area_latency_product,min_area,min_latency,pareto
+1,273,128,131,259,128,161,41699,True,False,True
+2,273,256,262,518,64,97,50246,False,False,True
+4,273,512,524,1036,32,65,67340,False,False,True
+8,273,1024,1048,2072,16,49,101528,False,True,True

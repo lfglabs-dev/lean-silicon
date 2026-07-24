@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.vvp
+*.vcd
+*.fst
+*.log
+*.json
+!info.yaml
+lean/.lake/
+formal/gf8_mul/
+openlane/
+reports/

@@ -1,0 +1,33 @@
+# Lean 4 proof model
+
+Pinned toolchain: `leanprover/lean4:v4.32.1`.
+
+Build:
+
+```sh
+lake build
+```
+
+Modules:
+
+- `GHASH128.lean` proves the real 128-bit `xtime` tap equations, reduction boundary, and XOR linearity.
+- `GF8.lean` — two independent executable definitions of multiplication in
+  `GF(2^8)` and exhaustive `bv_decide` equivalence.
+- `Stream.lean` — correctness of the interleaved XOR byte protocol and the
+  optimized SET/NONZERO transforms.
+- `Address.lean` — abstract representation relation between integer indices and
+  multiplicative field-address encodings.
+- `Memory.lean` — write-once memory success, conflict, idempotence, and
+  different-address commutation lemmas.
+- `Deref.lean` — faithful simplified `DEREF Cell` reconciliation: equality,
+  conflict, either-direction fill, and deferred both-unwritten behavior.
+- `ISA.lean` — simplified XOR/MUL/SET/JUMP transition refinement; hardware MUL
+  uses the serial implementation while the specification uses the independent
+  polynomial implementation.
+- `Optimality.lean` — channel-capacity cycle lower bounds, restricted gate
+  lower bounds, and the 273-bit state lower bound under stated requirements.
+
+The project contains no `sorry`, `admit`, or global `axiom` declarations.
+The address theorem is intentionally parametric over an `AddressEncoding`
+structure carrying the law `encode(i+j)=encode(i)*encode(j)`; instantiating that
+structure with the actual GF(2^128) generator is a later proof milestone.

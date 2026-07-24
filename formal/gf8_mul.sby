@@ -1,0 +1,14 @@
+[options]
+mode prove
+depth 32
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv
+prep -top gf8_mul_formal
+
+[files]
+../src/gf2n_mul_bitstream.sv
+gf8_mul_formal.sv
