@@ -1,0 +1,1 @@
++ bash -lc \!\ rg\ -n\ \'\\b\(sorry\|admit\|axiom\)\\b\'\ lean/LeanVMBMinCore.lean\ lean/LeanVMBMinCore 

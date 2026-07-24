@@ -1,0 +1,15 @@
++ bash -lc cd\ lean\ \&\&\ lake\ env\ lean\ ../results/m0-recovery-20260725T004900Z/ProofSurface.lean 
+'LeanVMBMinCore.GF8.serialMul_correct' depends on axioms: [propext,
+ Quot.sound,
+ LeanVMBMinCore.GF8.serialMul_correct._native.native_decide.ax_1_1]
+'LeanVMBMinCore.GF8.serialMul_zero_right' depends on axioms: [propext,
+ Quot.sound,
+ LeanVMBMinCore.GF8.serialMul_zero_right._native.native_decide.ax_1_1]
+'LeanVMBMinCore.GF8.serialMul_one_right' depends on axioms: [propext,
+ Quot.sound,
+ LeanVMBMinCore.GF8.serialMul_one_right._native.native_decide.ax_1_1]
+'LeanVMBMinCore.GHASH128.xtime_xor_linear' depends on axioms: [propext, Quot.sound]
+'LeanVMBMinCore.Memory.writeOnce_conflict' depends on axioms: [propext]
+'LeanVMBMinCore.ISA.hardwareStep_refines' depends on axioms: [propext,
+ Quot.sound,
+ LeanVMBMinCore.GF8.serialMul_correct._native.native_decide.ax_1_1]
