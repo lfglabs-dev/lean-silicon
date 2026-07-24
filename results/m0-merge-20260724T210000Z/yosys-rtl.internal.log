@@ -1,0 +1,1467 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Running command `read_verilog -sv src/gf2n_mul_bitstream.sv src/gf128_mul_bitstream.sv src/leanvm_b_stream_alu.sv src/tt_um_leanvm_b_mincore.sv; hierarchy -check -top tt_um_leanvm_b_mincore; proc; check; synth -top tt_um_leanvm_b_mincore; stat' --
+
+1. Executing Verilog-2005 frontend: src/gf2n_mul_bitstream.sv
+Parsing SystemVerilog input from `src/gf2n_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf2n_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: src/gf128_mul_bitstream.sv
+Parsing SystemVerilog input from `src/gf128_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf128_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+3. Executing Verilog-2005 frontend: src/leanvm_b_stream_alu.sv
+Parsing SystemVerilog input from `src/leanvm_b_stream_alu.sv' to AST representation.
+Generating RTLIL representation for module `\leanvm_b_stream_alu'.
+Successfully finished Verilog frontend.
+
+4. Executing Verilog-2005 frontend: src/tt_um_leanvm_b_mincore.sv
+Parsing SystemVerilog input from `src/tt_um_leanvm_b_mincore.sv' to AST representation.
+Generating RTLIL representation for module `\tt_um_leanvm_b_mincore'.
+Successfully finished Verilog frontend.
+
+5. Executing HIERARCHY pass (managing design hierarchy).
+
+5.1. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             \gf2n_mul_bitstream
+Parameter \WIDTH = 128
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000111
+
+5.2. Executing AST frontend in derive mode using pre-parsed AST for module `\gf2n_mul_bitstream'.
+Parameter \WIDTH = 128
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000111
+Generating RTLIL representation for module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+
+5.3. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+
+5.4. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+Removing unused module `\gf2n_mul_bitstream'.
+Removed 1 unused modules.
+
+6. Executing PROC pass (convert processes to netlists).
+
+6.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+6.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 12 switch rules as full_case in process $proc$src/leanvm_b_stream_alu.sv:214$93 in module leanvm_b_stream_alu.
+Marked 3 switch rules as full_case in process $proc$src/leanvm_b_stream_alu.sv:118$54 in module leanvm_b_stream_alu.
+Marked 5 switch rules as full_case in process $proc$src/gf2n_mul_bitstream.sv:72$117 in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Removed a total of 0 dead cases.
+
+6.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 16 assignments to connections.
+
+6.4. Executing PROC_INIT pass (extract init attributes).
+
+6.5. Executing PROC_ARST pass (detect async resets in processes).
+
+6.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~33 debug messages>
+
+6.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+     1/5: $0\scratch_byte[7:0] [7:1]
+     2/5: $0\scratch_byte[7:0] [0]
+     3/5: $0\byte_index[3:0]
+     4/5: $0\state[3:0]
+     5/5: $0\fault[0:0]
+Creating decoders for process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+     1/13: $2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63
+     2/13: $2\rx_ready[0:0]
+     3/13: $2\tx_data[7:0]
+     4/13: $2\tx_valid[0:0]
+     5/13: $1\rx_ready[0:0]
+     6/13: $1\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.index[3:0]$58
+     7/13: $1\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$57
+     8/13: $1\mul_result_shift[0:0]
+     9/13: $1\mul_bit_value[0:0]
+    10/13: $1\mul_bit_valid[0:0]
+    11/13: $1\mul_a_valid[0:0]
+    12/13: $1\tx_valid[0:0]
+    13/13: $1\tx_data[7:0]
+Creating decoders for process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+     1/30: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result[127:0]$152
+     2/30: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry[0:0]$154
+     3/30: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value[127:0]$153
+     4/30: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry[0:0]$150
+     5/30: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value[127:0]$149
+     6/30: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result[127:0]$148
+     7/30: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.next_value[127:0]$143 [127:120]
+     8/30: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.next_value[127:0]$143 [119:0]
+     9/30: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.$result[127:0]$140
+    10/30: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.byte_value[7:0]$142
+    11/30: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.value[127:0]$141
+    12/30: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry[0:0]$146
+    13/30: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value[127:0]$145
+    14/30: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result[127:0]$144
+    15/30: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry[0:0]$139
+    16/30: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value[127:0]$138
+    17/30: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result[127:0]$137
+    18/30: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.next_value[127:0]$136
+    19/30: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.byte_value[7:0]$135
+    20/30: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.value[127:0]$134
+    21/30: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.$result[127:0]$133
+    22/30: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry[0:0]$132
+    23/30: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value[127:0]$131
+    24/30: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result[127:0]$130
+    25/30: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.next_value[127:0]$129
+    26/30: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.byte_value[7:0]$128
+    27/30: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.value[127:0]$127
+    28/30: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.$result[127:0]$126
+    29/30: $0\accumulator[127:0]
+    30/30: $0\a_shift[127:0]
+
+6.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\leanvm_b_stream_alu.\rx_ready' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\tx_data' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\tx_valid' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\mul_a_valid' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\mul_bit_valid' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\mul_bit_value' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\mul_result_shift' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+No latch inferred for signal `\leanvm_b_stream_alu.\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.index' from process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+
+6.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\leanvm_b_stream_alu.\fault' using process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+  created $dff cell `$procdff$718' with positive edge clock.
+Creating register for signal `\leanvm_b_stream_alu.\state' using process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+  created $dff cell `$procdff$719' with positive edge clock.
+Creating register for signal `\leanvm_b_stream_alu.\byte_index' using process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+  created $dff cell `$procdff$720' with positive edge clock.
+Creating register for signal `\leanvm_b_stream_alu.\scratch_byte' using process `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+  created $dff cell `$procdff$721' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\a_shift' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$722' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\accumulator' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$723' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.$result' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$724' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.value' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$725' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.byte_value' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$726' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$113.next_value' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$727' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.$result' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$728' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.value' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$729' with positive edge clock.
+Creating register for signal `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$114.carry' using process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+  created $dff cell `$procdff$730' with positive edge clock.
+
+6.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+6.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 23 empty switches in `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+Removing empty process `leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:214$93'.
+Found and cleaned up 3 empty switches in `\leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+Removing empty process `leanvm_b_stream_alu.$proc$src/leanvm_b_stream_alu.sv:118$54'.
+Found and cleaned up 7 empty switches in `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+Removing empty process `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$117'.
+Cleaned up 33 empty switches.
+
+6.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module tt_um_leanvm_b_mincore.
+<suppressed ~1 debug messages>
+Optimizing module leanvm_b_stream_alu.
+<suppressed ~17 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~36 debug messages>
+
+7. Executing CHECK pass (checking for obvious problems).
+Checking module tt_um_leanvm_b_mincore...
+Checking module leanvm_b_stream_alu...
+Checking module gf128_mul_bitstream...
+Checking module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream...
+Found and reported 0 problems.
+
+8. Executing SYNTH pass.
+
+8.1. Executing HIERARCHY pass (managing design hierarchy).
+
+8.1.1. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+
+8.1.2. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+Removed 0 unused modules.
+
+8.2. Executing PROC pass (convert processes to netlists).
+
+8.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+8.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Removed a total of 0 dead cases.
+
+8.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 0 assignments to connections.
+
+8.2.4. Executing PROC_INIT pass (extract init attributes).
+
+8.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+8.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+
+8.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+
+8.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+8.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+
+8.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+8.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+8.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module tt_um_leanvm_b_mincore.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module gf128_mul_bitstream.
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+
+8.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module tt_um_leanvm_b_mincore.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module gf128_mul_bitstream.
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+
+8.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Removed 86 unused cells and 306 unused wires.
+<suppressed ~94 debug messages>
+
+8.5. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream...
+Checking module gf128_mul_bitstream...
+Checking module leanvm_b_stream_alu...
+Checking module tt_um_leanvm_b_mincore...
+Found and reported 0 problems.
+
+8.6. Executing OPT pass (performing simple optimizations).
+
+8.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+<suppressed ~282 debug messages>
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 94 cells.
+
+8.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 2/2 on $mux $procmux$369.
+    dead port 2/2 on $mux $procmux$381.
+    dead port 2/2 on $mux $procmux$393.
+    dead port 2/2 on $mux $procmux$405.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 4 multiplexer ports.
+<suppressed ~16 debug messages>
+
+8.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+    New ctrl vector for $pmux cell $procmux$333: { $eq$src/leanvm_b_stream_alu.sv:205$66_Y $auto$opt_reduce.cc:134:opt_pmux$732 }
+    New ctrl vector for $pmux cell $procmux$345: { $auto$opt_reduce.cc:134:opt_pmux$734 $eq$src/leanvm_b_stream_alu.sv:205$68_Y }
+    New ctrl vector for $pmux cell $procmux$364: { $auto$opt_reduce.cc:134:opt_pmux$736 $procmux$366_CMP $eq$src/leanvm_b_stream_alu.sv:211$86_Y }
+    New ctrl vector for $pmux cell $procmux$412: { $auto$opt_reduce.cc:134:opt_pmux$740 $eq$src/leanvm_b_stream_alu.sv:209$77_Y $auto$opt_reduce.cc:134:opt_pmux$738 }
+    New ctrl vector for $pmux cell $procmux$456: { $auto$opt_reduce.cc:134:opt_pmux$744 $eq$src/leanvm_b_stream_alu.sv:209$77_Y $auto$opt_reduce.cc:134:opt_pmux$742 }
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 5 changes.
+
+8.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+<suppressed ~27 debug messages>
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 9 cells.
+
+8.6.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 107 unused wires.
+<suppressed ~1 debug messages>
+
+8.6.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.6.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.6.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.6.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+    New ctrl vector for $pmux cell $procmux$215: { $eq$src/leanvm_b_stream_alu.sv:205$66_Y $eq$src/leanvm_b_stream_alu.sv:209$77_Y $procmux$235_CMP $eq$src/leanvm_b_stream_alu.sv:85$48_Y $auto$opt_reduce.cc:134:opt_pmux$746 $eq$src/leanvm_b_stream_alu.sv:211$85_Y }
+    New ctrl vector for $pmux cell $procmux$264: { $eq$src/leanvm_b_stream_alu.sv:205$66_Y $procmux$172_CMP $eq$src/leanvm_b_stream_alu.sv:207$70_Y $eq$src/leanvm_b_stream_alu.sv:209$77_Y $procmux$235_CMP $procmux$169_CMP $eq$src/leanvm_b_stream_alu.sv:85$48_Y $auto$opt_reduce.cc:134:opt_pmux$748 $eq$src/leanvm_b_stream_alu.sv:211$85_Y $eq$src/leanvm_b_stream_alu.sv:212$89_Y }
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 2 changes.
+
+8.6.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.6.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.6.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.6.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.6.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.6.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.6.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.6.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.6.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.6.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.6.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.6.23. Finished OPT passes. (There is nothing left to do.)
+
+8.7. Executing FSM pass (extract and optimize FSM).
+
+8.7.1. Executing FSM_DETECT pass (finding FSMs in design).
+Not marking leanvm_b_stream_alu.state as FSM state register:
+    Users of register don't seem to benefit from recoding.
+
+8.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).
+
+8.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+8.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+8.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).
+
+8.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).
+
+8.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).
+
+8.8. Executing OPT pass (performing simple optimizations).
+
+8.8.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.8.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.8.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.8.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $procdff$723 ($dff) from module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream (D = $procmux$695_Y, Q = \accumulator, rval = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$749 ($sdff) from module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream (D = $procmux$695_Y, Q = \accumulator).
+Adding SRST signal on $procdff$722 ($dff) from module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream (D = $procmux$710_Y, Q = \a_shift, rval = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$761 ($sdff) from module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream (D = $procmux$710_Y, Q = \a_shift).
+Adding SRST signal on $procdff$721 ($dff) from module leanvm_b_stream_alu (D = { $procmux$165_Y $procmux$187_Y }, Q = \scratch_byte, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$773 ($sdff) from module leanvm_b_stream_alu (D = $procmux$165_Y, Q = \scratch_byte [7:1]).
+Adding EN signal on $auto$ff.cc:266:slice$773 ($sdff) from module leanvm_b_stream_alu (D = $procmux$187_Y, Q = \scratch_byte [0]).
+Adding SRST signal on $procdff$720 ($dff) from module leanvm_b_stream_alu (D = $procmux$215_Y, Q = \byte_index, rval = 4'0000).
+Adding EN signal on $auto$ff.cc:266:slice$804 ($sdff) from module leanvm_b_stream_alu (D = $procmux$215_Y, Q = \byte_index).
+Adding SRST signal on $procdff$719 ($dff) from module leanvm_b_stream_alu (D = $procmux$264_Y, Q = \state, rval = 4'0000).
+Adding EN signal on $auto$ff.cc:266:slice$830 ($sdff) from module leanvm_b_stream_alu (D = $procmux$264_Y, Q = \state).
+Adding SRST signal on $procdff$718 ($dff) from module leanvm_b_stream_alu (D = $procmux$356_Y, Q = \fault, rval = 1'0).
+Adding EN signal on $auto$ff.cc:266:slice$862 ($sdff) from module leanvm_b_stream_alu (D = $procmux$356_Y, Q = \fault).
+
+8.8.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 13 unused cells and 12 unused wires.
+<suppressed ~15 debug messages>
+
+8.8.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~2 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+<suppressed ~3 debug messages>
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.8.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.8.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.8.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.8.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+<suppressed ~6 debug messages>
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+<suppressed ~42 debug messages>
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 16 cells.
+
+8.8.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.8.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 16 unused wires.
+<suppressed ~2 debug messages>
+
+8.8.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.8.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.8.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.8.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.8.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.8.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.8.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.8.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.8.23. Finished OPT passes. (There is nothing left to do.)
+
+8.9. Executing WREDUCE pass (reducing word size of cells).
+Removed top 1 bits (of 2) from port B of cell $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$auto$opt_dff.cc:195:make_patterns_logic$758 ($ne).
+Removed top 120 bits (of 128) from mux cell $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$ternary$src/gf2n_mul_bitstream.sv:66$155 ($mux).
+Removed top 120 bits (of 128) from port B of cell $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$xor$src/gf2n_mul_bitstream.sv:65$156 ($xor).
+Removed top 120 bits (of 128) from wire $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.$ternary$src/gf2n_mul_bitstream.sv:66$155_Y.
+Removed top 3 bits (of 4) from port B of cell leanvm_b_stream_alu.$procmux$172_CMP0 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu.$procmux$169_CMP0 ($eq).
+Removed top 6 bits (of 7) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:83$47 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:85$48 ($eq).
+Removed top 1 bits (of 8) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:205$68 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:207$70 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:208$73 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:209$77 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu.$eq$src/leanvm_b_stream_alu.sv:211$86 ($eq).
+Removed top 1 bits (of 2) from port B of cell leanvm_b_stream_alu.$auto$opt_dff.cc:195:make_patterns_logic$782 ($ne).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu.$procmux$235_CMP0 ($eq).
+Removed top 1 bits (of 2) from port B of cell leanvm_b_stream_alu.$auto$opt_dff.cc:195:make_patterns_logic$784 ($ne).
+Removed top 3 bits (of 4) from mux cell leanvm_b_stream_alu.$procmux$307 ($mux).
+Removed top 1 bits (of 8) from port B of cell leanvm_b_stream_alu.$procmux$318_CMP0 ($eq).
+Removed top 5 bits (of 8) from port B of cell leanvm_b_stream_alu.$procmux$319_CMP0 ($eq).
+Removed top 6 bits (of 8) from port B of cell leanvm_b_stream_alu.$procmux$320_CMP0 ($eq).
+Removed top 6 bits (of 8) from port B of cell leanvm_b_stream_alu.$procmux$321_CMP0 ($eq).
+Removed top 7 bits (of 8) from port B of cell leanvm_b_stream_alu.$procmux$322_CMP0 ($eq).
+Removed top 4 bits (of 8) from mux cell leanvm_b_stream_alu.$procmux$364 ($pmux).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu.$procmux$366_CMP0 ($eq).
+Removed top 3 bits (of 4) from port B of cell leanvm_b_stream_alu.$procmux$367_CMP0 ($eq).
+Removed top 7 bits (of 8) from mux cell leanvm_b_stream_alu.$procmux$391 ($mux).
+Removed top 1 bits (of 3) from port B of cell leanvm_b_stream_alu.$auto$opt_dff.cc:195:make_patterns_logic$857 ($ne).
+Removed top 4 bits (of 8) from wire leanvm_b_stream_alu.$2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63.
+Removed top 7 bits (of 8) from wire leanvm_b_stream_alu.$2\tx_data[7:0].
+Removed top 3 bits (of 4) from wire leanvm_b_stream_alu.$procmux$307_Y.
+
+8.10. Executing PEEPOPT pass (run peephole optimizers).
+
+8.11. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 4 unused wires.
+<suppressed ~2 debug messages>
+
+8.12. Executing ALUMACC pass (create $alu and $macc cells).
+Extracting $alu and $macc cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream:
+  created 0 $alu and 0 $macc cells.
+Extracting $alu and $macc cells in module gf128_mul_bitstream:
+  created 0 $alu and 0 $macc cells.
+Extracting $alu and $macc cells in module leanvm_b_stream_alu:
+  creating $macc model for $add$src/leanvm_b_stream_alu.sv:262$96 ($add).
+  creating $alu model for $macc $add$src/leanvm_b_stream_alu.sv:262$96.
+  creating $alu cell for $add$src/leanvm_b_stream_alu.sv:262$96: $auto$alumacc.cc:485:replace_alu$876
+  created 1 $alu and 0 $macc cells.
+Extracting $alu and $macc cells in module tt_um_leanvm_b_mincore:
+  created 0 $alu and 0 $macc cells.
+
+8.13. Executing SHARE pass (SAT-based resource sharing).
+
+8.14. Executing OPT pass (performing simple optimizations).
+
+8.14.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.14.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.14.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~18 debug messages>
+
+8.14.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.14.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.14.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.14.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.14.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.14.9. Finished OPT passes. (There is nothing left to do.)
+
+8.15. Executing MEMORY pass.
+
+8.15.1. Executing OPT_MEM pass (optimize memories).
+Performed a total of 0 transformations.
+
+8.15.2. Executing OPT_MEM_PRIORITY pass (removing unnecessary memory write priority relations).
+Performed a total of 0 transformations.
+
+8.15.3. Executing OPT_MEM_FEEDBACK pass (finding memory read-to-write feedback paths).
+
+8.15.4. Executing MEMORY_BMUX2ROM pass (converting muxes to ROMs).
+
+8.15.5. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+8.15.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.15.7. Executing MEMORY_SHARE pass (consolidating $memrd/$memwr cells).
+
+8.15.8. Executing OPT_MEM_WIDEN pass (optimize memories where all ports are wide).
+Performed a total of 0 transformations.
+
+8.15.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.15.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+8.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.17. Executing OPT pass (performing simple optimizations).
+
+8.17.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~9 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+<suppressed ~41 debug messages>
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.17.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.17.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.17.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 34 unused wires.
+<suppressed ~2 debug messages>
+
+8.17.5. Finished fast OPT passes.
+
+8.18. Executing MEMORY_MAP pass (converting memories to logic and flip-flops).
+
+8.19. Executing OPT pass (performing simple optimizations).
+
+8.19.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.19.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.19.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~14 debug messages>
+
+8.19.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+    Consolidated identical input bits for $mux cell $ternary$src/gf2n_mul_bitstream.sv:66$155:
+      Old ports: A=8'00000000, B=8'10000111, Y={ $auto$wreduce.cc:461:run$872 [7:1] $auto$opt_expr.cc:205:group_cell_inputs$881 [120] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$881 [120]
+      New connections: $auto$wreduce.cc:461:run$872 [7:1] = { $auto$opt_expr.cc:205:group_cell_inputs$881 [120] 4'0000 $auto$opt_expr.cc:205:group_cell_inputs$881 [120] $auto$opt_expr.cc:205:group_cell_inputs$881 [120] }
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+    New ctrl vector for $pmux cell $procmux$215: { $auto$opt_reduce.cc:134:opt_pmux$885 $auto$opt_reduce.cc:134:opt_pmux$883 }
+    New ctrl vector for $pmux cell $procmux$264: { $eq$src/leanvm_b_stream_alu.sv:205$66_Y $procmux$172_CMP $eq$src/leanvm_b_stream_alu.sv:207$70_Y $procmux$235_CMP $procmux$169_CMP $eq$src/leanvm_b_stream_alu.sv:85$48_Y $auto$opt_reduce.cc:134:opt_pmux$889 $auto$opt_reduce.cc:134:opt_pmux$887 }
+    Consolidated identical input bits for $mux cell $procmux$280:
+      Old ports: A=4'0110, B=4'1000, Y=$procmux$280_Y
+      New ports: A=2'01, B=2'10, Y={ $procmux$280_Y [3] $procmux$280_Y [1] }
+      New connections: { $procmux$280_Y [2] $procmux$280_Y [0] } = { $procmux$280_Y [1] 1'0 }
+    Consolidated identical input bits for $pmux cell $procmux$364:
+      Old ports: A=4'0000, B=12'000111111000, Y=$2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63
+      New ports: A=3'000, B=9'001111100, Y={ $2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63 [3] $2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63 [1:0] }
+      New connections: $2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63 [2] = $2\status_byte$func$src/leanvm_b_stream_alu.sv:186$46.$result[7:0]$63 [1]
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:128:opt_pmux$882: { $eq$src/leanvm_b_stream_alu.sv:211$85_Y $eq$src/leanvm_b_stream_alu.sv:210$81_Y $eq$src/leanvm_b_stream_alu.sv:209$77_Y $eq$src/leanvm_b_stream_alu.sv:208$73_Y $eq$src/leanvm_b_stream_alu.sv:207$70_Y }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:128:opt_pmux$888: { $eq$src/leanvm_b_stream_alu.sv:211$85_Y $eq$src/leanvm_b_stream_alu.sv:210$81_Y $eq$src/leanvm_b_stream_alu.sv:208$73_Y }
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 7 changes.
+
+8.19.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.19.6. Executing OPT_SHARE pass.
+
+8.19.7. Executing OPT_DFF pass (perform DFF optimizations).
+Adding EN signal on $auto$ff.cc:266:slice$835 ($sdffe) from module leanvm_b_stream_alu (D = $procmux$264_Y, Q = \state).
+
+8.19.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 1 unused wires.
+<suppressed ~1 debug messages>
+
+8.19.9. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~6 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+<suppressed ~1 debug messages>
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.19.10. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.19.11. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~13 debug messages>
+
+8.19.12. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+    New input vector for $reduce_and cell $auto$opt_dff.cc:220:make_patterns_logic$894: { $auto$opt_dff.cc:194:make_patterns_logic$858 $auto$opt_dff.cc:194:make_patterns_logic$856 $auto$opt_dff.cc:194:make_patterns_logic$854 $auto$opt_dff.cc:194:make_patterns_logic$852 $auto$opt_dff.cc:194:make_patterns_logic$848 $auto$opt_dff.cc:194:make_patterns_logic$846 $auto$opt_dff.cc:194:make_patterns_logic$842 $auto$opt_dff.cc:194:make_patterns_logic$816 $auto$opt_dff.cc:194:make_patterns_logic$814 $auto$opt_dff.cc:194:make_patterns_logic$810 $auto$opt_dff.cc:194:make_patterns_logic$783 $auto$opt_dff.cc:194:make_patterns_logic$781 $auto$opt_dff.cc:194:make_patterns_logic$891 }
+    New ctrl vector for $pmux cell $procmux$264: { $eq$src/leanvm_b_stream_alu.sv:205$66_Y $procmux$172_CMP $eq$src/leanvm_b_stream_alu.sv:207$70_Y $procmux$235_CMP $procmux$169_CMP $eq$src/leanvm_b_stream_alu.sv:85$48_Y $auto$opt_reduce.cc:134:opt_pmux$899 }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:128:opt_pmux$898: { $eq$src/leanvm_b_stream_alu.sv:212$89_Y $eq$src/leanvm_b_stream_alu.sv:211$85_Y $eq$src/leanvm_b_stream_alu.sv:210$81_Y $eq$src/leanvm_b_stream_alu.sv:209$77_Y $eq$src/leanvm_b_stream_alu.sv:208$73_Y }
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 3 changes.
+
+8.19.13. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.19.14. Executing OPT_SHARE pass.
+
+8.19.15. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.19.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 2 unused cells and 6 unused wires.
+<suppressed ~4 debug messages>
+
+8.19.17. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.19.18. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.19.19. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf128_mul_bitstream..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \leanvm_b_stream_alu..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \tt_um_leanvm_b_mincore..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~13 debug messages>
+
+8.19.20. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+  Optimizing cells in module \gf128_mul_bitstream.
+  Optimizing cells in module \leanvm_b_stream_alu.
+  Optimizing cells in module \tt_um_leanvm_b_mincore.
+Performed a total of 0 changes.
+
+8.19.21. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 0 cells.
+
+8.19.22. Executing OPT_SHARE pass.
+
+8.19.23. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.19.24. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+
+8.19.25. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.19.26. Finished OPT passes. (There is nothing left to do.)
+
+8.20. Executing TECHMAP pass (map to technology primitives).
+
+8.20.1. Executing Verilog-2005 frontend: /usr/bin/../share/yosys/techmap.v
+Parsing Verilog input from `/usr/bin/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `\$__div_mod_u'.
+Generating RTLIL representation for module `\$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `\$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_pmux'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Successfully finished Verilog frontend.
+
+8.20.2. Continuing TECHMAP pass.
+Using extmapper simplemap for cells of type $not.
+Using extmapper simplemap for cells of type $reduce_or.
+Using template $paramod$b3b6ac92d800c6f07aa48f510f923d86a674e5a7\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $eq.
+Using template $paramod$231afaec00e6fad0c71d9f677e0405124d548ad2\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $logic_and.
+Using extmapper simplemap for cells of type $reduce_bool.
+Using extmapper simplemap for cells of type $xor.
+Using extmapper simplemap for cells of type $logic_or.
+Using extmapper simplemap for cells of type $logic_not.
+Using extmapper simplemap for cells of type $sdffe.
+Using template $paramod$32a7b7b86c07519b7537abc18e96f0331f97914d\_90_alu for cells of type $alu.
+Using template $paramod$bf2533632d512eac76dd186c0da49367e29b8e98\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $ne.
+Using extmapper simplemap for cells of type $mux.
+Using extmapper simplemap for cells of type $reduce_and.
+Using template $paramod$a13703aa027da371a1931fc542d213d7de559b19\_90_pmux for cells of type $pmux.
+Using template $paramod$33afdd83bf3811dac2de7a968d39eea5718691bc\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $or.
+Using template $paramod$85df5dc01c7df96a7d8e5f1fdf76ce9ac452af63\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $and.
+Using template $paramod$d629d85c8826a74239b9178d1930215a43b0ceb0\_90_pmux for cells of type $pmux.
+Using template $paramod$c5c783b17ab1d780abfad8cfe6563a0a7b47a3b0\_90_pmux for cells of type $pmux.
+Using template $paramod$e830d104b5de63a966ae948f6aff012e63986700\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $pos.
+Using template $paramod\_90_lcu\WIDTH=32'00000000000000000000000000000100 for cells of type $lcu.
+No more expansions possible.
+<suppressed ~568 debug messages>
+
+8.21. Executing OPT pass (performing simple optimizations).
+
+8.21.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~5 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+<suppressed ~344 debug messages>
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.21.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+<suppressed ~3 debug messages>
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+<suppressed ~330 debug messages>
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 111 cells.
+
+8.21.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.21.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 2 unused cells and 477 unused wires.
+<suppressed ~4 debug messages>
+
+8.21.5. Finished fast OPT passes.
+
+8.22. Executing ABC pass (technology mapping using ABC).
+
+8.22.1. Extracting gate netlist of module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream' to `<abc-temp-dir>/input.blif'..
+Extracted 655 gates and 928 wires to a netlist network with 272 inputs and 259 outputs.
+
+8.22.1.1. Executing ABC.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ABC command line: "source <abc-temp-dir>/abc.script".
+ABC: 
+ABC: + read_blif <abc-temp-dir>/input.blif 
+ABC: + read_library <abc-temp-dir>/stdcells.genlib 
+ABC: Entered genlib library with 13 gates from file "<abc-temp-dir>/stdcells.genlib".
+ABC: + strash 
+ABC: + dretime 
+ABC: + map 
+ABC: + write_blif <abc-temp-dir>/output.blif 
+
+8.22.1.2. Re-integrating ABC results.
+ABC RESULTS:             ORNOT cells:        2
+ABC RESULTS:              NAND cells:        8
+ABC RESULTS:               NOT cells:      122
+ABC RESULTS:               AND cells:      120
+ABC RESULTS:                OR cells:       10
+ABC RESULTS:            ANDNOT cells:      132
+ABC RESULTS:               XOR cells:      131
+ABC RESULTS:               MUX cells:      248
+ABC RESULTS:        internal signals:      397
+ABC RESULTS:           input signals:      272
+ABC RESULTS:          output signals:      259
+Removing temp directory.
+
+8.22.2. Extracting gate netlist of module `\gf128_mul_bitstream' to `<abc-temp-dir>/input.blif'..
+Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
+Don't call ABC as there is nothing to map.
+Removing temp directory.
+
+8.22.3. Extracting gate netlist of module `\leanvm_b_stream_alu' to `<abc-temp-dir>/input.blif'..
+Extracted 438 gates and 476 wires to a netlist network with 36 inputs and 41 outputs.
+
+8.22.3.1. Executing ABC.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ABC command line: "source <abc-temp-dir>/abc.script".
+ABC: 
+ABC: + read_blif <abc-temp-dir>/input.blif 
+ABC: + read_library <abc-temp-dir>/stdcells.genlib 
+ABC: Entered genlib library with 13 gates from file "<abc-temp-dir>/stdcells.genlib".
+ABC: + strash 
+ABC: + dretime 
+ABC: + map 
+ABC: + write_blif <abc-temp-dir>/output.blif 
+
+8.22.3.2. Re-integrating ABC results.
+ABC RESULTS:               XOR cells:        2
+ABC RESULTS:               NOT cells:       10
+ABC RESULTS:               NOR cells:       30
+ABC RESULTS:              NAND cells:       17
+ABC RESULTS:               AND cells:       33
+ABC RESULTS:              XNOR cells:        8
+ABC RESULTS:             ORNOT cells:       37
+ABC RESULTS:                OR cells:      102
+ABC RESULTS:            ANDNOT cells:      160
+ABC RESULTS:        internal signals:      399
+ABC RESULTS:           input signals:       36
+ABC RESULTS:          output signals:       41
+Removing temp directory.
+
+8.22.4. Extracting gate netlist of module `\tt_um_leanvm_b_mincore' to `<abc-temp-dir>/input.blif'..
+Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
+Don't call ABC as there is nothing to map.
+Removing temp directory.
+
+8.23. Executing OPT pass (performing simple optimizations).
+
+8.23.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+<suppressed ~120 debug messages>
+Optimizing module gf128_mul_bitstream.
+Optimizing module leanvm_b_stream_alu.
+Optimizing module tt_um_leanvm_b_mincore.
+
+8.23.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf128_mul_bitstream'.
+Finding identical cells in module `\leanvm_b_stream_alu'.
+<suppressed ~3 debug messages>
+Finding identical cells in module `\tt_um_leanvm_b_mincore'.
+Removed a total of 1 cells.
+
+8.23.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.23.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf128_mul_bitstream..
+Finding unused cells or wires in module \leanvm_b_stream_alu..
+Finding unused cells or wires in module \tt_um_leanvm_b_mincore..
+Removed 0 unused cells and 603 unused wires.
+<suppressed ~7 debug messages>
+
+8.23.5. Finished fast OPT passes.
+
+8.24. Executing HIERARCHY pass (managing design hierarchy).
+
+8.24.1. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+
+8.24.2. Analyzing design hierarchy..
+Top module:  \tt_um_leanvm_b_mincore
+Used module:     \leanvm_b_stream_alu
+Used module:         \gf128_mul_bitstream
+Used module:             $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+Removed 0 unused modules.
+
+8.25. Printing statistics.
+
+=== $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream ===
+
+   Number of wires:                786
+   Number of wire bits:           1054
+   Number of public wires:          13
+   Number of public wire bits:     281
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1029
+     $_ANDNOT_                     132
+     $_AND_                        120
+     $_MUX_                        248
+     $_NAND_                         8
+     $_NOT_                        122
+     $_ORNOT_                        2
+     $_OR_                          10
+     $_SDFFE_PP0P_                 256
+     $_XOR_                        131
+
+=== gf128_mul_bitstream ===
+
+   Number of wires:                 11
+   Number of wire bits:             25
+   Number of public wires:          11
+   Number of public wire bits:      25
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream      1
+
+=== leanvm_b_stream_alu ===
+
+   Number of wires:                391
+   Number of wire bits:            467
+   Number of public wires:          22
+   Number of public wire bits:      59
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                416
+     $_ANDNOT_                     160
+     $_AND_                         33
+     $_NAND_                        17
+     $_NOR_                         29
+     $_NOT_                         10
+     $_ORNOT_                       37
+     $_OR_                         102
+     $_SDFFE_PN0P_                   1
+     $_SDFFE_PP0P_                  16
+     $_XNOR_                         8
+     $_XOR_                          2
+     gf128_mul_bitstream             1
+
+=== tt_um_leanvm_b_mincore ===
+
+   Number of wires:                 18
+   Number of wire bits:             60
+   Number of public wires:          18
+   Number of public wire bits:      60
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     leanvm_b_stream_alu             1
+
+=== design hierarchy ===
+
+   tt_um_leanvm_b_mincore            1
+     leanvm_b_stream_alu             1
+       gf128_mul_bitstream           1
+         $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream      1
+
+   Number of wires:               1206
+   Number of wire bits:           1606
+   Number of public wires:          64
+   Number of public wire bits:     425
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1444
+     $_ANDNOT_                     292
+     $_AND_                        153
+     $_MUX_                        248
+     $_NAND_                        25
+     $_NOR_                         29
+     $_NOT_                        132
+     $_ORNOT_                       39
+     $_OR_                         112
+     $_SDFFE_PN0P_                   1
+     $_SDFFE_PP0P_                 272
+     $_XNOR_                         8
+     $_XOR_                        133
+
+8.26. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream...
+Checking module gf128_mul_bitstream...
+Checking module leanvm_b_stream_alu...
+Checking module tt_um_leanvm_b_mincore...
+Found and reported 0 problems.
+
+9. Printing statistics.
+
+=== $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream ===
+
+   Number of wires:                786
+   Number of wire bits:           1054
+   Number of public wires:          13
+   Number of public wire bits:     281
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1029
+     $_ANDNOT_                     132
+     $_AND_                        120
+     $_MUX_                        248
+     $_NAND_                         8
+     $_NOT_                        122
+     $_ORNOT_                        2
+     $_OR_                          10
+     $_SDFFE_PP0P_                 256
+     $_XOR_                        131
+
+=== gf128_mul_bitstream ===
+
+   Number of wires:                 11
+   Number of wire bits:             25
+   Number of public wires:          11
+   Number of public wire bits:      25
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream      1
+
+=== leanvm_b_stream_alu ===
+
+   Number of wires:                391
+   Number of wire bits:            467
+   Number of public wires:          22
+   Number of public wire bits:      59
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                416
+     $_ANDNOT_                     160
+     $_AND_                         33
+     $_NAND_                        17
+     $_NOR_                         29
+     $_NOT_                         10
+     $_ORNOT_                       37
+     $_OR_                         102
+     $_SDFFE_PN0P_                   1
+     $_SDFFE_PP0P_                  16
+     $_XNOR_                         8
+     $_XOR_                          2
+     gf128_mul_bitstream             1
+
+=== tt_um_leanvm_b_mincore ===
+
+   Number of wires:                 18
+   Number of wire bits:             60
+   Number of public wires:          18
+   Number of public wire bits:      60
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     leanvm_b_stream_alu             1
+
+=== design hierarchy ===
+
+   tt_um_leanvm_b_mincore            1
+     leanvm_b_stream_alu             1
+       gf128_mul_bitstream           1
+         $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream      1
+
+   Number of wires:               1206
+   Number of wire bits:           1606
+   Number of public wires:          64
+   Number of public wire bits:     425
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1444
+     $_ANDNOT_                     292
+     $_AND_                        153
+     $_MUX_                        248
+     $_NAND_                        25
+     $_NOR_                         29
+     $_NOT_                        132
+     $_ORNOT_                       39
+     $_OR_                         112
+     $_SDFFE_PN0P_                   1
+     $_SDFFE_PP0P_                 272
+     $_XNOR_                         8
+     $_XOR_                        133
+
+End of script. Logfile hash: 7f8b863b5c, CPU: user 0.81s system 0.01s, MEM: 23.90 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 24% 22x opt_expr (0 sec), 13% 1x abc (0 sec), ...

@@ -1,4 +1,4 @@
-import Std.Tactic.Omega
+import Init.Omega
 
 /-!
 Exact lower bounds for the declared streaming-interface models. These do not

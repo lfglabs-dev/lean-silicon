@@ -1,11 +1,12 @@
 [options]
 mode bmc
-depth 32
+depth 22
 multiclock on
-timeout 45
+timeout 15
 
 [engines]
-abc bmc3
+# Diagnostic only: this solver cannot accept SBY's universal `anyconst` input.
+smtbmc boolector
 
 [script]
 read -formal ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv

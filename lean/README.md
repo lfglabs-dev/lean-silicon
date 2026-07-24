@@ -6,6 +6,7 @@ Build:
 
 ```sh
 lake build
+lake build LeanVMBMinCore
 ```
 
 Modules:
@@ -27,7 +28,10 @@ Modules:
 - `Optimality.lean` — channel-capacity cycle lower bounds, restricted gate
   lower bounds, and the 273-bit state lower bound under stated requirements.
 
-The project contains no `sorry`, `admit`, or global `axiom` declarations.
+Both commands build the same root module. The project gate rejects source
+occurrences of `sorry`, `admit`, and `axiom`; the evidence record names the
+exact parent, tree, and tested head so a later evidence-only commit cannot be
+misrepresented as testing itself.
 The address theorem is intentionally parametric over an `AddressEncoding`
 structure carrying the law `encode(i+j)=encode(i)*encode(j)`; instantiating that
 structure with the actual GF(2^128) generator is a later proof milestone.

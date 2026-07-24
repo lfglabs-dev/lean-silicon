@@ -1,0 +1,6 @@
+make-check 0
+make-sim 0
+lean-build 0
+formal-sby 0
+yosys-rtl 0
+yosys-formal 0

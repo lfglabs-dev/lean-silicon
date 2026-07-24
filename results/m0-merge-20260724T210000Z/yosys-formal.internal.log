@@ -1,0 +1,1409 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Running command `read_verilog -formal -sv src/gf2n_mul_bitstream.sv formal/gf8_mul_formal.sv; prep -top gf8_mul_formal; check; synth -top gf8_mul_formal; stat' --
+
+1. Executing Verilog-2005 frontend: src/gf2n_mul_bitstream.sv
+Parsing formal SystemVerilog input from `src/gf2n_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf2n_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: formal/gf8_mul_formal.sv
+Parsing formal SystemVerilog input from `formal/gf8_mul_formal.sv' to AST representation.
+Generating RTLIL representation for module `\gf8_mul_formal'.
+Successfully finished Verilog frontend.
+
+3. Executing PREP pass.
+
+3.1. Executing HIERARCHY pass (managing design hierarchy).
+
+3.1.1. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     \gf2n_mul_bitstream
+Parameter \WIDTH = 8
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 8'00011011
+
+3.1.2. Executing AST frontend in derive mode using pre-parsed AST for module `\gf2n_mul_bitstream'.
+Parameter \WIDTH = 8
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 8'00011011
+Generating RTLIL representation for module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+
+3.1.3. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+
+3.1.4. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+Removing unused module `\gf2n_mul_bitstream'.
+Removed 1 unused modules.
+Module gf8_mul_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+3.2. Executing PROC pass (convert processes to netlists).
+
+3.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+3.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 10 switch rules as full_case in process $proc$formal/gf8_mul_formal.sv:72$60 in module gf8_mul_formal.
+Marked 5 switch rules as full_case in process $proc$src/gf2n_mul_bitstream.sv:72$121 in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Removed a total of 0 dead cases.
+
+3.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 17 assignments to connections.
+
+3.2.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$115'.
+  Set init value: $formal$formal/gf8_mul_formal.sv:82$48_EN = 1'0
+Found init rule in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$113'.
+  Set init value: $formal$formal/gf8_mul_formal.sv:80$47_EN = 1'0
+Found init rule in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:11$112'.
+  Set init value: \phase = 5'00000
+Found init rule in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:10$111'.
+  Set init value: \rst_n = 1'0
+Found init rule in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:9$110'.
+  Set init value: \clk = 1'0
+
+3.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+3.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~18 debug messages>
+
+3.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$115'.
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$113'.
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:11$112'.
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:10$111'.
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:9$110'.
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+     1/18: $9\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$105
+     2/18: $8\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$101
+     3/18: $7\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$97
+     4/18: $6\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$93
+     5/18: $5\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$89
+     6/18: $4\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$85
+     7/18: $3\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$81
+     8/18: $2\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$77
+     9/18: $1\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result[7:0]$73
+    10/18: $1\reference_mul$func$formal/gf8_mul_formal.sv:82$46.x[7:0]$76
+    11/18: $1\reference_mul$func$formal/gf8_mul_formal.sv:82$46.b[7:0]$75
+    12/18: $1\reference_mul$func$formal/gf8_mul_formal.sv:82$46.a[7:0]$74
+    13/18: $0$formal$formal/gf8_mul_formal.sv:80$47_EN[0:0]$66
+    14/18: $0$formal$formal/gf8_mul_formal.sv:80$47_CHECK[0:0]$65
+    15/18: $0$formal$formal/gf8_mul_formal.sv:82$48_EN[0:0]$68
+    16/18: $0$formal$formal/gf8_mul_formal.sv:82$48_CHECK[0:0]$67
+    17/18: $0\phase[4:0]
+    18/18: $0\rst_n[0:0]
+Creating decoders for process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:16$51'.
+Creating decoders for process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+     1/29: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result[7:0]$156
+     2/29: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry[0:0]$158
+     3/29: $5\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value[7:0]$157
+     4/29: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry[0:0]$154
+     5/29: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value[7:0]$153
+     6/29: $4\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result[7:0]$152
+     7/29: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.$result[7:0]$144
+     8/29: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.next_value[7:0]$147
+     9/29: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.byte_value[7:0]$146
+    10/29: $3\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.value[7:0]$145
+    11/29: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry[0:0]$150
+    12/29: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value[7:0]$149
+    13/29: $3\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result[7:0]$148
+    14/29: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry[0:0]$143
+    15/29: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value[7:0]$142
+    16/29: $2\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result[7:0]$141
+    17/29: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.next_value[7:0]$140
+    18/29: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.byte_value[7:0]$139
+    19/29: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.value[7:0]$138
+    20/29: $2\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.$result[7:0]$137
+    21/29: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry[0:0]$136
+    22/29: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value[7:0]$135
+    23/29: $1\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result[7:0]$134
+    24/29: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.next_value[7:0]$133
+    25/29: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.byte_value[7:0]$132
+    26/29: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.value[7:0]$131
+    27/29: $1\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.$result[7:0]$130
+    28/29: $0\accumulator[7:0]
+    29/29: $0\a_shift[7:0]
+
+3.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+3.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\gf8_mul_formal.\rst_n' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$480' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\phase' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$481' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\reference_mul$func$formal/gf8_mul_formal.sv:82$46.$result' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$482' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\reference_mul$func$formal/gf8_mul_formal.sv:82$46.a' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$483' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\reference_mul$func$formal/gf8_mul_formal.sv:82$46.b' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$484' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\reference_mul$func$formal/gf8_mul_formal.sv:82$46.x' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$485' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.$formal$formal/gf8_mul_formal.sv:80$47_CHECK' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$486' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.$formal$formal/gf8_mul_formal.sv:80$47_EN' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$487' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.$formal$formal/gf8_mul_formal.sv:82$48_CHECK' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$488' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.$formal$formal/gf8_mul_formal.sv:82$48_EN' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+  created $dff cell `$procdff$489' with positive edge clock.
+Creating register for signal `\gf8_mul_formal.\clk' using process `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:16$51'.
+  created $ff cell `$procdff$490' with global clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\a_shift' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$491' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\accumulator' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$492' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.$result' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$493' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.value' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$494' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.byte_value' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$495' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\shift_in_byte$func$src/gf2n_mul_bitstream.sv:80$117.next_value' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$496' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.$result' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$497' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.value' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$498' with positive edge clock.
+Creating register for signal `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.\mul_by_x$func$src/gf2n_mul_bitstream.sv:86$118.carry' using process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+  created $dff cell `$procdff$499' with positive edge clock.
+
+3.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+3.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$115'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:0$113'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:11$112'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:10$111'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:9$110'.
+Found and cleaned up 11 empty switches in `\gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:72$60'.
+Removing empty process `gf8_mul_formal.$proc$formal/gf8_mul_formal.sv:16$51'.
+Found and cleaned up 7 empty switches in `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+Removing empty process `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$proc$src/gf2n_mul_bitstream.sv:72$121'.
+Cleaned up 18 empty switches.
+
+3.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf8_mul_formal.
+<suppressed ~2 debug messages>
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+<suppressed ~35 debug messages>
+
+3.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf8_mul_formal.
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+
+3.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf8_mul_formal..
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Removed 86 unused cells and 268 unused wires.
+<suppressed ~96 debug messages>
+
+3.5. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream...
+Checking module gf8_mul_formal...
+Found and reported 0 problems.
+
+3.6. Executing OPT pass (performing simple optimizations).
+
+3.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+3.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+3.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~25 debug messages>
+
+3.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+3.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+<suppressed ~6 debug messages>
+Removed a total of 2 cells.
+
+3.6.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 2 unused wires.
+<suppressed ~1 debug messages>
+
+3.6.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+3.6.8. Rerunning OPT passes. (Maybe there is more to do..)
+
+3.6.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~24 debug messages>
+
+3.6.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+3.6.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+3.6.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+3.6.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+3.6.14. Finished OPT passes. (There is nothing left to do.)
+
+3.7. Executing WREDUCE pass (reducing word size of cells).
+Removed top 3 bits (of 8) from mux cell $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$ternary$src/gf2n_mul_bitstream.sv:66$159 ($mux).
+Removed top 3 bits (of 8) from port B of cell $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$xor$src/gf2n_mul_bitstream.sv:65$160 ($xor).
+Removed top 3 bits (of 8) from wire $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$ternary$src/gf2n_mul_bitstream.sv:66$159_Y.
+Removed top 4 bits (of 5) from port B of cell gf8_mul_formal.$eq$formal/gf8_mul_formal.sv:19$53 ($eq).
+Removed top 3 bits (of 5) from port B of cell gf8_mul_formal.$ge$formal/gf8_mul_formal.sv:20$54 ($ge).
+Removed top 1 bits (of 5) from port B of cell gf8_mul_formal.$le$formal/gf8_mul_formal.sv:20$55 ($le).
+Removed top 1 bits (of 5) from port B of cell gf8_mul_formal.$eq$formal/gf8_mul_formal.sv:21$57 ($eq).
+Removed top 3 bits (of 5) from port B of cell gf8_mul_formal.$sub$formal/gf8_mul_formal.sv:22$58 ($sub).
+Removed top 1 bits (of 5) from port B of cell gf8_mul_formal.$lt$formal/gf8_mul_formal.sv:76$70 ($lt).
+Removed top 1 bits (of 5) from port B of cell gf8_mul_formal.$eq$formal/gf8_mul_formal.sv:80$72 ($eq).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:55$79 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:55$80 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:57$83 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:57$84 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:59$87 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:59$88 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:61$91 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:61$92 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:63$95 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:63$96 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:65$99 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:65$100 ($xor).
+Removed top 3 bits (of 8) from mux cell gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:67$103 ($mux).
+Removed top 3 bits (of 8) from port B of cell gf8_mul_formal.$xor$formal/gf8_mul_formal.sv:67$104 ($xor).
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:55$79_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:57$83_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:59$87_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:61$91_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:63$95_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:65$99_Y.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$ternary$formal/gf8_mul_formal.sv:67$103_Y.
+
+3.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 8 unused wires.
+<suppressed ~2 debug messages>
+
+3.9. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+3.10. Executing OPT pass (performing simple optimizations).
+
+3.10.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+3.10.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+3.10.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+3.10.4. Finished fast OPT passes.
+
+3.11. Printing statistics.
+
+=== $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream ===
+
+   Number of wires:                 28
+   Number of wire bits:            161
+   Number of public wires:          15
+   Number of public wire bits:      57
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 17
+     $dff                            2
+     $mux                           13
+     $xor                            2
+
+=== gf8_mul_formal ===
+
+   Number of wires:                 65
+   Number of wire bits:            365
+   Number of public wires:          10
+   Number of public wire bits:      35
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 67
+     $add                            1
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+     $dff                            5
+     $eq                             4
+     $ff                             1
+     $ge                             1
+     $le                             1
+     $logic_and                      1
+     $logic_not                      1
+     $lt                             1
+     $mux                           29
+     $not                            1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+     $shiftx                         1
+     $sub                            1
+     $xor                           14
+
+=== design hierarchy ===
+
+   gf8_mul_formal                    1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+
+   Number of wires:                 93
+   Number of wire bits:            526
+   Number of public wires:          25
+   Number of public wire bits:      92
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 83
+     $add                            1
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+     $dff                            7
+     $eq                             4
+     $ff                             1
+     $ge                             1
+     $le                             1
+     $logic_and                      1
+     $logic_not                      1
+     $lt                             1
+     $mux                           42
+     $not                            1
+     $shiftx                         1
+     $sub                            1
+     $xor                           16
+
+3.12. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream...
+Checking module gf8_mul_formal...
+Found and reported 0 problems.
+
+4. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream...
+Checking module gf8_mul_formal...
+Found and reported 0 problems.
+
+5. Executing SYNTH pass.
+
+5.1. Executing HIERARCHY pass (managing design hierarchy).
+
+5.1.1. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+
+5.1.2. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+Removed 0 unused modules.
+Module gf8_mul_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+5.2. Executing PROC pass (convert processes to netlists).
+
+5.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+5.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Removed a total of 0 dead cases.
+
+5.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 0 assignments to connections.
+
+5.2.4. Executing PROC_INIT pass (extract init attributes).
+
+5.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+5.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+
+5.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+
+5.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+5.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+
+5.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+5.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+5.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.5. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream...
+Checking module gf8_mul_formal...
+Found and reported 0 problems.
+
+5.6. Executing OPT pass (performing simple optimizations).
+
+5.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~24 debug messages>
+
+5.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.6.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.6.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.6.9. Finished OPT passes. (There is nothing left to do.)
+
+5.7. Executing FSM pass (extract and optimize FSM).
+
+5.7.1. Executing FSM_DETECT pass (finding FSMs in design).
+
+5.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).
+
+5.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+5.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+5.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).
+
+5.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).
+
+5.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).
+
+5.8. Executing OPT pass (performing simple optimizations).
+
+5.8.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.8.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~24 debug messages>
+
+5.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.8.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.8.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $procdff$492 ($dff) from module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream (D = $procmux$457_Y, Q = \accumulator, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$508 ($sdff) from module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream (D = $procmux$457_Y, Q = \accumulator).
+Adding SRST signal on $procdff$491 ($dff) from module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream (D = $procmux$472_Y, Q = \a_shift, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$520 ($sdff) from module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream (D = $procmux$472_Y, Q = \a_shift).
+Adding SRST signal on $procdff$488 ($dff) from module gf8_mul_formal (D = 1'x, Q = $formal$formal/gf8_mul_formal.sv:82$48_CHECK, rval = 1'1).
+Adding SRST signal on $procdff$481 ($dff) from module gf8_mul_formal (D = $procmux$234_Y, Q = \phase, rval = 5'00001).
+Adding EN signal on $auto$ff.cc:266:slice$533 ($sdff) from module gf8_mul_formal (D = $add$formal/gf8_mul_formal.sv:77$71_Y, Q = \phase).
+Adding EN signal on $procdff$480 ($dff) from module gf8_mul_formal (D = 1'1, Q = \rst_n).
+Setting constant 1-bit at position 0 on $auto$ff.cc:266:slice$532 ($sdff) from module gf8_mul_formal.
+
+5.8.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 8 unused cells and 9 unused wires.
+<suppressed ~10 debug messages>
+
+5.8.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+<suppressed ~2 debug messages>
+Optimizing module gf8_mul_formal.
+
+5.8.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.8.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+5.8.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.8.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+<suppressed ~6 debug messages>
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 2 cells.
+
+5.8.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.8.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 2 unused wires.
+<suppressed ~1 debug messages>
+
+5.8.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.8.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.8.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+5.8.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.8.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.8.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.8.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.8.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.8.23. Finished OPT passes. (There is nothing left to do.)
+
+5.9. Executing WREDUCE pass (reducing word size of cells).
+Removed top 1 bits (of 2) from port B of cell $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$auto$opt_dff.cc:195:make_patterns_logic$517 ($ne).
+Removed top 3 bits (of 8) from wire $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.$auto$wreduce.cc:461:run$500.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$501.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$502.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$503.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$504.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$505.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$506.
+Removed top 3 bits (of 8) from wire gf8_mul_formal.$auto$wreduce.cc:461:run$507.
+
+5.10. Executing PEEPOPT pass (run peephole optimizers).
+
+5.11. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 8 unused wires.
+<suppressed ~2 debug messages>
+
+5.12. Executing ALUMACC pass (create $alu and $macc cells).
+Extracting $alu and $macc cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream:
+  created 0 $alu and 0 $macc cells.
+Extracting $alu and $macc cells in module gf8_mul_formal:
+  creating $macc model for $add$formal/gf8_mul_formal.sv:77$71 ($add).
+  creating $macc model for $sub$formal/gf8_mul_formal.sv:22$58 ($sub).
+  creating $alu model for $macc $sub$formal/gf8_mul_formal.sv:22$58.
+  creating $alu model for $macc $add$formal/gf8_mul_formal.sv:77$71.
+  creating $alu model for $ge$formal/gf8_mul_formal.sv:20$54 ($ge): new $alu
+  creating $alu model for $le$formal/gf8_mul_formal.sv:20$55 ($le): new $alu
+  creating $alu model for $lt$formal/gf8_mul_formal.sv:76$70 ($lt): new $alu
+  creating $alu model for $eq$formal/gf8_mul_formal.sv:21$57 ($eq): merged with $le$formal/gf8_mul_formal.sv:20$55.
+  creating $alu cell for $lt$formal/gf8_mul_formal.sv:76$70: $auto$alumacc.cc:485:replace_alu$547
+  creating $alu cell for $le$formal/gf8_mul_formal.sv:20$55, $eq$formal/gf8_mul_formal.sv:21$57: $auto$alumacc.cc:485:replace_alu$558
+  creating $alu cell for $ge$formal/gf8_mul_formal.sv:20$54: $auto$alumacc.cc:485:replace_alu$571
+  creating $alu cell for $add$formal/gf8_mul_formal.sv:77$71: $auto$alumacc.cc:485:replace_alu$580
+  creating $alu cell for $sub$formal/gf8_mul_formal.sv:22$58: $auto$alumacc.cc:485:replace_alu$583
+  created 5 $alu and 0 $macc cells.
+
+5.13. Executing SHARE pass (SAT-based resource sharing).
+
+5.14. Executing OPT pass (performing simple optimizations).
+
+5.14.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+<suppressed ~1 debug messages>
+
+5.14.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.14.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+5.14.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.14.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.14.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.14.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 1 unused cells and 5 unused wires.
+<suppressed ~2 debug messages>
+
+5.14.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.14.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.14.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+5.14.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.14.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.14.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.14.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.14.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.14.16. Finished OPT passes. (There is nothing left to do.)
+
+5.15. Executing MEMORY pass.
+
+5.15.1. Executing OPT_MEM pass (optimize memories).
+Performed a total of 0 transformations.
+
+5.15.2. Executing OPT_MEM_PRIORITY pass (removing unnecessary memory write priority relations).
+Performed a total of 0 transformations.
+
+5.15.3. Executing OPT_MEM_FEEDBACK pass (finding memory read-to-write feedback paths).
+
+5.15.4. Executing MEMORY_BMUX2ROM pass (converting muxes to ROMs).
+
+5.15.5. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+5.15.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.15.7. Executing MEMORY_SHARE pass (consolidating $memrd/$memwr cells).
+
+5.15.8. Executing OPT_MEM_WIDEN pass (optimize memories where all ports are wide).
+Performed a total of 0 transformations.
+
+5.15.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.15.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+5.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.17. Executing OPT pass (performing simple optimizations).
+
+5.17.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+<suppressed ~9 debug messages>
+Optimizing module gf8_mul_formal.
+<suppressed ~48 debug messages>
+
+5.17.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+<suppressed ~6 debug messages>
+Removed a total of 2 cells.
+
+5.17.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.17.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 2 unused cells and 26 unused wires.
+<suppressed ~4 debug messages>
+
+5.17.5. Finished fast OPT passes.
+
+5.18. Executing MEMORY_MAP pass (converting memories to logic and flip-flops).
+
+5.19. Executing OPT pass (performing simple optimizations).
+
+5.19.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.19.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.19.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~19 debug messages>
+
+5.19.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+    Consolidated identical input bits for $mux cell $ternary$src/gf2n_mul_bitstream.sv:66$159:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$500 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$588 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$588 [3]
+      New connections: $auto$wreduce.cc:461:run$500 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$588 [3] $auto$opt_expr.cc:205:group_cell_inputs$588 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$588 [3] }
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:55$79:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$501 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$591 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$591 [3]
+      New connections: $auto$wreduce.cc:461:run$501 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$591 [3] $auto$opt_expr.cc:205:group_cell_inputs$591 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$591 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:57$83:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$502 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$594 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$594 [3]
+      New connections: $auto$wreduce.cc:461:run$502 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$594 [3] $auto$opt_expr.cc:205:group_cell_inputs$594 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$594 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:59$87:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$503 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$597 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$597 [3]
+      New connections: $auto$wreduce.cc:461:run$503 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$597 [3] $auto$opt_expr.cc:205:group_cell_inputs$597 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$597 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:61$91:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$504 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$600 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$600 [3]
+      New connections: $auto$wreduce.cc:461:run$504 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$600 [3] $auto$opt_expr.cc:205:group_cell_inputs$600 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$600 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:63$95:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$505 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$603 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$603 [3]
+      New connections: $auto$wreduce.cc:461:run$505 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$603 [3] $auto$opt_expr.cc:205:group_cell_inputs$603 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$603 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:65$99:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$506 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$606 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$606 [3]
+      New connections: $auto$wreduce.cc:461:run$506 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$606 [3] $auto$opt_expr.cc:205:group_cell_inputs$606 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$606 [3] }
+    Consolidated identical input bits for $mux cell $ternary$formal/gf8_mul_formal.sv:67$103:
+      Old ports: A=5'00000, B=5'11011, Y={ $auto$wreduce.cc:461:run$507 [4:1] $auto$opt_expr.cc:205:group_cell_inputs$609 [3] }
+      New ports: A=1'0, B=1'1, Y=$auto$opt_expr.cc:205:group_cell_inputs$609 [3]
+      New connections: $auto$wreduce.cc:461:run$507 [4:1] = { $auto$opt_expr.cc:205:group_cell_inputs$609 [3] $auto$opt_expr.cc:205:group_cell_inputs$609 [3] 1'0 $auto$opt_expr.cc:205:group_cell_inputs$609 [3] }
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 8 changes.
+
+5.19.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.19.6. Executing OPT_SHARE pass.
+
+5.19.7. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.19.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 8 unused wires.
+<suppressed ~2 debug messages>
+
+5.19.9. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+<suppressed ~6 debug messages>
+Optimizing module gf8_mul_formal.
+<suppressed ~42 debug messages>
+
+5.19.10. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.19.11. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~11 debug messages>
+
+5.19.12. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.19.13. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.19.14. Executing OPT_SHARE pass.
+
+5.19.15. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.19.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 0 unused cells and 24 unused wires.
+<suppressed ~2 debug messages>
+
+5.19.17. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.19.18. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.19.19. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \gf8_mul_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~11 debug messages>
+
+5.19.20. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+  Optimizing cells in module \gf8_mul_formal.
+Performed a total of 0 changes.
+
+5.19.21. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+Removed a total of 0 cells.
+
+5.19.22. Executing OPT_SHARE pass.
+
+5.19.23. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.19.24. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+
+5.19.25. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+
+5.19.26. Finished OPT passes. (There is nothing left to do.)
+
+5.20. Executing TECHMAP pass (map to technology primitives).
+
+5.20.1. Executing Verilog-2005 frontend: /usr/bin/../share/yosys/techmap.v
+Parsing Verilog input from `/usr/bin/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `\$__div_mod_u'.
+Generating RTLIL representation for module `\$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `\$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_pmux'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Successfully finished Verilog frontend.
+
+5.20.2. Continuing TECHMAP pass.
+Using extmapper simplemap for cells of type $mux.
+Using extmapper simplemap for cells of type $not.
+Using extmapper simplemap for cells of type $eq.
+Using template $paramod$672a140277c71df8314410f22acc08d55222c3c7\_90_alu for cells of type $alu.
+Using extmapper simplemap for cells of type $logic_and.
+Using template $paramod$3ac6e4268d0279df14823f25676acf685165517e\_90_alu for cells of type $alu.
+Using template $paramod$8742280fdebca84e1c87f2a86ed84f62d558f4cc\_90_alu for cells of type $alu.
+Using template $paramod$constmap:5cb70b3ab130d323186fb05365b64f9830cd7998$paramod$724ca30713ca8aea2c8cc37cca71097000942a01\_90_shift_shiftx for cells of type $shiftx.
+Using template $paramod$79fc7abbb3333dbd5736999d565fd903198fb1eb\_90_alu for cells of type $alu.
+Using extmapper simplemap for cells of type $logic_not.
+Using template $paramod$1a3a0c35c4a4896fbfd612699525c057298e72d2\_90_alu for cells of type $alu.
+Using extmapper simplemap for cells of type $xor.
+Using extmapper simplemap for cells of type $reduce_and.
+Using extmapper simplemap for cells of type $or.
+Using extmapper simplemap for cells of type $reduce_or.
+Using extmapper simplemap for cells of type $sdffe.
+Using extmapper simplemap for cells of type $dff.
+Using extmapper simplemap for cells of type $dffe.
+Using extmapper simplemap for cells of type $ff.
+Using extmapper simplemap for cells of type $and.
+Using template $paramod\_90_lcu\WIDTH=32'00000000000000000000000000000101 for cells of type $lcu.
+Using extmapper simplemap for cells of type $pos.
+Using template $paramod\_90_lcu\WIDTH=32'00000000000000000000000000000100 for cells of type $lcu.
+Using template $paramod\_90_lcu\WIDTH=32'00000000000000000000000000000011 for cells of type $lcu.
+Using extmapper simplemap for cells of type $reduce_bool.
+Using extmapper simplemap for cells of type $ne.
+No more expansions possible.
+<suppressed ~797 debug messages>
+
+5.21. Executing OPT pass (performing simple optimizations).
+
+5.21.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+<suppressed ~5 debug messages>
+Optimizing module gf8_mul_formal.
+<suppressed ~131 debug messages>
+
+5.21.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+<suppressed ~3 debug messages>
+Finding identical cells in module `\gf8_mul_formal'.
+<suppressed ~84 debug messages>
+Removed a total of 29 cells.
+
+5.21.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.21.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 40 unused cells and 202 unused wires.
+<suppressed ~42 debug messages>
+
+5.21.5. Finished fast OPT passes.
+
+5.22. Executing ABC pass (technology mapping using ABC).
+
+5.22.1. Extracting gate netlist of module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream' to `<abc-temp-dir>/input.blif'..
+Extracted 55 gates and 88 wires to a netlist network with 32 inputs and 19 outputs.
+
+5.22.1.1. Executing ABC.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ABC command line: "source <abc-temp-dir>/abc.script".
+ABC: 
+ABC: + read_blif <abc-temp-dir>/input.blif 
+ABC: + read_library <abc-temp-dir>/stdcells.genlib 
+ABC: Entered genlib library with 13 gates from file "<abc-temp-dir>/stdcells.genlib".
+ABC: + strash 
+ABC: + dretime 
+ABC: + map 
+ABC: + write_blif <abc-temp-dir>/output.blif 
+
+5.22.1.2. Re-integrating ABC results.
+ABC RESULTS:             ORNOT cells:        1
+ABC RESULTS:               AND cells:        1
+ABC RESULTS:               NOT cells:        2
+ABC RESULTS:              NAND cells:        8
+ABC RESULTS:                OR cells:       10
+ABC RESULTS:            ANDNOT cells:       12
+ABC RESULTS:               XOR cells:       11
+ABC RESULTS:               MUX cells:        8
+ABC RESULTS:        internal signals:       37
+ABC RESULTS:           input signals:       32
+ABC RESULTS:          output signals:       19
+Removing temp directory.
+
+5.22.2. Extracting gate netlist of module `\gf8_mul_formal' to `<abc-temp-dir>/input.blif'..
+Extracted 221 gates and 252 wires to a netlist network with 30 inputs and 14 outputs.
+
+5.22.2.1. Executing ABC.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ABC command line: "source <abc-temp-dir>/abc.script".
+ABC: 
+ABC: + read_blif <abc-temp-dir>/input.blif 
+ABC: + read_library <abc-temp-dir>/stdcells.genlib 
+ABC: Entered genlib library with 13 gates from file "<abc-temp-dir>/stdcells.genlib".
+ABC: + strash 
+ABC: + dretime 
+ABC: + map 
+ABC: + write_blif <abc-temp-dir>/output.blif 
+
+5.22.2.2. Re-integrating ABC results.
+ABC RESULTS:              XNOR cells:       29
+ABC RESULTS:               NOR cells:        2
+ABC RESULTS:               MUX cells:       73
+ABC RESULTS:               NOT cells:       17
+ABC RESULTS:              NAND cells:       10
+ABC RESULTS:               XOR cells:       70
+ABC RESULTS:               AND cells:        6
+ABC RESULTS:             ORNOT cells:        4
+ABC RESULTS:            ANDNOT cells:       13
+ABC RESULTS:                OR cells:       18
+ABC RESULTS:        internal signals:      208
+ABC RESULTS:           input signals:       30
+ABC RESULTS:          output signals:       14
+Removing temp directory.
+
+5.23. Executing OPT pass (performing simple optimizations).
+
+5.23.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream.
+Optimizing module gf8_mul_formal.
+<suppressed ~68 debug messages>
+
+5.23.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream'.
+Finding identical cells in module `\gf8_mul_formal'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+5.23.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.23.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream..
+Finding unused cells or wires in module \gf8_mul_formal..
+Removed 8 unused cells and 164 unused wires.
+<suppressed ~12 debug messages>
+
+5.23.5. Finished fast OPT passes.
+
+5.24. Executing HIERARCHY pass (managing design hierarchy).
+
+5.24.1. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+
+5.24.2. Analyzing design hierarchy..
+Top module:  \gf8_mul_formal
+Used module:     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream
+Removed 0 unused modules.
+Module gf8_mul_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+5.25. Printing statistics.
+
+=== $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream ===
+
+   Number of wires:                 66
+   Number of wire bits:             94
+   Number of public wires:          13
+   Number of public wire bits:      41
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 69
+     $_ANDNOT_                      12
+     $_AND_                          1
+     $_MUX_                          8
+     $_NAND_                         8
+     $_NOT_                          2
+     $_ORNOT_                        1
+     $_OR_                          10
+     $_SDFFE_PP0P_                  16
+     $_XOR_                         11
+
+=== gf8_mul_formal ===
+
+   Number of wires:                238
+   Number of wire bits:            271
+   Number of public wires:          10
+   Number of public wire bits:      35
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                247
+     $_ANDNOT_                      13
+     $_AND_                          5
+     $_DFFE_PN_                      1
+     $_DFF_P_                        2
+     $_FF_                           1
+     $_MUX_                         73
+     $_NAND_                        10
+     $_NOR_                          2
+     $_NOT_                          9
+     $_ORNOT_                        4
+     $_OR_                          18
+     $_SDFFE_PN0N_                   4
+     $_SDFFE_PN1N_                   1
+     $_XNOR_                        29
+     $_XOR_                         70
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+
+=== design hierarchy ===
+
+   gf8_mul_formal                    1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+
+   Number of wires:                304
+   Number of wire bits:            365
+   Number of public wires:          23
+   Number of public wire bits:      76
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                315
+     $_ANDNOT_                      25
+     $_AND_                          6
+     $_DFFE_PN_                      1
+     $_DFF_P_                        2
+     $_FF_                           1
+     $_MUX_                         81
+     $_NAND_                        18
+     $_NOR_                          2
+     $_NOT_                         11
+     $_ORNOT_                        5
+     $_OR_                          28
+     $_SDFFE_PN0N_                   4
+     $_SDFFE_PN1N_                   1
+     $_SDFFE_PP0P_                  16
+     $_XNOR_                        29
+     $_XOR_                         81
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+
+5.26. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream...
+Checking module gf8_mul_formal...
+Found and reported 0 problems.
+
+6. Printing statistics.
+
+=== $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream ===
+
+   Number of wires:                 66
+   Number of wire bits:             94
+   Number of public wires:          13
+   Number of public wire bits:      41
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 69
+     $_ANDNOT_                      12
+     $_AND_                          1
+     $_MUX_                          8
+     $_NAND_                         8
+     $_NOT_                          2
+     $_ORNOT_                        1
+     $_OR_                          10
+     $_SDFFE_PP0P_                  16
+     $_XOR_                         11
+
+=== gf8_mul_formal ===
+
+   Number of wires:                238
+   Number of wire bits:            271
+   Number of public wires:          10
+   Number of public wire bits:      35
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                247
+     $_ANDNOT_                      13
+     $_AND_                          5
+     $_DFFE_PN_                      1
+     $_DFF_P_                        2
+     $_FF_                           1
+     $_MUX_                         73
+     $_NAND_                        10
+     $_NOR_                          2
+     $_NOT_                          9
+     $_ORNOT_                        4
+     $_OR_                          18
+     $_SDFFE_PN0N_                   4
+     $_SDFFE_PN1N_                   1
+     $_XNOR_                        29
+     $_XOR_                         70
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+
+=== design hierarchy ===
+
+   gf8_mul_formal                    1
+     $paramod$d7c1eb58ac82a2b1d4ad0e034495119e1675fba1\gf2n_mul_bitstream      1
+
+   Number of wires:                304
+   Number of wire bits:            365
+   Number of public wires:          23
+   Number of public wire bits:      76
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                315
+     $_ANDNOT_                      25
+     $_AND_                          6
+     $_DFFE_PN_                      1
+     $_DFF_P_                        2
+     $_FF_                           1
+     $_MUX_                         81
+     $_NAND_                        18
+     $_NOR_                          2
+     $_NOT_                         11
+     $_ORNOT_                        5
+     $_OR_                          28
+     $_SDFFE_PN0N_                   4
+     $_SDFFE_PN1N_                   1
+     $_SDFFE_PP0P_                  16
+     $_XNOR_                        29
+     $_XOR_                         81
+     $anyconst                       2
+     $assert                         1
+     $cover                          1
+
+End of script. Logfile hash: e4db2df12a, CPU: user 0.32s system 0.00s, MEM: 15.90 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 26% 1x abc (0 sec), 21% 32x opt_expr (0 sec), ...

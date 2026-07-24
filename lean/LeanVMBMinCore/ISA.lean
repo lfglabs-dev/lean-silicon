@@ -26,7 +26,7 @@ inductive Op where
   | jumpOp (oc od of_ : Nat)
 
 /-- Integer physical address corresponding to an fp-relative reference. -/
-def local (fp offset : Nat) : Nat := fp + offset
+def localAddr (fp offset : Nat) : Nat := fp + offset
 
 def write (m : ValueMem) (address : Nat) (value : Word) : ValueMem :=
   fun query => if query = address then value else m query
@@ -35,57 +35,57 @@ def write (m : ValueMem) (address : Nat) (value : Word) : ValueMem :=
 def specStep (op : Op) (s : State) : State :=
   match op with
   | .xorOp a b c =>
-      let va := s.mem (local s.fp a)
-      let vb := s.mem (local s.fp b)
+      let va := s.mem (localAddr s.fp a)
+      let vb := s.mem (localAddr s.fp b)
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp c) (va ^^^ vb) }
+        mem := write s.mem (localAddr s.fp c) (va ^^^ vb) }
   | .mulOp a b c =>
-      let va := s.mem (local s.fp a)
-      let vb := s.mem (local s.fp b)
+      let va := s.mem (localAddr s.fp a)
+      let vb := s.mem (localAddr s.fp b)
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp c) (specMul va vb) }
+        mem := write s.mem (localAddr s.fp c) (specMul va vb) }
   | .setOp o k =>
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp o) k }
+        mem := write s.mem (localAddr s.fp o) k }
   | .jumpOp oc od of_ =>
-      let condition := s.mem (local s.fp oc)
+      let condition := s.mem (localAddr s.fp oc)
       if condition = 0#8 then
         { s with pc := s.pc + 1 }
       else
         { s with
-          pc := (s.mem (local s.fp od)).toNat
-          fp := (s.mem (local s.fp of_)).toNat }
+          pc := (s.mem (localAddr s.fp od)).toNat
+          fp := (s.mem (localAddr s.fp of_)).toNat }
 
 /-- Hardware transition; multiplication uses the serial circuit algorithm. -/
 def hardwareStep (op : Op) (s : State) : State :=
   match op with
   | .xorOp a b c =>
-      let va := s.mem (local s.fp a)
-      let vb := s.mem (local s.fp b)
+      let va := s.mem (localAddr s.fp a)
+      let vb := s.mem (localAddr s.fp b)
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp c) (va ^^^ vb) }
+        mem := write s.mem (localAddr s.fp c) (va ^^^ vb) }
   | .mulOp a b c =>
-      let va := s.mem (local s.fp a)
-      let vb := s.mem (local s.fp b)
+      let va := s.mem (localAddr s.fp a)
+      let vb := s.mem (localAddr s.fp b)
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp c) (serialMul va vb) }
+        mem := write s.mem (localAddr s.fp c) (serialMul va vb) }
   | .setOp o k =>
       { s with
         pc := s.pc + 1
-        mem := write s.mem (local s.fp o) k }
+        mem := write s.mem (localAddr s.fp o) k }
   | .jumpOp oc od of_ =>
-      let condition := s.mem (local s.fp oc)
+      let condition := s.mem (localAddr s.fp oc)
       if condition = 0#8 then
         { s with pc := s.pc + 1 }
       else
         { s with
-          pc := (s.mem (local s.fp od)).toNat
-          fp := (s.mem (local s.fp of_)).toNat }
+          pc := (s.mem (localAddr s.fp od)).toNat
+          fp := (s.mem (localAddr s.fp of_)).toNat }
 
 /-- Instruction-level refinement for the simplified scalar model. -/
 theorem hardwareStep_refines (op : Op) (s : State) :

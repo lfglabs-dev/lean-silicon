@@ -1,0 +1,17 @@
++ bash -lc cd\ lean\ \&\&\ lake\ build\ LeanVMBMinCore 
+⚠ [6/10] Replayed LeanVMBMinCore.Deref
+warning: LeanVMBMinCore/Deref.lean:79:21: This simp argument is unused:
+  Ne.symm h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h,̵ ̵N̵e̵.̵s̵y̵m̵m̵ ̵h̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Deref.lean:86:18: This simp argument is unused:
+  h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h̵,̵ ̵Ne.symm h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Build completed successfully (10 jobs).

@@ -1,0 +1,17 @@
+2026-07-24T20:13:24Z
+edc2357c558ef42392a7aafc5e34bb7688e7def1
+ M Makefile
+ M formal/README.md
+ M formal/gf8_mul.sby
+?? docs/M0_MANAGER.md
+?? results/
+Python 3.12.3
+GNU Make 4.3
+Icarus Verilog version 12.0 (stable) ()
+
+Unable to get version from "/usr/lib/x86_64-linux-gnu/ivl/ivlpp -V"
+Unable to get version from "/usr/lib/x86_64-linux-gnu/ivl/ivl -V -C"/tmp/ivrlh5a0e8cb9" -C"/usr/lib/x86_64-linux-gnu/ivl/vvp.conf""
+Yosys 0.33 (git sha1 2584903a060)
+SBY v0.59
+1.5.118
+Lake version 5.0.0-src+f054605 (Lean version 4.32.1)

@@ -1,0 +1,1 @@
++ yosys -ql /workspaces/mission-fcef4e99/leanvm-b-scalar-core/results/m0-20260724T200511Z/yosys-formal.internal.log -p read_verilog\ -formal\ -sv\ src/gf2n_mul_bitstream.sv\ formal/gf8_mul_formal.sv\;\ prep\ -top\ gf8_mul_formal\;\ check\;\ synth\ -top\ gf8_mul_formal\;\ stat 

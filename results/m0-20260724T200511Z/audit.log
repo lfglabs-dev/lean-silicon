@@ -1,0 +1,12 @@
+M0 audit input
+seed commit: edc2357c558ef42392a7aafc5e34bb7688e7def1
+upstream repository: https://github.com/leanEthereum/leanVM-b
+upstream commit: c308034ab78619b39a59d26f3dc60e7df5b52649
+documented upstream files inspected:
+  crates/lean_vm/src/cpu/isa.rs
+  crates/lean_vm/src/cpu/execute.rs
+  crates/lean_vm/src/cpu/mod.rs
+  crates/primitives/src/field/gf2_128.rs
+  misc/doc.tex
+tracked seed inventory: git ls-files (53 paths)
+manager decision: no RTL-controller implementation in M0

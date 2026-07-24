@@ -46,6 +46,9 @@ module gf8_mul_formal;
         reg [14:0] product;
         integer i;
         begin
+            // Construct the unreduced carry-less product first, then perform
+            // polynomial long division. This deliberately does not share the
+            // DUT's per-bit multiply-by-x recurrence.
             product = 15'b0;
             for (i = 0; i < 8; i = i + 1)
                 if (b[i])
