@@ -159,6 +159,17 @@ class ParameterisedWidthTests(unittest.TestCase):
         )
         self.assertEqual(result.errors, [])
 
+    def test_multidimensional_packed_port_counts_every_dimension(self) -> None:
+        """[7:0][3:0] is 32 bits across the boundary, not 8."""
+        result = self._scan("module b (output wire [7:0][3:0] bypass);endmodule")
+        self.assertTrue(any("32 bits" in item for item in result.errors), result.errors)
+
+    def test_multidimensional_parameterised_port_is_rejected(self) -> None:
+        result = self._scan(
+            "module b #(parameter N = 16) (output wire [N-1:0][7:0] bp);endmodule"
+        )
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
     def test_no_within_width_fact_is_claimed_for_a_failing_file(self) -> None:
         """The checker must not assert 'within 8 bits' about a file it rejected."""
         result = self._scan("module b (output wire [127:0] bypass);endmodule")

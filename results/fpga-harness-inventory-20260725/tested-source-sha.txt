@@ -1,4 +1,4 @@
-tested fpga_harness tree: 08353d5bbabcc8063d82506c772f3e79613790c2
+tested fpga_harness tree: aa00d0b86ea9e10269c3ee637d5d66d9361a8372
 verify with: git rev-parse HEAD:fpga_harness
 
 This is the git tree object of fpga_harness/ that produced the logs in this

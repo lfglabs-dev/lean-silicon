@@ -20,7 +20,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 19 tests in 8.422s
+Ran 19 tests in 8.274s
 
 OK
 python3 tools/design_space.py
@@ -113,6 +113,9 @@ test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_ha
 test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
 test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
 test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
+test_multidimensional_packed_port_counts_every_dimension (test_boundary_check.ParameterisedWidthTests.test_multidimensional_packed_port_counts_every_dimension)
+[7:0][3:0] is 32 bits across the boundary, not 8. ... ok
+test_multidimensional_parameterised_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_multidimensional_parameterised_port_is_rejected) ... ok
 test_narrow_parameterised_port_is_accepted (test_boundary_check.ParameterisedWidthTests.test_narrow_parameterised_port_is_accepted) ... ok
 test_no_within_width_fact_is_claimed_for_a_failing_file (test_boundary_check.ParameterisedWidthTests.test_no_within_width_fact_is_claimed_for_a_failing_file)
 The checker must not assert 'within 8 bits' about a file it rejected. ... ok
@@ -121,6 +124,6 @@ test_parameterised_wide_port_is_rejected (test_boundary_check.ParameterisedWidth
 test_unresolvable_width_is_rejected_rather_than_assumed_narrow (test_boundary_check.ParameterisedWidthTests.test_unresolvable_width_is_rejected_rather_than_assumed_narrow) ... ok
 
 ----------------------------------------------------------------------
-Ran 40 tests in 0.008s
+Ran 42 tests in 0.008s
 
 OK

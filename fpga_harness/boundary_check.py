@@ -108,11 +108,13 @@ def _is_literal_zero(term: str) -> bool:
     return re.fullmatch(r"(1'b0|1'h0|1'd0|0)", term) is not None
 
 
-# A packed port range, capturing the raw bounds so non-literal widths such as
-# ``[W-1:0]`` are seen by the checker instead of silently not matching.
+# All consecutive packed dimensions of a port, captured raw so that neither a
+# non-literal bound (``[W-1:0]``) nor a multi-dimensional declaration
+# (``[7:0][3:0]``, 32 bits) escapes by simply not matching.
 _PORT_RANGE_RE = re.compile(
-    r"\b(?:input|output|inout)\b[^;,()\[\]]*?\[([^\]]+)\]\s*(\w+)"
+    r"\b(?:input|output|inout)\b[^;,()\[\]]*?((?:\[[^\]]+\]\s*)+)(\w+)"
 )
+_ONE_RANGE_RE = re.compile(r"\[([^\]]+)\]")
 _PARAM_RE = re.compile(
     r"\b(?:parameter|localparam)\b[^;=]*?(\w+)\s*=\s*([^,;)]+)"
 )
@@ -291,22 +293,29 @@ def check_harness_width(
         params = _constant_bindings(text)
         flagged = False
         for match in _PORT_RANGE_RE.finditer(text):
-            bounds, port = match.group(1), match.group(2)
-            if ":" not in bounds:
-                continue
-            high_text, low_text = bounds.split(":", 1)
-            high = _const_value(high_text, params)
-            low = _const_value(low_text, params)
-            if high is None or low is None:
+            dimensions, port = match.group(1), match.group(2)
+            bounds_list = _ONE_RANGE_RE.findall(dimensions)
+            width = 1
+            unresolved: str | None = None
+            for bounds in bounds_list:
+                if ":" not in bounds:
+                    continue
+                high_text, low_text = bounds.split(":", 1)
+                high = _const_value(high_text, params)
+                low = _const_value(low_text, params)
+                if high is None or low is None:
+                    unresolved = bounds.strip()
+                    break
+                width *= abs(high - low) + 1
+            if unresolved is not None:
                 flagged = True
                 result.errors.append(
-                    f"{name}: port {port} is declared [{bounds.strip()}], whose "
+                    f"{name}: port {port} is declared [{unresolved}], whose "
                     "width this checker cannot resolve to constants; an "
                     "unverifiable width is treated as a potential wide bypass. "
                     "Declare the port with literal or locally-resolvable bounds"
                 )
                 continue
-            width = abs(high - low) + 1
             if width > PIN_WIDTH:
                 flagged = True
                 result.errors.append(
