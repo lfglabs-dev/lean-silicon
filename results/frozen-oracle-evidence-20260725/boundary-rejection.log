@@ -1,0 +1,6 @@
+Command fixture: attached branch at c308034ab78619b39a59d26f3dc60e7df5b52649; checker exit status: 1
+upstream checkout rejected: require clean detached https://github.com/leanEthereum/leanVM-b.git@c308034ab78619b39a59d26f3dc60e7df5b52649; got origin='https://github.com/leanEthereum/leanVM-b.git' head='c308034ab78619b39a59d26f3dc60e7df5b52649' detached=False dirty=False
+Command fixture: detached c308034ab78619b39a59d26f3dc60e7df5b52649 with one untracked file; checker exit status: 1
+upstream checkout rejected: require clean detached https://github.com/leanEthereum/leanVM-b.git@c308034ab78619b39a59d26f3dc60e7df5b52649; got origin='https://github.com/leanEthereum/leanVM-b.git' head='c308034ab78619b39a59d26f3dc60e7df5b52649' detached=True dirty=True
+Command fixture: clean detached HEAD~1; checker exit status: 1
+upstream checkout rejected: require clean detached https://github.com/leanEthereum/leanVM-b.git@c308034ab78619b39a59d26f3dc60e7df5b52649; got origin='https://github.com/leanEthereum/leanVM-b.git' head='d1fc3d4cf212b5a47bc733685376a874bfc211b6' detached=True dirty=False

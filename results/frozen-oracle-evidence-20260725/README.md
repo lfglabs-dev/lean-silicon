@@ -21,6 +21,7 @@ SHA-256 is `0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6`.
 | RTL simulation | `make sim` | 0 | passed |
 | bounded formal | `make formal` | 0 | passed |
 | Lean libraries | `make lean` | 0 | passed (existing linter warnings only) |
+| boundary rejection | see `boundary-rejection.log` | 0 | dirty, attached, and wrong-SHA fixtures each rejected with checker exit 1 |
 
 The scalar gate is intentionally limited to a seven-step straight-line
 profile: SET, SET, XOR, MUL, DEREF(Pc), DEREF(Fp), and a non-taken JUMP,
