@@ -45,6 +45,7 @@ module leanvm_b_m2_scalar_controller #(
       end else if(state==S_INV) begin
         inverse_req<=1'b1;
         if(inverse_valid) begin
+          inverse_req<=1'b0;
           missing=gf_mul(pending_result,inverse_value);
           if((written[pending_missing] && mem[pending_missing]!=missing) ||
              (written[pending_result_addr] && mem[pending_result_addr]!=pending_result)) begin fault<=1'b1; state<=S_FAULT; end
