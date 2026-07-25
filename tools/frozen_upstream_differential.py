@@ -16,10 +16,27 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import types
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "sim"))
-from scalar_step_oracle import encode, run  # noqa: E402
+ORACLE_SOURCE = ROOT / "sim/scalar_step_oracle.py"
+
+
+def load_oracle_source() -> tuple:
+    """Execute the tracked oracle source without consulting Python bytecode caches."""
+    module_name = "_tracked_scalar_step_oracle"
+    module = types.ModuleType(module_name)
+    module.__file__ = str(ORACLE_SOURCE)
+    sys.modules[module_name] = module
+    try:
+        code = compile(ORACLE_SOURCE.read_bytes(), str(ORACLE_SOURCE), "exec")
+        exec(code, module.__dict__)
+    finally:
+        del sys.modules[module_name]
+    return module.encode, module.run
+
+
+encode, run = load_oracle_source()
 
 COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
@@ -155,7 +172,7 @@ def main() -> None:
             "command": command, "cargo_exit_status": completed.returncode,
             "rust_toolchain": args.rust_toolchain,
             "provenance": {"checker_sha256": sha256(pathlib.Path(__file__)),
-                           "oracle_sha256": sha256(ROOT / "sim/scalar_step_oracle.py")},
+                           "oracle_sha256": sha256(ORACLE_SOURCE)},
         }, indent=2, sort_keys=True) + "\n")
     print(message, end="")
 
