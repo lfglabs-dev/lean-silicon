@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 """Drive Cargo-vetted deterministic vectors through the M2 RTL."""
 import argparse, datetime, hashlib, json, pathlib, subprocess, sys, tempfile
+import types
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'sim'))
-sys.path.insert(0,str(ROOT/'tools'))
-from scalar_step_oracle import multiply, inverse
-from frozen_upstream_differential import COMMIT, REPOSITORY, candidate_head, generate_cases, require_checkout
+SCALAR_GATE_SOURCE=ROOT/'tools'/'frozen_upstream_differential.py'
+scalar_gate=types.ModuleType('_tracked_frozen_upstream_differential')
+scalar_gate.__file__=str(SCALAR_GATE_SOURCE)
+sys.modules[scalar_gate.__name__]=scalar_gate
+try:
+    exec(compile(SCALAR_GATE_SOURCE.read_bytes(), str(SCALAR_GATE_SOURCE), 'exec'),
+         scalar_gate.__dict__)
+finally:
+    del sys.modules[scalar_gate.__name__]
+COMMIT,REPOSITORY=scalar_gate.COMMIT,scalar_gate.REPOSITORY
+candidate_head,generate_cases=scalar_gate.candidate_head,scalar_gate.generate_cases
+require_checkout=scalar_gate.require_checkout
+multiply,inverse=scalar_gate.ORACLE.multiply,scalar_gate.ORACLE.inverse
 parser=argparse.ArgumentParser()
 parser.add_argument("--upstream", type=pathlib.Path, required=True)
 parser.add_argument("--seed", type=lambda value: int(value, 0), default=0xc308034a)
@@ -94,7 +104,7 @@ if args.record:
                      'vvp_fixed_exit_status': 0, 'vvp_seeded_exit_status': 0},
         'rust_toolchain': args.rust_toolchain,
         'provenance': {'checker_sha256': digest(pathlib.Path(__file__)),
-                       'scalar_gate_sha256': digest(ROOT/'tools/frozen_upstream_differential.py'),
+                       'scalar_gate_sha256': digest(SCALAR_GATE_SOURCE),
                        'rtl_sha256': digest(ROOT/'src/leanvm_b_m2_scalar_controller.sv')},
     }, indent=2, sort_keys=True)+'\n')
 print(message)

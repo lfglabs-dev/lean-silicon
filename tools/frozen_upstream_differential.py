@@ -22,7 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 ORACLE_SOURCE = ROOT / "sim/scalar_step_oracle.py"
 
 
-def load_oracle_source() -> tuple:
+def load_oracle_source() -> types.ModuleType:
     """Execute the tracked oracle source without consulting Python bytecode caches."""
     module_name = "_tracked_scalar_step_oracle"
     module = types.ModuleType(module_name)
@@ -33,10 +33,11 @@ def load_oracle_source() -> tuple:
         exec(code, module.__dict__)
     finally:
         del sys.modules[module_name]
-    return module.encode, module.run
+    return module
 
 
-encode, run = load_oracle_source()
+ORACLE = load_oracle_source()
+encode, run = ORACLE.encode, ORACLE.run
 
 COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
