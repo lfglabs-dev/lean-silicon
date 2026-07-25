@@ -1,0 +1,13 @@
+make -C test sim
+make[1]: Entering directory '/workspaces/mission-19b61c63/leanvm-b-scalar-core/test'
+iverilog -g2012 -Wall -s tb_stream_alu -o tb_stream_alu.vvp ../src/gf2n_mul_bitstream.sv ../src/gf128_mul_bitstream.sv ../src/leanvm_b_stream_alu.sv tb_stream_alu.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../src/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../src/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../src/leanvm_b_stream_alu.sv:28
+vvp tb_stream_alu.vvp
+PASS: leanVM-b MinCore stream ALU
+tb_stream_alu.sv:171: $finish called at 21300000 (1ps)
+make[1]: Leaving directory '/workspaces/mission-19b61c63/leanvm-b-scalar-core/test'
