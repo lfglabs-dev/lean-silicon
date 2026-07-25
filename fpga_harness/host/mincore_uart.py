@@ -353,6 +353,27 @@ def _physical_transport(port: str, baud: int, timeout: float) -> ByteTransport:
         raise MinCoreError("could not open the requested serial port") from error
 
 
+def _open_evidence(path: Optional[Path]) -> Optional[BinaryIO]:
+    """Opened before any byte is sent so an unusable destination fails first."""
+    if path is None:
+        return None
+    try:
+        return path.open("ab")
+    except OSError as error:
+        raise MinCoreError(f"could not open the evidence destination: {error.strerror}") from error
+
+
+def _close_quietly(resource: object) -> None:
+    """Teardown runs in a finally block and must never mask the primary error."""
+    close = getattr(resource, "close", None)
+    if not callable(close):
+        return
+    try:
+        close()
+    except Exception:
+        pass
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Versioned MinCore raw-byte diagnostic transport (not LSC-1).")
     parser.add_argument("--port", help="explicit serial port; never enumerated or recorded")
@@ -381,34 +402,40 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         provenance = repo_provenance(args.evidence)
         a, b, value, expected = _operation_inputs(args)
-        if args.decode is not None:
-            request = b""
-            response = decode_response(args.operation, args.decode)
-            passed = None if expected is None else response == expected
-            execution_attempted, serial_response_observed = False, False
-        elif args.execute:
-            request = encode_request(args.operation, a=a, b=b, value=value)
-            transport = _physical_transport(args.port, args.baud, args.timeout)
-            try:
-                request, response = MinCoreDriver(transport, args.timeout).exchange(args.operation, a=a, b=b, value=value)
-            finally:
-                close = getattr(transport, "close", None)
-                if callable(close): close()
-            passed = None if expected is None else response == expected
-            execution_attempted, serial_response_observed = True, bool(response)
-        else:
-            request = encode_request(args.operation, a=a, b=b, value=value)
-            response, passed = b"", None
-            execution_attempted, serial_response_observed = False, False
-        if args.evidence:
-            with args.evidence.open("ab") as stream:
-                record_evidence(
-                    stream, provenance=provenance,
-                    operation=args.operation, request=request, response=response,
-                    expected=expected, passed=passed, execution_attempted=execution_attempted,
-                    serial_response_observed=serial_response_observed,
-                    include_payloads=args.evidence_payloads,
-                )
+        evidence = _open_evidence(args.evidence)
+        try:
+            if args.decode is not None:
+                request = b""
+                response = decode_response(args.operation, args.decode)
+                passed = None if expected is None else response == expected
+                execution_attempted, serial_response_observed = False, False
+            elif args.execute:
+                request = encode_request(args.operation, a=a, b=b, value=value)
+                transport = _physical_transport(args.port, args.baud, args.timeout)
+                try:
+                    request, response = MinCoreDriver(transport, args.timeout).exchange(args.operation, a=a, b=b, value=value)
+                finally:
+                    _close_quietly(transport)
+                passed = None if expected is None else response == expected
+                execution_attempted, serial_response_observed = True, bool(response)
+            else:
+                request = encode_request(args.operation, a=a, b=b, value=value)
+                response, passed = b"", None
+                execution_attempted, serial_response_observed = False, False
+            if evidence is not None:
+                try:
+                    record_evidence(
+                        evidence, provenance=provenance,
+                        operation=args.operation, request=request, response=response,
+                        expected=expected, passed=passed, execution_attempted=execution_attempted,
+                        serial_response_observed=serial_response_observed,
+                        include_payloads=args.evidence_payloads,
+                    )
+                    evidence.close()
+                except OSError as error:
+                    raise MinCoreError(f"could not write the evidence record: {error.strerror}") from error
+        finally:
+            _close_quietly(evidence)
         print(json.dumps({"operation": args.operation, "request_hex": request.hex(),
                           "response_hex": response.hex(),
                           "expected_hex": None if expected is None else expected.hex(),

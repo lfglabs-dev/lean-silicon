@@ -151,6 +151,34 @@ class MinCoreUartTests(unittest.TestCase):
             MinCoreDriver(StalledFlush(), .1, Clock()).exchange("clear")
         self.assertLess(time.monotonic() - start, 5)
 
+    def test_unusable_evidence_destination_fails_before_any_byte_is_sent(self):
+        opened = []
+        with tempfile.TemporaryDirectory() as directory:
+            unusable = Path(directory) / "missing" / "evidence.jsonl"
+            transport = lambda *a, **k: opened.append(a) or FakeSerial()
+            with mock.patch.object(mincore_uart, "_physical_transport", transport), \
+                 mock.patch("sys.stderr", io.StringIO()) as errors:
+                code = main(["--execute", "--port", "/dev/null", "--operation", "clear",
+                             "--evidence", str(unusable)])
+        self.assertEqual(code, 2)
+        self.assertEqual(opened, [])
+        self.assertIn("evidence destination", errors.getvalue())
+
+    def test_serial_close_failure_never_masks_the_exchange_outcome(self):
+        class Unclosable(FakeSerial):
+            def close(self): raise OSError("device disconnected")
+
+        with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: Unclosable()), \
+             mock.patch("sys.stdout", io.StringIO()) as output:
+            self.assertEqual(main(["--execute", "--port", "/dev/null", "--operation", "clear"]), 0)
+        self.assertTrue(json.loads(output.getvalue())["execution_attempted"])
+
+        with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: Unclosable()), \
+             mock.patch("sys.stderr", io.StringIO()) as errors:
+            self.assertEqual(main(["--execute", "--port", "/dev/null",
+                                   "--operation", "status", "--timeout", "0.05"]), 2)
+        self.assertNotIn("device disconnected", errors.getvalue())
+
     def test_evidence_distinguishes_a_dirty_source_tree(self):
         head = "0" * 40
         for dirty in (False, True, None):
