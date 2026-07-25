@@ -41,6 +41,8 @@ from typing import Callable, Mapping, Sequence
 from xml.parsers.expat import ExpatError
 
 LEVELS = ("toolchain", "usb", "jtag", "datapath")
+# highest_satisfied_level is the highest LEVELS entry whose probe is satisfied;
+# levels are orthogonal and toolchain is not required for usb/jtag visibility.
 
 # Vendor-documented identifiers. Unconfirmed against physical hardware in this
 # repository; see BUILD_PLAN.md for the unknowns this leaves open.
@@ -149,11 +151,16 @@ class Report:
 
     @property
     def highest_satisfied(self) -> str | None:
+        """Highest LEVELS entry with satisfied(level) true.
+
+        Levels are orthogonal: toolchain is not a prerequisite for usb/jtag.
+        Walks LEVELS order and selects the last satisfied; never returns
+        "datapath" because its probe always emits not-validated.
+        """
         reached = None
         for level in LEVELS:
-            if not self.satisfied(level):
-                break
-            reached = level
+            if self.satisfied(level):
+                reached = level
         return reached
 
     @property

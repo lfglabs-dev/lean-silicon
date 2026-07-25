@@ -98,10 +98,13 @@ class FullVisibilityTests(unittest.TestCase):
 
 class LevelIsolationTests(unittest.TestCase):
     def test_wrong_usb_identity_is_absent(self) -> None:
+        """USB identity absent does not affect independent jtag visibility."""
         fixture = dict(FULL_FIXTURE, usb_devices=[[0x1234, 0x5678, "some hub"]])
         report = detect(Environment.from_fixture(fixture))
         self.assertFalse(report.satisfied("usb"))
-        self.assertEqual(report.highest_satisfied, "toolchain")
+        # jtag is independently satisfied in FULL_FIXTURE; highest reflects that
+        self.assertTrue(report.satisfied("jtag"))
+        self.assertEqual(report.highest_satisfied, "jtag")
 
     def test_unrecognised_idcode_is_absent(self) -> None:
         fixture = dict(FULL_FIXTURE, jtag_scan="index 0: idcode 0xdeadbeef")
@@ -159,6 +162,95 @@ class LevelIsolationTests(unittest.TestCase):
         self.assertEqual(statuses, {"build-tools": "absent", "load-tools": "present"})
 
 
+class HighestSatisfiedSemanticsTests(unittest.TestCase):
+    """Regression for orthogonal level semantics: toolchain is not a prerequisite.
+
+    highest_satisfied_level walks LEVELS order and picks the last satisfied
+    level; usb/jtag visibility is independent of toolchain presence.
+    """
+
+    def test_toolchain_absent_usb_jtag_present_yields_highest_jtag(self) -> None:
+        """Verified macOS ULX3S case: yosys present, nextpnr/ecppack absent;
+        USB present; JTAG present (0x41113043); datapath not validated.
+        satisfied: toolchain=false, usb=true, jtag=true, datapath=false.
+        highest must be jtag; --require jtag must exit 0; JSON must agree.
+        """
+        fixture = {
+            "tools": {"yosys": "/usr/bin/yosys"},
+            "usb_devices": [[ULX3S_USB_VID, ULX3S_USB_PID, "ULX3S FPGA 85F"]],
+            "jtag_scan": "index 0: idcode 0x41113043 manufacturer lattice model LFE5U-85F",
+        }
+        report = detect(Environment.from_fixture(fixture))
+        self.assertFalse(report.satisfied("toolchain"))
+        self.assertTrue(report.satisfied("usb"))
+        self.assertTrue(report.satisfied("jtag"))
+        self.assertFalse(report.satisfied("datapath"))
+        self.assertEqual(report.highest_satisfied, "jtag")
+        payload = report.as_dict()
+        self.assertEqual(payload["highest_satisfied_level"], "jtag")
+        self.assertFalse(payload["satisfied"]["toolchain"])
+        self.assertTrue(payload["satisfied"]["usb"])
+        self.assertTrue(payload["satisfied"]["jtag"])
+        self.assertFalse(payload["satisfied"]["datapath"])
+
+    def test_usb_absent_recognised_jtag_present_yields_highest_jtag(self) -> None:
+        """Physically plausible: external JTAG cable (no ULX3S USB VID:PID)
+        or USB enumeration suppressed, yet openFPGALoader --detect returns a
+        recognised ECP5 IDCODE. Visibility is reported; datapath is not.
+        Semantics: jtag is highest when its probe is satisfied, regardless of usb.
+        """
+        fixture = {
+            "tools": {
+                "yosys": "/usr/bin/yosys",
+                "nextpnr-ecp5": "/usr/bin/nextpnr-ecp5",
+                "ecppack": "/usr/bin/ecppack",
+                "openFPGALoader": "/usr/bin/openFPGALoader",
+            },
+            "usb_devices": [],
+            "jtag_scan": "index 0: idcode 0x41113043 manufacturer lattice model LFE5U-85F",
+        }
+        report = detect(Environment.from_fixture(fixture))
+        self.assertFalse(report.satisfied("usb"))
+        self.assertTrue(report.satisfied("jtag"))
+        self.assertEqual(report.highest_satisfied, "jtag")
+        self.assertFalse(report.satisfied("datapath"))
+        payload = report.as_dict()
+        self.assertEqual(payload["highest_satisfied_level"], "jtag")
+
+    def test_toolchain_present_only_yields_highest_toolchain(self) -> None:
+        """Toolchain present, no USB identity, no JTAG scan output."""
+        fixture = {
+            "tools": {
+                "yosys": "/usr/bin/yosys",
+                "nextpnr-ecp5": "/usr/bin/nextpnr-ecp5",
+                "ecppack": "/usr/bin/ecppack",
+                "openFPGALoader": "/usr/bin/openFPGALoader",
+            },
+            "usb_devices": [],
+            "jtag_scan": "",
+        }
+        report = detect(Environment.from_fixture(fixture))
+        self.assertTrue(report.satisfied("toolchain"))
+        self.assertFalse(report.satisfied("usb"))
+        self.assertFalse(report.satisfied("jtag"))
+        self.assertEqual(report.highest_satisfied, "toolchain")
+        payload = report.as_dict()
+        self.assertEqual(payload["highest_satisfied_level"], "toolchain")
+
+    def test_datapath_never_becomes_highest(self) -> None:
+        """datapath probe always emits not-validated; satisfied is always false.
+        highest_satisfied must never be datapath even with full lower visibility.
+        """
+        report = detect(Environment.from_fixture(FULL_FIXTURE))
+        self.assertFalse(report.satisfied("datapath"))
+        self.assertNotEqual(report.highest_satisfied, "datapath")
+        self.assertEqual(report.highest_satisfied, "jtag")
+        payload = report.as_dict()
+        self.assertFalse(payload["satisfied"]["datapath"])
+        self.assertNotEqual(payload["highest_satisfied_level"], "datapath")
+        self.assertEqual(payload["highest_satisfied_level"], "jtag")
+
+
 class CommandLineTests(unittest.TestCase):
     def _run(self, argv: list[str]) -> tuple[int, str]:
         stream = io.StringIO()
@@ -200,6 +292,32 @@ class CommandLineTests(unittest.TestCase):
         payload = json.loads(out)
         self.assertFalse(payload["datapath_validated"])
         self.assertEqual(payload["highest_satisfied_level"], "jtag")
+
+    def test_require_jtag_and_json_highest_agree(self) -> None:
+        """--require jtag exit code and JSON highest_satisfied_level must be
+        consistent for the documented orthogonal-visibility cases.
+        """
+        cases = [
+            # toolchain absent + usb/jtag present -> highest jtag, require ok
+            ({"tools": {"yosys": "/usr/bin/yosys"}, "usb_devices": [[ULX3S_USB_VID, ULX3S_USB_PID, "x"]], "jtag_scan": "idcode 0x41113043"}, 0, "jtag"),
+            # usb absent, recognised jtag present -> highest jtag
+            ({"tools": {}, "usb_devices": [], "jtag_scan": "idcode 0x41113043"}, 0, "jtag"),
+            # toolchain present only
+            ({"tools": {"yosys": "/usr/bin/yosys", "nextpnr-ecp5": "/usr/bin/nextpnr-ecp5", "ecppack": "/usr/bin/ecppack", "openFPGALoader": "/usr/bin/openFPGALoader"}, "usb_devices": [], "jtag_scan": ""}, 1, "toolchain"),
+            # nothing
+            ({}, 1, None),
+            # full visibility still highest jtag (datapath unreachable)
+            (FULL_FIXTURE, 0, "jtag"),
+        ]
+        for i, (fx, expected_code, expected_highest) in enumerate(cases):
+            with self.subTest(case=i):
+                path = self._fixture_file(fx)
+                code, out = self._run(["--fixture", str(path), "--require", "jtag"])
+                self.assertEqual(code, expected_code)
+                if out.strip().startswith("{"):
+                    payload = json.loads(out)
+                    if expected_highest is not None:
+                        self.assertEqual(payload.get("highest_satisfied_level"), expected_highest)
 
 
 FAKE_SERIAL = "FAKESERIALDONOTLOG0001"
