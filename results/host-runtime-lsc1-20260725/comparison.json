@@ -1,0 +1,569 @@
+{
+  "artifact": {
+    "path": "host/fixtures/assert_set_xor_mul.program.json",
+    "sha256": "874459bdbf12b235ed93f333f5f4db176008b43c02e943d38e44fefc974c9b5a"
+  },
+  "comparison": {
+    "compared": {
+      "cycles": false,
+      "final_memory_addresses": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "mismatches": [],
+    "not_compared": {
+      "cycles": "the host run ended as 'unsupported' (pc 12: Jump is not integrated. JUMP needs host-side branch proposal and destination re-encoding; the LSC-1 transaction exists but the host does not prepare it yet), so its step count covers a prefix of the upstream run",
+      "per_step.addresses": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.branch": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.deferred": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.fault": "Program::execute panics rather than returning a fault code",
+      "per_step.fp": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.inputs": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.opcode": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.pc": "Execution::trace is pub(crate) at the frozen commit",
+      "per_step.writes": "Execution::trace is pub(crate) at the frozen commit"
+    },
+    "result": "MATCH"
+  },
+  "generated_at_utc": "2026-07-25T15:40:10.689599+00:00",
+  "lean_silicon": {
+    "final_state": {
+      "cycles": 12,
+      "fp": 0,
+      "lane_cycles": 1977,
+      "memory": [
+        "0x00000000000000000000000000000001",
+        "0x00000000000000000000000000000000",
+        "0x00000000000000000000000000000003",
+        "0x00000000000000000000000000000005",
+        "0x00000000000000000000000000000006",
+        "0x00000000000000000000000000000006",
+        "0x00000000000000000000000000000000",
+        "0x0000000000000000000000000000000f",
+        "0x0000000000000000000000000000000f",
+        "0x00000000000000000000000000000000",
+        "0x00000000000000000000000000000001",
+        "0x00000000000000000000000000008000"
+      ],
+      "open_deferred": [],
+      "pc": 12,
+      "written": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "profile": "INTERPRETER_COMPAT",
+    "reason": "pc 12: Jump is not integrated. JUMP needs host-side branch proposal and destination re-encoding; the LSC-1 transaction exists but the host does not prepare it yet",
+    "steps": [
+      {
+        "accesses": [
+          2
+        ],
+        "addresses": [
+          2
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 0,
+        "inputs": [
+          {
+            "address": 2,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "SET_CONSTANT",
+        "pc": 0,
+        "retire_seq": 1,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 1,
+        "writes": [
+          {
+            "address": 2,
+            "value": "0x00000000000000000000000000000003"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          3
+        ],
+        "addresses": [
+          3
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 1,
+        "inputs": [
+          {
+            "address": 3,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 2,
+        "opcode": "SET_CONSTANT",
+        "pc": 1,
+        "retire_seq": 2,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 2,
+        "writes": [
+          {
+            "address": 3,
+            "value": "0x00000000000000000000000000000005"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          2,
+          3,
+          4
+        ],
+        "addresses": [
+          2,
+          3,
+          4
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 2,
+        "inputs": [
+          {
+            "address": 2,
+            "present": true,
+            "value": 3
+          },
+          {
+            "address": 3,
+            "present": true,
+            "value": 5
+          },
+          {
+            "address": 4,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 186,
+        "next_fp": 0,
+        "next_pc": 3,
+        "opcode": "XOR",
+        "pc": 2,
+        "retire_seq": 3,
+        "source_op": "Xor",
+        "status": "OK",
+        "txn_id": 3,
+        "writes": [
+          {
+            "address": 4,
+            "value": "0x00000000000000000000000000000006"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          5
+        ],
+        "addresses": [
+          5
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 3,
+        "inputs": [
+          {
+            "address": 5,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 4,
+        "opcode": "SET_CONSTANT",
+        "pc": 3,
+        "retire_seq": 4,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 4,
+        "writes": [
+          {
+            "address": 5,
+            "value": "0x00000000000000000000000000000006"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          4,
+          5,
+          6
+        ],
+        "addresses": [
+          4,
+          5,
+          6
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 4,
+        "inputs": [
+          {
+            "address": 4,
+            "present": true,
+            "value": 6
+          },
+          {
+            "address": 5,
+            "present": true,
+            "value": 6
+          },
+          {
+            "address": 6,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 186,
+        "next_fp": 0,
+        "next_pc": 5,
+        "opcode": "XOR",
+        "pc": 4,
+        "retire_seq": 5,
+        "source_op": "Xor",
+        "status": "OK",
+        "txn_id": 5,
+        "writes": [
+          {
+            "address": 6,
+            "value": "0x00000000000000000000000000000000"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          6
+        ],
+        "addresses": [
+          6
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 5,
+        "inputs": [
+          {
+            "address": 6,
+            "present": true,
+            "value": 0
+          }
+        ],
+        "lane_cycles": 132,
+        "next_fp": 0,
+        "next_pc": 6,
+        "opcode": "SET_CONSTANT",
+        "pc": 5,
+        "retire_seq": 6,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 6,
+        "writes": []
+      },
+      {
+        "accesses": [
+          2,
+          3,
+          7
+        ],
+        "addresses": [
+          2,
+          3,
+          7
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 6,
+        "inputs": [
+          {
+            "address": 2,
+            "present": true,
+            "value": 3
+          },
+          {
+            "address": 3,
+            "present": true,
+            "value": 5
+          },
+          {
+            "address": 7,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 203,
+        "next_fp": 0,
+        "next_pc": 7,
+        "opcode": "MUL_NATIVE",
+        "pc": 6,
+        "retire_seq": 7,
+        "source_op": "Mul",
+        "status": "OK",
+        "txn_id": 7,
+        "writes": [
+          {
+            "address": 7,
+            "value": "0x0000000000000000000000000000000f"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          8
+        ],
+        "addresses": [
+          8
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 7,
+        "inputs": [
+          {
+            "address": 8,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 8,
+        "opcode": "SET_CONSTANT",
+        "pc": 7,
+        "retire_seq": 8,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 8,
+        "writes": [
+          {
+            "address": 8,
+            "value": "0x0000000000000000000000000000000f"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          7,
+          8,
+          9
+        ],
+        "addresses": [
+          7,
+          8,
+          9
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 8,
+        "inputs": [
+          {
+            "address": 7,
+            "present": true,
+            "value": 15
+          },
+          {
+            "address": 8,
+            "present": true,
+            "value": 15
+          },
+          {
+            "address": 9,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 186,
+        "next_fp": 0,
+        "next_pc": 9,
+        "opcode": "XOR",
+        "pc": 8,
+        "retire_seq": 9,
+        "source_op": "Xor",
+        "status": "OK",
+        "txn_id": 9,
+        "writes": [
+          {
+            "address": 9,
+            "value": "0x00000000000000000000000000000000"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          9
+        ],
+        "addresses": [
+          9
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 9,
+        "inputs": [
+          {
+            "address": 9,
+            "present": true,
+            "value": 0
+          }
+        ],
+        "lane_cycles": 132,
+        "next_fp": 0,
+        "next_pc": 10,
+        "opcode": "SET_CONSTANT",
+        "pc": 9,
+        "retire_seq": 10,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 10,
+        "writes": []
+      },
+      {
+        "accesses": [
+          10
+        ],
+        "addresses": [
+          10
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 10,
+        "inputs": [
+          {
+            "address": 10,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 11,
+        "opcode": "SET_CONSTANT",
+        "pc": 10,
+        "retire_seq": 11,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 11,
+        "writes": [
+          {
+            "address": 10,
+            "value": "0x00000000000000000000000000000001"
+          }
+        ]
+      },
+      {
+        "accesses": [
+          11
+        ],
+        "addresses": [
+          11
+        ],
+        "branch": null,
+        "deferred": [],
+        "fault": null,
+        "fp": 0,
+        "index": 11,
+        "inputs": [
+          {
+            "address": 11,
+            "present": false,
+            "value": null
+          }
+        ],
+        "lane_cycles": 152,
+        "next_fp": 0,
+        "next_pc": 12,
+        "opcode": "SET_CONSTANT",
+        "pc": 11,
+        "retire_seq": 12,
+        "source_op": "Set",
+        "status": "OK",
+        "txn_id": 12,
+        "writes": [
+          {
+            "address": 11,
+            "value": "0x00000000000000000000000000008000"
+          }
+        ]
+      }
+    ],
+    "terminal": "unsupported"
+  },
+  "schema": "leansilicon.host.comparison/1",
+  "upstream": {
+    "command": [
+      "cargo",
+      "+1.88.0",
+      "run",
+      "--quiet",
+      "--locked",
+      "-p",
+      "lean_compiler",
+      "--example",
+      "leansilicon_export"
+    ],
+    "cycles": 13,
+    "execution_source": "live_cargo_run",
+    "mem_len": 65536,
+    "mem_used": 12,
+    "repository": "https://github.com/leanEthereum/leanVM-b.git",
+    "rust_toolchain": "1.88.0",
+    "sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+  }
+}
