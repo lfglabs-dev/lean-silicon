@@ -1,0 +1,282 @@
+#!/usr/bin/env python3
+"""Deliberately small host diagnostic transport for the historical MinCore lane.
+
+This module does not implement LSC-1 framing.  It sends the fixed-length
+MinCore byte grammar through a UART bridge which presents a transparent byte
+stream, and never retries a transaction.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import BinaryIO, Callable, Dict, Optional, Protocol, Sequence
+
+VERSION = "0.1.0"
+STATUS_BYTES = bytes.fromhex("01010f08")
+
+
+class MinCoreError(Exception):
+    """Base error for a diagnostic exchange."""
+
+
+class TransportTimeout(MinCoreError):
+    """A write or read did not make progress before the configured deadline."""
+
+
+class ResponseError(MinCoreError):
+    """A response has the wrong size or violates a fixed response contract."""
+
+
+class AbortUnavailable(MinCoreError):
+    """The raw serial byte stream cannot assert MinCore's hardware ABORT pin."""
+
+
+class TransportFailure(MinCoreError):
+    """The transport raised an I/O error without a safe retry path."""
+
+
+class ByteTransport(Protocol):
+    @property
+    def in_waiting(self) -> int: ...
+
+    def read(self, size: int = 1) -> bytes: ...
+
+    def write(self, data: bytes) -> int: ...
+
+
+@dataclass(frozen=True)
+class Vector:
+    name: str
+    operation: str
+    a: bytes = b""
+    b: bytes = b""
+    value: bytes = b""
+    expected: bytes = b""
+
+
+# These literals were independently checked by polynomial long reduction.
+# They intentionally do not call this module's encode/decode implementation.
+VECTORS: Dict[str, Vector] = {
+    "set128": Vector(
+        "set128", "set", value=bytes.fromhex("000102030405060708090a0b0c0d0e0f"),
+        expected=bytes.fromhex("000102030405060708090a0b0c0d0e0f"),
+    ),
+    "xor128": Vector(
+        "xor128", "xor", a=bytes.fromhex("000102030405060708090a0b0c0d0e0f"),
+        b=bytes.fromhex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"),
+        expected=bytes.fromhex("f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0"),
+    ),
+    "mul128": Vector(
+        "mul128", "mul", a=bytes.fromhex("00112233445566778899aabbccddeeff"),
+        b=bytes.fromhex("ffeeddccbbaa99887766554433221100"),
+        expected=bytes.fromhex("c043248e79cfa802850661cb3c8aed47"),
+    ),
+}
+
+
+def _require_16(label: str, value: bytes) -> bytes:
+    if len(value) != 16:
+        raise ValueError(f"{label} must contain exactly 16 bytes (32 hex digits)")
+    return value
+
+
+def response_length(operation: str) -> int:
+    return {"xor": 16, "mul": 16, "set": 16, "status": 4, "clear": 0}[operation]
+
+
+def encode_request(operation: str, *, a: bytes = b"", b: bytes = b"", value: bytes = b"") -> bytes:
+    """Encode exactly one raw MinCore request; F128 arguments are little-endian."""
+    if operation == "xor":
+        a, b = _require_16("a", a), _require_16("b", b)
+        return bytes((0x01,)) + bytes(x for pair in zip(a, b) for x in pair)
+    if operation == "mul":
+        return bytes((0x02,)) + _require_16("a", a) + _require_16("b", b)
+    if operation == "set":
+        return bytes((0x03,)) + _require_16("value", value)
+    if operation == "clear":
+        return bytes((0x7D,))
+    if operation == "status":
+        return bytes((0x7E,))
+    raise ValueError(f"unsupported operation: {operation}")
+
+
+def decode_response(operation: str, response: bytes) -> bytes:
+    """Validate a fixed-size response.  STATUS is the only fixed-value response."""
+    needed = response_length(operation)
+    if len(response) != needed:
+        raise ResponseError(f"{operation} response length {len(response)}, expected {needed}")
+    if operation == "status" and response != STATUS_BYTES:
+        raise ResponseError(f"STATUS response {response.hex()}, expected {STATUS_BYTES.hex()}")
+    return response
+
+
+class MinCoreDriver:
+    def __init__(self, transport: ByteTransport, timeout: float = 1.0, clock: Callable[[], float] = time.monotonic):
+        if timeout <= 0:
+            raise ValueError("timeout must be positive")
+        self.transport, self.timeout, self.clock = transport, timeout, clock
+
+    def drain_stale(self) -> bytes:
+        """Remove already-buffered RX bytes before one diagnostic exchange."""
+        drained = bytearray()
+        while getattr(self.transport, "in_waiting", 0):
+            chunk = self.transport.read(max(1, min(int(self.transport.in_waiting), 4096)))
+            if not chunk:
+                break
+            drained.extend(chunk)
+        return bytes(drained)
+
+    def _write_all(self, data: bytes) -> None:
+        deadline, offset = self.clock() + self.timeout, 0
+        while offset < len(data):
+            try:
+                written = self.transport.write(data[offset:])
+            except Exception as error:
+                raise TransportFailure(f"write failed after {offset}/{len(data)} request bytes; transaction was not retried") from error
+            if written is None:
+                written = len(data) - offset
+            if written > 0:
+                offset += written
+                continue
+            if self.clock() >= deadline:
+                raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
+
+    def _read_exact(self, size: int) -> bytes:
+        deadline, data = self.clock() + self.timeout, bytearray()
+        while len(data) < size:
+            try:
+                chunk = self.transport.read(size - len(data))
+            except Exception as error:
+                raise TransportFailure(f"read failed after {len(data)}/{size} response bytes; transaction was not retried") from error
+            if chunk:
+                data.extend(chunk[: size - len(data)])
+                continue
+            if self.clock() >= deadline:
+                raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
+        return bytes(data)
+
+    def _reject_buffered_extra(self) -> None:
+        extra = self.drain_stale()
+        if extra:
+            raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}")
+
+    def exchange(self, operation: str, *, a: bytes = b"", b: bytes = b"", value: bytes = b"") -> tuple[bytes, bytes]:
+        """Send one request exactly once, then read and validate exactly one response."""
+        self.drain_stale()
+        request = encode_request(operation, a=a, b=b, value=value)
+        self._write_all(request)
+        response = self._read_exact(response_length(operation))
+        decode_response(operation, response)
+        self._reject_buffered_extra()
+        return request, response
+
+    def abort(self) -> None:
+        abort_method = getattr(self.transport, "abort", None)
+        if not callable(abort_method):
+            raise AbortUnavailable("ABORT is a separate synchronous hardware pin; raw UART has no abort byte")
+        abort_method()
+
+
+def repo_head() -> str:
+    root = Path(__file__).resolve().parents[2]
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
+def record_evidence(stream: BinaryIO, *, operation: str, request: bytes, response: bytes, expected: Optional[bytes], passed: bool, hardware_observed: bool) -> None:
+    """Write one redacted JSONL record.  Deliberately accepts no port argument."""
+    record = {"tool_version": VERSION, "repo_head": repo_head(), "operation": operation,
+              "request_hex": request.hex(), "response_hex": response.hex(),
+              "expected_hex": None if expected is None else expected.hex(), "actual_hex": response.hex(),
+              "pass": passed, "hardware_observed": hardware_observed}
+    stream.write((json.dumps(record, sort_keys=True) + "\n").encode("utf-8"))
+    stream.flush()
+
+
+def _hex_arg(value: str) -> bytes:
+    try:
+        return bytes.fromhex(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be an even-length hexadecimal string") from error
+
+
+def _operation_inputs(args: argparse.Namespace) -> tuple[bytes, bytes, bytes, Optional[bytes]]:
+    if args.vector:
+        vector = VECTORS[args.vector]
+        if args.operation != vector.operation:
+            raise ValueError("--operation must match the selected --vector")
+        return vector.a, vector.b, vector.value, vector.expected
+    return args.a, args.b, args.value, None
+
+
+def _physical_transport(port: str, baud: int, timeout: float) -> ByteTransport:
+    try:
+        import serial  # type: ignore
+    except ImportError as error:
+        raise MinCoreError("physical mode requires pyserial; install it with: python3 -m pip install pyserial") from error
+    try:
+        return serial.Serial(port=port, baudrate=baud, timeout=min(timeout, 0.1), write_timeout=timeout)
+    except Exception as error:
+        # Do not expose a potentially identifying serial device name in output.
+        raise MinCoreError("could not open the requested serial port") from error
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Versioned MinCore raw-byte diagnostic transport (not LSC-1).")
+    parser.add_argument("--port", help="explicit serial port; never enumerated or recorded")
+    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--timeout", type=float, default=1.0)
+    parser.add_argument("--operation", choices=("set", "xor", "mul", "status", "clear"), default="set")
+    parser.add_argument("--vector", choices=tuple(VECTORS), help="hardcoded independent golden vector")
+    parser.add_argument("--a", type=_hex_arg, default=b"")
+    parser.add_argument("--b", type=_hex_arg, default=b"")
+    parser.add_argument("--value", type=_hex_arg, default=b"")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--dry-run", action="store_true", help="encode and report; default unless --execute")
+    modes.add_argument("--encode", action="store_true", help="encode request only")
+    modes.add_argument("--decode", type=_hex_arg, metavar="RESPONSE_HEX", help="validate a supplied response only")
+    parser.add_argument("--execute", action="store_true", help="allow a physical serial transaction exactly once")
+    parser.add_argument("--evidence", type=Path, help="append redacted JSONL evidence")
+    args = parser.parse_args(argv)
+    if args.execute and not args.port:
+        parser.error("--execute requires explicit --port")
+    if args.port and not args.execute:
+        parser.error("--port is permitted only with --execute")
+    if args.execute and (args.encode or args.decode is not None or args.dry_run):
+        parser.error("--execute cannot be combined with --dry-run, --encode, or --decode")
+    try:
+        a, b, value, expected = _operation_inputs(args)
+        request = encode_request(args.operation, a=a, b=b, value=value)
+        if args.decode is not None:
+            response = decode_response(args.operation, args.decode)
+            passed = expected is None or response == expected
+            hardware = False
+        elif args.execute:
+            transport = _physical_transport(args.port, args.baud, args.timeout)
+            try:
+                request, response = MinCoreDriver(transport, args.timeout).exchange(args.operation, a=a, b=b, value=value)
+            finally:
+                close = getattr(transport, "close", None)
+                if callable(close): close()
+            passed, hardware = expected is None or response == expected, bool(response)
+        else:
+            response, passed, hardware = expected or b"", True, False
+        if args.evidence:
+            with args.evidence.open("ab") as stream:
+                record_evidence(stream, operation=args.operation, request=request, response=response, expected=expected, passed=passed, hardware_observed=hardware)
+        print(json.dumps({"operation": args.operation, "request_hex": request.hex(), "response_hex": response.hex(), "expected_hex": None if expected is None else expected.hex(), "pass": passed, "hardware_observed": hardware}, sort_keys=True))
+        return 0 if passed else 1
+    except (MinCoreError, ResponseError, ValueError) as error:
+        print(f"mincore-uart: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
