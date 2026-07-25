@@ -347,7 +347,15 @@ class HostRuntime:
         # Post-RETIRED writes must be atomic: prevalidate all against host write-once,
         # then apply. A late conflict leaves no partial mutation.
         writes = result["writes"]
+        proposed: dict[int, int] = {}
         for w in writes:
+            prior = proposed.get(w["address"])
+            if prior is not None and prior != w["value"]:
+                raise ProtocolViolation(
+                    "result payload contains conflicting writes to address "
+                    f"{w['address']}: {prior:#034x} != {w['value']:#034x}"
+                )
+            proposed[w["address"]] = w["value"]
             self.memory.prevalidate_write(w["address"], w["value"])
         for write in writes:
             self.memory.apply_write(write["address"], write["value"])

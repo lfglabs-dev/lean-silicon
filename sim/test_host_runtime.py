@@ -368,6 +368,29 @@ class RuntimeTests(unittest.TestCase):
         self.assertIsNone(memory.read(2))
         self.assertEqual(memory.read(3), 0xCC)
 
+    def test_post_retire_conflicting_duplicate_writes_are_atomic(self):
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([2])
+            + (2).to_bytes(4, "little") + (0xAA).to_bytes(16, "little")
+            + (2).to_bytes(4, "little") + (0xBB).to_bytes(16, "little")
+            + bytes([0, 0])
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory()
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        with self.assertRaisesRegex(ProtocolViolation, "conflicting writes"):
+            runtime.step()
+        self.assertIsNone(memory.read(2))
+
     def test_stale_retire_txn_id_is_protocol_violation(self):
         result_payload = (
             (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
