@@ -38,6 +38,8 @@ module leanvm_b_m2_scalar_controller #(
       if(!rst_n) begin
         state<=S_IDLE; fault<=0; pc<=0; fp<=0; inverse_operand<=0; pending_missing<=0; pending_result_addr<=0; pending_result<=0;
         for(i=0;i<MEM_WORDS;i=i+1) begin mem[i]<=0; written[i]<=0; end
+      end else if(load_valid && state!=S_IDLE) begin
+        fault<=1'b1; state<=S_FAULT;
       end else if (load_valid && state==S_IDLE) begin
         if(load_addr >= MEM_WORDS) begin fault<=1'b1; state<=S_FAULT; end
         else if(written[load_addr] && mem[load_addr] != load_value) begin fault<=1'b1; state<=S_FAULT; end

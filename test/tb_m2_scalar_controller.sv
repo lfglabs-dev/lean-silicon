@@ -20,5 +20,8 @@ module tb_m2_scalar_controller;
    load(20,1);load(21,enc(0));load(22,enc(0));issue(3,16,17,18,0);if(pc!==0 || fp!==0)$fatal(1,"frame restore");
    issue(4,0,0,0,0);if(fault || instr_ready)$fatal(1,"terminal halt");@(negedge clk);if(retired)$fatal(1,"halt retire pulse");
    rst_n=0;@(negedge clk);rst_n=1;load(1,128'h11);load(1,128'h22);if(!fault)$fatal(1,"loader write-once conflict");
+   rst_n=0;@(negedge clk);rst_n=1;load(2,128'h0a);load(4,mul(128'h0a,128'h05));
+   @(negedge clk);instr_op=1;instr_a=2;instr_b=3;instr_c=4;instr_valid=1;@(negedge clk);instr_valid=0;
+   if(!inverse_req)$fatal(1,"inverse request missing");load_addr=5;load_value=128'h99;load_valid=1;@(negedge clk);load_valid=0;if(!fault)$fatal(1,"busy load not rejected");
    $display("PASS m2 scalar controller");$finish; end
 endmodule

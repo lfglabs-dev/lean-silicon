@@ -16,4 +16,5 @@ frozen u32/reverse-map host contract.
 
 Instruction operands are offsets relative to `fp`; offset addition and
 `pc + 1` fault on u32 overflow.  HALT is terminal until reset.  The test loader
-uses the same idempotent write-once rule as instruction writes.
+uses the same idempotent write-once rule as instruction writes; asserting
+`load_valid` outside the idle state faults rather than silently dropping data.
