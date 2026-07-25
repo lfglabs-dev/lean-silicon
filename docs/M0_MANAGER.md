@@ -1,4 +1,7 @@
-# M0 manager ledger
+# Historical M0 manager ledger
+
+This MinCore-era lane plan is historical evidence only. It is superseded by
+the host-prepared LSC-1 roadmap in [ROADMAP](ROADMAP.md).
 
 ## Scope and gate
 

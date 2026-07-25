@@ -1,4 +1,8 @@
-# Frozen scalar semantics
+# Frozen leanVM-b semantic reference
+
+This is frozen-source reference material, not an active claim that LSC-1
+implements autonomous memory or service ownership. LSC-1 scope is in
+[ROADMAP](ROADMAP.md).
 
 This document freezes the scalar-core contract against
 `leanEthereum/leanVM-b` commit `c308034ab78619b39a59d26f3dc60e7df5b52649`.

@@ -1,0 +1,11 @@
+version: 1
+project: leanSilicon
+frozen_leanvm_b: c308034ab78619b39a59d26f3dc60e7df5b52649
+milestones:
+  host_packet_runtime: {depends_on: [], status: planned}
+  lsc1_rtl_completion: {depends_on: [host_packet_runtime], status: planned}
+  differential_tests: {depends_on: [host_packet_runtime, lsc1_rtl_completion], status: planned}
+  lean_refinement: {depends_on: [host_packet_runtime, differential_tests], status: planned}
+  ulx3s_pin_harness: {depends_on: [host_packet_runtime], status: planned}
+  tiny_tapeout_ppa: {depends_on: [lsc1_rtl_completion, differential_tests], status: planned}
+  official_zkdsl_validation: {depends_on: [lean_refinement, differential_tests], status: planned}
