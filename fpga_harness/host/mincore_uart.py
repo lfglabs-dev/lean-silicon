@@ -24,7 +24,17 @@ STATUS_BYTES = bytes.fromhex("01010f08")
 
 
 class MinCoreError(Exception):
-    """Base error for a diagnostic exchange."""
+    """Base error for a diagnostic exchange.
+
+    `observed` carries the response bytes that did arrive before the failure so
+    a caller can record what the device actually returned.  Reporting an empty
+    response for a rejected or partial answer would claim the wire stayed
+    silent when it did not.
+    """
+
+    def __init__(self, *args: object, observed: bytes = b"") -> None:
+        super().__init__(*args)
+        self.observed = observed
 
 
 class TransportTimeout(MinCoreError):
@@ -112,9 +122,11 @@ def decode_response(operation: str, response: bytes) -> bytes:
     """Validate a fixed-size response.  STATUS is the only fixed-value response."""
     needed = response_length(operation)
     if len(response) != needed:
-        raise ResponseError(f"{operation} response length {len(response)}, expected {needed}")
+        raise ResponseError(f"{operation} response length {len(response)}, expected {needed}",
+                            observed=response)
     if operation == "status" and response != STATUS_BYTES:
-        raise ResponseError(f"STATUS response {response.hex()}, expected {STATUS_BYTES.hex()}")
+        raise ResponseError(f"STATUS response {response.hex()}, expected {STATUS_BYTES.hex()}",
+                            observed=response)
     return response
 
 
@@ -152,11 +164,44 @@ class MinCoreDriver:
                 raise TransportTimeout(f"stale-input drain timeout after {len(drained)} bytes")
         return bytes(drained)
 
+    def _bounded(self, call: Callable[[], object], budget: float, timeout_message: str) -> object:
+        """Run one blocking transport call under what is left of the budget.
+
+        A synchronous call cannot be interrupted, so it runs on a daemon worker
+        and is abandoned once the budget is gone.  Every path that abandons a
+        call also leaves the driver poisoned, so an abandoned write can never be
+        mistaken for part of a later exchange.  The caller passes a remaining
+        budget rather than a deadline so that one phase costs one clock read.
+        """
+        outcome: list = []
+        failures: list = []
+
+        def run() -> None:
+            try:
+                outcome.append(call())
+            except BaseException as error:  # reported on the calling thread
+                failures.append(error)
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        worker.join(max(0.0, budget))
+        if worker.is_alive():
+            raise TransportTimeout(timeout_message)
+        if failures:
+            raise failures[0]
+        return outcome[0]
+
     def _write_all(self, data: bytes, deadline: Optional[float] = None) -> None:
         deadline, offset = self._deadline(deadline), 0
         while offset < len(data):
+            message = f"write timeout after {offset}/{len(data)} request bytes"
+            remaining = deadline - self.clock()
+            if remaining <= 0:
+                raise TransportTimeout(message)
             try:
-                written = self.transport.write(data[offset:])
+                written = self._bounded(lambda: self.transport.write(data[offset:]), remaining, message)
+            except TransportTimeout:
+                raise
             except Exception as error:
                 raise TransportFailure(f"write failed after {offset}/{len(data)} request bytes; transaction was not retried") from error
             if written is None:
@@ -165,13 +210,7 @@ class MinCoreDriver:
                 raise TransportFailure(
                     f"transport reported invalid write count after {offset}/{len(data)} request bytes"
                 )
-            if written > 0:
-                offset += written
-                if self.clock() > deadline:
-                    raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
-                continue
-            if self.clock() >= deadline:
-                raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
+            offset += written
 
     def _read_exact(self, size: int, deadline: Optional[float] = None) -> bytes:
         deadline, data = self._deadline(deadline), bytearray()
@@ -179,18 +218,22 @@ class MinCoreDriver:
             try:
                 chunk = self.transport.read(size - len(data))
             except Exception as error:
-                raise TransportFailure(f"read failed after {len(data)}/{size} response bytes; transaction was not retried") from error
+                raise TransportFailure(f"read failed after {len(data)}/{size} response bytes; transaction was not retried",
+                                       observed=bytes(data)) from error
             if chunk:
                 if len(chunk) > size - len(data):
                     raise TransportFailure(
-                        f"transport returned too many bytes after {len(data)}/{size} response bytes"
+                        f"transport returned too many bytes after {len(data)}/{size} response bytes",
+                        observed=bytes(data) + bytes(chunk),
                     )
                 data.extend(chunk)
                 if self.clock() > deadline:
-                    raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
+                    raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes",
+                                           observed=bytes(data))
                 continue
             if self.clock() >= deadline:
-                raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
+                raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes",
+                                       observed=bytes(data))
         return bytes(data)
 
     def _flush_output(self, deadline: Optional[float] = None) -> None:
@@ -203,26 +246,20 @@ class MinCoreDriver:
         flush = getattr(self.transport, "flush", None)
         if not callable(flush):
             return
-        deadline, failures = self._deadline(deadline), []
-        worker = threading.Thread(target=lambda: self._call_flush(flush, failures), daemon=True)
-        worker.start()
-        worker.join(max(0.0, deadline - self.clock()))
-        if worker.is_alive():
-            raise TransportTimeout("flush timeout before the no-response request drained")
-        if failures:
-            raise TransportFailure("output flush failed; transaction was not retried") from failures[0]
-
-    @staticmethod
-    def _call_flush(flush: Callable[[], object], failures: list) -> None:
+        deadline = self._deadline(deadline)
         try:
-            flush()
-        except BaseException as error:  # reported on the calling thread
-            failures.append(error)
+            self._bounded(flush, deadline - self.clock(),
+                          "flush timeout before the no-response request drained")
+        except TransportTimeout:
+            raise
+        except Exception as error:
+            raise TransportFailure("output flush failed; transaction was not retried") from error
 
-    def _reject_buffered_extra(self, deadline: Optional[float] = None) -> None:
+    def _reject_buffered_extra(self, deadline: Optional[float] = None, response: bytes = b"") -> None:
         extra = self.drain_stale(deadline)
         if extra:
-            raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}")
+            raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}",
+                                observed=response + extra)
 
     def exchange(self, operation: str, *, a: bytes = b"", b: bytes = b"", value: bytes = b"") -> tuple[bytes, bytes]:
         """Send one request exactly once, then read and validate exactly one response.
@@ -244,6 +281,7 @@ class MinCoreDriver:
         request = encode_request(operation, a=a, b=b, value=value)
         self._usable = False
         deadline = self.clock() + self.timeout
+        response = b""
         try:
             self.drain_stale(deadline)
             self._write_all(request, deadline)
@@ -252,8 +290,10 @@ class MinCoreDriver:
                 self._flush_output(deadline)
             response = self._read_exact(needed, deadline)
             decode_response(operation, response)
-            self._reject_buffered_extra(deadline)
-        except Exception:
+            self._reject_buffered_extra(deadline, response)
+        except MinCoreError as error:
+            if not error.observed:
+                error.observed = response
             raise
         else:
             self._usable = True
@@ -271,20 +311,25 @@ def repo_provenance(evidence: Optional[Path] = None) -> tuple[str, Optional[bool
 
     A head alone cannot distinguish evidence produced by a modified checkout
     from a clean run at the same commit.  A null dirty flag means unknown, which
-    must not be read as clean.  An evidence file written inside the checkout is
-    this tool's own output, not a source change, so it never counts as dirty.
+    must not be read as clean.  An *untracked* evidence file written inside the
+    checkout is this tool's own output, not a source change, so it never counts
+    as dirty.  A tracked destination is excluded from nothing: its edits are
+    indistinguishable from source edits, so hiding them would let any modified
+    file be laundered clean by naming it as the evidence path.
     """
     root = Path(__file__).resolve().parents[2]
     command = ["git", "status", "--porcelain=v1", "--untracked-files=all"]
-    if evidence is not None:
-        try:
-            relative = evidence.resolve().relative_to(root).as_posix()
-        except (OSError, ValueError):
-            relative = ""  # outside the checkout, so git already ignores it
-        if relative:
-            command += ["--", ".", f":(exclude,literal,top){relative}"]
     try:
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+        if evidence is not None:
+            try:
+                relative = evidence.resolve().relative_to(root).as_posix()
+            except (OSError, ValueError):
+                relative = ""  # outside the checkout, so git already ignores it
+            if relative and not subprocess.check_output(
+                ["git", "ls-files", "--", relative], cwd=root, text=True
+            ).strip():
+                command += ["--", ".", f":(exclude,literal,top){relative}"]
         status = subprocess.check_output(command, cwd=root, text=True)
     except (OSError, subprocess.CalledProcessError):
         return "unknown", None
@@ -392,6 +437,7 @@ def _record_failed_attempt(
     provenance: tuple[str, Optional[bool]],
     operation: str,
     request: bytes,
+    response: bytes,
     expected: Optional[bytes],
     failure: str,
     include_payloads: bool,
@@ -400,16 +446,18 @@ def _record_failed_attempt(
 
     Without it a run that opened the port, sent bytes, and then timed out is
     indistinguishable in the JSONL from one that never ran, even though the
-    device may already have changed state.  A secondary write error here must
-    not replace the transport error the caller is about to raise.
+    device may already have changed state.  `response` holds the bytes that did
+    arrive before the failure, so a rejected or partial answer is not recorded
+    as silence.  A secondary write error here must not replace the transport
+    error the caller is about to raise.
     """
     if evidence is None:
         return
     try:
         record_evidence(
             evidence, provenance=provenance, operation=operation, request=request,
-            response=b"", expected=expected, passed=None, execution_attempted=True,
-            serial_response_observed=False, failure=failure,
+            response=response, expected=expected, passed=None, execution_attempted=True,
+            serial_response_observed=bool(response), failure=failure,
             include_payloads=include_payloads,
         )
     except OSError:
@@ -472,7 +520,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 except MinCoreError as error:
                     _record_failed_attempt(
                         evidence, provenance=provenance, operation=args.operation,
-                        request=request, expected=expected, failure=type(error).__name__,
+                        request=request, response=error.observed, expected=expected,
+                        failure=type(error).__name__,
                         include_payloads=args.evidence_payloads,
                     )
                     raise

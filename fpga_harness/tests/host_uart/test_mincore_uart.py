@@ -1,5 +1,7 @@
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -75,9 +77,13 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertEqual(bytes(serial.written), encode_request("set", value=VECTORS["set128"].value))
 
     def test_deadlines_apply_even_while_io_makes_progress(self):
+        # The budget is checked before each write, so the last byte accepted is
+        # the one whose write started with budget left, not the one that ended
+        # past the deadline.
         serial = FakeSerial(write_limit=1)
-        with self.assertRaisesRegex(TransportTimeout, r"write timeout after 3/17 request bytes"):
+        with self.assertRaisesRegex(TransportTimeout, r"write timeout after 2/17 request bytes"):
             MinCoreDriver(serial, .025, Clock()).exchange("set", value=VECTORS["set128"].value)
+        self.assertEqual(len(serial.written), 2)  # no write is started without budget
 
         # The budget is shared, so the read phase starts with the write already charged to it.
         serial = FakeSerial(read_limit=1, responses=(STATUS_BYTES,))
@@ -106,6 +112,35 @@ class MinCoreUartTests(unittest.TestCase):
         start = time.monotonic()
         with self.assertRaisesRegex(TransportTimeout, "flush timeout"):
             MinCoreDriver(serial, 1.0, Clock()).exchange("clear")
+        self.assertLess(time.monotonic() - start, .5)  # a fresh budget would wait ~1.0s
+
+    def test_a_blocking_write_cannot_outlast_the_remaining_budget(self):
+        """A slow write must be abandoned at the deadline, not awaited in full."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledWrite(FakeSerial):
+            def write(self, data): release.wait(30); return len(data)
+
+        driver = MinCoreDriver(StalledWrite(), .05)  # real clock: measure wall time
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, r"write timeout after 0/1 request bytes"):
+            driver.exchange("status")
+        self.assertLess(time.monotonic() - start, 1)  # an unbounded write would wait ~30s
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")  # an abandoned write leaves the stream unknown
+
+    def test_a_drain_that_spends_the_budget_leaves_the_write_none(self):
+        """The write phase inherits what the drain left, never a fresh budget."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledWriteAfterStale(FakeSerial):
+            def write(self, data): release.wait(30); return len(data)
+
+        # 90 single-byte drain reads consume ~0.90 of the 1.0 budget on the fake clock.
+        serial = StalledWriteAfterStale(b"x" * 90, read_limit=1)
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, "write timeout"):
+            MinCoreDriver(serial, 1.0, Clock()).exchange("status")
         self.assertLess(time.monotonic() - start, .5)  # a fresh budget would wait ~1.0s
 
     def test_stale_drain_is_bounded_and_invalid_write_counts_fail(self):
@@ -257,6 +292,60 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertEqual([key for key in record if "port" in key], [])
         self.assertNotIn("/dev/", json.dumps(record))
 
+    def test_a_rejected_response_is_not_recorded_as_silence(self):
+        """STATUS answered with the wrong bytes still observed a serial response."""
+        class WrongStatus(FakeSerial):
+            def write(self, data):
+                self.incoming.extend(bytes.fromhex("01010008"))
+                return super().write(data)
+
+        transport = WrongStatus()
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "evidence.jsonl"
+            with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: transport), \
+                 mock.patch("sys.stderr", io.StringIO()):
+                self.assertEqual(main(["--execute", "--port", "/dev/null", "--operation", "status",
+                                       "--timeout", "0.5", "--evidence", str(evidence),
+                                       "--evidence-payloads"]), 2)
+            record = json.loads(evidence.read_text())
+
+        self.assertEqual(record["failure"], "ResponseError")
+        self.assertTrue(record["execution_attempted"])
+        self.assertTrue(record["serial_response_observed"])
+        self.assertEqual(record["response_length"], 4)
+        self.assertEqual(record["response_hex"], "01010008")
+        self.assertIsNone(record["pass"])  # rejected, never a pass
+
+    def test_a_partial_response_keeps_the_bytes_that_did_arrive(self):
+        class OneByteThenSilence(FakeSerial):
+            def write(self, data):
+                self.incoming.extend(b"\xe0")
+                return super().write(data)
+
+        transport = OneByteThenSilence()
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "evidence.jsonl"
+            with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: transport), \
+                 mock.patch("sys.stderr", io.StringIO()):
+                self.assertEqual(main(["--execute", "--port", "/dev/null", "--operation", "set",
+                                       "--vector", "set128", "--timeout", "0.05",
+                                       "--evidence", str(evidence), "--evidence-payloads"]), 2)
+            record = json.loads(evidence.read_text())
+
+        self.assertEqual(record["failure"], "TransportTimeout")
+        self.assertTrue(record["serial_response_observed"])
+        self.assertEqual(record["response_length"], 1)
+        self.assertEqual(record["response_hex"], "e0")
+
+    def test_a_silent_device_still_records_no_observed_response(self):
+        """The observed-byte plumbing must not invent an observation."""
+        error = TransportTimeout("read timeout after 0/4 response bytes")
+        self.assertEqual(error.observed, b"")
+        driver = MinCoreDriver(FakeSerial(), .03, Clock())
+        with self.assertRaises(TransportTimeout) as stopped:
+            driver.exchange("status")
+        self.assertEqual(stopped.exception.observed, b"")
+
     def test_a_completed_exchange_records_no_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             evidence = Path(directory) / "evidence.jsonl"
@@ -330,6 +419,41 @@ class MinCoreUartTests(unittest.TestCase):
             outside = Path(directory) / "evidence.jsonl"
             outside.write_text("")
             self.assertEqual(repo_provenance(outside), repo_provenance())
+
+    def sandbox_checkout(self):
+        """A throwaway git repo so provenance is judged on a known-clean tree."""
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = Path(directory.name)
+        (root / "fpga_harness" / "host").mkdir(parents=True)
+        (root / "README.md").write_text("tracked\n")
+        environment = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                       "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
+                       "PATH": os.environ.get("PATH", ""), "HOME": str(root)}
+        for command in (["init", "-q"], ["add", "README.md"], ["commit", "-qm", "seed"]):
+            subprocess.run(["git", *command], cwd=root, env=environment, check=True,
+                           stdout=subprocess.DEVNULL)
+        # repo_provenance() walks up from the module file, so point it at the sandbox.
+        self.enterContext(mock.patch.object(
+            mincore_uart, "__file__", str(root / "fpga_harness" / "host" / "mincore_uart.py")))
+        return root
+
+    def test_a_tracked_evidence_target_cannot_launder_a_dirty_tree(self):
+        """Naming an already-modified tracked file as --evidence must not hide it."""
+        root = self.sandbox_checkout()
+        tracked = root / "README.md"
+        self.assertEqual(repo_provenance()[1], False)  # the seeded tree really is clean
+
+        tracked.write_text("tracked\nlocal edit\n")
+        self.assertTrue(repo_provenance()[1])
+        self.assertTrue(repo_provenance(tracked)[1])  # the edit is still reported
+
+    def test_an_untracked_evidence_target_is_still_this_tools_own_output(self):
+        root = self.sandbox_checkout()
+        evidence = root / "evidence.jsonl"
+        evidence.write_text('{"probe": true}\n')
+        self.assertTrue(repo_provenance()[1])  # untracked output alone reads as dirty
+        self.assertFalse(repo_provenance(evidence)[1])  # but not when it is the destination
 
     def test_transport_failure_is_not_retried(self):
         class BrokenSerial(FakeSerial):

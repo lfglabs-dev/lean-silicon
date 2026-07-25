@@ -56,7 +56,11 @@ and a drain that fails or times out is itself an indeterminate outcome: it
 leaves an unknown number of stale bytes that a later exchange would otherwise
 read back as a response.  `--timeout` bounds one whole exchange rather than each
 phase: the drain, write, read, and flush share a single deadline, so phases that
-each stop just inside the limit cannot sum to several multiples of it.  `CLEAR`
+each stop just inside the limit cannot sum to several multiples of it.  A
+blocking call cannot be interrupted, so each write runs under whatever the
+deadline leaves and is abandoned when that budget is gone; no write is started
+without budget, and a transport with a write timeout of its own can no longer
+stretch an exchange past `--timeout`.  `CLEAR`
 has no response to prove its byte was transmitted, so the host flushes the
 transport before the port can be closed; that flush is bounded by whatever the
 earlier phases left of the budget, because the underlying `tcdrain()` accepts no
@@ -90,8 +94,12 @@ execution without a selected golden vector also records `pass: null`, because
 fixed-size validation alone is not a functional oracle.
 
 An exchange that fails once the port is open is recorded too, with `failure` set
-to the exception class name, `execution_attempted: true`, and
-`serial_response_observed: false`.  The device may already have changed state,
+to the exception class name and `execution_attempted: true`.  Bytes that did
+arrive before the failure are kept: a rejected response (`STATUS` answering
+`01 01 00 08`) or a partial read that then timed out records the observed length
+and digest with `serial_response_observed: true`, so a failed exchange is never
+reported as a silent wire.  `pass` stays `null`, because those bytes were never
+accepted.  The device may already have changed state,
 so a run that sent bytes and then timed out must not be indistinguishable from
 one that never ran; `execution_attempted` reports that the port was opened and
 I/O began, never that a response was seen.  Only the class name is stored,
@@ -103,7 +111,10 @@ Each record carries `repo_head` plus `repo_dirty`, which reports whether that
 checkout had uncommitted or untracked changes (`git status --porcelain=v1
 --untracked-files=all`).  A head alone cannot distinguish evidence produced by a
 modified tree from a clean run at the same commit.  `repo_dirty: null` means the
-tree state could not be determined and must not be read as clean.  The evidence
-file is this tool's own output rather than a source change, so it is excluded
-from that status: writing or appending an evidence file inside the checkout
-never makes a run report itself as dirty.
+tree state could not be determined and must not be read as clean.  An
+*untracked* evidence file is this tool's own output rather than a source change,
+so it is excluded from that status: writing or appending a new evidence file
+inside the checkout never makes a run report itself as dirty.  A *tracked*
+evidence destination is excluded from nothing, because its edits cannot be told
+apart from source edits; otherwise naming an already-modified tracked file as
+`--evidence` would report the run as clean.
