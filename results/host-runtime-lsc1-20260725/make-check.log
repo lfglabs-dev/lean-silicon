@@ -40,9 +40,15 @@ test_poisoned_stale_frame_regressions (test_host_runtime.ResultPayloadTests.test
 Poisoned or stale frames (wrong txn, tampered CRC) must be refused; F1 binding preserved. ... ok
 test_a_fault_bound_to_another_transaction_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_bound_to_another_transaction_is_a_protocol_violation) ... ok
 test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation) ... ok
+test_a_frame_level_retire_rejection_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_frame_level_retire_rejection_is_a_protocol_violation) ... ok
 test_a_non_fault_status_is_not_recorded_as_a_fault (test_host_runtime.RuntimeTests.test_a_non_fault_status_is_not_recorded_as_a_fault) ... ok
+test_a_non_overflowing_address_is_not_a_preparation_fault (test_host_runtime.RuntimeTests.test_a_non_overflowing_address_is_not_a_preparation_fault) ... ok
+test_a_non_retired_non_fault_status_is_not_recorded_as_a_fault (test_host_runtime.RuntimeTests.test_a_non_retired_non_fault_status_is_not_recorded_as_a_fault) ... ok
+test_a_retire_fault_payload_of_the_wrong_size_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_retire_fault_payload_of_the_wrong_size_is_a_protocol_violation) ... ok
 test_a_well_formed_fault_is_still_attributed_to_the_step (test_host_runtime.RuntimeTests.test_a_well_formed_fault_is_still_attributed_to_the_step) ... ok
+test_a_well_formed_retire_fault_is_still_attributed_to_the_step (test_host_runtime.RuntimeTests.test_a_well_formed_retire_fault_is_still_attributed_to_the_step) ... ok
 test_a_write_conflict_is_reported_as_a_fault_not_applied (test_host_runtime.RuntimeTests.test_a_write_conflict_is_reported_as_a_fault_not_applied) ... ok
+test_an_overflowing_effective_address_is_a_fault_terminal (test_host_runtime.RuntimeTests.test_an_overflowing_effective_address_is_a_fault_terminal) ... ok
 test_arbitrary_rx_tx_stalls_and_backpressure (test_host_runtime.RuntimeTests.test_arbitrary_rx_tx_stalls_and_backpressure)
 Full transaction loop under arbitrary permitted lane-gap patterns. ... ok
 test_forward_only_refuses_the_same_back_solve (test_host_runtime.RuntimeTests.test_forward_only_refuses_the_same_back_solve) ... ok
@@ -223,7 +229,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 216 tests in 10.894s
+Ran 222 tests in 9.740s
 
 OK
 python3 tools/host_upstream_comparison.py --artifact host/fixtures/assert_set_xor_mul.program.json \
@@ -375,6 +381,6 @@ test_wide_function_argument_is_not_a_boundary_violation (test_boundary_check.Sub
 test_wide_task_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_task_argument_is_not_a_boundary_violation) ... ok
 
 ----------------------------------------------------------------------
-Ran 77 tests in 0.017s
+Ran 77 tests in 0.016s
 
 OK
