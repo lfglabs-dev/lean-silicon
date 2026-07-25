@@ -1,0 +1,193 @@
+{
+  "generated_at_utc": "2026-07-25T15:37:34.343565+00:00",
+  "generated_from_repo_head": "ed2da78b04022fb1108bca4fc0bc21d95485cba9",
+  "program": {
+    "bytecode": [
+      {
+        "index": 0,
+        "k": "0x00000000000000000000000000000003",
+        "o": 2,
+        "op": "Set"
+      },
+      {
+        "index": 1,
+        "k": "0x00000000000000000000000000000005",
+        "o": 3,
+        "op": "Set"
+      },
+      {
+        "a": 2,
+        "b": 3,
+        "c": 4,
+        "index": 2,
+        "op": "Xor"
+      },
+      {
+        "index": 3,
+        "k": "0x00000000000000000000000000000006",
+        "o": 5,
+        "op": "Set"
+      },
+      {
+        "a": 4,
+        "b": 5,
+        "c": 6,
+        "index": 4,
+        "op": "Xor"
+      },
+      {
+        "index": 5,
+        "k": "0x00000000000000000000000000000000",
+        "o": 6,
+        "op": "Set"
+      },
+      {
+        "a": 2,
+        "b": 3,
+        "c": 7,
+        "index": 6,
+        "op": "Mul"
+      },
+      {
+        "index": 7,
+        "k": "0x0000000000000000000000000000000f",
+        "o": 8,
+        "op": "Set"
+      },
+      {
+        "a": 7,
+        "b": 8,
+        "c": 9,
+        "index": 8,
+        "op": "Xor"
+      },
+      {
+        "index": 9,
+        "k": "0x00000000000000000000000000000000",
+        "o": 9,
+        "op": "Set"
+      },
+      {
+        "index": 10,
+        "k": "0x00000000000000000000000000000001",
+        "o": 10,
+        "op": "Set"
+      },
+      {
+        "index": 11,
+        "k": "0x00000000000000000000000000008000",
+        "o": 11,
+        "op": "Set"
+      },
+      {
+        "index": 12,
+        "oc": 10,
+        "od": 11,
+        "of": 10,
+        "op": "Jump"
+      },
+      {
+        "index": 13,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 14,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 15,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      }
+    ],
+    "disassembly": "     0  SET    fp[2] = 0x00000000000000000000000000000003\n     1  SET    fp[3] = 0x00000000000000000000000000000005\n     2  XOR    fp[4] = fp[2] ^ fp[3]\n     3  SET    fp[5] = 0x00000000000000000000000000000006\n     4  XOR    fp[6] = fp[4] ^ fp[5]\n     5  SET    fp[6] = 0x00000000000000000000000000000000\n     6  MUL    fp[7] = fp[2] * fp[3]\n     7  SET    fp[8] = 0x0000000000000000000000000000000f\n     8  XOR    fp[9] = fp[7] ^ fp[8]\n     9  SET    fp[9] = 0x00000000000000000000000000000000\n    10  SET    fp[10] = g^0\n    11  SET    fp[11] = g^15\n    12  JUMP   if fp[10]\u22600: pc=fp[11], fp=fp[10]\n    13  SET    fp[0] = 0x00000000000000000000000000000000\n    14  SET    fp[0] = 0x00000000000000000000000000000000\n    15  SET    fp[0] = 0x00000000000000000000000000000000\n",
+    "fn_ranges": [
+      [
+        "main",
+        0,
+        13
+      ]
+    ],
+    "fp0": 0,
+    "pc0": 0
+  },
+  "provenance": {
+    "exporter_sha256": "87bf0131d197add11cab19ba34e9278a16dddcc066e254ca77b3c28d46b9da4b"
+  },
+  "schema": "leansilicon.host.program/1",
+  "source": {
+    "language": "zkDSL",
+    "path": "host/fixtures/assert_set_xor_mul.zkdsl",
+    "sha256": "861f78055c35b7d1a5a80aa7a219d1334f52488f273dcb14017a3ff47bcc60a9",
+    "text": "def main():\n    a = 3\n    b = 5\n    assert a + b == 6\n    assert a * b == 15\n    return\n"
+  },
+  "upstream": {
+    "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
+    "command": [
+      "cargo",
+      "+1.88.0",
+      "run",
+      "--quiet",
+      "--locked",
+      "-p",
+      "lean_compiler",
+      "--example",
+      "leansilicon_export"
+    ],
+    "interface": [
+      "lean_compiler::parse(&str) -> Result<Ast, String>",
+      "lean_compiler::compile(&Ast) -> lean_vm::cpu::Program",
+      "lean_compiler::disassemble(&[Op]) -> String",
+      "lean_vm::cpu::Program::execute([F128; 2]) -> Execution"
+    ],
+    "not_exposed_by_public_interface": {
+      "Execution::trace": "pub(crate): per-step trace rows and access counts",
+      "Program::hints": "pub(crate): prover frame/buffer allocation hints",
+      "Program::main_frame": "pub(crate): size of main's frame",
+      "Program::witness": "pub(crate): named prover witness streams"
+    },
+    "postflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "preflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "repository": "https://github.com/leanEthereum/leanVM-b.git",
+    "rust_toolchain": "1.88.0",
+    "sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+  },
+  "upstream_execution": {
+    "cycles": 13,
+    "mem": [
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000000000",
+      "0x00000000000000000000000000000003",
+      "0x00000000000000000000000000000005",
+      "0x00000000000000000000000000000006",
+      "0x00000000000000000000000000000006",
+      "0x00000000000000000000000000000000",
+      "0x0000000000000000000000000000000f",
+      "0x0000000000000000000000000000000f",
+      "0x00000000000000000000000000000000",
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000008000"
+    ],
+    "mem_len": 65536,
+    "mem_used": 12,
+    "public_input": [
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000000000"
+    ]
+  }
+}
