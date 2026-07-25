@@ -115,6 +115,7 @@ XOR128 = 0x01
 MUL128 = 0x02
 CLEAR  = 0x7d
 STATUS = 0x7e
+ABORT  = 0x7f
 
 
 def expected_mul(a: bytes, b: bytes) -> bytes:
@@ -139,42 +140,52 @@ def expected_mul(a: bytes, b: bytes) -> bytes:
     return int_to_le_bytes(poly, 16)
 
 
-def tx_set(ser: serial.Serial, value: bytes) -> bytes:
-    assert len(value) == 16
+def resync(ser: serial.Serial) -> None:
+    """Abort any partial prior command before beginning a new transaction."""
     drain(ser)
+    send_bytes(ser, bytes([ABORT]))
+
+
+def tx_set(ser: serial.Serial, value: bytes, timeout: float = TIMEOUT_S) -> bytes:
+    assert len(value) == 16
+    resync(ser)
     send_bytes(ser, bytes([SET128]) + value)
-    echo = recv_exact(ser, 16)
+    echo = recv_exact(ser, 16, timeout=timeout)
     return echo
 
 
-def tx_xor(ser: serial.Serial, a: bytes, b: bytes) -> bytes:
+def tx_xor(
+    ser: serial.Serial, a: bytes, b: bytes, timeout: float = TIMEOUT_S
+) -> bytes:
     assert len(a) == 16 and len(b) == 16
-    drain(ser)
+    resync(ser)
     pkt = bytes([XOR128])
     for i in range(16):
         pkt += bytes([a[i], b[i]])
     send_bytes(ser, pkt)
-    res = recv_exact(ser, 16)
+    res = recv_exact(ser, 16, timeout=timeout)
     return res
 
 
-def tx_mul(ser: serial.Serial, a: bytes, b: bytes) -> bytes:
+def tx_mul(
+    ser: serial.Serial, a: bytes, b: bytes, timeout: float = TIMEOUT_S
+) -> bytes:
     assert len(a) == 16 and len(b) == 16
-    drain(ser)
+    resync(ser)
     send_bytes(ser, bytes([MUL128]) + a + b)
-    res = recv_exact(ser, 16)
+    res = recv_exact(ser, 16, timeout=timeout)
     return res
 
 
 def tx_clear(ser: serial.Serial) -> None:
-    drain(ser)
+    resync(ser)
     send_bytes(ser, bytes([CLEAR]))
 
 
-def tx_status(ser: serial.Serial) -> bytes:
-    drain(ser)
+def tx_status(ser: serial.Serial, timeout: float = TIMEOUT_S) -> bytes:
+    resync(ser)
     send_bytes(ser, bytes([STATUS]))
-    return recv_exact(ser, 4)
+    return recv_exact(ser, 4, timeout=timeout)
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -203,7 +214,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0
 
         if args.tx == "status":
-            st = tx_status(ser)
+            st = tx_status(ser, timeout=args.timeout)
             print("STATUS:", st.hex())
             return 0
 
@@ -220,7 +231,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             if len(pay) != 16:
                 print("ERROR: set expects 16 bytes (32 hex chars)", file=sys.stderr)
                 return 2
-            echo = tx_set(ser, pay)
+            echo = tx_set(ser, pay, timeout=args.timeout)
             print("SET echo:", echo.hex())
             ok = echo == pay
             print("MATCH:", ok)
@@ -231,7 +242,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print("ERROR: xor expects 32 bytes (64 hex chars)", file=sys.stderr)
                 return 2
             a, b = pay[:16], pay[16:]
-            res = tx_xor(ser, a, b)
+            res = tx_xor(ser, a, b, timeout=args.timeout)
             exp = bytes(x ^ y for x, y in zip(a, b))
             print("XOR res :", res.hex())
             print("XOR exp :", exp.hex())
@@ -243,7 +254,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print("ERROR: mul expects 32 bytes (64 hex chars)", file=sys.stderr)
                 return 2
             a, b = pay[:16], pay[16:]
-            res = tx_mul(ser, a, b)
+            res = tx_mul(ser, a, b, timeout=args.timeout)
             exp = expected_mul(a, b)
             print("MUL res :", res.hex())
             print("MUL exp :", exp.hex())

@@ -74,7 +74,7 @@ class IdleSerial:
 
 def run_mul(response: bytes) -> int:
     """Run the driver's mul path against a canned 16-byte reply."""
-    fake = FakeSerial(response, command_len=1 + 32)
+    fake = FakeSerial(response, command_len=1 + 1 + 32)
     with mock.patch.object(ulx3s_uart, "open_port", return_value=fake):
         return ulx3s_uart.main(
             ["--port", "/dev/null", "--tx", "mul", "--payload", (MUL_A + MUL_B).hex()]
@@ -128,12 +128,35 @@ class MulExitStatusTest(unittest.TestCase):
         self.assertEqual(run_mul(MUL_A), 1)
 
     def test_driver_sends_the_documented_command_framing(self):
-        fake = FakeSerial(MUL_EXPECTED, command_len=1 + 32)
+        fake = FakeSerial(MUL_EXPECTED, command_len=1 + 1 + 32)
         with mock.patch.object(ulx3s_uart, "open_port", return_value=fake):
             ulx3s_uart.main(
                 ["--port", "/dev/null", "--tx", "mul", "--payload", (MUL_A + MUL_B).hex()]
             )
-        self.assertEqual(fake.written, bytes([ulx3s_uart.MUL128]) + MUL_A + MUL_B)
+        self.assertEqual(
+            fake.written,
+            bytes([ulx3s_uart.ABORT, ulx3s_uart.MUL128]) + MUL_A + MUL_B,
+        )
+
+    def test_cli_timeout_reaches_the_response_deadline(self):
+        fake = FakeSerial(MUL_EXPECTED, command_len=1 + 1 + 32)
+        with mock.patch.object(ulx3s_uart, "open_port", return_value=fake), mock.patch.object(
+            ulx3s_uart, "recv_exact", return_value=MUL_EXPECTED
+        ) as recv:
+            rc = ulx3s_uart.main(
+                [
+                    "--port",
+                    "/dev/null",
+                    "--tx",
+                    "mul",
+                    "--timeout",
+                    "0.125",
+                    "--payload",
+                    (MUL_A + MUL_B).hex(),
+                ]
+            )
+        self.assertEqual(rc, 0)
+        recv.assert_called_once_with(fake, 16, timeout=0.125)
 
 
 if __name__ == "__main__":
