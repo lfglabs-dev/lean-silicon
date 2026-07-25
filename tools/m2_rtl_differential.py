@@ -41,10 +41,14 @@ if count >= 3:
 with tempfile.TemporaryDirectory(prefix='m2-rtl-differential-') as directory:
     tmp=pathlib.Path(directory)
     fixed_out=tmp/'fixed.vvp'
-    subprocess.run(['iverilog','-g2012','-s','tb_m2_scalar_controller','-o',str(fixed_out),
-                    str(ROOT/'src'/'leanvm_b_m2_scalar_controller.sv'),
-                    str(ROOT/'test'/'tb_m2_scalar_controller.sv')],check=True)
-    fixed=subprocess.run(['vvp',str(fixed_out)],text=True,capture_output=True,check=True)
+    iverilog_fixed_command=[
+        'iverilog','-g2012','-s','tb_m2_scalar_controller','-o',str(fixed_out),
+        str(ROOT/'src'/'leanvm_b_m2_scalar_controller.sv'),
+        str(ROOT/'test'/'tb_m2_scalar_controller.sv'),
+    ]
+    vvp_fixed_command=['vvp',str(fixed_out)]
+    iverilog_fixed=subprocess.run(iverilog_fixed_command,check=True)
+    fixed=subprocess.run(vvp_fixed_command,text=True,capture_output=True,check=True)
     if 'PASS m2 scalar controller' not in fixed.stdout: raise SystemExit(fixed.stdout)
 
     statements=[]
@@ -76,9 +80,13 @@ module tb_seeded;
 endmodule
 """.format(count=count))
     seeded_out=tmp/'seeded.vvp'
-    subprocess.run(['iverilog','-g2012','-s','tb_seeded','-o',str(seeded_out),
-                    str(ROOT/'src'/'leanvm_b_m2_scalar_controller.sv'),str(bench)],check=True)
-    seeded=subprocess.run(['vvp',str(seeded_out)],text=True,capture_output=True,check=True)
+    iverilog_seeded_command=[
+        'iverilog','-g2012','-s','tb_seeded','-o',str(seeded_out),
+        str(ROOT/'src'/'leanvm_b_m2_scalar_controller.sv'),str(bench),
+    ]
+    vvp_seeded_command=['vvp',str(seeded_out)]
+    iverilog_seeded=subprocess.run(iverilog_seeded_command,check=True)
+    seeded=subprocess.run(vvp_seeded_command,text=True,capture_output=True,check=True)
     if f'PASS {count} seeded Cargo-vetted RTL vectors' not in seeded.stdout:
         raise SystemExit(seeded.stdout)
 postflight=require_checkout(args.upstream)
@@ -99,9 +107,14 @@ if args.record:
         'limits': 'M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.',
         'seed': f'{seed:#x}', 'case_count': count,
         'commands': {'scalar_gate': [sys.executable, str(ROOT/'tools'/'frozen_upstream_differential.py'), '--upstream', str(args.upstream), '--seed', hex(seed), '--cases', str(count), '--rust-toolchain', args.rust_toolchain],
-                     'iverilog_fixed': ['iverilog', '-g2012', '-s', 'tb_m2_scalar_controller'],
-                     'iverilog_seeded': ['iverilog', '-g2012', '-s', 'tb_seeded'],
-                     'vvp_fixed_exit_status': 0, 'vvp_seeded_exit_status': 0},
+                     'iverilog_fixed': iverilog_fixed_command,
+                     'iverilog_fixed_exit_status': iverilog_fixed.returncode,
+                     'vvp_fixed': vvp_fixed_command,
+                     'vvp_fixed_exit_status': fixed.returncode,
+                     'iverilog_seeded': iverilog_seeded_command,
+                     'iverilog_seeded_exit_status': iverilog_seeded.returncode,
+                     'vvp_seeded': vvp_seeded_command,
+                     'vvp_seeded_exit_status': seeded.returncode},
         'rust_toolchain': args.rust_toolchain,
         'provenance': {'checker_sha256': digest(pathlib.Path(__file__)),
                        'scalar_gate_sha256': digest(SCALAR_GATE_SOURCE),
