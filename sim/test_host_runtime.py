@@ -140,6 +140,26 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(loaded.at(2).integrated)
         self.assertFalse(loaded.at(12).integrated)
 
+    def test_host_package_imports_with_deferred_annotations_policy(self):
+        for module_path in sorted((ROOT / "host").glob("*.py")):
+            with self.subTest(module=module_path.name):
+                self.assertIn(
+                    "from __future__ import annotations",
+                    module_path.read_text(),
+                )
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import host, host.errors, host.lean_compiler_adapter, "
+                "host.memory, host.protocol, host.runtime",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_pc_outside_the_program_is_refused(self):
         loaded = adapter.load(ARTIFACT)
         with self.assertRaisesRegex(AdapterError, "outside the 16-slot program"):
