@@ -1,5 +1,5 @@
   ok  uio_oe direction mask 0b10110110 (bit set = ASIC drives)
   ok  uio_out drives exactly the bits uio_oe marks as outputs, and ties every input bit to zero
-  ok  lean_silicon_lsc1_pins.sv: all ASIC-facing ports within 8 bits
+  ok  lean_silicon_lsc1_pins.sv: every port width resolved and within 8 bits
   note uio[7] role spelled DONE in LSC1_PROTOCOL.md and DONE_PULSE in info.yaml; same pin, unaligned wording for the owning lanes to reconcile
 LSC-1 pin-accurate harness boundary: OK

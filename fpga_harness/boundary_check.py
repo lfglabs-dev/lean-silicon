@@ -16,6 +16,7 @@ false tripwire.
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from dataclasses import dataclass
@@ -105,6 +106,76 @@ def _uio_out_terms(text: str) -> list[str] | None:
 
 def _is_literal_zero(term: str) -> bool:
     return re.fullmatch(r"(1'b0|1'h0|1'd0|0)", term) is not None
+
+
+# A packed port range, capturing the raw bounds so non-literal widths such as
+# ``[W-1:0]`` are seen by the checker instead of silently not matching.
+_PORT_RANGE_RE = re.compile(
+    r"\b(?:input|output|inout)\b[^;,()\[\]]*?\[([^\]]+)\]\s*(\w+)"
+)
+_PARAM_RE = re.compile(
+    r"\b(?:parameter|localparam)\b[^;=]*?(\w+)\s*=\s*([^,;)]+)"
+)
+
+
+def _eval_const(node: ast.AST, bindings: dict[str, int]) -> int | None:
+    """Evaluate a whitelisted integer expression; None when not constant."""
+    if isinstance(node, ast.Constant):
+        return node.value if isinstance(node.value, int) else None
+    if isinstance(node, ast.Name):
+        return bindings.get(node.id)
+    if isinstance(node, ast.UnaryOp):
+        value = _eval_const(node.operand, bindings)
+        if value is None:
+            return None
+        if isinstance(node.op, ast.USub):
+            return -value
+        return value if isinstance(node.op, ast.UAdd) else None
+    if isinstance(node, ast.BinOp):
+        left = _eval_const(node.left, bindings)
+        right = _eval_const(node.right, bindings)
+        if left is None or right is None:
+            return None
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.FloorDiv) and right != 0:
+            return left // right
+        return None
+    return None
+
+
+def _const_value(text: str, bindings: dict[str, int]) -> int | None:
+    candidate = text.strip()
+    sized = re.fullmatch(r"\d*'[sSdD]?[dD]?(\d+)", candidate)
+    if sized:
+        return int(sized.group(1))
+    try:
+        tree = ast.parse(candidate, mode="eval")
+    except SyntaxError:
+        return None
+    return _eval_const(tree.body, bindings)
+
+
+def _constant_bindings(text: str) -> dict[str, int]:
+    """Resolve local parameters, including ones defined in terms of others."""
+    raw = {name: value for name, value in _PARAM_RE.findall(text)}
+    bindings: dict[str, int] = {}
+    for _pass in range(len(raw) + 1):
+        progressed = False
+        for name, value in raw.items():
+            if name in bindings:
+                continue
+            resolved = _const_value(value, bindings)
+            if resolved is not None:
+                bindings[name] = resolved
+                progressed = True
+        if not progressed:
+            break
+    return bindings
 
 
 def check_asic_top(
@@ -217,20 +288,36 @@ def check_harness_width(
         result.errors.append(f"{HARNESS_RTL_DIR}: no harness RTL found")
         return
     for name, text in sources.items():
-        for match in re.finditer(
-            r"\b(?:input|output|inout)\b[^;,()]*?\[\s*(\d+)\s*:\s*(\d+)\s*\]\s*(\w+)",
-            text,
-        ):
-            high, low = int(match.group(1)), int(match.group(2))
-            port = match.group(3)
+        params = _constant_bindings(text)
+        flagged = False
+        for match in _PORT_RANGE_RE.finditer(text):
+            bounds, port = match.group(1), match.group(2)
+            if ":" not in bounds:
+                continue
+            high_text, low_text = bounds.split(":", 1)
+            high = _const_value(high_text, params)
+            low = _const_value(low_text, params)
+            if high is None or low is None:
+                flagged = True
+                result.errors.append(
+                    f"{name}: port {port} is declared [{bounds.strip()}], whose "
+                    "width this checker cannot resolve to constants; an "
+                    "unverifiable width is treated as a potential wide bypass. "
+                    "Declare the port with literal or locally-resolvable bounds"
+                )
+                continue
             width = abs(high - low) + 1
             if width > PIN_WIDTH:
+                flagged = True
                 result.errors.append(
                     f"{name}: port {port} is {width} bits wide; a port wider "
                     f"than {PIN_WIDTH} bits across the ASIC boundary is a wide "
                     "bypass and is prohibited"
                 )
-        result.facts.append(f"{name}: all ASIC-facing ports within {PIN_WIDTH} bits")
+        if not flagged:
+            result.facts.append(
+                f"{name}: every port width resolved and within {PIN_WIDTH} bits"
+            )
 
 
 def run() -> Result:

@@ -20,7 +20,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 19 tests in 9.013s
+Ran 19 tests in 8.422s
 
 OK
 python3 tools/design_space.py
@@ -70,7 +70,7 @@ fpga_harness/rtl/lean_silicon_lsc1_pins.sv: structurally balanced
 python3 fpga_harness/boundary_check.py
   ok  uio_oe direction mask 0b10110110 (bit set = ASIC drives)
   ok  uio_out drives exactly the bits uio_oe marks as outputs, and ties every input bit to zero
-  ok  lean_silicon_lsc1_pins.sv: all ASIC-facing ports within 8 bits
+  ok  lean_silicon_lsc1_pins.sv: every port width resolved and within 8 bits
   note uio[7] role spelled DONE in LSC1_PROTOCOL.md and DONE_PULSE in info.yaml; same pin, unaligned wording for the owning lanes to reconcile
 LSC-1 pin-accurate harness boundary: OK
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s fpga_harness -v
@@ -86,10 +86,13 @@ test_jtag_detail_names_the_recognised_part (test_board_detect.FullVisibilityTest
 test_lower_levels_are_satisfied (test_board_detect.FullVisibilityTests.test_lower_levels_are_satisfied) ... ok
 test_rendered_report_states_datapath_is_not_validated (test_board_detect.FullVisibilityTests.test_rendered_report_states_datapath_is_not_validated) ... ok
 test_serialised_report_marks_datapath_false (test_board_detect.FullVisibilityTests.test_serialised_report_marks_datapath_false) ... ok
+test_either_loader_alone_satisfies_the_load_group (test_board_detect.LevelIsolationTests.test_either_loader_alone_satisfies_the_load_group) ... ok
 test_empty_jtag_scan_is_absent (test_board_detect.LevelIsolationTests.test_empty_jtag_scan_is_absent) ... ok
 test_every_documented_ecp5_idcode_is_recognised (test_board_detect.LevelIsolationTests.test_every_documented_ecp5_idcode_is_recognised) ... ok
 test_load_tools_alone_satisfy_the_toolchain_level_partially (test_board_detect.LevelIsolationTests.test_load_tools_alone_satisfy_the_toolchain_level_partially)
 A loader without a synthesis flow must not satisfy the level. ... ok
+test_partial_build_chain_does_not_satisfy_the_toolchain_level (test_board_detect.LevelIsolationTests.test_partial_build_chain_does_not_satisfy_the_toolchain_level)
+yosys alone cannot produce a bitstream; nextpnr/ecppack are required. ... ok
 test_unrecognised_idcode_is_absent (test_board_detect.LevelIsolationTests.test_unrecognised_idcode_is_absent) ... ok
 test_wrong_usb_identity_is_absent (test_board_detect.LevelIsolationTests.test_wrong_usb_identity_is_absent) ... ok
 test_different_roles_are_not_abbreviations (test_boundary_check.AbbreviationTests.test_different_roles_are_not_abbreviations) ... ok
@@ -102,13 +105,22 @@ test_tying_a_documented_output_to_zero_is_rejected (test_boundary_check.AsicTopV
 test_unexpected_driver_name_is_an_observation_not_an_error (test_boundary_check.AsicTopViolationTests.test_unexpected_driver_name_is_an_observation_not_an_error) ... ok
 test_widened_pin_port_is_rejected (test_boundary_check.AsicTopViolationTests.test_widened_pin_port_is_rejected) ... ok
 test_wrong_direction_mask_is_rejected (test_boundary_check.AsicTopViolationTests.test_wrong_direction_mask_is_rejected) ... ok
+test_shipped_harness_rtl_is_discovered (test_boundary_check.HarnessDiscoveryTests.test_shipped_harness_rtl_is_discovered) ... ok
+test_wide_port_in_nested_directory_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_nested_directory_is_rejected) ... ok
+test_wide_port_in_plain_verilog_file_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_plain_verilog_file_is_rejected) ... ok
 test_empty_harness_directory_is_rejected (test_boundary_check.HarnessWidthTests.test_empty_harness_directory_is_rejected) ... ok
 test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_harness_passes) ... ok
 test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
 test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
 test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
+test_narrow_parameterised_port_is_accepted (test_boundary_check.ParameterisedWidthTests.test_narrow_parameterised_port_is_accepted) ... ok
+test_no_within_width_fact_is_claimed_for_a_failing_file (test_boundary_check.ParameterisedWidthTests.test_no_within_width_fact_is_claimed_for_a_failing_file)
+The checker must not assert 'within 8 bits' about a file it rejected. ... ok
+test_parameter_defined_from_another_parameter_is_resolved (test_boundary_check.ParameterisedWidthTests.test_parameter_defined_from_another_parameter_is_resolved) ... ok
+test_parameterised_wide_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_parameterised_wide_port_is_rejected) ... ok
+test_unresolvable_width_is_rejected_rather_than_assumed_narrow (test_boundary_check.ParameterisedWidthTests.test_unresolvable_width_is_rejected_rather_than_assumed_narrow) ... ok
 
 ----------------------------------------------------------------------
-Ran 30 tests in 0.008s
+Ran 40 tests in 0.008s
 
 OK

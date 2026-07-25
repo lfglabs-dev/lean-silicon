@@ -126,6 +126,46 @@ class HarnessWidthTests(unittest.TestCase):
         self.assertTrue(any("no harness RTL" in item for item in result.errors))
 
 
+class ParameterisedWidthTests(unittest.TestCase):
+    """A width hidden behind a parameter must not slip past the width gate."""
+
+    def _scan(self, source: str) -> Result:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result, {"unit.sv": source})
+        return result
+
+    def test_parameterised_wide_port_is_rejected(self) -> None:
+        result = self._scan(
+            "module b #(parameter W = 128) (output wire [W-1:0] bypass);endmodule"
+        )
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_parameter_defined_from_another_parameter_is_resolved(self) -> None:
+        result = self._scan(
+            "module b #(parameter BYTES = 16, parameter W = BYTES*8) "
+            "(output wire [W-1:0] bypass);endmodule"
+        )
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_unresolvable_width_is_rejected_rather_than_assumed_narrow(self) -> None:
+        result = self._scan("module b (output wire [PKG_W-1:0] bypass);endmodule")
+        self.assertTrue(
+            any("cannot resolve" in item for item in result.errors), result.errors
+        )
+
+    def test_narrow_parameterised_port_is_accepted(self) -> None:
+        result = self._scan(
+            "module b #(parameter W = 8) (output wire [W-1:0] ok_port);endmodule"
+        )
+        self.assertEqual(result.errors, [])
+
+    def test_no_within_width_fact_is_claimed_for_a_failing_file(self) -> None:
+        """The checker must not assert 'within 8 bits' about a file it rejected."""
+        result = self._scan("module b (output wire [127:0] bypass);endmodule")
+        self.assertTrue(result.errors)
+        self.assertEqual(result.facts, [])
+
+
 class HarnessDiscoveryTests(unittest.TestCase):
     """A wide bypass must not escape by choice of directory or file suffix."""
 
