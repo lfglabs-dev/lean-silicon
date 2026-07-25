@@ -1,0 +1,3 @@
+cd formal && sby -f gf8_mul.sby
+/bin/sh: 1: sby: not found
+make: *** [Makefile:58: formal] Error 127

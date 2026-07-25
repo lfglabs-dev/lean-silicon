@@ -1,0 +1,38 @@
+test_json_output_is_parseable (test_board_detect.CommandLineTests.test_json_output_is_parseable) ... ok
+test_require_datapath_always_fails_even_with_full_visibility (test_board_detect.CommandLineTests.test_require_datapath_always_fails_even_with_full_visibility) ... ok
+test_require_jtag_tracks_the_fixture (test_board_detect.CommandLineTests.test_require_jtag_tracks_the_fixture) ... ok
+test_require_none_succeeds_without_any_hardware (test_board_detect.CommandLineTests.test_require_none_succeeds_without_any_hardware) ... ok
+test_absent_toolchain_is_reported_per_group (test_board_detect.EmptyEnvironmentTests.test_absent_toolchain_is_reported_per_group) ... ok
+test_default_environment_satisfies_nothing (test_board_detect.EmptyEnvironmentTests.test_default_environment_satisfies_nothing) ... ok
+test_full_visibility_still_reports_datapath_unvalidated (test_board_detect.FullVisibilityTests.test_full_visibility_still_reports_datapath_unvalidated)
+Tools plus USB plus a real IDCODE must not imply a working data path. ... ok
+test_jtag_detail_names_the_recognised_part (test_board_detect.FullVisibilityTests.test_jtag_detail_names_the_recognised_part) ... ok
+test_lower_levels_are_satisfied (test_board_detect.FullVisibilityTests.test_lower_levels_are_satisfied) ... ok
+test_rendered_report_states_datapath_is_not_validated (test_board_detect.FullVisibilityTests.test_rendered_report_states_datapath_is_not_validated) ... ok
+test_serialised_report_marks_datapath_false (test_board_detect.FullVisibilityTests.test_serialised_report_marks_datapath_false) ... ok
+test_empty_jtag_scan_is_absent (test_board_detect.LevelIsolationTests.test_empty_jtag_scan_is_absent) ... ok
+test_every_documented_ecp5_idcode_is_recognised (test_board_detect.LevelIsolationTests.test_every_documented_ecp5_idcode_is_recognised) ... ok
+test_load_tools_alone_satisfy_the_toolchain_level_partially (test_board_detect.LevelIsolationTests.test_load_tools_alone_satisfy_the_toolchain_level_partially)
+A loader without a synthesis flow must not satisfy the level. ... ok
+test_unrecognised_idcode_is_absent (test_board_detect.LevelIsolationTests.test_unrecognised_idcode_is_absent) ... ok
+test_wrong_usb_identity_is_absent (test_board_detect.LevelIsolationTests.test_wrong_usb_identity_is_absent) ... ok
+test_different_roles_are_not_abbreviations (test_boundary_check.AbbreviationTests.test_different_roles_are_not_abbreviations) ... ok
+test_leading_token_abbreviation_is_accepted (test_boundary_check.AbbreviationTests.test_leading_token_abbreviation_is_accepted) ... ok
+test_back_driving_an_input_pin_is_rejected (test_boundary_check.AsicTopViolationTests.test_back_driving_an_input_pin_is_rejected)
+uio[0] is RX_VALID, an input; the ASIC must not drive it. ... ok
+test_good_top_has_no_errors (test_boundary_check.AsicTopViolationTests.test_good_top_has_no_errors) ... ok
+test_missing_concatenation_is_reported (test_boundary_check.AsicTopViolationTests.test_missing_concatenation_is_reported) ... ok
+test_tying_a_documented_output_to_zero_is_rejected (test_boundary_check.AsicTopViolationTests.test_tying_a_documented_output_to_zero_is_rejected) ... ok
+test_unexpected_driver_name_is_an_observation_not_an_error (test_boundary_check.AsicTopViolationTests.test_unexpected_driver_name_is_an_observation_not_an_error) ... ok
+test_widened_pin_port_is_rejected (test_boundary_check.AsicTopViolationTests.test_widened_pin_port_is_rejected) ... ok
+test_wrong_direction_mask_is_rejected (test_boundary_check.AsicTopViolationTests.test_wrong_direction_mask_is_rejected) ... ok
+test_empty_harness_directory_is_rejected (test_boundary_check.HarnessWidthTests.test_empty_harness_directory_is_rejected) ... ok
+test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_harness_passes) ... ok
+test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
+test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
+test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.007s
+
+OK

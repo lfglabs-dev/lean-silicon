@@ -1,0 +1,12 @@
+LSC-1 ULX3S/ECP5 detection ladder
+  [-- ] toolchain
+        build-tools: absent — none of yosys, nextpnr-ecp5, ecppack on PATH
+        load-tools: absent — none of openFPGALoader, fujprog on PATH
+  [-- ] usb
+        ulx3s-usb-identity: absent — no 0x0403:0x6015 among 4 enumerated device(s)
+  [-- ] jtag
+        ecp5-idcode: absent — no JTAG scan output (loader missing, or no chain answered)
+  [-- ] datapath
+        byte-exchange-over-8bit-pins: not-validated — no data-path evidence exists in this repository. Missing: a synthesised ULX3S bitstream for a harness top-level; an ECP5 pin constraint file (.lpf) mapping the 8-bit interface to board pins; a host-side byte-exchange driver for the ready/valid handshake; a recorded request/response byte log captured from real hardware
+  highest satisfied level: none
+  data-path behaviour validated: NO

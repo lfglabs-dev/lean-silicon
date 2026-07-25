@@ -1,0 +1,49 @@
+{
+  "levels": [
+    "toolchain",
+    "usb",
+    "jtag",
+    "datapath"
+  ],
+  "findings": [
+    {
+      "level": "toolchain",
+      "name": "build-tools",
+      "status": "present",
+      "detail": "yosys=Yosys 0.44 (synthetic fixture value), nextpnr-ecp5=/usr/bin/nextpnr-ecp5, ecppack=/usr/bin/ecppack"
+    },
+    {
+      "level": "toolchain",
+      "name": "load-tools",
+      "status": "present",
+      "detail": "openFPGALoader=openFPGALoader v0.12.0 (synthetic fixture value)"
+    },
+    {
+      "level": "usb",
+      "name": "ulx3s-usb-identity",
+      "status": "present",
+      "detail": "1 device(s) matching 0x0403:0x6015 (ULX3S FPGA 85F); a USB identity is not fabric behaviour"
+    },
+    {
+      "level": "jtag",
+      "name": "ecp5-idcode",
+      "status": "present",
+      "detail": "IDCODE 0x41113043 identifies LFE5U-85F; silicon identity only, says nothing about a loaded design"
+    },
+    {
+      "level": "datapath",
+      "name": "byte-exchange-over-8bit-pins",
+      "status": "not-validated",
+      "detail": "no data-path evidence exists in this repository. Missing: a synthesised ULX3S bitstream for a harness top-level; an ECP5 pin constraint file (.lpf) mapping the 8-bit interface to board pins; a host-side byte-exchange driver for the ready/valid handshake; a recorded request/response byte log captured from real hardware"
+    }
+  ],
+  "satisfied": {
+    "toolchain": true,
+    "usb": true,
+    "jtag": true,
+    "datapath": false
+  },
+  "highest_satisfied_level": "jtag",
+  "datapath_validated": false,
+  "verdict": "data-path behaviour is NOT validated; lower levels only prove tool, USB, or JTAG visibility"
+}
