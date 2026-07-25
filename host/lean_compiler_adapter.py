@@ -94,9 +94,24 @@ class Program:
         return self.operations[pc]
 
 
+#: Operand names the artifact carries as ``0x``-prefixed 128-bit hex strings.
+FIELD_OPERANDS = ("k", "metadata")
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AdapterError(message)
+
+
+def _field(text: str, where: str) -> int:
+    _require(
+        isinstance(text, str) and len(text) == 34 and text.startswith("0x"),
+        f"{where} is not a 0x-prefixed 128-bit hex literal: {text!r}",
+    )
+    try:
+        return int(text, 16)
+    except ValueError as error:
+        raise AdapterError(f"{where} is not hexadecimal: {text!r}") from error
 
 
 def load(path: str | pathlib.Path) -> Program:
@@ -131,6 +146,9 @@ def load(path: str | pathlib.Path) -> Program:
             f"slot {expected_index} carries unknown opcode {kind!r}",
         )
         operands = {key: value for key, value in slot.items() if key not in ("index", "op")}
+        for name in FIELD_OPERANDS:
+            if name in operands:
+                operands[name] = _field(operands[name], f"slot {expected_index} operand {name!r}")
         operations.append(Operation(expected_index, kind, operands))
 
     return Program(

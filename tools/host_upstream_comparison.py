@@ -133,6 +133,7 @@ def main() -> None:
     parser.add_argument("--out", type=pathlib.Path, help="write the comparison JSON")
     parser.add_argument("--rust-toolchain", default="1.88.0")
     args = parser.parse_args()
+    args.artifact = args.artifact.resolve()
 
     artifact = json.loads(args.artifact.read_text())
     program = lean_compiler_adapter.load(args.artifact)
