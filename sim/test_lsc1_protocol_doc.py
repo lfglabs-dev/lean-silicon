@@ -242,6 +242,26 @@ class DocumentSizeTests(unittest.TestCase):
         self.assertIn(f"sof      := 0x{SOF_RESPONSE:02X}", TEXT)
         self.assertIn(f"polynomial `0x{lsc1.CRC32_POLYNOMIAL:08X}`", TEXT)
 
+    def test_inline_prose_byte_counts_match_the_driven_endpoint(self) -> None:
+        """Sizes stated in words drift as easily as sizes stated in tables."""
+        service = blake3_request(Lsc1Endpoint())
+        service_required = lsc1.response_frame_bytes(len(service.payload))
+        service_response = lsc1.request_frame_bytes(Opcode.SERVICE_RESPONSE)
+        fault, _ = lsc1.drive(
+            Lsc1Endpoint(), lsc1.build_retire(txn_id=1, result_crc=0).encode()
+        )
+        flowed = " ".join(TEXT.split())
+        for claim in (
+            f"same {TRANSACTION_PREAMBLE_BYTES}-byte preamble",
+            f"Every fault response is {len(fault)} bytes on the wire.",
+            f"{len(service.payload)}-byte payload",
+            f"`BLAKE3_REQUEST`'s {service_required + service_response} service bytes",
+            f"the {service_required}-byte `SERVICE_REQUIRED` response plus the "
+            f"{service_response}-byte `SERVICE_RESPONSE` request",
+            f"`INDEX_BITS = {INDEX_BITS}`",
+        ):
+            self.assertIn(claim, flowed)
+
     def test_declared_envelope_overhead_is_what_the_codec_adds(self) -> None:
         for opcode in Opcode:
             self.assertEqual(
