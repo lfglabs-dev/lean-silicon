@@ -20,7 +20,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 19 tests in 8.438s
+Ran 19 tests in 8.517s
 
 OK
 python3 tools/design_space.py

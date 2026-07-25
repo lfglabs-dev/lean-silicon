@@ -4,7 +4,7 @@ Evidence for the lane that added `fpga_harness/INVENTORY.md`,
 `fpga_harness/BOUNDARY.md`, `fpga_harness/BUILD_PLAN.md`,
 `fpga_harness/boundary_check.py`, and `fpga_harness/board_detect.py`.
 
-Branch base: `main` at `40320dcbb35fa3c8b64ef04d3ba1c53c7a2ec4f6` (merged in after PR #10).
+Branch base: `main` at `40320dcfe56fad4d262d2a7ef08b6ed96a43dbf2` (merged in after PR #10).
 Tested source: `fpga_harness/` tree object recorded in `tested-source-sha.txt`.
 Environment: see `toolchain.txt`.
 

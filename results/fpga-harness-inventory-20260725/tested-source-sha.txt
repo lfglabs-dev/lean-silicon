@@ -7,4 +7,4 @@ with the source it describes, so that commit hash does not exist while the logs
 are being generated. The tree object does, and it identifies the tested
 implementation exactly. It stays stable when only results/ or SHA256SUMS change.
 
-base main: 2630c9be3fec014f5230e780f19e82af07372d5a
+base main: 40320dcfe56fad4d262d2a7ef08b6ed96a43dbf2 (merged in; original branch base was 2630c9be3fec014f5230e780f19e82af07372d5a)
