@@ -309,8 +309,19 @@ def _port_widths(text: str) -> list[tuple[str, int | None, str]]:
     for group in _declaration_groups(text):
         inherited: str | None = None
         for item in _split_top_level(group):
-            match = _PORT_ITEM_RE.match(item.strip())
+            # Strip initializers (= value) before parsing port structure
+            item_no_init = item.split("=")[0].strip()
+            if not item_no_init:
+                continue
+            match = _PORT_ITEM_RE.match(item_no_init)
             if match is None:
+                ports.append(
+                    (
+                        item_no_init[:30],
+                        None,
+                        "port item does not match expected structure; cannot verify width",
+                    )
+                )
                 continue
             prefix, name, unpacked = match.groups()
             # Only the first item of a group names the type; the rest inherit it
@@ -353,9 +364,12 @@ def check_asic_top(
     doc_roles: dict[int, str] | None = None,
 ) -> None:
     text = _strip_comments(ASIC_TOP.read_text() if text is None else text)
+    # Strip function/task bodies before port checks so their arguments don't mask
+    # the actual module ports being validated.
+    text_no_subprograms = _strip_subprogram_bodies(text)
 
     for port, expected in ASIC_PORT_DIRECTIONS.items():
-        if not re.search(rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b", text):
+        if not re.search(rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b", text_no_subprograms):
             result.errors.append(
                 f"{ASIC_TOP.name}: port {port} is not declared "
                 f"[{PIN_WIDTH - 1}:0]; the pin interface must stay {PIN_WIDTH} bits"
@@ -366,7 +380,7 @@ def check_asic_top(
         declared = re.search(
             rf"\b(input|output|inout)\b[^;,()]*?"
             rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b",
-            text,
+            text_no_subprograms,
         )
         if declared is None or declared.group(1) != expected:
             found = declared.group(1) if declared else "no"
@@ -543,7 +557,20 @@ def _net_widths(text: str) -> dict[str, int]:
     """
     params = _constant_bindings(text)
     widths: dict[str, int] = {}
-    for declaration in _NET_KIND_RE.finditer(_strip_subprogram_bodies(text)):
+
+    # Extract widths from parameter/localparam declarations
+    text_no_subprograms = _strip_subprogram_bodies(text)
+    for match in _PARAM_RE.finditer(text_no_subprograms):
+        name = match.group(1)
+        full_decl = match.group(0)
+        # Look for packed range before the parameter name
+        range_match = re.search(r'\[([^\]]+)\](?:[^\[]*\b' + re.escape(name) + r'\b)', full_decl)
+        if range_match:
+            factor = _dimension_factor(range_match.group(1), params)
+            if factor is not None:
+                widths[name] = factor
+
+    for declaration in _NET_KIND_RE.finditer(text_no_subprograms):
         inherited: str | None = None
         for item in _split_top_level(declaration.group(1)):
             item = item.split("=")[0].strip()
