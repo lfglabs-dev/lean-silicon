@@ -88,7 +88,12 @@ self-contained transaction at a time.
 - every `uio` bit the mask marks as an input is tied to zero in `uio_out`, and
   every bit marked as an output is driven by a real signal;
 - no port exceeds 8 bits in any `.sv` or `.v` file found recursively under
-  `fpga_harness/rtl/`.
+  `fpga_harness/rtl/`. Width is counted across packed and unpacked dimensions
+  together and includes the width implied by the data type, so `integer`,
+  `[7:0][3:0]`, `[7:0] b [15:0]`, and a name sharing a declaration after a
+  comma are all measured. A port whose width cannot be resolved — an
+  unresolvable parameter, or a user-defined or package-scoped type — is
+  rejected rather than assumed narrow.
 
 What it does **not** do, stated plainly: it is a structural source check. It does
 not prove sequential handshake conformance, it does not simulate, and it cannot

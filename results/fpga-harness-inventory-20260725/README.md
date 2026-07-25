@@ -21,7 +21,7 @@ directory should be read as hardware validation.
 |---|---|---|---|
 | `make-check.log` | `make check` | 0 | Full gating suite, including the two new targets |
 | `fpga-boundary.log` | `python3 fpga_harness/boundary_check.py` | 0 | Pin/no-bypass structural check passes on current RTL |
-| `fpga-harness-tests.log` | `unittest discover -s fpga_harness -v` | 0 | 48 deterministic tests, no board touched |
+| `fpga-harness-tests.log` | `unittest discover -s fpga_harness -v` | 0 | 62 deterministic tests, no board touched |
 | `fpga-detect-real.log` | `board_detect.py` | 0 | Real probe of this container: every level absent |
 | `fpga-detect-mock-full.log` | `board_detect.py --fixture ... --json` | 0 | Synthetic full visibility; `datapath_validated: false` |
 | `fpga-detect-require-datapath.log` | `board_detect.py --fixture ... --require datapath` | 1 | Fails as designed even with full visibility |

@@ -20,7 +20,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 19 tests in 8.517s
+Ran 19 tests in 8.350s
 
 OK
 python3 tools/design_space.py
@@ -116,6 +116,15 @@ test_wide_port_in_plain_verilog_file_is_rejected (test_boundary_check.HarnessDis
 test_empty_harness_directory_is_rejected (test_boundary_check.HarnessWidthTests.test_empty_harness_directory_is_rejected) ... ok
 test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_harness_passes) ... ok
 test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
+test_byte_port_is_within_the_pin_width (test_boundary_check.ImplicitTypeWidthTests.test_byte_port_is_within_the_pin_width) ... ok
+test_implicit_type_multiplies_with_its_dimensions (test_boundary_check.ImplicitTypeWidthTests.test_implicit_type_multiplies_with_its_dimensions) ... ok
+test_integer_port_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_integer_port_is_rejected) ... ok
+test_longint_port_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_longint_port_is_rejected) ... ok
+test_package_scoped_type_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_package_scoped_type_is_rejected) ... ok
+test_signed_modifier_does_not_hide_the_declared_width (test_boundary_check.ImplicitTypeWidthTests.test_signed_modifier_does_not_hide_the_declared_width) ... ok
+test_signed_narrow_port_is_accepted (test_boundary_check.ImplicitTypeWidthTests.test_signed_narrow_port_is_accepted) ... ok
+test_user_defined_type_is_rejected_rather_than_assumed_narrow (test_boundary_check.ImplicitTypeWidthTests.test_user_defined_type_is_rejected_rather_than_assumed_narrow)
+A typedef could be any width, so it cannot be waved through. ... ok
 test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
 test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
 test_a_wide_port_inside_a_comment_is_not_a_violation (test_boundary_check.ParameterisedWidthTests.test_a_wide_port_inside_a_comment_is_not_a_violation) ... ok
@@ -131,9 +140,17 @@ test_scalar_ports_are_accepted (test_boundary_check.ParameterisedWidthTests.test
 test_unpacked_array_port_counts_towards_the_width (test_boundary_check.ParameterisedWidthTests.test_unpacked_array_port_counts_towards_the_width)
 [7:0] bytes [15:0] exposes 128 bits, not 8. ... ok
 test_unpacked_only_port_is_measured (test_boundary_check.ParameterisedWidthTests.test_unpacked_only_port_is_measured) ... ok
+test_unpacked_size_without_a_range_is_counted (test_boundary_check.ParameterisedWidthTests.test_unpacked_size_without_a_range_is_counted)
+`arr [4]` is four elements, not one. ... ok
 test_unresolvable_width_is_rejected_rather_than_assumed_narrow (test_boundary_check.ParameterisedWidthTests.test_unresolvable_width_is_rejected_rather_than_assumed_narrow) ... ok
+test_narrow_shared_declaration_is_accepted (test_boundary_check.SharedDeclarationTests.test_narrow_shared_declaration_is_accepted) ... ok
+test_non_ansi_declarations_are_scanned (test_boundary_check.SharedDeclarationTests.test_non_ansi_declarations_are_scanned) ... ok
+test_second_name_in_a_declaration_is_scanned (test_boundary_check.SharedDeclarationTests.test_second_name_in_a_declaration_is_scanned) ... ok
+test_second_name_inherits_the_packed_width (test_boundary_check.SharedDeclarationTests.test_second_name_inherits_the_packed_width)
+`input wire [7:0] a, b` makes `b` eight bits, not one. ... ok
+test_wide_port_after_a_narrow_group_is_still_found (test_boundary_check.SharedDeclarationTests.test_wide_port_after_a_narrow_group_is_still_found) ... ok
 
 ----------------------------------------------------------------------
-Ran 48 tests in 0.009s
+Ran 62 tests in 0.010s
 
 OK

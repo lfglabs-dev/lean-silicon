@@ -165,7 +165,7 @@ class ParameterisedWidthTests(unittest.TestCase):
     def test_unresolvable_width_is_rejected_rather_than_assumed_narrow(self) -> None:
         result = self._scan("module b (output wire [PKG_W-1:0] bypass);endmodule")
         self.assertTrue(
-            any("cannot resolve" in item for item in result.errors), result.errors
+            any("unverifiable width" in item for item in result.errors), result.errors
         )
 
     def test_narrow_parameterised_port_is_accepted(self) -> None:
@@ -204,11 +204,96 @@ class ParameterisedWidthTests(unittest.TestCase):
         )
         self.assertEqual(result.errors, [])
 
+    def test_unpacked_size_without_a_range_is_counted(self) -> None:
+        """`arr [4]` is four elements, not one."""
+        result = self._scan("module h (output logic [3:0] arr [4]);endmodule")
+        self.assertTrue(any("16 bits" in item for item in result.errors), result.errors)
+
     def test_no_within_width_fact_is_claimed_for_a_failing_file(self) -> None:
         """The checker must not assert 'within 8 bits' about a file it rejected."""
         result = self._scan("module b (output wire [127:0] bypass);endmodule")
         self.assertTrue(result.errors)
         self.assertEqual(result.facts, [])
+
+
+class ImplicitTypeWidthTests(unittest.TestCase):
+    """A type that carries its own width must not be scored as a single bit."""
+
+    def _scan(self, source: str) -> Result:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result, {"unit.sv": source})
+        return result
+
+    def test_integer_port_is_rejected(self) -> None:
+        result = self._scan("module h (output integer bypass);endmodule")
+        self.assertTrue(any("32 bits" in item for item in result.errors), result.errors)
+
+    def test_longint_port_is_rejected(self) -> None:
+        result = self._scan("module h (output longint bypass);endmodule")
+        self.assertTrue(any("64 bits" in item for item in result.errors), result.errors)
+
+    def test_implicit_type_multiplies_with_its_dimensions(self) -> None:
+        result = self._scan("module h (output byte bypass [3:0]);endmodule")
+        self.assertTrue(any("32 bits" in item for item in result.errors), result.errors)
+
+    def test_byte_port_is_within_the_pin_width(self) -> None:
+        self.assertEqual(self._scan("module h (output byte ok);endmodule").errors, [])
+
+    def test_signed_modifier_does_not_hide_the_declared_width(self) -> None:
+        result = self._scan("module h (output wire signed [63:0] bp);endmodule")
+        self.assertTrue(any("64 bits" in item for item in result.errors), result.errors)
+
+    def test_signed_narrow_port_is_accepted(self) -> None:
+        result = self._scan("module h (output wire signed [7:0] ok);endmodule")
+        self.assertEqual(result.errors, [])
+
+    def test_user_defined_type_is_rejected_rather_than_assumed_narrow(self) -> None:
+        """A typedef could be any width, so it cannot be waved through."""
+        result = self._scan("module h (output my_bus_t bypass);endmodule")
+        self.assertTrue(
+            any("unverifiable width" in item for item in result.errors), result.errors
+        )
+        self.assertEqual(result.facts, [])
+
+    def test_package_scoped_type_is_rejected(self) -> None:
+        result = self._scan("module h (output pkg::bus_t bypass);endmodule")
+        self.assertTrue(
+            any("unverifiable width" in item for item in result.errors), result.errors
+        )
+
+
+class SharedDeclarationTests(unittest.TestCase):
+    """Names after a comma inherit the direction and must still be measured."""
+
+    def _scan(self, source: str) -> Result:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result, {"unit.sv": source})
+        return result
+
+    def test_second_name_in_a_declaration_is_scanned(self) -> None:
+        result = self._scan("module h (input wire a, bytes [15:0]);endmodule")
+        self.assertTrue(any("16 bits" in item for item in result.errors), result.errors)
+
+    def test_second_name_inherits_the_packed_width(self) -> None:
+        """`input wire [7:0] a, b` makes `b` eight bits, not one."""
+        result = self._scan("module h (input wire [7:0] a, bytes [15:0]);endmodule")
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_narrow_shared_declaration_is_accepted(self) -> None:
+        result = self._scan("module h (input wire [7:0] a, b, c);endmodule")
+        self.assertEqual(result.errors, [])
+
+    def test_wide_port_after_a_narrow_group_is_still_found(self) -> None:
+        result = self._scan(
+            "module h (input wire a, b, output wire [127:0] wide);endmodule"
+        )
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_non_ansi_declarations_are_scanned(self) -> None:
+        result = self._scan(
+            "module h (a, b);\n input [7:0] a;\n output [127:0] b;\nendmodule"
+        )
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
 
 
 class HarnessDiscoveryTests(unittest.TestCase):

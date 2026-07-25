@@ -108,15 +108,30 @@ def _is_literal_zero(term: str) -> bool:
     return re.fullmatch(r"(1'b0|1'h0|1'd0|0)", term) is not None
 
 
-# A whole port declaration: everything before the name (which carries the packed
-# dimensions), the name, and any unpacked dimensions after it. Both dimension
-# groups count towards the width, so neither ``[7:0][3:0]`` nor
-# ``[7:0] bytes [15:0]`` can present 128 bits as 8.
-_PORT_DECL_RE = re.compile(
-    r"\b(?:input|output|inout)\b([^;,()]*?)(\w+)\s*((?:\[[^\]]+\]\s*)*)(?=[,;)]|$)",
-    re.MULTILINE,
+_DIRECTION_RE = re.compile(r"\b(?:input|output|inout)\b")
+# An item of a declaration group: the type and packed dimensions, the name, and
+# any unpacked dimensions after it. Every dimension group counts towards the
+# width, so neither ``[7:0][3:0]`` nor ``[7:0] bytes [15:0]`` can present 128
+# bits as 8.
+_PORT_ITEM_RE = re.compile(r"^(.*?)([A-Za-z_]\w*)\s*((?:\[[^\]]*\]\s*)*)$", re.DOTALL)
+_ONE_RANGE_RE = re.compile(r"\[([^\]]*)\]")
+_IDENTIFIER_RE = re.compile(r"[A-Za-z_][\w$]*(?:\s*::\s*[A-Za-z_][\w$]*)*")
+
+# Net kinds and modifiers that carry no width of their own; a port declared with
+# only these is one bit before dimensions are applied.
+_WIDTHLESS_KEYWORDS = frozenset(
+    {
+        "var", "signed", "unsigned", "const", "automatic", "static", "ref",
+        "wire", "reg", "logic", "bit", "tri", "tri0", "tri1", "triand",
+        "trior", "trireg", "wand", "wor", "supply0", "supply1", "uwire",
+    }
 )
-_ONE_RANGE_RE = re.compile(r"\[([^\]]+)\]")
+# Built-in types whose width is implicit: no bracket range appears, so without
+# this table ``output integer bypass`` would be scored as a single bit.
+_IMPLICIT_TYPE_WIDTHS = {
+    "byte": 8, "shortint": 16, "int": 32, "integer": 32, "longint": 64,
+    "time": 64, "shortreal": 32, "real": 64, "realtime": 64,
+}
 _BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 _LINE_COMMENT_RE = re.compile(r"//[^\n]*")
 
@@ -187,6 +202,124 @@ def _constant_bindings(text: str) -> dict[str, int]:
         if not progressed:
             break
     return bindings
+
+
+def _split_top_level(text: str) -> list[str]:
+    """Split on commas that are not inside brackets."""
+    items: list[str] = []
+    depth = 0
+    start = 0
+    for index, char in enumerate(text):
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif char == "," and depth == 0:
+            items.append(text[start:index])
+            start = index + 1
+    items.append(text[start:])
+    return items
+
+
+def _declaration_groups(text: str) -> list[str]:
+    """Text governed by each direction keyword, up to the end of its list.
+
+    A group runs to the closing paren or semicolon, so every name after a comma
+    stays with the direction that introduced it and cannot escape the scan.
+    """
+    groups: list[str] = []
+    for match in _DIRECTION_RE.finditer(text):
+        start = match.end()
+        depth = 0
+        end = len(text)
+        for index in range(start, len(text)):
+            char = text[index]
+            if char in "([{":
+                depth += 1
+            elif char in ")]}":
+                if depth == 0:
+                    end = index
+                    break
+                depth -= 1
+            elif char == ";" and depth == 0:
+                end = index
+                break
+        following = _DIRECTION_RE.search(text, start)
+        if following is not None and following.start() < end:
+            end = following.start()
+        groups.append(text[start:end])
+    return groups
+
+
+def _base_width(prefix: str) -> tuple[int | None, str | None]:
+    """Width implied by a port's data type, or the token that defeated us."""
+    width = 1
+    for match in _IDENTIFIER_RE.finditer(_ONE_RANGE_RE.sub(" ", prefix)):
+        token = re.sub(r"\s+", "", match.group(0))
+        if token in _WIDTHLESS_KEYWORDS:
+            continue
+        if token in _IMPLICIT_TYPE_WIDTHS:
+            width = _IMPLICIT_TYPE_WIDTHS[token]
+            continue
+        return None, token
+    return width, None
+
+
+def _dimension_factor(bounds: str, params: dict[str, int]) -> int | None:
+    """Number of bits a single ``[...]`` contributes, or None if unresolvable."""
+    if ":" in bounds:
+        high_text, low_text = bounds.split(":", 1)
+        high = _const_value(high_text, params)
+        low = _const_value(low_text, params)
+        if high is None or low is None:
+            return None
+        return abs(high - low) + 1
+    size = _const_value(bounds, params)
+    return None if size is None else abs(size)
+
+
+def _port_widths(text: str) -> list[tuple[str, int | None, str]]:
+    """Every declared port as (name, width, detail); width None means unresolved."""
+    params = _constant_bindings(text)
+    ports: list[tuple[str, int | None, str]] = []
+    for group in _declaration_groups(text):
+        inherited: str | None = None
+        for item in _split_top_level(group):
+            match = _PORT_ITEM_RE.match(item.strip())
+            if match is None:
+                continue
+            prefix, name, unpacked = match.groups()
+            # Only the first item of a group names the type; the rest inherit it
+            # along with its packed dimensions.
+            if inherited is None:
+                inherited = prefix
+            elif not prefix.strip():
+                prefix = inherited
+            base, unknown = _base_width(prefix)
+            if base is None:
+                ports.append(
+                    (
+                        name,
+                        None,
+                        f"data type {unknown!r} has no width this checker can resolve",
+                    )
+                )
+                continue
+            width = base
+            unresolved: str | None = None
+            for bounds in _ONE_RANGE_RE.findall(prefix) + _ONE_RANGE_RE.findall(unpacked):
+                if not bounds.strip():
+                    continue
+                factor = _dimension_factor(bounds, params)
+                if factor is None:
+                    unresolved = bounds.strip()
+                    break
+                width *= factor
+            if unresolved is not None:
+                ports.append((name, None, f"dimension [{unresolved}] is not constant"))
+            else:
+                ports.append((name, width, ""))
+    return ports
 
 
 def check_asic_top(
@@ -300,35 +433,16 @@ def check_harness_width(
         return
     for name, text in sources.items():
         flagged = False
-        text = _strip_comments(text)
-        params = _constant_bindings(text)
-        for match in _PORT_DECL_RE.finditer(text):
-            port = match.group(2)
-            bounds_list = _ONE_RANGE_RE.findall(match.group(1)) + _ONE_RANGE_RE.findall(
-                match.group(3)
-            )
-            width = 1
-            unresolved: str | None = None
-            for bounds in bounds_list:
-                if ":" not in bounds:
-                    continue
-                high_text, low_text = bounds.split(":", 1)
-                high = _const_value(high_text, params)
-                low = _const_value(low_text, params)
-                if high is None or low is None:
-                    unresolved = bounds.strip()
-                    break
-                width *= abs(high - low) + 1
-            if unresolved is not None:
+        for port, width, detail in _port_widths(_strip_comments(text)):
+            if width is None:
                 flagged = True
                 result.errors.append(
-                    f"{name}: port {port} is declared [{unresolved}], whose "
-                    "width this checker cannot resolve to constants; an "
+                    f"{name}: port {port} cannot be sized because {detail}; an "
                     "unverifiable width is treated as a potential wide bypass. "
-                    "Declare the port with literal or locally-resolvable bounds"
+                    "Declare the port with a built-in type and literal or "
+                    "locally-resolvable bounds"
                 )
-                continue
-            if width > PIN_WIDTH:
+            elif width > PIN_WIDTH:
                 flagged = True
                 result.errors.append(
                     f"{name}: port {port} is {width} bits wide; a port wider "
