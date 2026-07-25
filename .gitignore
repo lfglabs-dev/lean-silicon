@@ -8,5 +8,12 @@ __pycache__/
 !info.yaml
 lean/.lake/
 formal/gf8_mul/
+formal/gf128_serialize/
+formal/gf128_serialize_bmc/
+formal/gf128_serialize_induction/
+formal/gf128_serialize_cover/
+formal/stream_alu_mul_pulse/
+formal/stream_alu_mul_pulse_induction/
+formal/stream_alu_mul_pulse_cover/
 openlane/
 reports/

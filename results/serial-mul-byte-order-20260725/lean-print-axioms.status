@@ -1,0 +1,2 @@
+command=cd lean && lake env lean lean-print-axioms.input.lean
+exit=0

@@ -1,0 +1,95 @@
+SBY 13:07:12 [gf128_serialize_cover] Removing directory '/workspaces/mission-2e52a6f8/repo/formal/gf128_serialize_cover'.
+SBY 13:07:12 [gf128_serialize_cover] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf2n_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/gf128_serialize_cover/src/gf2n_mul_bitstream.sv'.
+SBY 13:07:12 [gf128_serialize_cover] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf128_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/gf128_serialize_cover/src/gf128_mul_bitstream.sv'.
+SBY 13:07:12 [gf128_serialize_cover] Copy '/workspaces/mission-2e52a6f8/repo/formal/gf128_serialize_formal.sv' to '/workspaces/mission-2e52a6f8/repo/formal/gf128_serialize_cover/src/gf128_serialize_formal.sv'.
+SBY 13:07:12 [gf128_serialize_cover] engine_0: smtbmc yices
+SBY 13:07:12 [gf128_serialize_cover] base: starting process "cd gf128_serialize_cover/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY 13:07:12 [gf128_serialize_cover] base: finished (returncode=0)
+SBY 13:07:12 [gf128_serialize_cover] prep: starting process "cd gf128_serialize_cover/model; yosys -ql design_prep.log design_prep.ys"
+SBY 13:07:12 [gf128_serialize_cover] prep: finished (returncode=0)
+SBY 13:07:12 [gf128_serialize_cover] smt2: starting process "cd gf128_serialize_cover/model; yosys -ql design_smt2.log design_smt2.ys"
+SBY 13:07:12 [gf128_serialize_cover] smt2: finished (returncode=0)
+SBY 13:07:12 [gf128_serialize_cover] engine_0: starting process "cd gf128_serialize_cover; yosys-smtbmc -s yices --presat --unroll -c --noprogress -t 80  --append 0 --dump-vcd engine_0/trace%.vcd --dump-yw engine_0/trace%.yw --dump-vlogtb engine_0/trace%_tb.v --dump-smtc engine_0/trace%.smtc model/design_smt2.smt2"
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Solver: yices
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 0..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 1..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 2..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 3..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 4..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 5..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 6..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 7..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 8..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 9..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 10..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 11..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 12..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 13..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 14..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 15..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 16..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 17..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 18..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 19..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 20..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 21..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 22..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 23..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 24..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 25..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 26..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 27..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 28..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 29..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 30..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 31..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 32..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 33..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 34..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 35..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 36..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 37..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 38..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 39..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 40..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 41..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 42..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 43..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 44..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 45..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 46..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 47..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 48..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 49..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 50..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 51..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 52..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 53..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 54..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 55..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 56..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 57..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 58..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 59..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 60..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 61..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 62..
+SBY 13:07:12 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 63..
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 64..
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 65..
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 66..
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Checking cover reachability in step 67..
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Reached cover statement in step 67 at gf128_serialize_formal: gf128_serialize_formal.sv:105.13-105.25 (_witness_.check_cover_gf128_serialize_formal_sv_105_26)
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Writing trace to VCD file: engine_0/trace0.vcd
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Writing trace to Verilog testbench: engine_0/trace0_tb.v
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Writing trace to constraints file: engine_0/trace0.smtc
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Writing trace to Yosys witness file: engine_0/trace0.yw
+SBY 13:07:13 [gf128_serialize_cover] engine_0: ##   0:00:00  Status: passed
+SBY 13:07:13 [gf128_serialize_cover] engine_0: finished (returncode=0)
+SBY 13:07:13 [gf128_serialize_cover] engine_0: Status returned by engine: pass
+SBY 13:07:13 [gf128_serialize_cover] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:00 (0)
+SBY 13:07:13 [gf128_serialize_cover] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:00 (0)
+SBY 13:07:13 [gf128_serialize_cover] summary: engine_0 (smtbmc yices) returned pass
+SBY 13:07:13 [gf128_serialize_cover] summary: cover trace: gf128_serialize_cover/engine_0/trace0.vcd
+SBY 13:07:13 [gf128_serialize_cover] summary:   reached cover statement gf128_serialize_formal._witness_.check_cover_gf128_serialize_formal_sv_105_26 at gf128_serialize_formal.sv:105.13-105.25 in step 67
+SBY 13:07:13 [gf128_serialize_cover] DONE (PASS, rc=0)
