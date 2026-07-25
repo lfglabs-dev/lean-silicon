@@ -29,6 +29,10 @@ controller.  `docs/ROADMAP.md` is authoritative for completion criteria.
 
 ## Proofs and checks
 
+These entries are layer-specific evidence, not a project-level formal
+verification claim.  `docs/PROOF_BOUNDARIES.md` identifies the missing
+frozen-ISA/controller and RTL/netlist correspondence bridges.
+
 - Lean 4 source for GF8 multiplier equivalence, actual-width GHASH `xtime`,
   streaming transforms, address representation, write-once memory, simplified
   scalar refinement, DEREF reconciliation, and scoped optimality lower bounds.

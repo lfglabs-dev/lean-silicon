@@ -2,7 +2,10 @@
 
 ## Direction
 
-leanSilicon is **“A formally verified physical scalar coprocessor for leanVM-b.”**
+leanSilicon is developing a physical scalar coprocessor for leanVM-b.  It is
+**not currently marketed as formally verified**: the present evidence is
+bounded and layer-specific.  The exact correspondence boundaries, missing
+theorems, and release gates are in [PROOF_BOUNDARIES](PROOF_BOUNDARIES.md).
 LSC-1 executes one host-prepared instruction transaction at a time.  The host
 (initially a Mac) owns compilation, program storage, VM memory, hints and
 witnesses, pointer resolution, deferred-equality state, inversion assistance,
@@ -34,6 +37,29 @@ internal wide service bypass.
 4. Pin-accurate ULX3S harness, then Tiny Tapeout PPA/precheck.
 5. Official zkDSL validation against frozen leanVM-b
    `c308034ab78619b39a59d26f3dc60e7df5b52649`.
+
+## Required proof bridges and gates
+
+Completion requires more than individual proofs or successful simulations.
+The planned graph must close these bridges in dependency order:
+
+1. Frozen source to documentation/oracle traceability, then official zkDSL
+   validation against the pinned source.
+2. Oracle to a complete Lean v1 packet functional model, with all operation and
+   fault cases covered.
+3. That model to the exact completed `lean_silicon_lsc1` SystemVerilog
+   controller, through an explicit state/packet relation and refinement proof.
+4. Exact-SV controller properties with documented assumptions and proof bounds
+   or induction; GF8 bounded properties are not a substitute for this gate.
+5. Oracle/Lean/RTL differential vectors with deterministic fault, stall, and
+   response coverage.
+6. Sequential RTL-to-netlist equivalence for the release synthesis inputs,
+   before using netlist/PPA results as implementation evidence.
+
+Until those gates are recorded as passing, no repository artifact may claim
+that the full LSC-1 controller or the project is formally verified.  The
+current proof boundaries are deliberately separated in
+[PROOF_BOUNDARIES](PROOF_BOUNDARIES.md).
 
 ## Completion criteria
 

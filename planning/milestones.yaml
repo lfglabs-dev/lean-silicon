@@ -2,10 +2,15 @@ version: 1
 project: leanSilicon
 frozen_leanvm_b: c308034ab78619b39a59d26f3dc60e7df5b52649
 milestones:
-  host_packet_runtime: {depends_on: [], status: planned}
-  lsc1_rtl_completion: {depends_on: [host_packet_runtime], status: planned}
-  differential_tests: {depends_on: [host_packet_runtime, lsc1_rtl_completion], status: planned}
-  lean_refinement: {depends_on: [host_packet_runtime, differential_tests], status: planned}
+  frozen_oracle_traceability: {depends_on: [], status: planned, gate: "locked-source mapping, vector regeneration, and zkDSL-ready evidence"}
+  host_packet_runtime: {depends_on: [frozen_oracle_traceability], status: planned}
+  lsc1_rtl_completion: {depends_on: [host_packet_runtime], status: planned, gate: "exact v1 controller and assertion inventory"}
+  differential_tests: {depends_on: [host_packet_runtime, lsc1_rtl_completion], status: planned, gate: "oracle/Lean/RTL vectors, faults, stalls, zero mismatches"}
+  lean_refinement: {depends_on: [host_packet_runtime, frozen_oracle_traceability], status: planned, gate: "all-opcode/fault packet-model refinement"}
+  sv_controller_correspondence: {depends_on: [lean_refinement, lsc1_rtl_completion], status: planned, gate: "explicit packet/state relation proves exact SV controller refines functional model"}
+  sv_controller_formal: {depends_on: [lsc1_rtl_completion, sv_controller_correspondence], status: planned, gate: "properties over exact completed controller with documented assumptions and proof method"}
   ulx3s_pin_harness: {depends_on: [host_packet_runtime], status: planned}
-  tiny_tapeout_ppa: {depends_on: [lsc1_rtl_completion, differential_tests], status: planned}
-  official_zkdsl_validation: {depends_on: [lean_refinement, differential_tests], status: planned}
+  rtl_netlist_equivalence: {depends_on: [lsc1_rtl_completion, sv_controller_formal], status: planned, gate: "sequential equivalence for fixed release RTL, synthesis inputs, clock, and reset"}
+  tiny_tapeout_ppa: {depends_on: [rtl_netlist_equivalence, differential_tests], status: planned, gate: "reproducible synthesis/precheck and recorded PPA"}
+  official_zkdsl_validation: {depends_on: [frozen_oracle_traceability, lean_refinement, differential_tests], status: planned, gate: "official validation against pinned frozen source"}
+  formal_verification_release_claim: {depends_on: [sv_controller_correspondence, sv_controller_formal, rtl_netlist_equivalence, official_zkdsl_validation, tiny_tapeout_ppa], status: blocked, gate: "all correspondence bridges recorded passing for one fixed release"}
