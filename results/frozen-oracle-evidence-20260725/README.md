@@ -1,7 +1,7 @@
 # Current-candidate frozen-oracle evidence
 
 This record was run against candidate source commit
-`b2c32a424a4cdbe0c8bdf42aae2574f6ca68f659` before this evidence-only commit.
+`0a4fe71e61ceed301333bd90d78f36583a347150` before this evidence-only commit.
 The final PR head adds only this record; the implementation and all tested
 source files are the stated tested head. No Actions run/job URL was available
 when this local record was created.
@@ -15,13 +15,13 @@ SHA-256 is `0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6`.
 
 | Gate | Exact command | Exit status | Result |
 |---|---|---:|---|
-| scalar differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/frozen_upstream_differential.py --upstream /tmp/leanVM-b-frozen --seed 0xC308034A --cases 64 --record /tmp/final-scalar.log --evidence /tmp/final-scalar.json` | 0 | 64 deterministic scalar cases passed |
-| M2 differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/m2_rtl_differential.py --upstream /tmp/leanVM-b-frozen --seed 0xC308034A --cases 64 --record /tmp/final-m2.json` | 0 | 64 Cargo-vetted RTL XOR/MUL vectors plus controller edge regression passed |
+| scalar differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/frozen_upstream_differential.py --upstream /workspaces/mission-24ee4121/frozen-upstream --seed 0xC308034A --cases 64 --record /tmp/reviewer-pr7-final-scalar.log --evidence /tmp/reviewer-pr7-final-scalar.json` | 0 | 64 deterministic scalar cases passed |
+| M2 differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/m2_rtl_differential.py --upstream /workspaces/mission-24ee4121/frozen-upstream --seed 0xC308034A --cases 64 --record /tmp/reviewer-pr7-final-m2.json` | 0 | 64 Cargo-vetted RTL XOR/MUL vectors plus controller edge regression passed |
 | Python/structural checks | `make check` | 0 | passed |
 | RTL simulation | `make sim` | 0 | passed |
 | bounded formal | `make formal` | 0 | passed |
 | Lean libraries | `make lean` | 0 | passed (existing linter warnings only) |
-| boundary rejection | see `boundary-rejection.log` | 0 | dirty, attached, and wrong-SHA fixtures each rejected with checker exit 1 |
+| boundary rejection | see `boundary-rejection.log` | 0 | dirty candidate plus dirty, attached, and wrong-SHA upstream fixtures each rejected with checker exit 1 |
 
 The scalar gate is intentionally limited to a seven-step straight-line
 profile: SET, SET, XOR, MUL, DEREF(Pc), DEREF(Fp), and a non-taken JUMP,

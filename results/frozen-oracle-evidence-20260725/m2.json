@@ -1,11 +1,62 @@
 {
   "case_count": 64,
-  "commands": {"iverilog_fixed": ["iverilog", "-g2012", "-s", "tb_m2_scalar_controller"], "iverilog_seeded": ["iverilog", "-g2012", "-s", "tb_seeded"], "scalar_gate": ["/usr/bin/python3", "/workspaces/mission-1c84bcf5/leanvm-b-scalar-core/tools/frozen_upstream_differential.py", "--upstream", "/tmp/leanVM-b-frozen", "--seed", "0xc308034a", "--cases", "64", "--rust-toolchain", "1.88.0"], "vvp_fixed_exit_status": 0, "vvp_seeded_exit_status": 0},
+  "commands": {
+    "iverilog_fixed": [
+      "iverilog",
+      "-g2012",
+      "-s",
+      "tb_m2_scalar_controller"
+    ],
+    "iverilog_seeded": [
+      "iverilog",
+      "-g2012",
+      "-s",
+      "tb_seeded"
+    ],
+    "scalar_gate": [
+      "/usr/bin/python3",
+      "/workspaces/mission-24ee4121/private-worktrees/pr7/tools/frozen_upstream_differential.py",
+      "--upstream",
+      "/workspaces/mission-24ee4121/frozen-upstream",
+      "--seed",
+      "0xc308034a",
+      "--cases",
+      "64",
+      "--rust-toolchain",
+      "1.88.0"
+    ],
+    "vvp_fixed_exit_status": 0,
+    "vvp_seeded_exit_status": 0
+  },
   "exit_status": 0,
   "limits": "M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.",
   "profile": "M2 XOR and MUL only; 64 deterministic seeded full-width vectors plus fixed controller edge regressions.",
-  "provenance": {"checker_sha256": "0dbf325dda28529a26644fa44057ad20674b4d22d6c02f86c9fb83cfa8f0de93", "rtl_sha256": "f3e038032b2f1c76b176651dd79b266976091f1215b7e617c194888e387ab5e5", "scalar_gate_sha256": "c83a377f613348d1e07261fed4ad4c98258b61e483b230fd3cceb11a0a8f1def"},
-  "result": "PASS", "rust_toolchain": "1.88.0", "schema": 1, "seed": "0xc308034a",
-  "tested_at_utc": "2026-07-25T05:08:54.699402+00:00", "tested_repo_head": "b2c32a424a4cdbe0c8bdf42aae2574f6ca68f659",
-  "upstream": {"cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6", "postflight": {"detached": "true", "head": "c308034ab78619b39a59d26f3dc60e7df5b52649", "origin": "https://github.com/leanEthereum/leanVM-b.git", "status": ""}, "preflight": {"detached": "true", "head": "c308034ab78619b39a59d26f3dc60e7df5b52649", "origin": "https://github.com/leanEthereum/leanVM-b.git", "status": ""}, "repository": "https://github.com/leanEthereum/leanVM-b.git", "sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"}
+  "provenance": {
+    "checker_sha256": "c4533c4992e65e420a29e279a812367ddd2a07320a5a9e9742ec49c41771c0cb",
+    "rtl_sha256": "f3e038032b2f1c76b176651dd79b266976091f1215b7e617c194888e387ab5e5",
+    "scalar_gate_sha256": "d633ac53eb3a59b01f273be0889cc079b4e7be7e9692b95d843b61875ed44854"
+  },
+  "result": "PASS",
+  "rust_toolchain": "1.88.0",
+  "schema": 1,
+  "seed": "0xc308034a",
+  "tested_at_utc": "2026-07-25T05:21:43.567381+00:00",
+  "tested_repo_head": "0a4fe71e61ceed301333bd90d78f36583a347150",
+  "upstream": {
+    "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
+    "postflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "preflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "repository": "https://github.com/leanEthereum/leanVM-b.git",
+    "sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+  }
 }
