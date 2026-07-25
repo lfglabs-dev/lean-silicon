@@ -4,7 +4,7 @@ frozen_leanvm_b: c308034ab78619b39a59d26f3dc60e7df5b52649
 milestones:
   frozen_oracle_traceability: {depends_on: [], status: planned, gate: "locked-source mapping, vector regeneration, and zkDSL-ready evidence"}
   docs_reference_oracle: {depends_on: [frozen_oracle_traceability], status: planned, gate: "versioned selected-behavior oracle and opcode/fault coverage map; reference evidence, not a theorem"}
-  host_packet_runtime: {depends_on: [docs_reference_oracle], status: planned}
+  host_packet_runtime: {depends_on: [docs_reference_oracle], status: planned, gate: "host owns memory/pointers/witnesses and prepares every instruction transaction; SET/XOR/MUL are driven end to end, DEREF/JUMP/BLAKE3 are not yet prepared"}
   lsc1_rtl_completion: {depends_on: [host_packet_runtime], status: planned, gate: "exact v1 controller and assertion inventory"}
   differential_tests: {depends_on: [host_packet_runtime, lsc1_rtl_completion], status: planned, gate: "oracle/Lean/RTL vectors, faults, stalls, zero mismatches"}
   lean_refinement: {depends_on: [host_packet_runtime, docs_reference_oracle], status: planned, gate: "all-opcode/fault packet-model refinement"}
