@@ -1,0 +1,2 @@
+command=yosys lint+synth CI invocation
+exit=0

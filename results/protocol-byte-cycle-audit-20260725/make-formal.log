@@ -1,0 +1,60 @@
+cd formal && sby -f gf8_mul.sby
+SBY  1:19:17 [gf8_mul] Removing directory '/workspaces/mission-3fa72a5c/leanvm-b-scalar-core/formal/gf8_mul'.
+SBY  1:19:17 [gf8_mul] Copy '/workspaces/mission-3fa72a5c/leanvm-b-scalar-core/formal/../src/gf2n_mul_bitstream.sv' to '/workspaces/mission-3fa72a5c/leanvm-b-scalar-core/formal/gf8_mul/src/gf2n_mul_bitstream.sv'.
+SBY  1:19:17 [gf8_mul] Copy '/workspaces/mission-3fa72a5c/leanvm-b-scalar-core/formal/gf8_mul_formal.sv' to '/workspaces/mission-3fa72a5c/leanvm-b-scalar-core/formal/gf8_mul/src/gf8_mul_formal.sv'.
+SBY  1:19:17 [gf8_mul] engine_0: abc bmc3
+SBY  1:19:17 [gf8_mul] base: starting process "cd gf8_mul/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY  1:19:18 [gf8_mul] base: finished (returncode=0)
+SBY  1:19:18 [gf8_mul] prep: starting process "cd gf8_mul/model; yosys -ql design_prep.log design_prep.ys"
+SBY  1:19:18 [gf8_mul] prep: finished (returncode=0)
+SBY  1:19:18 [gf8_mul] aig: starting process "cd gf8_mul/model; yosys -ql design_aiger.log design_aiger.ys"
+SBY  1:19:18 [gf8_mul] aig: finished (returncode=0)
+SBY  1:19:18 [gf8_mul] engine_0: starting process "cd gf8_mul; yosys-abc -c 'read_aiger model/design_aiger.aig; fold; strash; bmc3 -F 32 -v; write_cex -a engine_0/trace.aiw'"
+SBY  1:19:18 [gf8_mul] engine_0: ABC command line: "read_aiger model/design_aiger.aig; fold; strash; bmc3 -F 32 -v; write_cex -a engine_0/trace.aiw".
+SBY  1:19:18 [gf8_mul] engine_0: Warning: The network has no constraints.
+SBY  1:19:18 [gf8_mul] engine_0: Running "bmc3". PI/PO/Reg = 231/1/67. And =   1449. Lev =    77. ObjNums =   674.
+SBY  1:19:18 [gf8_mul] engine_0: Params: FramesMax = 32. Start = 0. ConfLimit = 0. TimeOut = 0. SolveAll = 0.
+SBY  1:19:18 [gf8_mul] engine_0: 0 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 1 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 2 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 3 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 4 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 5 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 6 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 7 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 8 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 9 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 10 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 11 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 12 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 13 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 14 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 15 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 16 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 17 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 18 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 19 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:18 [gf8_mul] engine_0: 20 + : Var =       1. Cla =        0. Conf =      0. Learn =      0.    0 MB   4 MB     0.02 sec
+SBY  1:19:22 [gf8_mul] engine_0: 21 + : Var =    4018. Cla =     6996. Conf = 143498. Learn =  27379.    0 MB   8 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 22 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 23 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 24 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 25 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 26 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 27 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 28 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 29 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 30 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: 31 + : Var =    4208. Cla =     7316. Conf = 143498. Learn =  27379.    0 MB   9 MB     4.25 sec
+SBY  1:19:22 [gf8_mul] engine_0: Runtime:  CNF = 0.0 sec (0.0 %)  UNSAT = 4.2 sec (99.5 %)  SAT = 0.0 sec (0.0 %)  UNDEC = 0.0 sec (0.0 %)
+SBY  1:19:22 [gf8_mul] engine_0: LStart(P) = 10000  LDelta(Q) = 2000  LRatio(R) = 80  ReduceDB = 14  Vars = 4208  Used = 3139 (74.60 %)
+SBY  1:19:22 [gf8_mul] engine_0: Buffs = 3757. Dups = 0.   Hash hits = 257.  Hash misses = 1316.  UniProps = 0.
+SBY  1:19:22 [gf8_mul] engine_0: No output asserted in 32 frames. Resource limit reached (conf limit 0). Time =     4.26 sec
+SBY  1:19:22 [gf8_mul] engine_0: Counter-example is not available.
+SBY  1:19:22 [gf8_mul] engine_0: finished (returncode=0)
+SBY  1:19:22 [gf8_mul] engine_0: Status returned by engine: PASS
+SBY  1:19:22 [gf8_mul] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:04 (4)
+SBY  1:19:22 [gf8_mul] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:04 (4)
+SBY  1:19:22 [gf8_mul] summary: engine_0 (abc bmc3) returned PASS
+SBY  1:19:22 [gf8_mul] summary: engine_0 did not produce any traces
+SBY  1:19:22 [gf8_mul] DONE (PASS, rc=0)
