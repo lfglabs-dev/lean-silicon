@@ -94,27 +94,35 @@ class RunResult:
 FAULT_PAYLOAD_BYTES = 5
 
 
-def check_fault_response(reply: "protocol.ResponseFrame", *, expected_txn_id: int) -> None:
-    """Refuse a non-``OK`` response that cannot be this instruction's fault.
+def check_fault_response(
+    reply: "protocol.ResponseFrame",
+    *,
+    expected_txn_id: int,
+    where: str = "instruction",
+) -> None:
+    """Refuse a non-``OK`` response that cannot be this step's fault.
 
     A well-framed response is not evidence on its own: only a defined fault
     status carrying the section 8.6 payload and echoing the transaction in
     flight may be recorded against this step.  Anything else is a protocol
     violation, and treating it as a fault would end the run while the real
-    transaction is still staged on the endpoint.
+    transaction is still staged on the endpoint.  Section 9.1 frame-level
+    rejections echo txn_id 0 for exactly that reason, so they are caught here
+    by the transaction-binding check.
     """
     if int(reply.status) < 0x80:
         raise ProtocolViolation(
-            f"instruction answered {reply.status.name}, which is not a fault status"
+            f"{where} answered {reply.status.name}, which is not a fault status"
         )
     if len(reply.payload) != FAULT_PAYLOAD_BYTES:
         raise ProtocolViolation(
-            f"fault payload has {len(reply.payload)} bytes, expected {FAULT_PAYLOAD_BYTES}"
+            f"{where} fault payload has {len(reply.payload)} bytes, "
+            f"expected {FAULT_PAYLOAD_BYTES}"
         )
     echoed = int.from_bytes(reply.payload[0:4], "little")
     if echoed != expected_txn_id:
         raise ProtocolViolation(
-            f"fault echoed txn_id {echoed}, expected {expected_txn_id}"
+            f"{where} fault echoed txn_id {echoed}, expected {expected_txn_id}"
         )
 
 
@@ -350,6 +358,7 @@ class HostRuntime:
             )
         )
         if retire.status is not protocol.Status.RETIRED:
+            check_fault_response(retire, expected_txn_id=self.txn_id, where="retire")
             record.status = retire.status.name
             record.fault = retire.status.name
             record.lane_cycles = self.lane_cycles - before
@@ -427,6 +436,17 @@ class HostRuntime:
                 record = self.step()
             except UnsupportedCapability as error:
                 return RunResult(records, "unsupported", str(error))
+            except protocol.ProtocolFault as fault:
+                # Host-side preparation faults, and only those: the endpoint
+                # answers its own faults with a response frame. `checked_add`
+                # raises before any byte is sent, so nothing is staged and the
+                # run ends on the fault rather than on an escaping exception.
+                self.faulted = True
+                return RunResult(
+                    records,
+                    "fault",
+                    f"pc {self.pc} raised {fault.status.name.lower()} preparing the transaction",
+                )
             records.append(record)
             if record.fault is not None:
                 return RunResult(records, "fault", f"pc {record.pc} answered {record.fault}")

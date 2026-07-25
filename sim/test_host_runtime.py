@@ -484,6 +484,94 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(record.fault, "WRITE_CONFLICT")
         self.assertTrue(runtime.faulted)
 
+    class _RetireSpoofingRuntime(HostRuntime):
+        """Lets the instruction succeed, then scripts the RETIRE answer."""
+
+        def __init__(self, *args, retire_reply, **kwargs):
+            self.retire_reply = retire_reply
+            super().__init__(*args, **kwargs)
+
+        def _exchange(self, frame):
+            if protocol.Opcode(frame.opcode) is protocol.Opcode.RETIRE:
+                return self.retire_reply
+            return super()._exchange(frame)
+
+    def _refuse_retire_fault(self, reply, message):
+        runtime = self._RetireSpoofingRuntime(program(set_slot(2, 1)), retire_reply=reply)
+        with self.assertRaisesRegex(ProtocolViolation, message):
+            runtime.step()
+        self.assertFalse(runtime.faulted)
+
+    def test_a_non_retired_non_fault_status_is_not_recorded_as_a_fault(self):
+        # Protocol 9.1: none of these bind the staged transaction, so recording
+        # one as this step's fault would end the run with it still pending.
+        for status in (protocol.Status.OK, protocol.Status.SERVICE_REQUIRED, protocol.Status.INFO):
+            with self.subTest(status=status.name):
+                self._refuse_retire_fault(
+                    protocol.ResponseFrame(status, (1).to_bytes(4, "little") + bytes(1)),
+                    f"retire answered {status.name}, which is not a fault status",
+                )
+
+    def test_a_retire_fault_payload_of_the_wrong_size_is_a_protocol_violation(self):
+        for payload in (b"", (1).to_bytes(4, "little"), (1).to_bytes(4, "little") + bytes(2)):
+            with self.subTest(length=len(payload)):
+                self._refuse_retire_fault(
+                    protocol.ResponseFrame(protocol.Status.BAD_CRC, payload),
+                    f"retire fault payload has {len(payload)} bytes, expected 5",
+                )
+
+    def test_a_frame_level_retire_rejection_is_a_protocol_violation(self):
+        # Frame-level faults echo txn_id 0: the endpoint never bound them to the
+        # transaction, which therefore survives in RESULT_PENDING.
+        for echoed in (0, 2, 9):
+            with self.subTest(txn_id=echoed):
+                self._refuse_retire_fault(
+                    protocol.ResponseFrame(
+                        protocol.Status.BAD_CRC,
+                        echoed.to_bytes(4, "little") + bytes(1),
+                    ),
+                    f"retire fault echoed txn_id {echoed}, expected 1",
+                )
+
+    def test_a_well_formed_retire_fault_is_still_attributed_to_the_step(self):
+        runtime = self._RetireSpoofingRuntime(
+            program(set_slot(2, 1)),
+            retire_reply=protocol.ResponseFrame(
+                protocol.Status.RETIRE_MISMATCH,
+                (1).to_bytes(4, "little") + bytes([1]),
+            ),
+        )
+        record = runtime.step()
+        self.assertEqual(record.fault, "RETIRE_MISMATCH")
+        self.assertTrue(runtime.faulted)
+
+    def test_an_overflowing_effective_address_is_a_fault_terminal(self):
+        cases = {
+            "set": (set_slot(1, 5), 0xFFFFFFFF),
+            "set_far_offset": (set_slot(0xFFFFFFFF, 5), 1),
+            "binary_a": ({"op": "Xor", "a": 1, "b": 0, "c": 0}, 0xFFFFFFFF),
+            "binary_c": ({"op": "Mul", "a": 0, "b": 0, "c": 2}, 0xFFFFFFFE),
+        }
+        for name, (slot, fp0) in cases.items():
+            with self.subTest(case=name):
+                runtime = HostRuntime(program(slot, fp0=fp0))
+                result = runtime.run()
+                self.assertEqual(result.terminal, "fault")
+                self.assertIn("u32_overflow", result.reason)
+                self.assertTrue(runtime.faulted)
+                self.assertEqual(result.records, [])
+
+    def test_a_non_overflowing_address_is_not_a_preparation_fault(self):
+        # The catch must be exactly `checked_add`, not "anything near the top of
+        # u32": fp+offset == U32_MAX adds fine, so it reaches the endpoint and
+        # comes back as an ordinary fault frame with a step record behind it.
+        runtime = HostRuntime(program(set_slot(1, 5), fp0=0xFFFFFFFE))
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertNotIn("preparing the transaction", result.reason)
+        self.assertEqual([record.addresses for record in result.records], [[0xFFFFFFFF]])
+        self.assertEqual(result.records[0].fault, "INDEX_RANGE")
+
     def test_set_xor_mul_are_driven_end_to_end(self):
         runtime = HostRuntime(program(
             set_slot(2, 3),
