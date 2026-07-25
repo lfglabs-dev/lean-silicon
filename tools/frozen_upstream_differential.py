@@ -31,6 +31,13 @@ fn main() { let mut input = String::new(); io::stdin().read_to_string(&mut input
  }}'''
 
 
+def generate_cases(seed: int, count: int) -> list[tuple[int, int]]:
+    rng = random.Random(seed)
+    fixed = [(0x12, 0x34), (0x55, 0x66), (0x0A, 0x05)]
+    return (fixed + [(rng.getrandbits(128), rng.getrandbits(128))
+                     for _ in range(max(0, count - len(fixed)))])[:count]
+
+
 def require_checkout(path: pathlib.Path) -> None:
     actual = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
     origin = subprocess.check_output(["git", "-C", str(path), "remote", "get-url", "origin"], text=True).strip()
@@ -59,12 +66,9 @@ def main() -> None:
     example = args.upstream / "crates/lean_vm/examples/scalar_probe.rs"
     example.parent.mkdir(exist_ok=True)
     example.write_text(PROBE)
-    rng = random.Random(args.seed)
     # Keep the first cases aligned with the M2 RTL regression, then fill the
     # requested total with seeded full-width cases.
-    fixed = [(0x12, 0x34), (0x55, 0x66), (0x0A, 0x05)]
-    cases = (fixed + [(rng.getrandbits(128), rng.getrandbits(128))
-                      for _ in range(max(0, args.cases - len(fixed)))])[:args.cases]
+    cases = generate_cases(args.seed, args.cases)
     payload = "".join(f"{a:032x},{b:032x}\n" for a, b in cases)
     command = ["cargo", "run", "--quiet", "-p", "lean_vm", "--example", "scalar_probe"]
     completed = subprocess.run(command, cwd=args.upstream, input=payload, text=True, capture_output=True)
