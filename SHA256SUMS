@@ -74,7 +74,7 @@ d1f2dfa6bf564b9cf248838630eb92efd55f03e9ab8bf5e7dfec3d318b9f0f29  ./lean/lakefil
 4c17322b9a84867f9d5f2087d8b608693bfba7a58071d8459d1500f688c0b48b  ./planning/OWNERSHIP.md
 fc41b9d998cd4f7fb02a769b9a3bff28e74ac5e53a9d2dec5a71c5ee6889aeb2  ./planning/milestones.yaml
 01e08410080741c1f164e3b7459ea15db5966cef6629bfeb2691175f269efd00  ./requirements.txt
-c32bbfb4f94e21f40cdf47a7b5e05b3792b0cda2f986204775fdfd4e2b2184e8  ./results/fpga-harness-inventory-20260725/README.md
+2a8c187816fa2a19d8b505de4ea504762f707410187d1b2034905a4011f0efc4  ./results/fpga-harness-inventory-20260725/README.md
 8bf78f652b65f8ef9284399a0a291f7b8834bf16bdfbd7751800bd2e478010ff  ./results/fpga-harness-inventory-20260725/fpga-boundary.log
 9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa  ./results/fpga-harness-inventory-20260725/fpga-boundary.status
 df395788b1ab2a8647ca5dffaf8259361fb1339c5f6933e00a13f4e80473e6c6  ./results/fpga-harness-inventory-20260725/fpga-detect-mock-full.log
@@ -83,9 +83,9 @@ df395788b1ab2a8647ca5dffaf8259361fb1339c5f6933e00a13f4e80473e6c6  ./results/fpga
 9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa  ./results/fpga-harness-inventory-20260725/fpga-detect-real.status
 cbc40303bad75e24a7ebd73b937adb843d4631f23159a6c4544d817c567efad9  ./results/fpga-harness-inventory-20260725/fpga-detect-require-datapath.log
 4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865  ./results/fpga-harness-inventory-20260725/fpga-detect-require-datapath.status
-fd4d8c956b708991942a5002bcf9136066c7420e52b159c88674085aa3dd1311  ./results/fpga-harness-inventory-20260725/fpga-harness-tests.log
+255d504465bcfd53a2d1081fbb2208c9931836e1538e1d1e80824be56a6ce442  ./results/fpga-harness-inventory-20260725/fpga-harness-tests.log
 9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa  ./results/fpga-harness-inventory-20260725/fpga-harness-tests.status
-25fe801c89d456e4d3bc67b419ca14dc3f69e862361d9af7a06f23b06354b303  ./results/fpga-harness-inventory-20260725/make-check.log
+877887c6dc16aa888b2b10415c137389e5eb4b294c65f97a9e57a285a03dae43  ./results/fpga-harness-inventory-20260725/make-check.log
 9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa  ./results/fpga-harness-inventory-20260725/make-check.status
 b3772647ab68461199dcb1979296a3862a0a1222a7c2dee694d27e152e1d68fb  ./results/fpga-harness-inventory-20260725/make-formal.log
 53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3  ./results/fpga-harness-inventory-20260725/make-formal.status
@@ -93,7 +93,7 @@ dc9ae71fe0b8bdbacc6293d9f754e5eb7e1dae4a9ad37c7903a0e510ff388e3b  ./results/fpga
 53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3  ./results/fpga-harness-inventory-20260725/make-lean.status
 2e33273b293bde8335d33abcbea09248c5ab8da5382d3d1decd18969f5af8bac  ./results/fpga-harness-inventory-20260725/make-sim.log
 53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3  ./results/fpga-harness-inventory-20260725/make-sim.status
-9cf190f91c063a27371cfa33b6a916df54cf6e6db37c2df9ef598e2c1e3e6a80  ./results/fpga-harness-inventory-20260725/tested-source-sha.txt
+c71b2f1965826146cd879d48275c78542ed9b20edd5a940e65128b20ab3a605f  ./results/fpga-harness-inventory-20260725/tested-source-sha.txt
 6f105c46c0d7a97a6425c136d1bf6f933aa91fe9eee296f86fba4d66a1662560  ./results/fpga-harness-inventory-20260725/toolchain.txt
 be0da30a37ab97160fe55efe0ac74c986a452772454b725862cdd099aeabe448  ./results/frozen-oracle-evidence-20260725/README.md
 2d55eb5eeca0baa3e8f941de57632f6810a71feefbfc31be9999b5e4b21fb147  ./results/frozen-oracle-evidence-20260725/SHA256SUMS

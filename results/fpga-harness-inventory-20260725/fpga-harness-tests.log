@@ -23,6 +23,9 @@ test_different_roles_are_not_abbreviations (test_boundary_check.AbbreviationTest
 test_leading_token_abbreviation_is_accepted (test_boundary_check.AbbreviationTests.test_leading_token_abbreviation_is_accepted) ... ok
 test_back_driving_an_input_pin_is_rejected (test_boundary_check.AsicTopViolationTests.test_back_driving_an_input_pin_is_rejected)
 uio[0] is RX_VALID, an input; the ASIC must not drive it. ... ok
+test_commented_out_declaration_cannot_mask_a_widened_port (test_boundary_check.AsicTopViolationTests.test_commented_out_declaration_cannot_mask_a_widened_port)
+A stale `// input wire [7:0] ui_in` must not excuse a real [31:0]. ... ok
+test_commented_out_direction_mask_cannot_mask_drift (test_boundary_check.AsicTopViolationTests.test_commented_out_direction_mask_cannot_mask_drift) ... ok
 test_good_top_has_no_errors (test_boundary_check.AsicTopViolationTests.test_good_top_has_no_errors) ... ok
 test_missing_concatenation_is_reported (test_boundary_check.AsicTopViolationTests.test_missing_concatenation_is_reported) ... ok
 test_tying_a_documented_output_to_zero_is_rejected (test_boundary_check.AsicTopViolationTests.test_tying_a_documented_output_to_zero_is_rejected) ... ok
@@ -37,6 +40,7 @@ test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_ha
 test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
 test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
 test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
+test_a_wide_port_inside_a_comment_is_not_a_violation (test_boundary_check.ParameterisedWidthTests.test_a_wide_port_inside_a_comment_is_not_a_violation) ... ok
 test_multidimensional_packed_port_counts_every_dimension (test_boundary_check.ParameterisedWidthTests.test_multidimensional_packed_port_counts_every_dimension)
 [7:0][3:0] is 32 bits across the boundary, not 8. ... ok
 test_multidimensional_parameterised_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_multidimensional_parameterised_port_is_rejected) ... ok
@@ -45,9 +49,13 @@ test_no_within_width_fact_is_claimed_for_a_failing_file (test_boundary_check.Par
 The checker must not assert 'within 8 bits' about a file it rejected. ... ok
 test_parameter_defined_from_another_parameter_is_resolved (test_boundary_check.ParameterisedWidthTests.test_parameter_defined_from_another_parameter_is_resolved) ... ok
 test_parameterised_wide_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_parameterised_wide_port_is_rejected) ... ok
+test_scalar_ports_are_accepted (test_boundary_check.ParameterisedWidthTests.test_scalar_ports_are_accepted) ... ok
+test_unpacked_array_port_counts_towards_the_width (test_boundary_check.ParameterisedWidthTests.test_unpacked_array_port_counts_towards_the_width)
+[7:0] bytes [15:0] exposes 128 bits, not 8. ... ok
+test_unpacked_only_port_is_measured (test_boundary_check.ParameterisedWidthTests.test_unpacked_only_port_is_measured) ... ok
 test_unresolvable_width_is_rejected_rather_than_assumed_narrow (test_boundary_check.ParameterisedWidthTests.test_unresolvable_width_is_rejected_rather_than_assumed_narrow) ... ok
 
 ----------------------------------------------------------------------
-Ran 42 tests in 0.008s
+Ran 48 tests in 0.009s
 
 OK
