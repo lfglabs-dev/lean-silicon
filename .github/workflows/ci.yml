@@ -57,8 +57,8 @@ jobs:
         run: cd formal && sby -f gf8_mul.sby
       - name: Yosys lint and synthesis
         run: >-
-          yosys -p 'read_verilog -sv src/gf2n_mul_bitstream.sv src/gf128_mul_bitstream.sv src/leanvm_b_stream_alu.sv src/tt_um_leanvm_b_mincore.sv src/leanvm_b_m2_scalar_controller.sv;
-          hierarchy -check -top tt_um_leanvm_b_mincore; proc; check; synth -top tt_um_leanvm_b_mincore; stat'
+          yosys -p 'read_verilog -sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lean_silicon_lsc1.sv;
+          hierarchy -check -top lean_silicon_lsc1; proc; check; synth -top lean_silicon_lsc1; stat'
       - name: M2 controller lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv src/leanvm_b_m2_scalar_controller.sv;

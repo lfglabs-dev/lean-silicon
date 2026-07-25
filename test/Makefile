@@ -1,7 +1,8 @@
 PROJECT_SOURCES = \
-  ../src/gf2n_mul_bitstream.sv \
-  ../src/gf128_mul_bitstream.sv \
-  ../src/leanvm_b_stream_alu.sv
+  ../asic_core/rtl/gf2n_mul_bitstream.sv \
+  ../asic_core/rtl/gf128_mul_bitstream.sv \
+  ../asic_core/rtl/leanvm_b_stream_alu.sv \
+  ../asic_core/rtl/lean_silicon_lsc1.sv
 
 .PHONY: sim clean
 

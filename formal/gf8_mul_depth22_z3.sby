@@ -9,9 +9,10 @@ timeout 15
 smtbmc z3
 
 [script]
-read -formal ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv
+# [files] are copied into the SBY work directory; use their local basenames.
+read -formal gf2n_mul_bitstream.sv gf8_mul_formal.sv
 prep -top gf8_mul_formal
 
 [files]
-../src/gf2n_mul_bitstream.sv
+../asic_core/rtl/gf2n_mul_bitstream.sv
 gf8_mul_formal.sv
