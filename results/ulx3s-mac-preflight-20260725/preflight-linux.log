@@ -1,0 +1,8 @@
+ULX3S macOS preflight (visibility only, not data-path validation)
+  host: Linux 6.8.0-136-generic (x86_64)
+  usb:  UNSUPPORTED on this platform - USB enumeration in this tool is macOS-only and this host is Linux. fpga_harness/board_detect.py reads /sys/bus/usb/devices, which is Linux sysfs; neither probe is claimed to work here.
+  [--] tools: none on PATH
+  [--] jtag: no recognised ECP5 IDCODE
+  checklist unconfirmed: board_revision, fpga_density, sdram_part, us1_connector, cable_type, power_source
+  next stage ready: NO (missing: lpf_constraints, board_top, timing_clean_bitstream, host_byte_driver)
+  data-path behaviour validated: NO

@@ -1,0 +1,18 @@
+next stage refused: missing lpf_constraints, board_top, timing_clean_bitstream, host_byte_driver
+Next-stage command shape (bitstream and byte log). Not run by this tool.
+  [--] lpf_constraints: an ECP5 pin constraint file (.lpf) mapping all 24 interface signals
+  [--] board_top: a ULX3S board top that instantiates lean_silicon_lsc1
+  [--] timing_clean_bitstream: a bitstream with a passing 25 MHz timing report, not merely a build
+  [--] host_byte_driver: a host-side byte-exchange driver for the ready/valid handshake
+
+  stage 2: write fpga_harness/ulx3s.lpf and a board top, then:
+      make fpga-boundary
+  stage 3: synthesise and check timing at 25 MHz before packing:
+      yosys -p 'synth_ecp5 -top ulx3s_top -json build/ulx3s.json' <sources> && nextpnr-ecp5 --85k --json build/ulx3s.json --lpf fpga_harness/ulx3s.lpf --textcfg build/ulx3s.config --freq 25 --report build/timing.json && ecppack build/ulx3s.config build/ulx3s.bit
+  stage 3: load it, without claiming anything about behaviour:
+      openFPGALoader -b ulx3s build/ulx3s.bit
+  stage 4: drive real bytes and record both directions:
+      make ulx3s-byte-log LEANVM_B_UPSTREAM=/path/to/leanVM-b
+
+  ready: NO
+  This block is a command shape, not a runnable stage. It stays closed until every prerequisite above exists in the tree, and satisfying them still only enables stage 4; data-path validation additionally requires a recorded byte log reproduced on a second board (fpga_harness/BUILD_PLAN.md stage 5).

@@ -1,0 +1,41 @@
+test_artifact_states_what_it_does_not_establish (sim.test_ulx3s_mac_preflight.ArtifactTests.test_artifact_states_what_it_does_not_establish) ... ok
+test_malformed_confirmation_is_rejected (sim.test_ulx3s_mac_preflight.ArtifactTests.test_malformed_confirmation_is_rejected) ... ok
+test_next_stage_flag_exits_non_zero_while_closed (sim.test_ulx3s_mac_preflight.ArtifactTests.test_next_stage_flag_exits_non_zero_while_closed) ... ok
+test_runs_end_to_end_and_writes_both_documents (sim.test_ulx3s_mac_preflight.ArtifactTests.test_runs_end_to_end_and_writes_both_documents) ... ok
+test_the_emitted_fixture_is_accepted_by_board_detect (sim.test_ulx3s_mac_preflight.ArtifactTests.test_the_emitted_fixture_is_accepted_by_board_detect) ... ok
+test_unknown_checklist_key_is_rejected (sim.test_ulx3s_mac_preflight.ArtifactTests.test_unknown_checklist_key_is_rejected) ... ok
+test_a_confirmation_is_recorded_verbatim (sim.test_ulx3s_mac_preflight.ChecklistTests.test_a_confirmation_is_recorded_verbatim) ... ok
+test_covers_the_physical_facts_software_cannot_see (sim.test_ulx3s_mac_preflight.ChecklistTests.test_covers_the_physical_facts_software_cannot_see) ... ok
+test_every_entry_says_where_to_look (sim.test_ulx3s_mac_preflight.ChecklistTests.test_every_entry_says_where_to_look) ... ok
+test_unconfirmed_by_default (sim.test_ulx3s_mac_preflight.ChecklistTests.test_unconfirmed_by_default) ... ok
+test_a_board_capture_raises_the_ladder_to_jtag (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_a_board_capture_raises_the_ladder_to_jtag) ... ok
+test_a_charge_only_cable_capture_leaves_usb_absent (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_a_charge_only_cable_capture_leaves_usb_absent) ... ok
+test_fixture_carries_only_tools_that_exist (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_fixture_carries_only_tools_that_exist) ... ok
+test_fixture_is_json_serialisable_as_written (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_fixture_is_json_serialisable_as_written) ... ok
+test_replay_never_reaches_the_datapath_level (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_replay_never_reaches_the_datapath_level) ... ok
+test_an_unknown_idcode_is_recorded_not_dropped (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_an_unknown_idcode_is_recorded_not_dropped) ... ok
+test_idcode_table_is_imported_from_the_harness (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_idcode_table_is_imported_from_the_harness) ... ok
+test_recognises_the_85f_idcode (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_recognises_the_85f_idcode) ... ok
+test_usb_identity_is_imported_from_the_harness (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_usb_identity_is_imported_from_the_harness) ... ok
+test_a_satisfied_prerequisite_flips_to_present (sim.test_ulx3s_mac_preflight.NextStageTests.test_a_satisfied_prerequisite_flips_to_present) ... ok
+test_commands_are_printed_never_executed (sim.test_ulx3s_mac_preflight.NextStageTests.test_commands_are_printed_never_executed) ... ok
+test_every_prerequisite_says_what_it_wants (sim.test_ulx3s_mac_preflight.NextStageTests.test_every_prerequisite_says_what_it_wants) ... ok
+test_fails_closed_in_the_current_tree (sim.test_ulx3s_mac_preflight.NextStageTests.test_fails_closed_in_the_current_tree) ... ok
+test_non_darwin_is_unsupported_not_absent (sim.test_ulx3s_mac_preflight.PlatformRefusalTests.test_non_darwin_is_unsupported_not_absent) ... ok
+test_refusal_names_the_sysfs_limit_of_the_harness_probe (sim.test_ulx3s_mac_preflight.PlatformRefusalTests.test_refusal_names_the_sysfs_limit_of_the_harness_probe) ... ok
+test_the_harness_probe_really_is_sysfs_only (sim.test_ulx3s_mac_preflight.PlatformRefusalTests.test_the_harness_probe_really_is_sysfs_only) ... ok
+test_a_missing_program_is_recorded_not_raised (sim.test_ulx3s_mac_preflight.ProbeTests.test_a_missing_program_is_recorded_not_raised) ... ok
+test_output_beyond_the_limit_is_clipped_and_flagged (sim.test_ulx3s_mac_preflight.ProbeTests.test_output_beyond_the_limit_is_clipped_and_flagged) ... ok
+test_short_output_is_kept_whole (sim.test_ulx3s_mac_preflight.ProbeTests.test_short_output_is_kept_whole) ... ok
+test_bus_with_no_devices_parses_to_nothing (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_bus_with_no_devices_parses_to_nothing) ... ok
+test_flattens_hub_nesting (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_flattens_hub_nesting) ... ok
+test_hex_field_parser_rejects_non_strings (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_hex_field_parser_rejects_non_strings) ... ok
+test_keeps_the_raw_field_alongside_the_parse (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_keeps_the_raw_field_alongside_the_parse) ... ok
+test_non_json_is_reported_not_raised (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_non_json_is_reported_not_raised) ... ok
+test_strips_the_vendor_name_from_the_hex_field (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_strips_the_vendor_name_from_the_hex_field) ... ok
+test_unparseable_identity_is_skipped_rather_than_guessed (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_unparseable_identity_is_skipped_rather_than_guessed) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.135s
+
+OK

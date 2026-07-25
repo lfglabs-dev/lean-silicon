@@ -1,0 +1,223 @@
+{
+  "board_detect_fixture": {
+    "_comment": "Captured on macOS by tools/ulx3s_mac_preflight.py and replayed through fpga_harness/board_detect.py unmodified. The USB layer comes from system_profiler because that script's sysfs probe is Linux-only. Replay does not raise the datapath level; nothing here is data-path evidence.",
+    "jtag_scan": "",
+    "tools": {},
+    "usb_devices": [],
+    "versions": {}
+  },
+  "checklist": [
+    {
+      "key": "board_revision",
+      "question": "Which ULX3S board revision is this?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "Silkscreen on the PCB, near the ULX3S logo (for example 'ULX3S v3.0.8')."
+    },
+    {
+      "key": "fpga_density",
+      "question": "Which ECP5 density is fitted?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "The marking on the large Lattice package, e.g. LFE5U-85F-6BG381C. Cross-check against the JTAG IDCODE captured in this artifact."
+    },
+    {
+      "key": "sdram_part",
+      "question": "What is the SDRAM part number and size?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "The marking on the SDRAM chip, e.g. AS4C32M16SB-7TCN (32Mx16 = 64 MiB). Recorded for inventory only; the LSC-1 harness must not use SDRAM."
+    },
+    {
+      "key": "us1_connector",
+      "question": "Is US1 a Micro-B connector on this revision?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "The USB connector nearest the FT231X, silkscreened US1."
+    },
+    {
+      "key": "cable_type",
+      "question": "Which cable is in use, and is it a data cable?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "A USB-C to Micro-B cable that carries data. Charge-only cables power the board (LEDs light) but enumerate nothing; see the failure signature in docs/ULX3S_MAC_PREFLIGHT.md."
+    },
+    {
+      "key": "power_source",
+      "question": "Is the board powered from US1 alone, or from an external supply?",
+      "status": "unconfirmed",
+      "value": null,
+      "where_to_look": "Jumper/switch position and whether anything else is plugged in."
+    }
+  ],
+  "claims": {
+    "does_not_establish": [
+      "that any bitstream is loaded or correct",
+      "that host bytes crossed the LSC-1 8-bit ready/valid pins",
+      "anything about the ASIC RTL, its protocol behaviour, or timing closure",
+      "any leanVM-b equivalence result; the data-path gate remains the official Rust comparison in tools/host_upstream_comparison.py"
+    ],
+    "establishes": [
+      "which loader/build tools exist on this Mac and at which versions",
+      "whether macOS enumerates a device at the ULX3S USB identity",
+      "whether an ECP5 TAP answers openFPGALoader --detect with an IDCODE"
+    ],
+    "known_limits": [
+      "fpga_harness/board_detect.py enumerates USB from /sys/bus/usb/devices, which does not exist on macOS; its usb level is a false negative on Darwin and is not used here",
+      "the USB VID:PID and the ECP5 IDCODE table are vendor-documented values imported from fpga_harness/board_detect.py, not confirmed against hardware in this repository (fpga_harness/INVENTORY.md section 5)",
+      "checklist entries are human observations; unconfirmed means unknown, not absent"
+    ]
+  },
+  "connection": {
+    "cable": "USB-C (Mac) to Micro-B (US1), data-capable",
+    "note": "a charge-only cable powers the board but enumerates nothing",
+    "port": "US1"
+  },
+  "generated_at_utc": "2026-07-25T15:54:55.441396+00:00",
+  "generated_from_repo_head": "5975aa03756a163c274bfcdc7ef93ff998b1a436",
+  "host": {
+    "machine": "x86_64",
+    "platform": "Linux",
+    "python": "3.12.3",
+    "release": "6.8.0-136-generic"
+  },
+  "jtag": {
+    "detail": "an IDCODE identifies silicon on the JTAG chain. It says nothing about which design is loaded or whether it works.",
+    "idcodes": [],
+    "probes": [
+      {
+        "command": [
+          "openFPGALoader",
+          "--detect"
+        ],
+        "error": "openFPGALoader is not on PATH",
+        "found": false,
+        "returncode": null,
+        "stderr": "",
+        "stdout": "",
+        "truncated": false
+      },
+      {
+        "command": [
+          "openFPGALoader",
+          "-c",
+          "ft232",
+          "--detect"
+        ],
+        "error": "openFPGALoader is not on PATH",
+        "found": false,
+        "returncode": null,
+        "stderr": "",
+        "stdout": "",
+        "truncated": false
+      }
+    ],
+    "recognised": [],
+    "scan_text": "",
+    "unrecognised": []
+  },
+  "next_stage": {
+    "commands": [
+      {
+        "command": "make fpga-boundary",
+        "purpose": "write fpga_harness/ulx3s.lpf and a board top, then:",
+        "stage": "stage 2"
+      },
+      {
+        "command": "yosys -p 'synth_ecp5 -top ulx3s_top -json build/ulx3s.json' <sources> && nextpnr-ecp5 --85k --json build/ulx3s.json --lpf fpga_harness/ulx3s.lpf --textcfg build/ulx3s.config --freq 25 --report build/timing.json && ecppack build/ulx3s.config build/ulx3s.bit",
+        "purpose": "synthesise and check timing at 25 MHz before packing:",
+        "stage": "stage 3"
+      },
+      {
+        "command": "openFPGALoader -b ulx3s build/ulx3s.bit",
+        "purpose": "load it, without claiming anything about behaviour:",
+        "stage": "stage 3"
+      },
+      {
+        "command": "make ulx3s-byte-log LEANVM_B_UPSTREAM=/path/to/leanVM-b",
+        "purpose": "drive real bytes and record both directions:",
+        "stage": "stage 4"
+      }
+    ],
+    "missing": [
+      "lpf_constraints",
+      "board_top",
+      "timing_clean_bitstream",
+      "host_byte_driver"
+    ],
+    "policy": "This block is a command shape, not a runnable stage. It stays closed until every prerequisite above exists in the tree, and satisfying them still only enables stage 4; data-path validation additionally requires a recorded byte log reproduced on a second board (fpga_harness/BUILD_PLAN.md stage 5).",
+    "prerequisites": [
+      {
+        "found": [],
+        "key": "lpf_constraints",
+        "present": false,
+        "requires": "an ECP5 pin constraint file (.lpf) mapping all 24 interface signals"
+      },
+      {
+        "found": [],
+        "key": "board_top",
+        "present": false,
+        "requires": "a ULX3S board top that instantiates lean_silicon_lsc1"
+      },
+      {
+        "found": [],
+        "key": "timing_clean_bitstream",
+        "present": false,
+        "requires": "a bitstream with a passing 25 MHz timing report, not merely a build"
+      },
+      {
+        "found": [],
+        "key": "host_byte_driver",
+        "present": false,
+        "requires": "a host-side byte-exchange driver for the ready/valid handshake"
+      }
+    ],
+    "ready": false
+  },
+  "schema": "leansilicon.hardware.preflight/1",
+  "tools": {
+    "dfu-util": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    },
+    "ecppack": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    },
+    "fujprog": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    },
+    "nextpnr-ecp5": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    },
+    "openFPGALoader": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    },
+    "yosys": {
+      "path": null,
+      "probes": [],
+      "version": null,
+      "version_command": null
+    }
+  },
+  "usb": {
+    "detail": "USB enumeration in this tool is macOS-only and this host is Linux. fpga_harness/board_detect.py reads /sys/bus/usb/devices, which is Linux sysfs; neither probe is claimed to work here.",
+    "devices": [],
+    "matches": [],
+    "source": "unsupported",
+    "supported": false
+  }
+}

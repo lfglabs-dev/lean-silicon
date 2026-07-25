@@ -1,0 +1,7 @@
+{
+  "_comment": "Captured on macOS by tools/ulx3s_mac_preflight.py and replayed through fpga_harness/board_detect.py unmodified. The USB layer comes from system_profiler because that script's sysfs probe is Linux-only. Replay does not raise the datapath level; nothing here is data-path evidence.",
+  "jtag_scan": "",
+  "tools": {},
+  "usb_devices": [],
+  "versions": {}
+}
