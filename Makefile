@@ -1,9 +1,11 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect ulx3s-preflight ulx3s-next-stage sim lean formal clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
+ULX3S_PREFLIGHT ?= results/ulx3s-preflight.json
+ULX3S_FIXTURE ?= results/ulx3s-board.fixture.json
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
@@ -58,6 +60,17 @@ fpga-harness:
 # Reporting only: absent tools or absent board must not fail a build.
 fpga-detect:
 	$(PYTHON) fpga_harness/board_detect.py
+
+# macOS-only capture against a physical board; deliberately not in `check`.
+# Writes a preflight artifact plus a board_detect.py --fixture to replay.
+ulx3s-preflight:
+	$(PYTHON) tools/ulx3s_mac_preflight.py --out $(ULX3S_PREFLIGHT) \
+	  --fixture-out $(ULX3S_FIXTURE)
+
+# Prints the bitstream/byte-log command shape and exits non-zero until the
+# .lpf, board top, timing-clean bitstream and host byte driver all exist.
+ulx3s-next-stage:
+	$(PYTHON) tools/ulx3s_mac_preflight.py --next-stage
 
 check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
 

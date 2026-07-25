@@ -29,6 +29,8 @@ Frozen leanVM-b evidence remains tied to
   modelled executably by `sim/lsc1_transaction.py`.
 - `host/`: Mac-side runtime that prepares transactions and owns VM state,
   documented in `docs/HOST_RUNTIME.md`.
+- `docs/ULX3S_MAC_PREFLIGHT.md`: macOS procedure for a physical ULX3S-85F over
+  US1, capturing USB/JTAG/toolchain visibility only. Not data-path evidence.
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
 

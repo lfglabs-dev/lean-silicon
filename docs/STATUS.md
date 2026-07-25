@@ -12,6 +12,8 @@
 | Host vs frozen Rust comparison | final memory only, for the 12 cells the fixture run touched; `cycles` and every per-step field explicitly not compared | `tools/host_upstream_comparison.py`, `docs/HOST_RUNTIME.md` section 5 |
 | Full scalar semantics | not implemented | planned graph |
 | ULX3S harness bitstream | not implemented | pin contract only |
+| ULX3S macOS preflight | capture tool and procedure; USB/JTAG/toolchain visibility only, no data path | `docs/ULX3S_MAC_PREFLIGHT.md`, `tools/ulx3s_mac_preflight.py` |
+| ULX3S board capture from hardware | not run; no board or Mac has produced an artifact in-repo | `docs/ULX3S_MAC_PREFLIGHT.md` section 7 |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
 | RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |
