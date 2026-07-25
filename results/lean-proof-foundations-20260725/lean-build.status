@@ -1,0 +1,2 @@
+command=(cd lean && ../../.elan/bin/lake --version && ../../.elan/bin/lake build && ../../.elan/bin/lake build LeanVMBMinCore && ../../.elan/bin/lake env lean LeanVMBMinCore/CheckedIndex.lean)
+exit=0

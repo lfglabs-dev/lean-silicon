@@ -1,0 +1,2 @@
+official_lean_toolchain=leanprover/lean4:v4.32.1
+lake_binary=/root/workspaces/mission-d918b961/.elan/bin/lake
