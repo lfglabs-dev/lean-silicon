@@ -166,8 +166,8 @@ class MinCoreUartTests(unittest.TestCase):
         observed = []
         with tempfile.TemporaryDirectory() as directory:
             evidence = Path(directory) / "evidence.jsonl"
-            def provenance():
-                observed.append(evidence.exists())
+            def provenance(path=None):
+                observed.append((evidence.exists(), path))
                 return ("0" * 40, False)
             old_stdout, sys.stdout = sys.stdout, io.StringIO()
             try:
@@ -177,8 +177,21 @@ class MinCoreUartTests(unittest.TestCase):
             finally:
                 sys.stdout = old_stdout
             record = json.loads(evidence.read_text())
-        self.assertEqual(observed, [False])
+        self.assertEqual(observed, [(False, evidence)])
         self.assertFalse(record["repo_dirty"])
+
+    def test_appending_evidence_inside_the_checkout_never_reports_dirty(self):
+        root = Path(__file__).resolve().parents[3]
+        evidence = root / "test_evidence_provenance_probe.jsonl"
+        self.addCleanup(evidence.unlink, True)
+        self.assertFalse(evidence.exists())
+        before = repo_provenance(evidence)
+        evidence.write_text('{"probe": true}\n')
+        self.assertEqual(repo_provenance(evidence), before)
+        with tempfile.TemporaryDirectory() as directory:
+            outside = Path(directory) / "evidence.jsonl"
+            outside.write_text("")
+            self.assertEqual(repo_provenance(outside), repo_provenance())
 
     def test_transport_failure_is_not_retried(self):
         class BrokenSerial(FakeSerial):

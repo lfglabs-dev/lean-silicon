@@ -250,18 +250,26 @@ class MinCoreDriver:
         abort_method()
 
 
-def repo_provenance() -> tuple[str, Optional[bool]]:
+def repo_provenance(evidence: Optional[Path] = None) -> tuple[str, Optional[bool]]:
     """Head commit plus whether that tree had uncommitted changes.
 
     A head alone cannot distinguish evidence produced by a modified checkout
     from a clean run at the same commit.  A null dirty flag means unknown, which
-    must not be read as clean.
+    must not be read as clean.  An evidence file written inside the checkout is
+    this tool's own output, not a source change, so it never counts as dirty.
     """
     root = Path(__file__).resolve().parents[2]
+    command = ["git", "status", "--porcelain=v1", "--untracked-files=all"]
+    if evidence is not None:
+        try:
+            relative = evidence.resolve().relative_to(root).as_posix()
+        except (OSError, ValueError):
+            relative = ""  # outside the checkout, so git already ignores it
+        if relative:
+            command += ["--", ".", f":(exclude,literal,top){relative}"]
     try:
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-        status = subprocess.check_output(
-            ["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=root, text=True)
+        status = subprocess.check_output(command, cwd=root, text=True)
     except (OSError, subprocess.CalledProcessError):
         return "unknown", None
     return head, bool(status.strip())
@@ -371,8 +379,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.execute and (args.encode or args.decode is not None or args.dry_run):
         parser.error("--execute cannot be combined with --dry-run, --encode, or --decode")
     try:
-        # Sampled before --evidence can create an untracked file in the checkout.
-        provenance = repo_provenance()
+        provenance = repo_provenance(args.evidence)
         a, b, value, expected = _operation_inputs(args)
         if args.decode is not None:
             request = b""

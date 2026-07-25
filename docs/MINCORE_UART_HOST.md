@@ -85,6 +85,7 @@ Each record carries `repo_head` plus `repo_dirty`, which reports whether that
 checkout had uncommitted or untracked changes (`git status --porcelain=v1
 --untracked-files=all`).  A head alone cannot distinguish evidence produced by a
 modified tree from a clean run at the same commit.  `repo_dirty: null` means the
-tree state could not be determined and must not be read as clean.  Provenance is
-sampled before the evidence file is opened, so writing a new evidence file into
-the checkout does not make the run report itself as dirty.
+tree state could not be determined and must not be read as clean.  The evidence
+file is this tool's own output rather than a source change, so it is excluded
+from that status: writing or appending an evidence file inside the checkout
+never makes a run report itself as dirty.
