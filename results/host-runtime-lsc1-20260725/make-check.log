@@ -1,3 +1,4 @@
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s sim -v
 test_commands (test_cycle_model.RandomBackpressureTests.test_commands) ... ok
 test_exact_no_stall_latencies (test_cycle_model.RandomBackpressureTests.test_exact_no_stall_latencies) ... ok
 test_invalid_command (test_cycle_model.RandomBackpressureTests.test_invalid_command) ... ok
@@ -7,8 +8,10 @@ test_a_non_frozen_upstream_is_refused (test_host_runtime.AdapterTests.test_a_non
 test_a_non_power_of_two_bytecode_is_refused (test_host_runtime.AdapterTests.test_a_non_power_of_two_bytecode_is_refused) ... ok
 test_an_unknown_opcode_is_refused (test_host_runtime.AdapterTests.test_an_unknown_opcode_is_refused) ... ok
 test_host_package_imports_with_deferred_annotations_policy (test_host_runtime.AdapterTests.test_host_package_imports_with_deferred_annotations_policy) ... ok
+test_malformed_initial_scalars_are_adapter_errors (test_host_runtime.AdapterTests.test_malformed_initial_scalars_are_adapter_errors) ... ok
 test_malformed_u32_operands_are_adapter_errors (test_host_runtime.AdapterTests.test_malformed_u32_operands_are_adapter_errors) ... ok
 test_missing_and_compound_operands_are_adapter_errors (test_host_runtime.AdapterTests.test_missing_and_compound_operands_are_adapter_errors) ... ok
+test_pc0_outside_the_bytecode_is_refused (test_host_runtime.AdapterTests.test_pc0_outside_the_bytecode_is_refused) ... ok
 test_pc_outside_the_program_is_refused (test_host_runtime.AdapterTests.test_pc_outside_the_program_is_refused) ... ok
 test_the_checked_in_artifact_loads (test_host_runtime.AdapterTests.test_the_checked_in_artifact_loads) ... ok
 test_wrong_schema_is_refused (test_host_runtime.AdapterTests.test_wrong_schema_is_refused) ... ok
@@ -35,6 +38,10 @@ test_decode_matches_the_endpoint_encoding (test_host_runtime.ResultPayloadTests.
 test_poisoned_result_wrong_txn_id_is_protocol_violation (test_host_runtime.ResultPayloadTests.test_poisoned_result_wrong_txn_id_is_protocol_violation) ... ok
 test_poisoned_stale_frame_regressions (test_host_runtime.ResultPayloadTests.test_poisoned_stale_frame_regressions)
 Poisoned or stale frames (wrong txn, tampered CRC) must be refused; F1 binding preserved. ... ok
+test_a_fault_bound_to_another_transaction_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_bound_to_another_transaction_is_a_protocol_violation) ... ok
+test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation) ... ok
+test_a_non_fault_status_is_not_recorded_as_a_fault (test_host_runtime.RuntimeTests.test_a_non_fault_status_is_not_recorded_as_a_fault) ... ok
+test_a_well_formed_fault_is_still_attributed_to_the_step (test_host_runtime.RuntimeTests.test_a_well_formed_fault_is_still_attributed_to_the_step) ... ok
 test_a_write_conflict_is_reported_as_a_fault_not_applied (test_host_runtime.RuntimeTests.test_a_write_conflict_is_reported_as_a_fault_not_applied) ... ok
 test_arbitrary_rx_tx_stalls_and_backpressure (test_host_runtime.RuntimeTests.test_arbitrary_rx_tx_stalls_and_backpressure)
 Full transaction loop under arbitrary permitted lane-gap patterns. ... ok
@@ -42,6 +49,7 @@ test_forward_only_refuses_the_same_back_solve (test_host_runtime.RuntimeTests.te
 test_mul_back_solves_from_the_host_inverse_witness (test_host_runtime.RuntimeTests.test_mul_back_solves_from_the_host_inverse_witness) ... ok
 test_multiplying_by_a_known_zero_is_not_given_a_witness (test_host_runtime.RuntimeTests.test_multiplying_by_a_known_zero_is_not_given_a_witness) ... ok
 test_negotiate_requires_every_schema_field (test_host_runtime.RuntimeTests.test_negotiate_requires_every_schema_field) ... ok
+test_post_retire_conflicting_duplicate_writes_are_atomic (test_host_runtime.RuntimeTests.test_post_retire_conflicting_duplicate_writes_are_atomic) ... ok
 test_post_retire_write_batch_is_atomic_on_a_late_conflict (test_host_runtime.RuntimeTests.test_post_retire_write_batch_is_atomic_on_a_late_conflict) ... ok
 test_sentinel_requires_zero_frame_pointer (test_host_runtime.RuntimeTests.test_sentinel_requires_zero_frame_pointer) ... ok
 test_set_xor_mul_are_driven_end_to_end (test_host_runtime.RuntimeTests.test_set_xor_mul_are_driven_end_to_end) ... ok
@@ -215,6 +223,158 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 209 tests in 11.191s
+Ran 216 tests in 10.894s
+
+OK
+python3 tools/host_upstream_comparison.py --artifact host/fixtures/assert_set_xor_mul.program.json \
+  
+PREFIX_MATCH upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 source=recorded_artifact steps=12 terminal=unsupported cells=12
+python3 tools/design_space.py
+radix=1: state=273 bits, step=259 simple gates, transaction=161 cycles [minimum-logic pareto]
+radix=2: state=273 bits, step=518 simple gates, transaction=97 cycles [pareto]
+radix=4: state=273 bits, step=1036 simple gates, transaction=65 cycles [pareto]
+radix=8: state=273 bits, step=2072 simple gates, transaction=49 cycles [minimum-latency pareto]
+python3 tools/exact_linear_xor.py
+Exact GHASH xtime reduction-tap XOR2 minimum: 3 gates
+Construction:
+  g0 = (a0) xor (carry) = a0 xor carry
+  g1 = (a1) xor (carry) = a1 xor carry
+  g2 = (a6) xor (carry) = a6 xor carry
+Required outputs:
+  a0 xor carry
+  a1 xor carry
+  a6 xor carry
+python3 tools/interface_consistency.py
+Interface constants agree across RTL, Python, and info.yaml
+  commands: 6
+  status:   01 01 0f 08
+  top:      lean_silicon_lsc1
+  sources:  4
+python3 tools/repo_consistency.py
+LSC-1 repository consistency: OK
+python3 tools/generate_checksums.py --check
+SHA256SUMS matches tracked source artifacts
+python3 tools/rtl_state_count.py
+Explicit source-level sequential state
+  FSM state                  4 bits
+  byte index                 4 bits
+  shared scratch             8 bits
+  sticky fault               1 bits
+  shifted multiplicand     128 bits
+  accumulator              128 bits
+  TOTAL                    273 bits
+python3 tools/sv_smoke_check.py asic_core/rtl/*.sv src/leanvm_b_m2_scalar_controller.sv formal/*.sv test/tb_stream_alu.sv test/tb_m2_scalar_controller.sv fpga_harness/rtl/*.sv
+asic_core/rtl/gf128_mul_bitstream.sv: structurally balanced
+asic_core/rtl/gf2n_mul_bitstream.sv: structurally balanced
+asic_core/rtl/lean_silicon_lsc1.sv: structurally balanced
+asic_core/rtl/leanvm_b_stream_alu.sv: structurally balanced
+src/leanvm_b_m2_scalar_controller.sv: structurally balanced
+formal/gf128_serialize_formal.sv: structurally balanced
+formal/gf8_mul_formal.sv: structurally balanced
+formal/stream_alu_mul_pulse_formal.sv: structurally balanced
+test/tb_stream_alu.sv: structurally balanced
+test/tb_m2_scalar_controller.sv: structurally balanced
+fpga_harness/rtl/lean_silicon_lsc1_pins.sv: structurally balanced
+python3 fpga_harness/boundary_check.py
+  ok  ASIC pin ports are all [7:0] and face the direction the contract requires
+  ok  uio_oe direction mask 0b10110110 (bit set = ASIC drives)
+  ok  uio_out drives exactly the bits uio_oe marks as outputs, and ties every input bit to zero
+  ok  lean_silicon_lsc1_pins.sv: every port width resolved and within 8 bits
+  note uio[7] role spelled DONE in LSC1_PROTOCOL.md and DONE_PULSE in info.yaml; same pin, unaligned wording for the owning lanes to reconcile
+LSC-1 pin-accurate harness boundary: OK
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s fpga_harness -v
+test_json_output_is_parseable (test_board_detect.CommandLineTests.test_json_output_is_parseable) ... ok
+test_require_datapath_always_fails_even_with_full_visibility (test_board_detect.CommandLineTests.test_require_datapath_always_fails_even_with_full_visibility) ... ok
+test_require_jtag_tracks_the_fixture (test_board_detect.CommandLineTests.test_require_jtag_tracks_the_fixture) ... ok
+test_require_none_succeeds_without_any_hardware (test_board_detect.CommandLineTests.test_require_none_succeeds_without_any_hardware) ... ok
+test_absent_toolchain_is_reported_per_group (test_board_detect.EmptyEnvironmentTests.test_absent_toolchain_is_reported_per_group) ... ok
+test_default_environment_satisfies_nothing (test_board_detect.EmptyEnvironmentTests.test_default_environment_satisfies_nothing) ... ok
+test_full_visibility_still_reports_datapath_unvalidated (test_board_detect.FullVisibilityTests.test_full_visibility_still_reports_datapath_unvalidated)
+Tools plus USB plus a real IDCODE must not imply a working data path. ... ok
+test_jtag_detail_names_the_recognised_part (test_board_detect.FullVisibilityTests.test_jtag_detail_names_the_recognised_part) ... ok
+test_lower_levels_are_satisfied (test_board_detect.FullVisibilityTests.test_lower_levels_are_satisfied) ... ok
+test_rendered_report_states_datapath_is_not_validated (test_board_detect.FullVisibilityTests.test_rendered_report_states_datapath_is_not_validated) ... ok
+test_serialised_report_marks_datapath_false (test_board_detect.FullVisibilityTests.test_serialised_report_marks_datapath_false) ... ok
+test_either_loader_alone_satisfies_the_load_group (test_board_detect.LevelIsolationTests.test_either_loader_alone_satisfies_the_load_group) ... ok
+test_empty_jtag_scan_is_absent (test_board_detect.LevelIsolationTests.test_empty_jtag_scan_is_absent) ... ok
+test_every_documented_ecp5_idcode_is_recognised (test_board_detect.LevelIsolationTests.test_every_documented_ecp5_idcode_is_recognised) ... ok
+test_load_tools_alone_satisfy_the_toolchain_level_partially (test_board_detect.LevelIsolationTests.test_load_tools_alone_satisfy_the_toolchain_level_partially)
+A loader without a synthesis flow must not satisfy the level. ... ok
+test_partial_build_chain_does_not_satisfy_the_toolchain_level (test_board_detect.LevelIsolationTests.test_partial_build_chain_does_not_satisfy_the_toolchain_level)
+yosys alone cannot produce a bitstream; nextpnr/ecppack are required. ... ok
+test_unrecognised_idcode_is_absent (test_board_detect.LevelIsolationTests.test_unrecognised_idcode_is_absent) ... ok
+test_wrong_usb_identity_is_absent (test_board_detect.LevelIsolationTests.test_wrong_usb_identity_is_absent) ... ok
+test_different_roles_are_not_abbreviations (test_boundary_check.AbbreviationTests.test_different_roles_are_not_abbreviations) ... ok
+test_leading_token_abbreviation_is_accepted (test_boundary_check.AbbreviationTests.test_leading_token_abbreviation_is_accepted) ... ok
+test_inout_on_a_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_inout_on_a_pin_port_is_rejected) ... ok
+test_reversing_an_input_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_reversing_an_input_pin_port_is_rejected) ... ok
+test_reversing_an_output_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_reversing_an_output_pin_port_is_rejected) ... ok
+test_shipped_top_declares_every_pin_port_correctly (test_boundary_check.AsicPortDirectionTests.test_shipped_top_declares_every_pin_port_correctly) ... ok
+test_back_driving_an_input_pin_is_rejected (test_boundary_check.AsicTopViolationTests.test_back_driving_an_input_pin_is_rejected)
+uio[0] is RX_VALID, an input; the ASIC must not drive it. ... ok
+test_commented_out_declaration_cannot_mask_a_widened_port (test_boundary_check.AsicTopViolationTests.test_commented_out_declaration_cannot_mask_a_widened_port)
+A stale `// input wire [7:0] ui_in` must not excuse a real [31:0]. ... ok
+test_commented_out_direction_mask_cannot_mask_drift (test_boundary_check.AsicTopViolationTests.test_commented_out_direction_mask_cannot_mask_drift) ... ok
+test_good_top_has_no_errors (test_boundary_check.AsicTopViolationTests.test_good_top_has_no_errors) ... ok
+test_missing_concatenation_is_reported (test_boundary_check.AsicTopViolationTests.test_missing_concatenation_is_reported) ... ok
+test_tying_a_documented_output_to_zero_is_rejected (test_boundary_check.AsicTopViolationTests.test_tying_a_documented_output_to_zero_is_rejected) ... ok
+test_unexpected_driver_name_is_an_observation_not_an_error (test_boundary_check.AsicTopViolationTests.test_unexpected_driver_name_is_an_observation_not_an_error) ... ok
+test_widened_pin_port_is_rejected (test_boundary_check.AsicTopViolationTests.test_widened_pin_port_is_rejected) ... ok
+test_wrong_direction_mask_is_rejected (test_boundary_check.AsicTopViolationTests.test_wrong_direction_mask_is_rejected) ... ok
+test_ranged_bit_select_term_is_rejected (test_boundary_check.ConcatenationTermWidthTests.test_ranged_bit_select_term_is_rejected) ... ok
+test_scalar_net_term_is_accepted (test_boundary_check.ConcatenationTermWidthTests.test_scalar_net_term_is_accepted) ... ok
+test_single_bit_select_term_is_accepted (test_boundary_check.ConcatenationTermWidthTests.test_single_bit_select_term_is_accepted) ... ok
+test_wide_net_named_as_a_bare_term_is_rejected (test_boundary_check.ConcatenationTermWidthTests.test_wide_net_named_as_a_bare_term_is_rejected)
+A bare identifier looks like one pin, so its declaration decides. ... ok
+test_direction_persists_across_commas_in_an_ansi_list (test_boundary_check.DirectionlessPortTests.test_direction_persists_across_commas_in_an_ansi_list) ... ok
+test_interface_port_is_rejected (test_boundary_check.DirectionlessPortTests.test_interface_port_is_rejected) ... ok
+test_modport_qualified_interface_port_is_rejected (test_boundary_check.DirectionlessPortTests.test_modport_qualified_interface_port_is_rejected) ... ok
+test_non_ansi_port_names_are_left_to_the_body_scan (test_boundary_check.DirectionlessPortTests.test_non_ansi_port_names_are_left_to_the_body_scan)
+`module h(a, b);` is legal; the real widths are declared inside. ... ok
+test_shipped_harness_rtl_is_discovered (test_boundary_check.HarnessDiscoveryTests.test_shipped_harness_rtl_is_discovered) ... ok
+test_wide_port_in_nested_directory_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_nested_directory_is_rejected) ... ok
+test_wide_port_in_plain_verilog_file_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_plain_verilog_file_is_rejected) ... ok
+test_empty_harness_directory_is_rejected (test_boundary_check.HarnessWidthTests.test_empty_harness_directory_is_rejected) ... ok
+test_narrow_harness_passes (test_boundary_check.HarnessWidthTests.test_narrow_harness_passes) ... ok
+test_wide_bypass_port_is_rejected (test_boundary_check.HarnessWidthTests.test_wide_bypass_port_is_rejected) ... ok
+test_byte_port_is_within_the_pin_width (test_boundary_check.ImplicitTypeWidthTests.test_byte_port_is_within_the_pin_width) ... ok
+test_implicit_type_multiplies_with_its_dimensions (test_boundary_check.ImplicitTypeWidthTests.test_implicit_type_multiplies_with_its_dimensions) ... ok
+test_integer_port_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_integer_port_is_rejected) ... ok
+test_longint_port_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_longint_port_is_rejected) ... ok
+test_package_scoped_type_is_rejected (test_boundary_check.ImplicitTypeWidthTests.test_package_scoped_type_is_rejected) ... ok
+test_signed_modifier_does_not_hide_the_declared_width (test_boundary_check.ImplicitTypeWidthTests.test_signed_modifier_does_not_hide_the_declared_width) ... ok
+test_signed_narrow_port_is_accepted (test_boundary_check.ImplicitTypeWidthTests.test_signed_narrow_port_is_accepted) ... ok
+test_user_defined_type_is_rejected_rather_than_assumed_narrow (test_boundary_check.ImplicitTypeWidthTests.test_user_defined_type_is_rejected_rather_than_assumed_narrow)
+A typedef could be any width, so it cannot be waved through. ... ok
+test_current_repository_satisfies_the_boundary (test_boundary_check.LiveRepositoryTests.test_current_repository_satisfies_the_boundary) ... ok
+test_expected_direction_mask_matches_the_shipped_top (test_boundary_check.LiveRepositoryTests.test_expected_direction_mask_matches_the_shipped_top) ... ok
+test_a_wide_port_inside_a_comment_is_not_a_violation (test_boundary_check.ParameterisedWidthTests.test_a_wide_port_inside_a_comment_is_not_a_violation) ... ok
+test_multidimensional_packed_port_counts_every_dimension (test_boundary_check.ParameterisedWidthTests.test_multidimensional_packed_port_counts_every_dimension)
+[7:0][3:0] is 32 bits across the boundary, not 8. ... ok
+test_multidimensional_parameterised_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_multidimensional_parameterised_port_is_rejected) ... ok
+test_narrow_parameterised_port_is_accepted (test_boundary_check.ParameterisedWidthTests.test_narrow_parameterised_port_is_accepted) ... ok
+test_no_within_width_fact_is_claimed_for_a_failing_file (test_boundary_check.ParameterisedWidthTests.test_no_within_width_fact_is_claimed_for_a_failing_file)
+The checker must not assert 'within 8 bits' about a file it rejected. ... ok
+test_parameter_defined_from_another_parameter_is_resolved (test_boundary_check.ParameterisedWidthTests.test_parameter_defined_from_another_parameter_is_resolved) ... ok
+test_parameterised_wide_port_is_rejected (test_boundary_check.ParameterisedWidthTests.test_parameterised_wide_port_is_rejected) ... ok
+test_scalar_ports_are_accepted (test_boundary_check.ParameterisedWidthTests.test_scalar_ports_are_accepted) ... ok
+test_unpacked_array_port_counts_towards_the_width (test_boundary_check.ParameterisedWidthTests.test_unpacked_array_port_counts_towards_the_width)
+[7:0] bytes [15:0] exposes 128 bits, not 8. ... ok
+test_unpacked_only_port_is_measured (test_boundary_check.ParameterisedWidthTests.test_unpacked_only_port_is_measured) ... ok
+test_unpacked_size_without_a_range_is_counted (test_boundary_check.ParameterisedWidthTests.test_unpacked_size_without_a_range_is_counted)
+`arr [4]` is four elements, not one. ... ok
+test_unresolvable_width_is_rejected_rather_than_assumed_narrow (test_boundary_check.ParameterisedWidthTests.test_unresolvable_width_is_rejected_rather_than_assumed_narrow) ... ok
+test_narrow_shared_declaration_is_accepted (test_boundary_check.SharedDeclarationTests.test_narrow_shared_declaration_is_accepted) ... ok
+test_non_ansi_declarations_are_scanned (test_boundary_check.SharedDeclarationTests.test_non_ansi_declarations_are_scanned) ... ok
+test_second_name_in_a_declaration_is_scanned (test_boundary_check.SharedDeclarationTests.test_second_name_in_a_declaration_is_scanned) ... ok
+test_second_name_inherits_the_packed_width (test_boundary_check.SharedDeclarationTests.test_second_name_inherits_the_packed_width)
+`input wire [7:0] a, b` makes `b` eight bits, not one. ... ok
+test_wide_port_after_a_narrow_group_is_still_found (test_boundary_check.SharedDeclarationTests.test_wide_port_after_a_narrow_group_is_still_found) ... ok
+test_a_real_wide_port_beside_a_function_is_still_rejected (test_boundary_check.SubprogramScopeTests.test_a_real_wide_port_beside_a_function_is_still_rejected) ... ok
+test_wide_function_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_function_argument_is_not_a_boundary_violation) ... ok
+test_wide_task_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_task_argument_is_not_a_boundary_violation) ... ok
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.017s
 
 OK

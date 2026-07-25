@@ -8,13 +8,19 @@ SHA used for the live runs: `toolchain.txt`.
 
 | Log | Command | Exit |
 |---|---|---|
+| `host-tests.log` | `python3 -m unittest discover -s sim -t . -p test_host_runtime.py -v` | `host-tests.status` |
 | `make-check.log` | `make check` | `make-check.status` |
 | `host-comparison-recorded.log` | `make host-comparison` | `host-comparison-recorded.status` |
 | `host-comparison-live.log` | `make host-comparison LEANVM_B_UPSTREAM=/tmp/leanVM-b` | `host-comparison-live.status` |
 | `scalar-differential.log` | `make scalar-differential LEANVM_B_UPSTREAM=/tmp/leanVM-b` | `scalar-differential.status` |
 
-`comparison.json` is the `leansilicon.host.comparison/1` document from the
-live run: every prepared transaction with its pc, fp, opcode, effective
+Each log is captured outside the working tree and copied in afterwards, so
+`make check` sees the `SHA256SUMS` the tested source head actually carries
+rather than one already invalidated by the log being written.
+
+`comparison.json` is the `leansilicon.host.comparison/1` document from a live
+run of `tools/host_upstream_comparison.py --upstream /tmp/leanVM-b --out`:
+every prepared transaction with its pc, fp, opcode, effective
 addresses, input cell presence and values, writes, branch, deferred events,
 status, retirement sequence and lane cycle count, plus the final state and the
 comparison verdict.

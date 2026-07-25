@@ -1,3 +1,3 @@
-lean_compiler probe failed (1):
-error: the 'cargo' binary, normally provided by the 'cargo' component, is not applicable to the '1.88.0-x86_64-unknown-linux-gnu' toolchain
-
+python3 tools/host_upstream_comparison.py --artifact host/fixtures/assert_set_xor_mul.program.json \
+  --upstream "/tmp/leanVM-b"
+PREFIX_MATCH upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 source=live_cargo_run steps=12 terminal=unsupported cells=12
