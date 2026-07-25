@@ -122,6 +122,7 @@ class MinCoreDriver:
         if timeout <= 0:
             raise ValueError("timeout must be positive")
         self.transport, self.timeout, self.clock = transport, timeout, clock
+        self._usable = True
 
     def drain_stale(self) -> bytes:
         """Remove already-buffered RX bytes before one diagnostic exchange."""
@@ -153,6 +154,8 @@ class MinCoreDriver:
                 )
             if written > 0:
                 offset += written
+                if self.clock() > deadline:
+                    raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
                 continue
             if self.clock() >= deadline:
                 raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
@@ -170,6 +173,8 @@ class MinCoreDriver:
                         f"transport returned too many bytes after {len(data)}/{size} response bytes"
                     )
                 data.extend(chunk)
+                if self.clock() > deadline:
+                    raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
                 continue
             if self.clock() >= deadline:
                 raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
@@ -182,12 +187,22 @@ class MinCoreDriver:
 
     def exchange(self, operation: str, *, a: bytes = b"", b: bytes = b"", value: bytes = b"") -> tuple[bytes, bytes]:
         """Send one request exactly once, then read and validate exactly one response."""
+        if not self._usable:
+            raise TransportFailure(
+                "driver is unusable after an indeterminate exchange; create a new transport after explicit resynchronization"
+            )
         self.drain_stale()
         request = encode_request(operation, a=a, b=b, value=value)
-        self._write_all(request)
-        response = self._read_exact(response_length(operation))
-        decode_response(operation, response)
-        self._reject_buffered_extra()
+        self._usable = False
+        try:
+            self._write_all(request)
+            response = self._read_exact(response_length(operation))
+            decode_response(operation, response)
+            self._reject_buffered_extra()
+        except Exception:
+            raise
+        else:
+            self._usable = True
         return request, response
 
     def abort(self) -> None:
@@ -308,21 +323,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         parser.error("--execute cannot be combined with --dry-run, --encode, or --decode")
     try:
         a, b, value, expected = _operation_inputs(args)
-        request = encode_request(args.operation, a=a, b=b, value=value)
         if args.decode is not None:
+            request = b""
             response = decode_response(args.operation, args.decode)
-            passed = expected is None or response == expected
+            passed = None if expected is None else response == expected
             execution_attempted, serial_response_observed = False, False
         elif args.execute:
+            request = encode_request(args.operation, a=a, b=b, value=value)
             transport = _physical_transport(args.port, args.baud, args.timeout)
             try:
                 request, response = MinCoreDriver(transport, args.timeout).exchange(args.operation, a=a, b=b, value=value)
             finally:
                 close = getattr(transport, "close", None)
                 if callable(close): close()
-            passed = expected is None or response == expected
+            passed = None if expected is None else response == expected
             execution_attempted, serial_response_observed = True, bool(response)
         else:
+            request = encode_request(args.operation, a=a, b=b, value=value)
             response, passed = b"", None
             execution_attempted, serial_response_observed = False, False
         if args.evidence:

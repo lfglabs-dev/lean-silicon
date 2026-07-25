@@ -69,6 +69,15 @@ class MinCoreUartTests(unittest.TestCase):
             MinCoreDriver(serial, .03, Clock()).exchange("set", value=VECTORS["set128"].value)
         self.assertEqual(bytes(serial.written), encode_request("set", value=VECTORS["set128"].value))
 
+    def test_deadlines_apply_even_while_io_makes_progress(self):
+        serial = FakeSerial(write_limit=1)
+        with self.assertRaisesRegex(TransportTimeout, r"write timeout after 3/17 request bytes"):
+            MinCoreDriver(serial, .025, Clock()).exchange("set", value=VECTORS["set128"].value)
+
+        serial = FakeSerial(read_limit=1, responses=(STATUS_BYTES,))
+        with self.assertRaisesRegex(TransportTimeout, r"read timeout after 3/4 response bytes"):
+            MinCoreDriver(serial, .025, Clock()).exchange("status")
+
     def test_stale_drain_is_bounded_and_invalid_write_counts_fail(self):
         class NoisySerial(FakeSerial):
             @property
@@ -91,8 +100,11 @@ class MinCoreUartTests(unittest.TestCase):
 
     def test_framing_loss_and_abort_are_explicit(self):
         serial = FakeSerial(responses=(b"\xe0",))
+        driver = MinCoreDriver(serial, .03, Clock())
         with self.assertRaisesRegex(TransportTimeout, r"1/16 response bytes"):
-            MinCoreDriver(serial, .03, Clock()).exchange("set", value=VECTORS["set128"].value)
+            driver.exchange("set", value=VECTORS["set128"].value)
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")
         with self.assertRaises(AbortUnavailable):
             MinCoreDriver(FakeSerial(), .2, Clock()).abort()
 
@@ -125,6 +137,18 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertIsNone(result["pass"])
         self.assertFalse(result["execution_attempted"])
         self.assertFalse(result["serial_response_observed"])
+
+    def test_decode_only_does_not_require_or_encode_request_operands(self):
+        output = io.StringIO()
+        old_stdout, sys.stdout = sys.stdout, output
+        try:
+            self.assertEqual(main(["--operation", "set", "--decode", VECTORS["set128"].expected.hex()]), 0)
+        finally:
+            sys.stdout = old_stdout
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["request_hex"], "")
+        self.assertEqual(result["response_hex"], VECTORS["set128"].expected.hex())
+        self.assertIsNone(result["pass"])
 
     def test_consecutive_commands_response_validation_and_evidence_redaction(self):
         serial = FakeSerial(read_limit=2, responses=(STATUS_BYTES, VECTORS["mul128"].expected))

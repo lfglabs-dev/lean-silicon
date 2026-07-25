@@ -48,9 +48,10 @@ fault indication must specify out-of-band status rather than overload raw data.
 
 The host drains bytes already buffered before each transaction, reads exactly
 the documented response length, rejects immediately buffered extras, times out
-with byte progress, and does not retry.  After framing loss or timeout the
-outcome is unknown; a raw UART-only bridge cannot safely resynchronize a
-partial MinCore command.
+with byte progress, and does not retry.  After framing loss, timeout, or I/O
+failure the outcome is unknown; the driver refuses all later exchanges on that
+transport because a raw UART-only bridge cannot safely resynchronize a partial
+MinCore command.
 
 ## Usage
 
@@ -72,3 +73,6 @@ are recorded instead.  `--evidence-payloads` opts into recording those
 potentially sensitive bytes.  Dry-run and encode records have
 `execution_attempted: false`, an empty response, and `pass: null`; they never
 substitute a golden expected value for an observed response.
+Decode-only mode does not encode or require request operands.  Decode or serial
+execution without a selected golden vector also records `pass: null`, because
+fixed-size validation alone is not a functional oracle.
