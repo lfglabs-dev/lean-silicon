@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential design-space exact-xor interface-check consistency smoke placeholders sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential design-space exact-xor interface-check consistency checksum-check smoke placeholders sim lean formal clean package checksums
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
@@ -35,7 +35,7 @@ placeholders:
 	@! grep -RInE '\\b(sorry|admit|axiom)\\b' lean/LeanVMBMinCore*.lean lean/LeanVMBMinCore || \
 	  (echo "Lean proof placeholder found" >&2; exit 1)
 
-check: python design-space exact-xor interface-check consistency gate-count smoke placeholders
+check: python design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders
 
 sim:
 	$(MAKE) -C test sim
@@ -55,4 +55,7 @@ package: check
 	tar --exclude='__pycache__' --exclude='.lake' -czf ../lean-silicon-lsc1.tar.gz .
 
 checksums:
-	$(PYTHON) tools/generate_checksums.py
+	$(PYTHON) tools/generate_checksums.py > SHA256SUMS
+
+checksum-check:
+	$(PYTHON) tools/generate_checksums.py --check
