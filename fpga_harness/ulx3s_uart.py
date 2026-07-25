@@ -117,6 +117,10 @@ CLEAR  = 0x7d
 STATUS = 0x7e
 ABORT  = 0x7f
 
+# Fixed reply of status_byte() in asic_core/rtl/leanvm_b_stream_alu.sv:
+# protocol major, protocol minor, opcode bitmap (XOR|MUL|SET|NONZERO), lane width.
+STATUS_SIGNATURE = bytes([0x01, 0x01, 0x0F, 0x08])
+
 
 def expected_mul(a: bytes, b: bytes) -> bytes:
     """Expected GF(2^128) product of two little-endian 16-byte operands.
@@ -216,7 +220,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.tx == "status":
             st = tx_status(ser, timeout=args.timeout)
             print("STATUS:", st.hex())
-            return 0
+            print("STATUS exp:", STATUS_SIGNATURE.hex())
+            ok = st == STATUS_SIGNATURE
+            print("MATCH:", ok)
+            return 0 if ok else 1
 
         if not args.payload:
             print("ERROR: --payload required for set/xor/mul", file=sys.stderr)

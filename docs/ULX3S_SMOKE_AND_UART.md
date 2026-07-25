@@ -100,6 +100,8 @@ ASIC boundary is not widened out to pins.
   multiply plus long reduction, and the LSB-first bit-serial recurrence) and
   cross-checked against each other. The process exit status depends on the
   comparison, so a complete but incorrect 16-byte product exits 1 rather than 0.
+- STATUS is checked against the fixed `01 01 0f 08` signature the RTL emits, so
+  four garbage bytes exit 1. This matters because `status` is the default `--tx`.
 - Stale-byte drain on open and between transactions.
 - Timeout and clear/status support.
 
@@ -111,7 +113,7 @@ python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 000000
 
 ## P2 Tests
 - Boundary: `make fpga-boundary` (and direct `python3 fpga_harness/boundary_check.py`) → OK
-- Harness unit tests: `make fpga-harness` → 111 tests OK
+- Harness unit tests: `make fpga-harness` → 123 tests OK
 - Sim: `make python` → 163 tests OK
 - Icarus benches: `make sim` builds and runs both `test/tb_stream_alu.sv` and
   `test/tb_uart_bridge.sv`. The bridge bench is wired into the target rather
