@@ -1,0 +1,3 @@
+cd lean && lake build
+sandboxed lake shim: real Lake binary not found
+make: *** [Makefile:54: lean] Error 127

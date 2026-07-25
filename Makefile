@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential design-space exact-xor interface-check consistency checksum-check smoke placeholders sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
@@ -35,7 +35,17 @@ placeholders:
 	@! grep -RInE '\\b(sorry|admit|axiom)\\b' lean/LeanVMBMinCore*.lean lean/LeanVMBMinCore || \
 	  (echo "Lean proof placeholder found" >&2; exit 1)
 
-check: python design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders
+fpga-boundary:
+	$(PYTHON) fpga_harness/boundary_check.py
+
+fpga-harness:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s fpga_harness -v
+
+# Reporting only: absent tools or absent board must not fail a build.
+fpga-detect:
+	$(PYTHON) fpga_harness/board_detect.py
+
+check: python design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim
@@ -49,7 +59,7 @@ formal:
 
 clean:
 	$(MAKE) -C test clean
-	rm -rf lean/.lake sim/__pycache__
+	rm -rf lean/.lake sim/__pycache__ fpga_harness/__pycache__
 
 package: check
 	tar --exclude='__pycache__' --exclude='.lake' -czf ../lean-silicon-lsc1.tar.gz .

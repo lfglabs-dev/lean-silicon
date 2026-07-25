@@ -1,0 +1,10 @@
+tested fpga_harness tree: e915e48eaaebb97a4221b1d6e3dfa02af3db2117
+verify with: git rev-parse HEAD:fpga_harness
+
+This is the git tree object of fpga_harness/ that produced the logs in this
+directory. A commit SHA cannot be used here: the evidence is committed together
+with the source it describes, so that commit hash does not exist while the logs
+are being generated. The tree object does, and it identifies the tested
+implementation exactly. It stays stable when only results/ or SHA256SUMS change.
+
+base main: 1811202c20f10eea590890cf3c65c7503557f9b6 (merged in; original branch base was 2630c9be3fec014f5230e780f19e82af07372d5a)

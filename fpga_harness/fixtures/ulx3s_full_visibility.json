@@ -1,0 +1,15 @@
+{
+  "_comment": "Synthetic best case: build tools, loader, ULX3S USB identity, and a real LFE5U-85F IDCODE all present. Used to demonstrate that full tool/USB/JTAG visibility still yields datapath_validated=false. Not captured from hardware.",
+  "tools": {
+    "yosys": "/usr/bin/yosys",
+    "nextpnr-ecp5": "/usr/bin/nextpnr-ecp5",
+    "ecppack": "/usr/bin/ecppack",
+    "openFPGALoader": "/usr/bin/openFPGALoader"
+  },
+  "versions": {
+    "yosys": "Yosys 0.44 (synthetic fixture value)",
+    "openFPGALoader": "openFPGALoader v0.12.0 (synthetic fixture value)"
+  },
+  "usb_devices": [[1027, 24597, "ULX3S FPGA 85F"]],
+  "jtag_scan": "index 0: idcode 0x41113043 manufacturer lattice model LFE5U-85F"
+}

@@ -1,0 +1,17 @@
+container toolchain probe, 2026-07-25T11:06:50Z
+
+python3          PRESENT (Python 3.12.3)
+yosys            ABSENT
+nextpnr-ecp5     ABSENT
+ecppack          ABSENT
+openFPGALoader   ABSENT
+fujprog          ABSENT
+ujprog           ABSENT
+iverilog         ABSENT
+sby              ABSENT
+lsusb            ABSENT
+dfu-util         ABSENT
+lake             PRESENT (sandboxed lake shim: real Lake binary not found)
+
+Python 3.12.3
+PyYAML 6.0.3

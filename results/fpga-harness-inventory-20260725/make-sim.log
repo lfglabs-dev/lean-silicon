@@ -1,0 +1,7 @@
+make -C test sim
+make[1]: Entering directory '/workspaces/mission-7847dc25/lean-silicon/test'
+iverilog -g2012 -Wall -s tb_stream_alu -o tb_stream_alu.vvp ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv ../asic_core/rtl/leanvm_b_stream_alu.sv ../asic_core/rtl/lean_silicon_lsc1.sv tb_stream_alu.sv
+make[1]: iverilog: No such file or directory
+make[1]: *** [Makefile:10: sim] Error 127
+make[1]: Leaving directory '/workspaces/mission-7847dc25/lean-silicon/test'
+make: *** [Makefile:51: sim] Error 2
