@@ -321,10 +321,14 @@ class RuntimeTests(unittest.TestCase):
         def __init__(self, *args, result_payload, retire_payload, **kwargs):
             self.result_payload = result_payload
             self.retire_payload = retire_payload
+            #: Opcodes actually put on the wire, so a test can prove that a frame
+            #: which would commit endpoint state was never sent.
+            self.sent = []
             super().__init__(*args, **kwargs)
 
         def _exchange(self, frame):
             opcode = protocol.Opcode(frame.opcode)
+            self.sent.append(opcode)
             if opcode is protocol.Opcode.NEGOTIATE:
                 payload = (
                     bytes((protocol.PROTOCOL_VERSION, int(self.profile)))
@@ -359,7 +363,7 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ProtocolViolation, "required 14-byte schema"):
             self._NegotiationRuntime(program(set_slot(2, 1)), negotiation_payload=expected[:-1])
 
-    def test_post_retire_write_batch_is_atomic_on_a_late_conflict(self):
+    def test_a_write_once_conflict_is_refused_before_retire_is_sent(self):
         result_payload = (
             (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
             + bytes([2])
@@ -382,8 +386,12 @@ class RuntimeTests(unittest.TestCase):
             runtime.step()
         self.assertIsNone(memory.read(2))
         self.assertEqual(memory.read(3), 0xCC)
+        # RETIRE is what commits the endpoint's pc/fp. Sending it and only then
+        # refusing the batch would advance the endpoint past a host that never
+        # moved, which no retry can reconcile.
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
 
-    def test_post_retire_conflicting_duplicate_writes_are_atomic(self):
+    def test_conflicting_duplicate_writes_are_refused_before_retire_is_sent(self):
         result_payload = (
             (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
             + bytes([2])
@@ -405,6 +413,33 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ProtocolViolation, "conflicting writes"):
             runtime.step()
         self.assertIsNone(memory.read(2))
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_an_acceptable_write_batch_is_still_retired_and_applied(self):
+        """Guards the two tests above from passing because RETIRE never happens."""
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([2])
+            + (2).to_bytes(4, "little") + (0xAA).to_bytes(16, "little")
+            + (3).to_bytes(4, "little") + (0xBB).to_bytes(16, "little")
+            + bytes([0, 0])
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory(cells={3: 0xBB})
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        record = runtime.step()
+        self.assertIn(protocol.Opcode.RETIRE, runtime.sent)
+        self.assertIsNone(record.fault)
+        self.assertEqual(memory.read(2), 0xAA)
+        self.assertEqual(memory.read(3), 0xBB)
 
     def test_stale_retire_txn_id_is_protocol_violation(self):
         result_payload = (

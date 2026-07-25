@@ -368,6 +368,24 @@ class HostRuntime:
             return record
 
         result = decode_result_payload(reply.payload, expected_txn_id=self.txn_id)
+
+        # The whole write batch is checked before RETIRE goes out, because RETIRE is
+        # what makes the endpoint commit its pc/fp. Rejecting afterwards would leave
+        # the endpoint advanced against host state that never moved, and the retry
+        # would only ever see STATE_MISMATCH. Refusing first leaves the transaction
+        # RESULT_PENDING, which is recoverable.
+        writes = result["writes"]
+        proposed: dict[int, int] = {}
+        for write in writes:
+            prior = proposed.get(write["address"])
+            if prior is not None and prior != write["value"]:
+                raise ProtocolViolation(
+                    "result payload contains conflicting writes to address "
+                    f"{write['address']}: {prior:#034x} != {write['value']:#034x}"
+                )
+            proposed[write["address"]] = write["value"]
+            self.memory.prevalidate_write(write["address"], write["value"])
+
         retire = self._exchange(
             protocol.build_retire(
                 txn_id=result["txn_id"],
@@ -399,19 +417,8 @@ class HostRuntime:
                 f"{(result['next_pc'], result['next_fp'])}"
             )
 
-        # Post-RETIRED writes must be atomic: prevalidate all against host write-once,
-        # then apply. A late conflict leaves no partial mutation.
-        writes = result["writes"]
-        proposed: dict[int, int] = {}
-        for w in writes:
-            prior = proposed.get(w["address"])
-            if prior is not None and prior != w["value"]:
-                raise ProtocolViolation(
-                    "result payload contains conflicting writes to address "
-                    f"{w['address']}: {prior:#034x} != {w['value']:#034x}"
-                )
-            proposed[w["address"]] = w["value"]
-            self.memory.prevalidate_write(w["address"], w["value"])
+        # Prevalidated above and nothing has mutated memory since, so this cannot
+        # leave a partial batch behind.
         for write in writes:
             self.memory.apply_write(write["address"], write["value"])
         for address in result["accesses"]:
