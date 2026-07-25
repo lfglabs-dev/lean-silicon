@@ -1,4 +1,7 @@
-# Semantic differences and profile decisions
+# Historical MinCore semantic differences
+
+The comparisons below preserve their original MinCore context. They are not an
+active LSC-1 implementation claim; see [ROADMAP](ROADMAP.md).
 
 Comparison baseline: `leanEthereum/leanVM-b@c308034ab78619b39a59d26f3dc60e7df5b52649`.
 

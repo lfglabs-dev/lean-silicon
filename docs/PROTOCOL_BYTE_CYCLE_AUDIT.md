@@ -1,4 +1,7 @@
-# Protocol byte/cycle model and trust-boundary audit
+# Historical MinCore protocol byte/cycle audit
+
+This audit applies to the retained seed-0 stream protocol, not the planned
+LSC-1 v1 packet executor. See [ROADMAP](ROADMAP.md).
 
 **Scope.** This document specifies the implemented MinCore byte lane in
 `src/leanvm_b_stream_alu.sv`, its wrapper, and the executable model in

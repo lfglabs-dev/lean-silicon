@@ -1,5 +1,5 @@
 # Finite M0 check: all RTL and the sole assertion remain unchanged.
-read_verilog -formal -sv ../src/gf2n_mul_bitstream.sv gf8_mul_formal.sv
+read_verilog -formal -sv ../asic_core/rtl/gf2n_mul_bitstream.sv gf8_mul_formal.sv
 prep -top gf8_mul_formal
 # The Yosys SAT backend does not import cover cells.  The cover is not an
 # assertion and does not constrain the model, so remove only that reporting cell.

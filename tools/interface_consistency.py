@@ -9,9 +9,9 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-RTL = (ROOT / "src" / "leanvm_b_stream_alu.sv").read_text()
+RTL = (ROOT / "asic_core" / "rtl" / "leanvm_b_stream_alu.sv").read_text()
 PYMODEL = (ROOT / "sim" / "model.py").read_text()
-WRAPPER = (ROOT / "src" / "tt_um_leanvm_b_mincore.sv").read_text()
+WRAPPER = (ROOT / "asic_core" / "rtl" / "lean_silicon_lsc1.sv").read_text()
 INFO = yaml.safe_load((ROOT / "info.yaml").read_text())
 
 EXPECTED = {
@@ -62,7 +62,7 @@ def main() -> None:
     if project["clock_hz"] != 25_000_000:
         raise SystemExit("unexpected clock_hz")
     for source in project["source_files"]:
-        if not (ROOT / "src" / source).is_file():
+        if not (ROOT / source).is_file():
             raise SystemExit(f"missing Tiny Tapeout source file: {source}")
 
     print("Interface constants agree across RTL, Python, and info.yaml")

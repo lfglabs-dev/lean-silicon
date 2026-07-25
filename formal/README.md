@@ -15,6 +15,11 @@ The Lean proof in `lean/LeanVMBMinCore/GF8.lean` checks the same simplified
 algorithm through a separate formalization. This creates two independent proof
 paths: Lean bit-blasting and RTL model checking.
 
+This is a GF(2^8) proof boundary only.  In particular, Lean's GF8
+`native_decide` result and this bounded SBY run are not a proof of the
+production GF(2^128) multiplier, the full LSC-1 controller, or frozen-ISA
+semantics.  See `docs/PROOF_BOUNDARIES.md` for the required bridges.
+
 The finite SAT script checks frames 0 through 22. The harness toggles its
 generated clock on each global step; its assertion first evaluates at frame 21,
 after the reset, A-load, and eight multiplier-bit positive edges. The script

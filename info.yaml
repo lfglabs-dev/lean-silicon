@@ -1,18 +1,18 @@
 # Tiny Tapeout project information
 project:
-  title:        "leanVM-b MinCore"
+  title:        "leanSilicon LSC-1"
   author:       "Thomas"
   discord:      ""
-  description:  "Area-first streamed leanVM-b GF(2^128) opcode engine"
+  description:  "Verification-in-progress physical scalar coprocessor for leanVM-b."
   language:     "SystemVerilog"
   clock_hz:     25000000
   tiles:        "2x2"
-  top_module:   "tt_um_leanvm_b_mincore"
+  top_module:   "lean_silicon_lsc1"
   source_files:
-    - "gf2n_mul_bitstream.sv"
-    - "gf128_mul_bitstream.sv"
-    - "leanvm_b_stream_alu.sv"
-    - "tt_um_leanvm_b_mincore.sv"
+    - "asic_core/rtl/gf2n_mul_bitstream.sv"
+    - "asic_core/rtl/gf128_mul_bitstream.sv"
+    - "asic_core/rtl/leanvm_b_stream_alu.sv"
+    - "asic_core/rtl/lean_silicon_lsc1.sv"
 
 pinout:
   ui[0]: "RX_DATA[0]"

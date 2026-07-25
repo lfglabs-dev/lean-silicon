@@ -48,6 +48,10 @@ future `sorry`, `admit`, or `axiom` occurrence.
 
 ## Independence of arithmetic checks
 
+The checks below provide finite or model-scoped evidence only.  They do not
+connect the full LSC-1 SV controller to the frozen ISA and do not establish
+RTL-to-netlist equivalence; see `docs/PROOF_BOUNDARIES.md`.
+
 Three distinct descriptions are present:
 
 1. bit-streamed RTL transition;

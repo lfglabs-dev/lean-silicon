@@ -38,3 +38,10 @@ misrepresented as testing itself.
 The address theorem is intentionally parametric over an `AddressEncoding`
 structure carrying the law `encode(i+j)=encode(i)*encode(j)`; instantiating that
 structure with the actual GF(2^128) generator is a later proof milestone.
+
+These are functional-model theorems, not a theorem about the full authored
+SystemVerilog controller or its synthesized netlist.  `GF8.lean` uses
+`native_decide` only for GF(2^8); it is not the production GF(2^128)
+multiplier proof.  The optimality results are scoped arithmetic lower bounds
+under their stated assumptions, never global implementation-optimality claims.
+See `docs/PROOF_BOUNDARIES.md`.
