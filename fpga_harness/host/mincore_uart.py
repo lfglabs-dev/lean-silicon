@@ -133,9 +133,13 @@ class MinCoreDriver:
             raise TransportFailure("buffered-input query failed") from error
         return max(0, buffered)
 
-    def drain_stale(self) -> bytes:
+    def _deadline(self, deadline: Optional[float]) -> float:
+        """Adopt the caller's transaction budget, or open a fresh one when alone."""
+        return self.clock() + self.timeout if deadline is None else deadline
+
+    def drain_stale(self, deadline: Optional[float] = None) -> bytes:
         """Remove already-buffered RX bytes before one diagnostic exchange."""
-        deadline, drained = self.clock() + self.timeout, bytearray()
+        deadline, drained = self._deadline(deadline), bytearray()
         while (buffered := self._buffered_count()) > 0:
             try:
                 chunk = self.transport.read(min(buffered, 4096))
@@ -148,8 +152,8 @@ class MinCoreDriver:
                 raise TransportTimeout(f"stale-input drain timeout after {len(drained)} bytes")
         return bytes(drained)
 
-    def _write_all(self, data: bytes) -> None:
-        deadline, offset = self.clock() + self.timeout, 0
+    def _write_all(self, data: bytes, deadline: Optional[float] = None) -> None:
+        deadline, offset = self._deadline(deadline), 0
         while offset < len(data):
             try:
                 written = self.transport.write(data[offset:])
@@ -169,8 +173,8 @@ class MinCoreDriver:
             if self.clock() >= deadline:
                 raise TransportTimeout(f"write timeout after {offset}/{len(data)} request bytes")
 
-    def _read_exact(self, size: int) -> bytes:
-        deadline, data = self.clock() + self.timeout, bytearray()
+    def _read_exact(self, size: int, deadline: Optional[float] = None) -> bytes:
+        deadline, data = self._deadline(deadline), bytearray()
         while len(data) < size:
             try:
                 chunk = self.transport.read(size - len(data))
@@ -189,17 +193,17 @@ class MinCoreDriver:
                 raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
         return bytes(data)
 
-    def _flush_output(self) -> None:
+    def _flush_output(self, deadline: Optional[float] = None) -> None:
         """A zero-length response is no evidence that queued bytes actually left.
 
         `serial.Serial.flush()` is `tcdrain()`, which takes no timeout and blocks
         while a stalled device never drains, so it runs on a worker thread and is
-        bounded like every other phase of the exchange.
+        bounded by whatever remains of the transaction budget.
         """
         flush = getattr(self.transport, "flush", None)
         if not callable(flush):
             return
-        deadline, failures = self.clock() + self.timeout, []
+        deadline, failures = self._deadline(deadline), []
         worker = threading.Thread(target=lambda: self._call_flush(flush, failures), daemon=True)
         worker.start()
         worker.join(max(0.0, deadline - self.clock()))
@@ -215,8 +219,8 @@ class MinCoreDriver:
         except BaseException as error:  # reported on the calling thread
             failures.append(error)
 
-    def _reject_buffered_extra(self) -> None:
-        extra = self.drain_stale()
+    def _reject_buffered_extra(self, deadline: Optional[float] = None) -> None:
+        extra = self.drain_stale(deadline)
         if extra:
             raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}")
 
@@ -227,6 +231,11 @@ class MinCoreDriver:
         no bytes, and the preflight drain is inside it: a drain that fails or
         times out leaves an unknown number of stale bytes on the wire, which a
         later exchange would otherwise read back as this request's response.
+
+        Every phase shares one deadline, so `timeout` bounds the whole
+        transaction.  Per-phase deadlines would let a drain, write, read, and
+        flush that each stay just inside the limit sum to several multiples of
+        it, and the caller has no other handle on how long an exchange may run.
         """
         if not self._usable:
             raise TransportFailure(
@@ -234,15 +243,16 @@ class MinCoreDriver:
             )
         request = encode_request(operation, a=a, b=b, value=value)
         self._usable = False
+        deadline = self.clock() + self.timeout
         try:
-            self.drain_stale()
-            self._write_all(request)
+            self.drain_stale(deadline)
+            self._write_all(request, deadline)
             needed = response_length(operation)
             if needed == 0:
-                self._flush_output()
-            response = self._read_exact(needed)
+                self._flush_output(deadline)
+            response = self._read_exact(needed, deadline)
             decode_response(operation, response)
-            self._reject_buffered_extra()
+            self._reject_buffered_extra(deadline)
         except Exception:
             raise
         else:
@@ -292,9 +302,15 @@ def record_evidence(
     passed: Optional[bool],
     execution_attempted: bool,
     serial_response_observed: bool,
+    failure: Optional[str] = None,
     include_payloads: bool = False,
 ) -> None:
-    """Write one JSONL record without a port or raw payloads by default."""
+    """Write one JSONL record without a port or raw payloads by default.
+
+    `failure` carries the exception class name only.  Transport error text can
+    embed a device name, so the class is the widest discriminator that stays
+    redacted.
+    """
     digest = lambda value: hashlib.sha256(value).hexdigest()
     head, dirty = provenance
     record = {"tool_version": VERSION, "repo_head": head, "repo_dirty": dirty, "operation": operation,
@@ -303,7 +319,8 @@ def record_evidence(
               "expected_length": None if expected is None else len(expected),
               "expected_sha256": None if expected is None else digest(expected),
               "pass": passed, "execution_attempted": execution_attempted,
-              "serial_response_observed": serial_response_observed}
+              "serial_response_observed": serial_response_observed,
+              "failure": failure}
     if include_payloads:
         record.update(request_hex=request.hex(), response_hex=response.hex(),
                       expected_hex=None if expected is None else expected.hex())
@@ -369,6 +386,36 @@ def _open_evidence(path: Optional[Path]) -> Optional[BinaryIO]:
         raise MinCoreError(f"could not open the evidence destination: {error.strerror}") from error
 
 
+def _record_failed_attempt(
+    evidence: Optional[BinaryIO],
+    *,
+    provenance: tuple[str, Optional[bool]],
+    operation: str,
+    request: bytes,
+    expected: Optional[bytes],
+    failure: str,
+    include_payloads: bool,
+) -> None:
+    """Note a device-touching attempt that never produced a validated response.
+
+    Without it a run that opened the port, sent bytes, and then timed out is
+    indistinguishable in the JSONL from one that never ran, even though the
+    device may already have changed state.  A secondary write error here must
+    not replace the transport error the caller is about to raise.
+    """
+    if evidence is None:
+        return
+    try:
+        record_evidence(
+            evidence, provenance=provenance, operation=operation, request=request,
+            response=b"", expected=expected, passed=None, execution_attempted=True,
+            serial_response_observed=False, failure=failure,
+            include_payloads=include_payloads,
+        )
+    except OSError:
+        pass
+
+
 def _close_quietly(resource: object) -> None:
     """Teardown runs in a finally block and must never mask the primary error."""
     close = getattr(resource, "close", None)
@@ -418,12 +465,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             elif args.execute:
                 request = encode_request(args.operation, a=a, b=b, value=value)
                 transport = _physical_transport(args.port, args.baud, args.timeout)
+                # The port is open, so any later failure already touched the device.
+                execution_attempted, serial_response_observed = True, False
                 try:
                     request, response = MinCoreDriver(transport, args.timeout).exchange(args.operation, a=a, b=b, value=value)
+                except MinCoreError as error:
+                    _record_failed_attempt(
+                        evidence, provenance=provenance, operation=args.operation,
+                        request=request, expected=expected, failure=type(error).__name__,
+                        include_payloads=args.evidence_payloads,
+                    )
+                    raise
                 finally:
                     _close_quietly(transport)
                 passed = None if expected is None else response == expected
-                execution_attempted, serial_response_observed = True, bool(response)
+                serial_response_observed = bool(response)
             else:
                 request = encode_request(args.operation, a=a, b=b, value=value)
                 response, passed = b"", None

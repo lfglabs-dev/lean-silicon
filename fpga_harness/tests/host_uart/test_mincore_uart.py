@@ -79,9 +79,34 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportTimeout, r"write timeout after 3/17 request bytes"):
             MinCoreDriver(serial, .025, Clock()).exchange("set", value=VECTORS["set128"].value)
 
+        # The budget is shared, so the read phase starts with the write already charged to it.
         serial = FakeSerial(read_limit=1, responses=(STATUS_BYTES,))
         with self.assertRaisesRegex(TransportTimeout, r"read timeout after 3/4 response bytes"):
-            MinCoreDriver(serial, .025, Clock()).exchange("status")
+            MinCoreDriver(serial, .035, Clock()).exchange("status")
+
+    def test_one_timeout_bounds_the_whole_exchange_not_each_phase(self):
+        """Phases that each stay just inside the limit must not sum past it."""
+        clock, timeout = Clock(), .2
+        serial = FakeSerial(b"stale bytes", read_limit=1, write_limit=1,
+                            responses=(VECTORS["set128"].expected,))
+        start = clock.value
+        with self.assertRaisesRegex(TransportTimeout, "request bytes"):
+            MinCoreDriver(serial, timeout, clock).exchange("set", value=VECTORS["set128"].value)
+        self.assertLessEqual(clock.value - start, timeout + .02)  # at most one tick past
+
+    def test_a_stalled_flush_only_gets_the_budget_the_drain_left_behind(self):
+        """A drain that burns most of the timeout must not hand the flush a fresh one."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledFlush(FakeSerial):
+            def flush(self): release.wait(30)
+
+        # 90 single-byte drain reads consume ~0.90 of the 1.0 budget on the fake clock.
+        serial = StalledFlush(b"x" * 90, read_limit=1)
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, "flush timeout"):
+            MinCoreDriver(serial, 1.0, Clock()).exchange("clear")
+        self.assertLess(time.monotonic() - start, .5)  # a fresh budget would wait ~1.0s
 
     def test_stale_drain_is_bounded_and_invalid_write_counts_fail(self):
         class NoisySerial(FakeSerial):
@@ -206,6 +231,43 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(opened, [])
         self.assertIn("evidence destination", errors.getvalue())
+
+    def test_a_failure_after_the_device_was_touched_is_still_recorded(self):
+        class StallsAfterWrite(FakeSerial):
+            """Accepts the request byte, then never answers."""
+
+        transport = StallsAfterWrite()
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "evidence.jsonl"
+            with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: transport), \
+                 mock.patch("sys.stderr", io.StringIO()):
+                self.assertEqual(main(["--execute", "--port", "/dev/null", "--operation",
+                                       "status", "--timeout", "0.05",
+                                       "--evidence", str(evidence)]), 2)
+            records = [json.loads(line) for line in evidence.read_text().splitlines() if line.strip()]
+
+        self.assertEqual(bytes(transport.written), b"\x7e")  # the device really was touched
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertTrue(record["execution_attempted"])
+        self.assertFalse(record["serial_response_observed"])  # never claim an observation
+        self.assertIsNone(record["pass"])
+        self.assertEqual(record["failure"], "TransportTimeout")
+        self.assertEqual(record["response_length"], 0)
+        self.assertEqual([key for key in record if "port" in key], [])
+        self.assertNotIn("/dev/", json.dumps(record))
+
+    def test_a_completed_exchange_records_no_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "evidence.jsonl"
+            with mock.patch.object(mincore_uart, "_physical_transport", lambda *a, **k: FakeSerial()), \
+                 mock.patch("sys.stdout", io.StringIO()):
+                self.assertEqual(main(["--execute", "--port", "/dev/null", "--operation", "clear",
+                                       "--evidence", str(evidence)]), 0)
+            record = json.loads(evidence.read_text())
+        self.assertIsNone(record["failure"])
+        self.assertTrue(record["execution_attempted"])
+        self.assertFalse(record["serial_response_observed"])
 
     def test_serial_close_failure_never_masks_the_exchange_outcome(self):
         class Unclosable(FakeSerial):

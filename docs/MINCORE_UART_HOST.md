@@ -54,10 +54,13 @@ transport failure rather than an uncaught error.  Request operands are checked
 before that drain runs, so a rejected request never consumes a buffered byte,
 and a drain that fails or times out is itself an indeterminate outcome: it
 leaves an unknown number of stale bytes that a later exchange would otherwise
-read back as a response.  `CLEAR` has no response to prove its byte was
-transmitted, so the host flushes the transport before the
-port can be closed; that flush is bounded by `--timeout` because the underlying
-`tcdrain()` accepts no timeout of its own.  After framing loss, timeout, or I/O failure the outcome is
+read back as a response.  `--timeout` bounds one whole exchange rather than each
+phase: the drain, write, read, and flush share a single deadline, so phases that
+each stop just inside the limit cannot sum to several multiples of it.  `CLEAR`
+has no response to prove its byte was transmitted, so the host flushes the
+transport before the port can be closed; that flush is bounded by whatever the
+earlier phases left of the budget, because the underlying `tcdrain()` accepts no
+timeout of its own.  After framing loss, timeout, or I/O failure the outcome is
 unknown; the driver refuses all later exchanges on that transport because a raw
 UART-only bridge cannot safely resynchronize a partial MinCore command.
 
@@ -81,9 +84,20 @@ are recorded instead.  `--evidence-payloads` opts into recording those
 potentially sensitive bytes.  Dry-run and encode records have
 `execution_attempted: false`, an empty response, and `pass: null`; they never
 substitute a golden expected value for an observed response.
+
 Decode-only mode does not encode or require request operands.  Decode or serial
 execution without a selected golden vector also records `pass: null`, because
 fixed-size validation alone is not a functional oracle.
+
+An exchange that fails once the port is open is recorded too, with `failure` set
+to the exception class name, `execution_attempted: true`, and
+`serial_response_observed: false`.  The device may already have changed state,
+so a run that sent bytes and then timed out must not be indistinguishable from
+one that never ran; `execution_attempted` reports that the port was opened and
+I/O began, never that a response was seen.  Only the class name is stored,
+because transport error text can embed a device name.  A record is written for
+this path only after the port opened: a run that could not open a port never
+reached the device and reports the failure on stderr alone.
 
 Each record carries `repo_head` plus `repo_dirty`, which reports whether that
 checkout had uncommitted or untracked changes (`git status --porcelain=v1
