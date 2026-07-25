@@ -78,12 +78,16 @@ fn main() {
     let ranges: Vec<String> = program.fn_ranges.iter()
         .map(|(n, e, l)| format!(r#"["{n}",{e},{l}]"#)).collect();
     let run = program.execute([F128::ONE, F128::ZERO]);
-    let mem: Vec<String> = run.mem.iter().map(|v| format!("\"{}\"", hex(*v))).collect();
+    // `mem` is padded to a power of two; only the first `mem_used` cells were
+    // touched, and everything past them is zero. Emit the touched prefix and
+    // the full length rather than megabytes of padding.
+    let mem: Vec<String> = run.mem.iter().take(run.mem_used)
+        .map(|v| format!("\"{}\"", hex(*v))).collect();
     println!(
-        r#"{{"pc0":{},"fp0":{},"bytecode":[{}],"fn_ranges":[{}],"disassembly":{},"execution":{{"cycles":{},"mem_used":{},"mem":[{}]}}}}"#,
+        r#"{{"pc0":{},"fp0":{},"bytecode":[{}],"fn_ranges":[{}],"disassembly":{},"execution":{{"cycles":{},"mem_used":{},"mem_len":{},"mem":[{}]}}}}"#,
         program.pc0, program.fp0, ops.join(","), ranges.join(","),
         serde_json_string(&disassemble(&program.prog)),
-        run.cycles, run.mem_used, mem.join(","));
+        run.cycles, run.mem_used, run.mem.len(), mem.join(","));
 }
 
 /// Minimal JSON string escaping; the disassembly is ASCII plus newlines.
@@ -193,6 +197,9 @@ def main() -> None:
                              "0x00000000000000000000000000000000"],
             "cycles": probe["execution"]["cycles"],
             "mem_used": probe["execution"]["mem_used"],
+            "mem_len": probe["execution"]["mem_len"],
+            # Only the `mem_used` prefix is recorded; upstream pads `mem` to
+            # `mem_len` (a power of two) and every padded cell is zero.
             "mem": probe["execution"]["mem"],
         },
         "provenance": {"exporter_sha256": sha256(pathlib.Path(__file__))},

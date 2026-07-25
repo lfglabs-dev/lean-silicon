@@ -65,6 +65,7 @@ def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, to
         "public_input": recorded["public_input"],
         "cycles": probe["execution"]["cycles"],
         "mem_used": probe["execution"]["mem_used"],
+        "mem_len": probe["execution"]["mem_len"],
         "mem": probe["execution"]["mem"],
     }
     return live, "live_cargo_run", command
@@ -76,14 +77,22 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
     Memory is write-once on both sides, so a cell the host wrote can never be
     given a different value by a later upstream instruction.  Cells the host
     never reached are not compared.
+
+    ``upstream["mem"]`` holds the ``mem_used`` prefix that upstream actually
+    touched; the rest of its power-of-two buffer is untouched zero.  A host
+    write at or past that prefix is a divergence, not a gap in the record.
     """
     mem = [int(value, 16) for value in upstream["mem"]]
     addresses = sorted(runtime.memory.cells)
     mismatches = []
     for address in addresses:
         host_value = runtime.memory.cells[address]
-        if address >= len(mem):
-            mismatches.append({"address": address, "reason": "outside upstream memory image"})
+        if address >= upstream["mem_used"]:
+            mismatches.append({
+                "address": address,
+                "host": f"{host_value:#034x}",
+                "reason": f"upstream never touched this cell (mem_used={upstream['mem_used']})",
+            })
         elif mem[address] != host_value:
             mismatches.append({
                 "address": address,
@@ -150,13 +159,14 @@ def main() -> None:
             "rust_toolchain": args.rust_toolchain if command else None,
             "cycles": upstream["cycles"],
             "mem_used": upstream["mem_used"],
+            "mem_len": upstream["mem_len"],
         },
         "lean_silicon": {
             "profile": runtime.profile.name,
             "terminal": run.terminal,
             "reason": run.reason,
             "steps": [record.as_dict() for record in run.records],
-            "final_state": runtime.final_state(len(upstream["mem"])),
+            "final_state": runtime.final_state(upstream["mem_used"]),
         },
         "comparison": comparison,
     }
