@@ -1,3 +1,1 @@
-python3 tools/host_upstream_comparison.py --artifact host/fixtures/assert_set_xor_mul.program.json \
-  --upstream "/tmp/leanVM-b"
-MATCH upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 source=live_cargo_run steps=12 terminal=unsupported cells=12
+PREFIX_MATCH upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 source=live_cargo_run steps=12 terminal=unsupported cells=12

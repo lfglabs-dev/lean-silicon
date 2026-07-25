@@ -32,11 +32,12 @@
       "per_step.inputs": "Execution::trace is pub(crate) at the frozen commit",
       "per_step.opcode": "Execution::trace is pub(crate) at the frozen commit",
       "per_step.pc": "Execution::trace is pub(crate) at the frozen commit",
-      "per_step.writes": "Execution::trace is pub(crate) at the frozen commit"
+      "per_step.writes": "Execution::trace is pub(crate) at the frozen commit",
+      "unsupported_suffix": "pc 12: Jump is not integrated. JUMP needs host-side branch proposal and destination re-encoding; the LSC-1 transaction exists but the host does not prepare it yet"
     },
-    "result": "MATCH"
+    "result": "PREFIX_MATCH"
   },
-  "generated_at_utc": "2026-07-25T15:40:10.689599+00:00",
+  "generated_at_utc": "2026-07-25T18:43:59.099979+00:00",
   "lean_silicon": {
     "final_state": {
       "cycles": 12,
