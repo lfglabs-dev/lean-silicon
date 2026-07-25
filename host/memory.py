@@ -117,23 +117,30 @@ class HostMemory:
         Returns the pairs that are still open.  A pair whose sides disagree is a
         host-detected inconsistency, not something the ASIC can see later.
         """
-        still_open: list[tuple[int, int]] = []
-        for target, local in self.deferred:
-            left = self.cells.get(target)
-            right = self.cells.get(local)
-            if left is None and right is None:
-                still_open.append((target, local))
-            elif left is None:
-                self.cells[target] = right
-            elif right is None:
-                self.cells[local] = left
-            elif left != right:
-                raise WriteOnceViolation(
-                    f"deferred equality {target} == {local} is unsatisfiable: "
-                    f"{left:#034x} != {right:#034x}"
-                )
-        self.deferred = still_open
-        return still_open
+        pending = self.deferred
+        while True:
+            still_open: list[tuple[int, int]] = []
+            resolved = 0
+            for target, local in pending:
+                left = self.cells.get(target)
+                right = self.cells.get(local)
+                if left is None and right is None:
+                    still_open.append((target, local))
+                elif left is None:
+                    self.apply_write(target, right)
+                    resolved += 1
+                elif right is None:
+                    self.apply_write(local, left)
+                    resolved += 1
+                elif left != right:
+                    raise WriteOnceViolation(
+                        f"deferred equality {target} == {local} is unsatisfiable: "
+                        f"{left:#034x} != {right:#034x}"
+                    )
+            if resolved == 0:
+                self.deferred = still_open
+                return still_open
+            pending = still_open
 
     def image(self, size: int) -> list[int]:
         """Dense prefix of the memory image, unwritten cells read as zero."""

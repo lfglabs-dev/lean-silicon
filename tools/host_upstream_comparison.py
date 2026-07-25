@@ -101,6 +101,12 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
             })
 
     cycles_comparable = run.terminal == "halted"
+    if run.terminal not in ("halted", "unsupported"):
+        mismatches.append({
+            "field": "terminal",
+            "host": run.terminal,
+            "reason": run.reason,
+        })
     if cycles_comparable and runtime.step_index != upstream["cycles"]:
         mismatches.append({
             "field": "cycles",

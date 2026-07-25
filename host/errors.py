@@ -22,6 +22,10 @@ class WriteOnceViolation(HostError):
     """The host was asked to overwrite a written cell with a different value."""
 
 
+class ProtocolViolation(HostError):
+    """A response was well-framed but violated the transaction contract."""
+
+
 class TransactionRejected(HostError):
     """The endpoint answered an instruction with a fault status."""
 

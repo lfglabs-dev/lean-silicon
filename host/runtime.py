@@ -12,7 +12,7 @@ what is missing.
 """
 from dataclasses import dataclass, field
 
-from .errors import TransactionRejected, UnsupportedCapability
+from .errors import ProtocolViolation, TransactionRejected, UnsupportedCapability
 from .lean_compiler_adapter import Program
 from .memory import HostMemory, field_inverse
 from .protocol import protocol
@@ -87,12 +87,16 @@ class RunResult:
         }
 
 
-def decode_result_payload(payload: bytes) -> dict:
+def decode_result_payload(payload: bytes, *, expected_txn_id: int | None = None) -> dict:
     """Decode an ``OK`` transition result (protocol section 8)."""
     def u32(offset: int) -> int:
         return int.from_bytes(payload[offset:offset + 4], "little")
 
     txn_id, next_pc, next_fp = u32(0), u32(4), u32(8)
+    if expected_txn_id is not None and txn_id != expected_txn_id:
+        raise ProtocolViolation(
+            f"result echoed txn_id {txn_id}, expected {expected_txn_id}"
+        )
     cursor = 12
     writes = []
     for _ in range(payload[cursor]):
@@ -263,7 +267,7 @@ class HostRuntime:
             self.faulted = True
             return record
 
-        result = decode_result_payload(reply.payload)
+        result = decode_result_payload(reply.payload, expected_txn_id=self.txn_id)
         retire = self._exchange(
             protocol.build_retire(
                 txn_id=result["txn_id"],
@@ -276,6 +280,23 @@ class HostRuntime:
             record.lane_cycles = self.lane_cycles - before
             self.faulted = True
             return record
+        if len(retire.payload) != 16:
+            raise ProtocolViolation(
+                f"retire payload has {len(retire.payload)} bytes, expected 16"
+            )
+        retired_txn_id = int.from_bytes(retire.payload[0:4], "little")
+        if retired_txn_id != self.txn_id:
+            raise ProtocolViolation(
+                f"retire echoed txn_id {retired_txn_id}, expected {self.txn_id}"
+            )
+        committed_pc = int.from_bytes(retire.payload[8:12], "little")
+        committed_fp = int.from_bytes(retire.payload[12:16], "little")
+        if (committed_pc, committed_fp) != (result["next_pc"], result["next_fp"]):
+            raise ProtocolViolation(
+                "retire committed scalar state "
+                f"{(committed_pc, committed_fp)}, expected "
+                f"{(result['next_pc'], result['next_fp'])}"
+            )
 
         for write in result["writes"]:
             self.memory.apply_write(write["address"], write["value"])

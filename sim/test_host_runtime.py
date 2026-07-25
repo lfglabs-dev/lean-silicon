@@ -15,10 +15,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from host import lean_compiler_adapter as adapter  # noqa: E402
-from host.errors import AdapterError, UnsupportedCapability, WriteOnceViolation  # noqa: E402
+from host.errors import (  # noqa: E402
+    AdapterError,
+    ProtocolViolation,
+    UnsupportedCapability,
+    WriteOnceViolation,
+)
 from host.memory import HostMemory, PointerMap, field_inverse  # noqa: E402
 from host.protocol import protocol  # noqa: E402
 from host.runtime import HostRuntime, decode_result_payload  # noqa: E402
+from tools.host_upstream_comparison import compare  # noqa: E402
 
 ARTIFACT = ROOT / "host" / "fixtures" / "assert_set_xor_mul.program.json"
 
@@ -79,6 +85,13 @@ class HostMemoryTests(unittest.TestCase):
         contradiction.record_deferred(2, 3)
         with self.assertRaisesRegex(WriteOnceViolation, "unsatisfiable"):
             contradiction.resolve_deferred()
+
+    def test_deferred_equalities_propagate_to_a_fixed_point(self):
+        memory = HostMemory(cells={3: 11})
+        memory.record_deferred(1, 2)
+        memory.record_deferred(2, 3)
+        self.assertEqual(memory.resolve_deferred(), [])
+        self.assertEqual((memory.read(1), memory.read(2)), (11, 11))
 
     def test_field_inverse_round_trips(self):
         for value in (1, 2, 3, 0x87, (1 << 127) | 5, (1 << 128) - 1):
@@ -182,6 +195,11 @@ class ResultPayloadTests(unittest.TestCase):
     def test_a_truncated_payload_is_refused(self):
         with self.assertRaisesRegex(ValueError, "consumed"):
             decode_result_payload(bytes(12) + bytes([0, 0, 0, 0]))
+
+    def test_a_result_for_another_transaction_is_refused(self):
+        payload = (9).to_bytes(4, "little") + bytes(8) + bytes([0, 0, 0])
+        with self.assertRaisesRegex(ProtocolViolation, "expected 8"):
+            decode_result_payload(payload, expected_txn_id=8)
 
 
 class RuntimeTests(unittest.TestCase):
@@ -330,6 +348,16 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
         result = runtime.run()
         self.assertNotEqual(result.terminal, "halted")
         self.assertLess(runtime.step_index, self.upstream["cycles"])
+
+    def test_step_limit_cannot_be_reported_as_a_match(self):
+        runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
+        result = runtime.run(max_steps=0)
+        comparison = compare(runtime, result, self.upstream)
+        self.assertEqual(comparison["result"], "MISMATCH")
+        self.assertIn(
+            {"field": "terminal", "host": "step_limit", "reason": result.reason},
+            comparison["mismatches"],
+        )
 
 
 if __name__ == "__main__":
