@@ -170,8 +170,19 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
                     "reason": "host run did not cover all upstream cells; gaps recorded in not_compared",
                 })
 
+    if mismatches:
+        result = "MISMATCH"
+    elif run.terminal == "halted":
+        result = "MATCH"
+    else:
+        # An explicitly unsupported suffix may have no additional memory cells,
+        # but it was still skipped.  Preserve the useful prefix evidence without
+        # ever presenting it as full-run equivalence.
+        result = "PREFIX_MATCH"
+        not_compared["unsupported_suffix"] = run.reason
+
     return {
-        "result": "MATCH" if not mismatches else "MISMATCH",
+        "result": result,
         "compared": {
             "final_memory_addresses": addresses,
             "cycles": cycles_comparable,
@@ -240,7 +251,7 @@ def main() -> None:
         f"steps={len(run.records)} terminal={run.terminal} "
         f"cells={len(comparison['compared']['final_memory_addresses'])}"
     )
-    if comparison["result"] != "MATCH":
+    if comparison["result"] == "MISMATCH":
         raise SystemExit(json.dumps(comparison["mismatches"], indent=2))
 
 

@@ -126,8 +126,10 @@ Equivalence is claimed only for the entries under `comparison.compared`.
 For the checked-in fixture the compared set is the 12 cells the frozen run
 touched, and `cycles` is explicitly not compared: the fixture's terminating
 `JUMP` is not integrated, so the host executes a 12-step prefix of the 13-cycle
-upstream run. `sim/test_host_runtime.py` asserts that boundary directly, so a
-future change that silently claimed more would fail.
+upstream run. The result is therefore `PREFIX_MATCH`, never the full-run
+`MATCH` reserved for a valid sentinel halt. `sim/test_host_runtime.py` asserts
+that boundary directly, so a future change that silently claimed more would
+fail.
 
 ## 6. Reproducing
 

@@ -481,6 +481,12 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result.terminal, "step_limit")
         self.assertEqual(len(result.records), 2)
 
+    def test_sentinel_requires_zero_frame_pointer(self):
+        runtime = HostRuntime(program(pc0=0, fp0=7))
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertIn("bad_halt_state", result.reason)
+
     def test_arbitrary_rx_tx_stalls_and_backpressure(self):
         """Full transaction loop under arbitrary permitted lane-gap patterns."""
         for rx in ([], [0, 1], [1, 0], [2, 1, 0], [0, 0, 3]):
@@ -533,6 +539,14 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             with self.subTest(address=address):
                 self.assertLess(address, self.upstream["mem_used"])
                 self.assertEqual(value, mem[address])
+
+    def test_unsupported_suffix_is_prefix_match_never_full_match(self):
+        runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
+        result = runtime.run()
+        comparison = compare(runtime, result, self.upstream)
+        self.assertEqual(result.terminal, "unsupported")
+        self.assertEqual(comparison["result"], "PREFIX_MATCH")
+        self.assertIn("unsupported_suffix", comparison["not_compared"])
 
     def test_the_host_covers_every_cell_the_frozen_run_touched(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))

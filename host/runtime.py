@@ -379,6 +379,12 @@ class HostRuntime:
         records: list[StepRecord] = []
         for _ in range(max_steps):
             if self.pc == self.program.halt_pc:
+                if self.fp != 0:
+                    return RunResult(
+                        records,
+                        "fault",
+                        f"bad_halt_state: sentinel pc {self.pc} reached with fp {self.fp}",
+                    )
                 return RunResult(records, "halted", f"reached sentinel pc {self.pc}")
             try:
                 record = self.step()
