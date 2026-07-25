@@ -1,6 +1,8 @@
 # leanSilicon
 
-**A verification-in-progress physical scalar coprocessor for leanVM-b.**
+**Project objective:** a formally verified physical scalar coprocessor for
+leanVM-b. **Current status:** verification in progress; the current evidence
+does not establish that objective.
 
 LSC-1 receives one host-prepared instruction transaction at a time over an
 8-bit ready/valid interface. The Mac owns compilation, program storage, VM
@@ -11,7 +13,8 @@ service requests, retirement, or fault.
 
 The current RTL is an exercised MinCore arithmetic seed behind the final
 `lean_silicon_lsc1` Tiny Tapeout top. It is not yet the LSC-1 v1 packet
-executor. The repository is not currently marketed as formally verified: see
+executor. The project objective above is not a present-tense verification
+claim: the repository is not currently marketed as formally verified. See
 the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 [ROADMAP](docs/ROADMAP.md), and [STATUS](docs/STATUS.md).
 Frozen leanVM-b evidence remains tied to

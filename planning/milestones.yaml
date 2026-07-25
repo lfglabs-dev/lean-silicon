@@ -3,10 +3,11 @@ project: leanSilicon
 frozen_leanvm_b: c308034ab78619b39a59d26f3dc60e7df5b52649
 milestones:
   frozen_oracle_traceability: {depends_on: [], status: planned, gate: "locked-source mapping, vector regeneration, and zkDSL-ready evidence"}
-  host_packet_runtime: {depends_on: [frozen_oracle_traceability], status: planned}
+  docs_reference_oracle: {depends_on: [frozen_oracle_traceability], status: planned, gate: "versioned selected-behavior oracle and opcode/fault coverage map; reference evidence, not a theorem"}
+  host_packet_runtime: {depends_on: [docs_reference_oracle], status: planned}
   lsc1_rtl_completion: {depends_on: [host_packet_runtime], status: planned, gate: "exact v1 controller and assertion inventory"}
   differential_tests: {depends_on: [host_packet_runtime, lsc1_rtl_completion], status: planned, gate: "oracle/Lean/RTL vectors, faults, stalls, zero mismatches"}
-  lean_refinement: {depends_on: [host_packet_runtime, frozen_oracle_traceability], status: planned, gate: "all-opcode/fault packet-model refinement"}
+  lean_refinement: {depends_on: [host_packet_runtime, docs_reference_oracle], status: planned, gate: "all-opcode/fault packet-model refinement"}
   sv_controller_correspondence: {depends_on: [lean_refinement, lsc1_rtl_completion], status: planned, gate: "explicit packet/state relation proves exact SV controller refines functional model"}
   sv_controller_formal: {depends_on: [lsc1_rtl_completion, sv_controller_correspondence], status: planned, gate: "properties over exact completed controller with documented assumptions and proof method"}
   ulx3s_pin_harness: {depends_on: [host_packet_runtime], status: planned}

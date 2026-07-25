@@ -2,8 +2,10 @@
 
 ## Direction
 
-leanSilicon is developing a physical scalar coprocessor for leanVM-b.  It is
-**not currently marketed as formally verified**: the present evidence is
+leanSilicon's long-term objective is a formally verified physical scalar
+coprocessor for leanVM-b.  That objective is **not** a present-tense product
+claim: leanSilicon is **not currently marketed as formally verified** because
+the present evidence is
 bounded and layer-specific.  The exact correspondence boundaries, missing
 theorems, and release gates are in [PROOF_BOUNDARIES](PROOF_BOUNDARIES.md).
 LSC-1 executes one host-prepared instruction transaction at a time.  The host
@@ -55,6 +57,13 @@ The planned graph must close these bridges in dependency order:
    response coverage.
 6. Sequential RTL-to-netlist equivalence for the release synthesis inputs,
    before using netlist/PPA results as implementation evidence.
+
+The machine-readable counterparts are
+`frozen_oracle_traceability`, `docs_reference_oracle`, `lean_refinement`,
+`sv_controller_correspondence`, `sv_controller_formal`,
+`differential_tests`, and `rtl_netlist_equivalence` in
+[`planning/milestones.yaml`](../planning/milestones.yaml).  Their shared
+release gate is `formal_verification_release_claim`.
 
 Until those gates are recorded as passing, no repository artifact may claim
 that the full LSC-1 controller or the project is formally verified.  The
