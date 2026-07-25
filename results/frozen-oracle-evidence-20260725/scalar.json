@@ -16,15 +16,15 @@
   "limits": "Does not cover BLAKE3, Cell DEREF/deferred reconciliation, taken jumps, allocation hints, or overflow behavior.",
   "profile": "seven-step straight-line SET, SET, XOR, MUL, DEREF(Pc), DEREF(Fp), non-taken JUMP",
   "provenance": {
-    "checker_sha256": "d633ac53eb3a59b01f273be0889cc079b4e7be7e9692b95d843b61875ed44854",
+    "checker_sha256": "a1fbbcbe225a1e2edb2456f92825e7b6853f224e8d0379aa4454d298c2419919",
     "oracle_sha256": "33a0956687b75cb08d19e58a7da8fc4acf622e63795f1220f57a38bc6d2c4117"
   },
   "result": "PASS",
   "rust_toolchain": "1.88.0",
   "schema": 1,
   "seed": "0xc308034a",
-  "tested_at_utc": "2026-07-25T05:21:27.308318+00:00",
-  "tested_repo_head": "0a4fe71e61ceed301333bd90d78f36583a347150",
+  "tested_at_utc": "2026-07-25T06:33:31.641407+00:00",
+  "tested_repo_head": "a4a5a55a56e03559ab52b593435f9bbc5ab25cc7",
   "upstream": {
     "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
     "postflight": {

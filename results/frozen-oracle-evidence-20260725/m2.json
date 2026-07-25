@@ -15,7 +15,7 @@
     ],
     "scalar_gate": [
       "/usr/bin/python3",
-      "/workspaces/mission-24ee4121/private-worktrees/pr7/tools/frozen_upstream_differential.py",
+      "/workspaces/mission-4ef1fee5/repo/tools/frozen_upstream_differential.py",
       "--upstream",
       "/workspaces/mission-24ee4121/frozen-upstream",
       "--seed",
@@ -32,16 +32,16 @@
   "limits": "M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.",
   "profile": "M2 XOR and MUL only; 64 deterministic seeded full-width vectors plus fixed controller edge regressions.",
   "provenance": {
-    "checker_sha256": "c4533c4992e65e420a29e279a812367ddd2a07320a5a9e9742ec49c41771c0cb",
+    "checker_sha256": "d6e2804b192b11009bbc6adb33d4a2e56b9296427dcdebd5ddefeb43f549d72a",
     "rtl_sha256": "f3e038032b2f1c76b176651dd79b266976091f1215b7e617c194888e387ab5e5",
-    "scalar_gate_sha256": "d633ac53eb3a59b01f273be0889cc079b4e7be7e9692b95d843b61875ed44854"
+    "scalar_gate_sha256": "a1fbbcbe225a1e2edb2456f92825e7b6853f224e8d0379aa4454d298c2419919"
   },
   "result": "PASS",
   "rust_toolchain": "1.88.0",
   "schema": 1,
   "seed": "0xc308034a",
-  "tested_at_utc": "2026-07-25T05:21:43.567381+00:00",
-  "tested_repo_head": "0a4fe71e61ceed301333bd90d78f36583a347150",
+  "tested_at_utc": "2026-07-25T06:33:47.785232+00:00",
+  "tested_repo_head": "a4a5a55a56e03559ab52b593435f9bbc5ab25cc7",
   "upstream": {
     "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
     "postflight": {
