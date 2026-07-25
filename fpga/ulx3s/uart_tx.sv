@@ -42,8 +42,13 @@ module uart_tx #(
                     // shift out LSB
                     tx_serial <= shift[0];
                     shift <= {1'b1, shift[8:1]};
-                    if (bit_cnt == 8) begin
-                        // After 8 data bits, emit stop (already high from fill) and return to ready
+                    // bit_cnt 0 drives the start bit, 1..8 the data bits, and 9
+                    // the stop bit. Releasing tx_ready at 8 would end data bit 7
+                    // after a single clock instead of a full baud interval, so a
+                    // receiver samples every zero-valued bit 7 as one.
+                    if (bit_cnt == 9) begin
+                        // The stop bit and the idle level are both high, so the
+                        // ready branch holds this level until the next load.
                         tx_ready <= 1'b1;
                         bit_cnt  <= 0;
                     end else begin

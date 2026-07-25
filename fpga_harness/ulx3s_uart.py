@@ -20,9 +20,27 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from pathlib import Path
 from typing import Optional
 
-import serial  # pyserial
+# Deferred so the response-checking logic below can be imported and unit-tested
+# on a machine with no pyserial and no board attached.
+try:
+    import serial  # pyserial
+except ImportError:  # pragma: no cover - only hit without pyserial installed
+    serial = None  # type: ignore[assignment]
+
+# The GF(2^128) oracle lives in sim/, one level up from this package.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from sim.model import (  # noqa: E402
+    gf_mul_bitserial,
+    gf_mul_polynomial,
+    int_to_le_bytes,
+    le_bytes_to_int,
+)
 
 BAUD = 1_000_000
 TIMEOUT_S = 2.0
@@ -30,6 +48,8 @@ TIMEOUT_S = 2.0
 
 def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial.Serial:
     """Open with explicit path. Caller owns lifetime."""
+    if serial is None:
+        raise RuntimeError("pyserial is required to reach a board; pip install pyserial")
     ser = serial.Serial(
         port=path,
         baudrate=baud,
@@ -95,6 +115,28 @@ XOR128 = 0x01
 MUL128 = 0x02
 CLEAR  = 0x7d
 STATUS = 0x7e
+
+
+def expected_mul(a: bytes, b: bytes) -> bytes:
+    """Expected GF(2^128) product of two little-endian 16-byte operands.
+
+    Computed by both oracles in sim.model and cross-checked. They share no
+    intermediate steps: one is schoolbook carry-less multiply plus long
+    reduction, the other is the LSB-first bit-serial recurrence the RTL uses.
+    A disagreement means the oracle itself is broken, which must not be
+    reported as a board failure.
+    """
+    if len(a) != 16 or len(b) != 16:
+        raise ValueError("operands must be 16 bytes each")
+    a_int = le_bytes_to_int(a)
+    b_int = le_bytes_to_int(b)
+    poly = gf_mul_polynomial(a_int, b_int)
+    bitserial = gf_mul_bitserial(a_int, b_int)
+    if poly != bitserial:
+        raise AssertionError(
+            f"GF(2^128) oracles disagree: {poly:032x} vs {bitserial:032x}"
+        )
+    return int_to_le_bytes(poly, 16)
 
 
 def tx_set(ser: serial.Serial, value: bytes) -> bytes:
@@ -202,9 +244,12 @@ def main(argv: Optional[list[str]] = None) -> int:
                 return 2
             a, b = pay[:16], pay[16:]
             res = tx_mul(ser, a, b)
+            exp = expected_mul(a, b)
             print("MUL res :", res.hex())
-            print("MUL (no local expected; compare to oracle)")
-            return 0
+            print("MUL exp :", exp.hex())
+            ok = res == exp
+            print("MATCH:", ok)
+            return 0 if ok else 1
 
         return 0
     finally:

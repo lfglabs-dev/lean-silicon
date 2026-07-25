@@ -26,23 +26,28 @@
 - Build script: [fpga/ulx3s/build_smoke.sh](../fpga/ulx3s/build_smoke.sh)
 
 ### Toolchain (pinned OSS CAD Suite 2026-07-25)
+Reproduced verbatim in `results/ulx3s-smoke-uart-20260725/tool_versions.txt`:
 ```
 Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
-nextpnr-ecp5 --version: nextpnr-ecp5 0.7+75 (git sha1 ...)
-ecppack from prjtrellis
+"nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.10-100-gfb95bb8e)
+Project Trellis ecppack Version 1.4-79-g56bb170
 ```
 
 ### Exact commands executed (no --timing-allow-fail)
 ```sh
-cd fpga/ulx3s
-yosys -p 'read_verilog -sv smoke_top.sv; hierarchy -check -top smoke_top; proc; synth_ecp5 -top smoke_top; write_json smoke.json'
-nextpnr-ecp5 --85k --package CABGA381 --json smoke.json --lpf ulx3s_v318_smoke.lpf --textcfg smoke.config
-ecppack --svf smoke.svf smoke.config smoke.bit
+make -C fpga/ulx3s smoke      # runs fpga/ulx3s/build_smoke.sh
 ```
+The script resolves the repository root from its own location, so it may be run
+from any working directory. It archives the bitstream, config and SVF into
+`results/ulx3s-smoke-uart-20260725/` under the names the manifest lists, writes
+`SHA256SUMS` there, and then re-verifies it with `sha256sum -c` before exiting.
 
 ### Post-route timing (captured)
+The LPF carries `FREQUENCY PORT "clk" 25.000000 MHz`. Without it nextpnr falls
+back to a 12 MHz default and a passing report says nothing about the real board
+clock.
 ```
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 12.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 25.00 MHz)
 ```
 
 ### Bitstream artefacts
@@ -56,25 +61,45 @@ Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 1
   - Framing error detection; byte dropped on error
 - Bridge: [fpga/ulx3s/uart_bridge.sv](../fpga/ulx3s/uart_bridge.sv)
   - Instantiates **exact** `lean_silicon_lsc1` (MinCore seed, not v1 packet)
-  - Byte buffering + backpressure: RX_VALID asserted only when core `rx_ready`
-  - POR 2-flop reset synchroniser
-  - TX_READY only when UART serializer idle
+  - One-deep skid buffer in each direction. Each buffer's ready signal deasserts
+    on the same handshake that fills it, so no byte is presented to a side that
+    has not signalled room for it and none is replaced before the far side took it.
+  - `RX_VALID` is held until the core completes the handshake, rather than pulsed
+    against a ready sampled a cycle earlier.
+  - `TX_READY` is the transmit buffer's empty flag, not a mirror of the
+    serialiser's ready one cycle late.
+  - POR reset: a zero-initialised shift register, so `rst_n` is genuinely held
+    low for 8 edges before release. A synchroniser that only ever shifts in ones
+    never asserts reset at all and leaves the whole design at `x`.
+  - Sticky `rx_overrun` observability probe: set if a byte arrives while the
+    receive buffer is full and not draining. It drives no logic; the testbench
+    asserts it stays clear.
   - Framing error or 0x7f byte produces ABORT pulse
 - Top: [fpga/ulx3s/ulx3s_top.sv](../fpga/ulx3s/ulx3s_top.sv) (USE_SMOKE=0 selects bridge)
 - Build: [fpga/ulx3s/build_uart.sh](../fpga/ulx3s/build_uart.sh)
 
 ### Bridge post-route (same flow)
+Built with `make -C fpga/ulx3s uart`.
 ```
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 160.26 MHz (PASS at 12.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 154.37 MHz (PASS at 25.00 MHz)
 ```
+Device utilisation confirms the core is really in the image, not optimised away:
+703 TRELLIS_COMB and 402 TRELLIS_FF against 34/25 for the bare smoke design.
+Only 4 TRELLIS_IO are used (`clk`, `led`, `uart_rx`, `uart_tx`), so the 8-bit
+ASIC boundary is not widened out to pins.
 - Bitstream: `results/ulx3s-smoke-uart-20260725/ulx3s_bridge.bit`
-- SHA256: `0c190f247b9c7683e111d76bcd3c891b26fa27bbd1ad4477ede9b2b7598faccc`
+- SHA256: `eacee77bdca486f173cacdb56709e442942eb85f9111eabcb96026976f8bae51`
+- Byte-identical across two independent runs of the build script.
 
 ## P1 Python driver (new harness-owned path)
 - [fpga_harness/ulx3s_uart.py](../fpga_harness/ulx3s_uart.py)
 - **Explicit serial path only**. No enumeration. No persistence. No auto-detect.
 - Commands: `--tx set|xor|mul|status|clear --port /dev/... --payload <hex>`
-- Independent expected constants for SET/XOR; MUL delegates to oracle.
+- Independent expected values for SET, XOR **and MUL**. The MUL expectation is
+  computed locally by both oracles in `sim/model.py` (schoolbook carry-less
+  multiply plus long reduction, and the LSB-first bit-serial recurrence) and
+  cross-checked against each other. The process exit status depends on the
+  comparison, so a complete but incorrect 16-byte product exits 1 rather than 0.
 - Stale-byte drain on open and between transactions.
 - Timeout and clear/status support.
 
@@ -86,16 +111,34 @@ python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 000000
 
 ## P2 Tests
 - Boundary: `make fpga-boundary` (and direct `python3 fpga_harness/boundary_check.py`) → OK
-- Harness unit tests: `make fpga-harness` → 101 tests OK
-- Sim: `make sim` (python) → 163 tests OK
-- Icarus bridge TB: `test/tb_uart_bridge.sv` compiles and runs (liveness window; no full UART model in TB)
+- Harness unit tests: `make fpga-harness` → 111 tests OK
+- Sim: `make python` → 163 tests OK
+- Icarus benches: `make sim` builds and runs both `test/tb_stream_alu.sv` and
+  `test/tb_uart_bridge.sv`. The bridge bench is wired into the target rather
+  than run by hand, so a regression in it fails the suite.
+
+`tb_uart_bridge` contains a real 1 Mbaud 8N1 receiver, not a liveness window.
+It fails on a response byte that is never serialised, on a stop bit that is not
+high, on a final data bit not held for a full baud interval, on any byte that
+differs from an independently computed expectation, on an unexpected extra byte,
+and on `rx_overrun`. Covered transactions: STATUS, SET with an all-zero payload,
+SET with a mixed payload, XOR, MUL against the `sim/model.py` vector, unknown
+opcode → `0xe0`, and abort-then-recover.
+
+Mutation testing was used to show the bench and the harness tests actually
+discriminate, rather than passing because the code happens to be correct:
+
+| Mutation | Reintroduced defect | Result |
+| --- | --- | --- |
+| M1 | `uart_tx` releases `tx_ready` at `bit_cnt == 8` | caught — `byte 0 is 81, expected 01` |
+| M4 | POR shift register that only shifts in ones | caught |
+| MA | Original `uart_bridge.sv` ready/valid logic verbatim | caught — STATUS receives 2 of 4 bytes, SET 8 of 16 |
+| MB | `--tx mul` returns 0 without comparing | caught by 4 harness tests |
 
 Run order used:
 ```sh
-make fpga-boundary
-make fpga-harness
-python3 -m unittest discover -s sim -q
-iverilog ... && vvp /tmp/tb_uart.vvp
+make check          # includes fpga-boundary, fpga-harness, checksum-check
+make sim            # both Icarus benches
 ```
 
 ## Programming (SRAM-only, review gate)
@@ -116,7 +159,7 @@ Power-cycle recovery: remove power or press reset; SRAM contents are lost.
 - Not a CPU/ISA validation.
 - Not a datapath validation on silicon.
 - Not a claim that bytes crossed a physical ULX3S.
-- The artefacts prove: reproducible OSS flow from exact source at 03926bb, exact `lean_silicon_lsc1` pin contract instantiated, timing numbers at 25 MHz target, and clean tests.
+- The artefacts prove: reproducible OSS flow from exact source at 03926bb, exact `lean_silicon_lsc1` pin contract instantiated, post-route timing closed against an explicit 25 MHz constraint, and clean tests.
 
 ## Supported transaction sequence (MinCore protocol)
 - SET128 (0x03): 1+16 bytes in → 16 bytes echo
@@ -133,15 +176,33 @@ All bytes traverse ui_in/uo_out/uio_* ready/valid. No wide bypass.
 - No Verilator full bridge test (Icarus only; Verilator would require additional wrapper).
 - Bridge driver lacks host-side flow control backpressure beyond TX_READY gating.
 - LPF is hypothesis only for v3.1.8; full pin list and bank voltages unverified here.
+- **0x7f cannot appear as a payload byte.** The bridge treats it as an abort at
+  the byte layer, before any command framing, so a SET/XOR/MUL operand
+  containing 0x7f aborts the transaction instead of being delivered. This is the
+  documented ABORT contract, not a regression; escaping or framing the payload
+  would change the wire protocol and is deliberately out of scope for this PR.
+- The bridge is one byte deep in each direction. That is sufficient here because
+  the host is slower than the core, but it is not a general flow-control layer.
 
 ## Artefact manifest (local)
+Every file listed below is present in the committed results directory. Verify with
+`cd results/ulx3s-smoke-uart-20260725 && sha256sum -c SHA256SUMS && sha256sum -c SHA256SUMS_bridge.txt`.
 ```
 results/ulx3s-smoke-uart-20260725/
-  SHA256SUMS
+  SHA256SUMS               # ulx3s_smoke.bit, smoke.config, smoke.svf
+  SHA256SUMS_bridge.txt    # ulx3s_bridge.bit
   ulx3s_smoke.bit          # 96eb9eda...
-  ulx3s_bridge.bit         # 0c190f24...
-  tool_versions*.txt
-  nextpnr_*.log (timing lines)
+  ulx3s_bridge.bit         # eacee77b...
+  smoke.config
+  smoke.svf
+  tool_versions.txt        tool_versions_uart.txt
+  yosys.log                yosys_uart.log
+  nextpnr.log              nextpnr_uart.log
+  timing.txt               timing_uart.txt
 ```
+`ecppack` emits nothing on success, so its log is not archived; an empty file
+would not distinguish a silent run from a run that never happened.
+The repository `.gitignore` excludes `*.log` globally; this directory is
+exempted so the synthesis and route evidence is actually reviewable.
 
 All deliverables stop at the verified boundary. No fabricated execution logs.

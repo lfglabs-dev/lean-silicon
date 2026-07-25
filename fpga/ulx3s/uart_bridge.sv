@@ -15,12 +15,14 @@ module uart_bridge (
     input  wire uart_rx,   // async from FTDI (M1)
     output wire uart_tx    // to FTDI (L4)
 );
-    // POR reset synchroniser (active-low)
-    reg rst_m, rst_n;
-    always @(posedge clk) begin
-        rst_m <= 1'b1;     // async deassert captured
-        rst_n <= rst_m;
-    end
+    // Power-on reset (active-low). The shift register starts at zero, so rst_n
+    // is genuinely held low for POR_CYCLES edges before it releases. A
+    // synchroniser that only ever shifts in ones never asserts reset at all,
+    // which leaves every register in this file and in the core undefined.
+    localparam integer POR_CYCLES = 8;
+    reg [POR_CYCLES-1:0] por_shift = {POR_CYCLES{1'b0}};
+    always @(posedge clk) por_shift <= {por_shift[POR_CYCLES-2:0], 1'b1};
+    wire rst_n = por_shift[POR_CYCLES-1];
 
     // UART RX
     wire [7:0] uart_rx_data;
@@ -67,84 +69,93 @@ module uart_bridge (
     // Host drives: uio_in[0]=RX_VALID, uio_in[3]=TX_READY, uio_in[6]=ABORT
     // ASIC drives: uio_out[1]=RX_READY, uio_out[2]=TX_VALID, ...
     // We sample uio_out (ASIC outputs) and drive uio_in (host inputs).
-    // Simple policy:
-    // - Forward uart_rx_data to ui_in when we have a byte and core is ready.
-    // - Assert RX_VALID only for one cycle when a clean byte is accepted.
-    // - When core asserts TX_VALID and we have TX_READY, forward uo_out to uart.
-    // - Backpressure: if uart_tx not ready, hold TX_READY low to core.
+    //
+    // Both directions use a one-deep buffer whose ready deasserts on the very
+    // handshake that fills it. That is what makes the ready/valid contract hold
+    // in both directions: a byte is never presented to a side that has not
+    // signalled room for it, and never replaced before the far side took it.
 
-    reg        rx_valid_q;
-    reg [7:0]  rx_data_q;
-    reg        tx_ready_q;
-    reg        abort_q;
-    reg        frame_abort;
+    reg       abort_q;
 
-    // One-cycle framing abort pulse
+    // Framing errors and the explicit 0x7f abort byte both produce a one-cycle
+    // abort pulse. uart_framing_err and uart_rx_valid are themselves one-cycle
+    // pulses, so no extra edge detection is needed.
+    wire rx_byte_ok  = uart_rx_valid && !uart_framing_err;
+    wire rx_is_abort = rx_byte_ok && (uart_rx_data == 8'h7f);
+
     always @(posedge clk) begin
-        if (!rst_n) frame_abort <= 1'b0;
-        else frame_abort <= uart_framing_err;
+        if (!rst_n) abort_q <= 1'b0;
+        else        abort_q <= uart_framing_err || rx_is_abort;
     end
 
-    // Host->core forwarding with backpressure
+    // ---- host -> core ----------------------------------------------------
+    // RX_VALID stays asserted until the core completes the handshake. Sampling
+    // RX_READY a cycle early and pulsing RX_VALID regardless discards every
+    // byte that arrives while the core is mid-transaction.
+    reg       rx_full;
+    reg [7:0] rx_data_q;
+    reg       rx_overrun;
+
+    wire core_rx_ready = uio_out[1];
+    wire rx_core_fire  = rx_full && core_rx_ready;
+    wire rx_accept     = rx_byte_ok && !rx_is_abort;
+
     always @(posedge clk) begin
         if (!rst_n) begin
-            rx_valid_q <= 1'b0;
-            rx_data_q  <= 8'h00;
-            abort_q    <= 1'b0;
-        end else begin
-            // Default: deassert after one cycle unless re-armed
-            rx_valid_q <= 1'b0;
-            abort_q    <= frame_abort;
-
-            if (uart_rx_valid && !uart_framing_err) begin
-                // Accept a byte from UART only if core can take it this cycle.
-                // If not, we drop it (harness policy: host must not overrun without flow control).
-                // A production harness would NACK or buffer; here we keep it minimal.
-                if (uio_out[1]) begin // RX_READY from core
-                    rx_valid_q <= 1'b1;
-                    rx_data_q  <= uart_rx_data;
-                end
-            end
-
-            // Host can send 0x7f as explicit abort
-            if (uart_rx_valid && uart_rx_data == 8'h7f && !uart_framing_err) begin
-                abort_q <= 1'b1;
-            end
+            rx_full   <= 1'b0;
+            rx_data_q <= 8'h00;
+        end else if (abort_q) begin
+            // The buffered byte belongs to the transaction being abandoned.
+            rx_full   <= 1'b0;
+        end else if (rx_accept) begin
+            rx_data_q <= uart_rx_data;
+            rx_full   <= 1'b1;
+        end else if (rx_core_fire) begin
+            rx_full   <= 1'b0;
         end
     end
 
-    // Core->host forwarding
+    // Sticky observability probe: a byte arrived while the buffer was still
+    // full and not being drained, so it displaced one the core never read.
+    // Testbenches assert this stays clear; it drives no logic.
+    always @(posedge clk) begin
+        if (!rst_n) rx_overrun <= 1'b0;
+        else if (rx_accept && rx_full && !rx_core_fire) rx_overrun <= 1'b1;
+    end
+
+    // ---- core -> host ----------------------------------------------------
+    // TX_READY is the buffer-empty flag, so it drops on the same edge the core
+    // hands a byte over. Mirroring the serialiser's ready one cycle late lets
+    // the core complete a second handshake while the serialiser is already
+    // busy, and that byte is overwritten instead of sent.
+    reg       tx_full;
+    reg [7:0] tx_data_q;
+
+    wire core_tx_valid = uio_out[2];
+    wire core_tx_ready = !tx_full;
+    wire tx_core_fire  = core_tx_valid && core_tx_ready;
+    wire tx_uart_fire  = tx_full && uart_tx_ready;
+
     always @(posedge clk) begin
         if (!rst_n) begin
-            tx_ready_q <= 1'b0;
-        end else begin
-            // Only offer TX_READY when the UART serializer is idle
-            tx_ready_q <= uart_tx_ready;
+            tx_full   <= 1'b0;
+            tx_data_q <= 8'h00;
+        end else if (abort_q) begin
+            tx_full   <= 1'b0;
+        end else if (tx_core_fire) begin
+            tx_data_q <= uo_out;
+            tx_full   <= 1'b1;
+        end else if (tx_uart_fire) begin
+            tx_full   <= 1'b0;
         end
     end
 
     // Wire the exact 8-bit interface
     assign ui_in  = rx_data_q;
-    assign uio_in = {1'b0, abort_q, 1'b0, 1'b0, tx_ready_q, 1'b0, 1'b0, rx_valid_q};
+    assign uio_in = {1'b0, abort_q, 1'b0, 1'b0, core_tx_ready, 1'b0, 1'b0, rx_full};
 
-    // Core produces uo_out (tx_data) when uio_out[2] (TX_VALID) is high.
-    // We register a one-cycle pulse to the UART when we see TX_VALID && TX_READY.
-    reg        core_tx_fire;
-    reg [7:0]  core_tx_data;
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            core_tx_fire <= 1'b0;
-            core_tx_data <= 8'h00;
-        end else begin
-            core_tx_fire <= uio_out[2] && tx_ready_q;
-            if (uio_out[2] && tx_ready_q) begin
-                core_tx_data <= uo_out;
-            end
-        end
-    end
-
-    assign uart_tx_data  = core_tx_data;
-    assign uart_tx_valid = core_tx_fire;
+    assign uart_tx_data  = tx_data_q;
+    assign uart_tx_valid = tx_full;
 
     // Instantiate the exact contract top (MinCore seed, not v1 packet)
     lean_silicon_lsc1 asic (
@@ -159,7 +170,7 @@ module uart_bridge (
     );
 
     // Unused uio_oe and other bits are left floating in harness; ASIC drives them.
-    wire _unused = &{uio_oe, 1'b0};
+    wire _unused = &{uio_oe, rx_overrun, 1'b0};
 
 endmodule
 `default_nettype wire

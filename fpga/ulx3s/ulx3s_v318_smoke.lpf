@@ -5,6 +5,9 @@
 # Clock: 25 MHz onboard oscillator
 LOCATE COMP "clk" SITE "G2";
 IOBUF PORT "clk" IO_TYPE=LVCMOS33;
+# Without this the router falls back to its 12 MHz default, so a passing
+# nextpnr timing report says nothing about closure at the real board clock.
+FREQUENCY PORT "clk" 25.000000 MHz;
 # LED0 (active low on ULX3S)
 LOCATE COMP "led" SITE "B2";
 IOBUF PORT "led" IO_TYPE=LVCMOS33;

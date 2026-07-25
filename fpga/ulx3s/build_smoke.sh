@@ -2,17 +2,36 @@
 # Reproducible ULX3S v3.1.8 smoke build.
 # Requires: yosys, nextpnr-ecp5, ecppack from OSS CAD Suite (no -f ever).
 set -eu
-cd "$(dirname "$0")"
+
+# Resolve the repository root from this script's location. The build products
+# are archived into the committed results directory, so a wrong number of ".."
+# silently scatters evidence outside the repository instead of failing.
+HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ROOT=$(CDPATH= cd -- "$HERE/../.." && pwd)
+cd "$HERE"
 
 TOP=smoke_top
 LPF=ulx3s_v318_smoke.lpf
-OUTDIR=../../../results/ulx3s-smoke-uart-20260725
+OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
+
+# Names the artifacts are archived and checksummed under. They must match the
+# files committed under results/, otherwise `sha256sum -c` names a file that
+# does not exist and the manifest cannot be verified.
+BIT_NAME=ulx3s_smoke.bit
+CFG_NAME=smoke.config
+SVF_NAME=smoke.svf
+
+OSS_CAD_BIN=${OSS_CAD_BIN:-/root/oss/bin}
+if [ -d "$OSS_CAD_BIN" ]; then
+    PATH="$OSS_CAD_BIN:$PATH"
+    export PATH
+fi
 
 echo "=== TOOL VERSIONS ===" | tee "$OUTDIR/tool_versions.txt"
 yosys -V 2>&1 | tee -a "$OUTDIR/tool_versions.txt"
 nextpnr-ecp5 --version 2>&1 | tee -a "$OUTDIR/tool_versions.txt"
-ecppack --help 2>&1 | head -1 | tee -a "$OUTDIR/tool_versions.txt"
+ecppack --version 2>&1 | tee -a "$OUTDIR/tool_versions.txt"
 echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "$OUTDIR/tool_versions.txt"
 
 echo "=== SYNTH ==="
@@ -24,12 +43,19 @@ nextpnr-ecp5 --85k --package CABGA381 --json ${TOP}.json --lpf ${LPF} --textcfg 
 echo "=== PACK ==="
 ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit 2>&1 | tee "$OUTDIR/ecppack.log"
 
-sha256sum ${TOP}.bit ${TOP}.config ${TOP}.svf 2>/dev/null | tee "$OUTDIR/SHA256SUMS"
+cp "${TOP}.bit"    "$OUTDIR/$BIT_NAME"
+cp "${TOP}.config" "$OUTDIR/$CFG_NAME"
+cp "${TOP}.svf"    "$OUTDIR/$SVF_NAME"
+
+# Digest the archived copies from inside OUTDIR so the manifest holds bare
+# file names that resolve when checked from that directory.
+( cd "$OUTDIR" && sha256sum "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" > SHA256SUMS )
+( cd "$OUTDIR" && sha256sum -c SHA256SUMS )
 
 # Capture timing line for report
 grep -E 'Max frequency|Slack' "$OUTDIR/nextpnr.log" | tail -5 | tee "$OUTDIR/timing.txt" || true
 
 echo "=== BUILD COMPLETE ==="
-ls -l ${TOP}.bit
-echo "bitstream: $(pwd)/${TOP}.bit"
-echo "sha256: $(sha256sum ${TOP}.bit | cut -d' ' -f1)"
+ls -l "$OUTDIR/$BIT_NAME"
+echo "bitstream: $OUTDIR/$BIT_NAME"
+echo "sha256: $(sha256sum "$OUTDIR/$BIT_NAME" | cut -d' ' -f1)"
