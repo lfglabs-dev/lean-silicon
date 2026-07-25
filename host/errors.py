@@ -28,6 +28,18 @@ class ProtocolViolation(HostError):
     """A response was well-framed but violated the transaction contract."""
 
 
+class PreparationFault(HostError):
+    """The host refused to build a request, before any byte reached the lane.
+
+    Distinct from a decoding failure on the way back: nothing is staged on the
+    endpoint, so the run may end on this without stranding a transaction.
+    """
+
+    def __init__(self, status) -> None:
+        super().__init__(f"preparation failed: {status.name.lower()}")
+        self.status = status
+
+
 class TransactionRejected(HostError):
     """The endpoint answered an instruction with a fault status."""
 

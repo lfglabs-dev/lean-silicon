@@ -15,7 +15,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .errors import ProtocolViolation, TransactionRejected, UnsupportedCapability
+from .errors import (
+    PreparationFault,
+    ProtocolViolation,
+    TransactionRejected,
+    UnsupportedCapability,
+)
 from .lean_compiler_adapter import Program
 from .memory import HostMemory, field_inverse
 from .protocol import protocol
@@ -265,6 +270,18 @@ class HostRuntime:
             for address in addresses
         ]
 
+    def _address(self, offset: int) -> int:
+        """``fp + offset`` as a host refusal, not as a lane-level fault.
+
+        ``checked_add`` signals with the same ``ProtocolFault`` type that
+        ``decode_response`` uses for a corrupted frame, so it is translated
+        here: only this one, raised before anything is sent, may end a run.
+        """
+        try:
+            return protocol.checked_add(self.fp, offset)
+        except protocol.ProtocolFault as fault:
+            raise PreparationFault(fault.status) from fault
+
     def _prepare(self, operation) -> tuple["protocol.RequestFrame", list[int]]:
         """Build one self-contained request, or refuse and say why."""
         if not operation.integrated:
@@ -275,7 +292,7 @@ class HostRuntime:
         self.txn_id += 1
         if operation.kind == "Set":
             offset = operation.operands["o"]
-            address = protocol.checked_add(self.fp, offset)
+            address = self._address(offset)
             frame = protocol.build_set_constant(
                 txn_id=self.txn_id,
                 pc=self.pc,
@@ -288,7 +305,7 @@ class HostRuntime:
             return frame, [address]
 
         offsets = (operation.operands["a"], operation.operands["b"], operation.operands["c"])
-        addresses = [protocol.checked_add(self.fp, offset) for offset in offsets]
+        addresses = [self._address(offset) for offset in offsets]
         cells = self._cells(addresses)
         opcode = _LSC1_OPCODE[operation.kind]
         frame = protocol.build_binary_op(
@@ -436,11 +453,12 @@ class HostRuntime:
                 record = self.step()
             except UnsupportedCapability as error:
                 return RunResult(records, "unsupported", str(error))
-            except protocol.ProtocolFault as fault:
-                # Host-side preparation faults, and only those: the endpoint
-                # answers its own faults with a response frame. `checked_add`
-                # raises before any byte is sent, so nothing is staged and the
-                # run ends on the fault rather than on an escaping exception.
+            except PreparationFault as fault:
+                # Only a refusal raised before the request was sent: nothing is
+                # staged, so ending the run here strands nothing. A frame that
+                # fails to decode on the way back is not this, and must not be
+                # reported as one -- the endpoint may hold a pending or an
+                # already-committed transaction, so it keeps propagating.
                 self.faulted = True
                 return RunResult(
                     records,

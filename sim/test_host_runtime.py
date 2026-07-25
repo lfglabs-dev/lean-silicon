@@ -561,6 +561,61 @@ class RuntimeTests(unittest.TestCase):
                 self.assertTrue(runtime.faulted)
                 self.assertEqual(result.records, [])
 
+    class _CorruptingLaneRuntime(HostRuntime):
+        """Corrupts the raw bytes of one chosen response, deterministically.
+
+        Counts post-NEGOTIATE exchanges: 1 is the instruction response, 2 the
+        RETIRE response.
+        """
+
+        def __init__(self, *args, corrupt_at, mangle, **kwargs):
+            self.exchanges = 0
+            self.corrupt_at = corrupt_at
+            self.mangle = mangle
+            super().__init__(*args, **kwargs)
+
+        def _exchange(self, frame):
+            if protocol.Opcode(frame.opcode) is protocol.Opcode.NEGOTIATE:
+                return super()._exchange(frame)
+            self.exchanges += 1
+            raw, cycles = protocol.drive(self.endpoint, frame.encode())
+            self.lane_cycles += cycles
+            if self.exchanges == self.corrupt_at:
+                raw = self.mangle(bytearray(raw))
+            return protocol.decode_response(bytes(raw))
+
+    def test_a_corrupted_response_is_not_reported_as_a_preparation_fault(self):
+        # `decode_response` signals with the same ProtocolFault type as
+        # `checked_add`. A frame that fails to decode arrives *after* the
+        # request was sent, so the endpoint may hold a pending or an already
+        # committed transaction: it must not be turned into a fault terminal.
+        def flip_crc(raw):
+            raw[-1] ^= 0xFF
+            return raw
+
+        def flip_sof(raw):
+            raw[0] ^= 0xFF
+            return raw
+
+        def truncate(raw):
+            return raw[:-3]
+
+        expected = {
+            "flip_crc": protocol.Status.BAD_CRC,
+            "flip_sof": protocol.Status.BAD_SOF,
+            "truncate": protocol.Status.BAD_LENGTH,
+        }
+        for name, mangle in (("flip_crc", flip_crc), ("flip_sof", flip_sof), ("truncate", truncate)):
+            for corrupt_at, where in ((1, "instruction"), (2, "retire")):
+                with self.subTest(corruption=name, response=where):
+                    runtime = self._CorruptingLaneRuntime(
+                        program(set_slot(2, 1)), corrupt_at=corrupt_at, mangle=mangle
+                    )
+                    with self.assertRaises(protocol.ProtocolFault) as caught:
+                        runtime.run()
+                    self.assertIs(caught.exception.status, expected[name])
+                    self.assertFalse(runtime.faulted)
+
     def test_a_non_overflowing_address_is_not_a_preparation_fault(self):
         # The catch must be exactly `checked_add`, not "anything near the top of
         # u32": fp+offset == U32_MAX adds fine, so it reaches the endpoint and
