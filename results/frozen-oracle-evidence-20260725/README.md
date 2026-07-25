@@ -1,7 +1,7 @@
 # Current-candidate frozen-oracle evidence
 
 This record was run against candidate source commit
-`a4a5a55a56e03559ab52b593435f9bbc5ab25cc7` before this evidence-only commit.
+`debebada1a3913051f1e6e5cdd4e2b1e23915167` before this evidence-only commit.
 The final PR head adds only this record; the implementation and all tested
 source files are the stated tested head. No Actions run/job URL was available
 when this local record was created.
@@ -16,7 +16,7 @@ SHA-256 is `0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6`.
 | Gate | Exact command | Exit status | Result |
 |---|---|---:|---|
 | scalar differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/frozen_upstream_differential.py --upstream /workspaces/mission-24ee4121/frozen-upstream --seed 0xC308034A --cases 64 --record /tmp/pr7-new-scalar.log --evidence /tmp/pr7-new-scalar.json` | 0 | 64 deterministic scalar cases passed |
-| M2 differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/m2_rtl_differential.py --upstream /workspaces/mission-24ee4121/frozen-upstream --seed 0xC308034A --cases 64 --record /tmp/pr7-new-m2.json` | 0 | 64 Cargo-vetted RTL XOR/MUL vectors plus controller edge regression passed |
+| M2 differential | `PATH=/workspaces/mission-1c84bcf5/.cargo/bin:$PATH python3 tools/m2_rtl_differential.py --upstream /tmp/pr7-upstream-2XPjQm --seed 0xC308034A --cases 64 --record /tmp/pr7-complete-rtl-commands.json` | 0 | 64 Cargo-vetted RTL XOR/MUL vectors plus controller edge regression passed |
 | Python/structural checks | `make check` | 0 | passed |
 | RTL simulation | `make sim` | 0 | passed |
 | bounded formal | `make formal` | 0 | passed |

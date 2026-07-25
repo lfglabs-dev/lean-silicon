@@ -5,19 +5,29 @@
       "iverilog",
       "-g2012",
       "-s",
-      "tb_m2_scalar_controller"
+      "tb_m2_scalar_controller",
+      "-o",
+      "/tmp/m2-rtl-differential-jdw_5v3p/fixed.vvp",
+      "/workspaces/mission-4ef1fee5/repo/src/leanvm_b_m2_scalar_controller.sv",
+      "/workspaces/mission-4ef1fee5/repo/test/tb_m2_scalar_controller.sv"
     ],
+    "iverilog_fixed_exit_status": 0,
     "iverilog_seeded": [
       "iverilog",
       "-g2012",
       "-s",
-      "tb_seeded"
+      "tb_seeded",
+      "-o",
+      "/tmp/m2-rtl-differential-jdw_5v3p/seeded.vvp",
+      "/workspaces/mission-4ef1fee5/repo/src/leanvm_b_m2_scalar_controller.sv",
+      "/tmp/m2-rtl-differential-jdw_5v3p/tb_seeded.sv"
     ],
+    "iverilog_seeded_exit_status": 0,
     "scalar_gate": [
       "/usr/bin/python3",
       "/workspaces/mission-4ef1fee5/repo/tools/frozen_upstream_differential.py",
       "--upstream",
-      "/workspaces/mission-24ee4121/frozen-upstream",
+      "/tmp/pr7-upstream-2XPjQm",
       "--seed",
       "0xc308034a",
       "--cases",
@@ -25,14 +35,22 @@
       "--rust-toolchain",
       "1.88.0"
     ],
+    "vvp_fixed": [
+      "vvp",
+      "/tmp/m2-rtl-differential-jdw_5v3p/fixed.vvp"
+    ],
     "vvp_fixed_exit_status": 0,
+    "vvp_seeded": [
+      "vvp",
+      "/tmp/m2-rtl-differential-jdw_5v3p/seeded.vvp"
+    ],
     "vvp_seeded_exit_status": 0
   },
   "exit_status": 0,
   "limits": "M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.",
   "profile": "M2 XOR and MUL only; 64 deterministic seeded full-width vectors plus fixed controller edge regressions.",
   "provenance": {
-    "checker_sha256": "d6e2804b192b11009bbc6adb33d4a2e56b9296427dcdebd5ddefeb43f549d72a",
+    "checker_sha256": "13cda9f3b47fda14a1ea23b3e210212eacd7250ea15ffd1e1ac638ea0d5bff3a",
     "rtl_sha256": "f3e038032b2f1c76b176651dd79b266976091f1215b7e617c194888e387ab5e5",
     "scalar_gate_sha256": "a1fbbcbe225a1e2edb2456f92825e7b6853f224e8d0379aa4454d298c2419919"
   },
@@ -40,8 +58,8 @@
   "rust_toolchain": "1.88.0",
   "schema": 1,
   "seed": "0xc308034a",
-  "tested_at_utc": "2026-07-25T06:33:47.785232+00:00",
-  "tested_repo_head": "a4a5a55a56e03559ab52b593435f9bbc5ab25cc7",
+  "tested_at_utc": "2026-07-25T07:10:29.980183+00:00",
+  "tested_repo_head": "debebada1a3913051f1e6e5cdd4e2b1e23915167",
   "upstream": {
     "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
     "postflight": {
