@@ -14,6 +14,7 @@ parser.add_argument("--record", type=pathlib.Path, help="write reproducibility m
 parser.add_argument("--rust-toolchain", default="1.88.0")
 args=parser.parse_args()
 if args.cases <= 0: raise SystemExit('--cases must be positive')
+tested_head=candidate_head()
 preflight=require_checkout(args.upstream)
 seed=args.seed
 count=args.cases
@@ -23,9 +24,10 @@ subprocess.run([
     '--rust-toolchain', args.rust_toolchain,
 ], check=True)
 cases=generate_cases(seed,count)
-assert multiply(*cases[0]) == 0x328
-assert multiply(cases[2][0],cases[2][1]) == multiply(*cases[2])
-assert multiply(multiply(*cases[2]),inverse(cases[2][1])) == cases[2][0]
+if count >= 1: assert multiply(*cases[0]) == 0x328
+if count >= 3:
+    assert multiply(cases[2][0],cases[2][1]) == multiply(*cases[2])
+    assert multiply(multiply(*cases[2]),inverse(cases[2][1])) == cases[2][0]
 with tempfile.TemporaryDirectory(prefix='m2-rtl-differential-') as directory:
     tmp=pathlib.Path(directory)
     fixed_out=tmp/'fixed.vvp'
@@ -59,10 +61,10 @@ module tb_seeded;
  task issue;input[2:0] op;input[31:0] a,b,c;begin @(negedge clk);while(!instr_ready)@(negedge clk);instr_op=op;instr_a=a;instr_b=b;instr_c=c;instr_valid=1;@(negedge clk);instr_valid=0;while(!retired&&!fault)@(negedge clk);if(fault)$fatal(1,"unexpected fault");end endtask
  initial begin
 """ + "\n".join(statements) + """
-  $display("PASS 64 seeded Cargo-vetted RTL vectors");$finish;
+  $display("PASS {count} seeded Cargo-vetted RTL vectors");$finish;
  end
 endmodule
-""")
+""".format(count=count))
     seeded_out=tmp/'seeded.vvp'
     subprocess.run(['iverilog','-g2012','-s','tb_seeded','-o',str(seeded_out),
                     str(ROOT/'src'/'leanvm_b_m2_scalar_controller.sv'),str(bench)],check=True)
@@ -70,6 +72,8 @@ endmodule
     if f'PASS {count} seeded Cargo-vetted RTL vectors' not in seeded.stdout:
         raise SystemExit(seeded.stdout)
 postflight=require_checkout(args.upstream)
+if candidate_head() != tested_head:
+    raise SystemExit('candidate checkout rejected: HEAD changed during differential')
 message=f'PASS M2 RTL differential: {count} seeded Cargo-vetted cases driven through RTL plus controller edge regressions'
 if args.record:
     def digest(path): return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -77,11 +81,11 @@ if args.record:
     args.record.write_text(json.dumps({
         'schema': 1, 'result': 'PASS', 'exit_status': 0,
         'tested_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        'tested_repo_head': candidate_head(),
+        'tested_repo_head': tested_head,
         'upstream': {'repository': REPOSITORY, 'sha': COMMIT, 'preflight': preflight,
                      'postflight': postflight,
                      'cargo_lock_sha256': digest(args.upstream/'Cargo.lock')},
-        'profile': 'M2 XOR and MUL only; 64 deterministic seeded full-width vectors plus fixed controller edge regressions.',
+        'profile': f'M2 XOR and MUL only; {count} deterministic seeded full-width vectors plus fixed controller edge regressions.',
         'limits': 'M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.',
         'seed': f'{seed:#x}', 'case_count': count,
         'commands': {'scalar_gate': [sys.executable, str(ROOT/'tools'/'frozen_upstream_differential.py'), '--upstream', str(args.upstream), '--seed', hex(seed), '--cases', str(count), '--rust-toolchain', args.rust_toolchain],

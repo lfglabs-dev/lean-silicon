@@ -74,7 +74,15 @@ def sha256(path: pathlib.Path) -> str:
 
 
 def candidate_head() -> str:
-    return command_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
+    head = command_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
+    status = command_output(
+        ["git", "-C", str(ROOT), "status", "--porcelain=v1", "--untracked-files=all"]
+    )
+    if status:
+        raise SystemExit(
+            f"candidate checkout rejected: require clean tree at {head}; dirty=true"
+        )
+    return head
 
 
 def program(a: int, b: int) -> list[tuple]:
@@ -94,6 +102,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.cases <= 0:
         raise SystemExit("--cases must be positive")
+    tested_head = candidate_head()
     preflight = require_checkout(args.upstream)
     if shutil.which("cargo") is None:
         raise SystemExit("cargo is required to compile the pinned upstream probe")
@@ -125,6 +134,8 @@ def main() -> None:
         expected = [str(machine.cycles)] + [f"{machine.read(address):032x}" for address in range(8)]
         if row != expected: raise SystemExit(f"mismatch case={index} seed={args.seed:#x}: upstream={row} oracle={expected}")
     postflight = require_checkout(args.upstream)
+    if candidate_head() != tested_head:
+        raise SystemExit("candidate checkout rejected: HEAD changed during differential")
     message = f"PASS upstream={COMMIT} seed={args.seed:#x} cases={args.cases} profile=7-step-set-xor-mul-deref-pc-deref-fp-nontaken-jump\n"
     if args.record: args.record.write_text(message)
     if args.evidence:
@@ -134,7 +145,7 @@ def main() -> None:
             "result": "PASS",
             "exit_status": 0,
             "tested_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "tested_repo_head": candidate_head(),
+            "tested_repo_head": tested_head,
             "upstream": {"repository": REPOSITORY, "sha": COMMIT,
                          "preflight": preflight, "postflight": postflight,
                          "cargo_lock_sha256": sha256(args.upstream / "Cargo.lock")},
