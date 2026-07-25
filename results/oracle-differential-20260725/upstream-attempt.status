@@ -1,0 +1,2 @@
+command: python3 tools/frozen_upstream_differential.py --upstream /tmp/leanvm-b-upstream --seed 0xC308034A --cases 64
+exit: 1

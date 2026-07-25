@@ -1,9 +1,13 @@
 PYTHON ?= python3
 
-.PHONY: check python design-space exact-xor interface-check smoke placeholders sim lean formal clean package
+.PHONY: check python scalar-differential design-space exact-xor interface-check smoke placeholders sim lean formal clean package
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
+
+scalar-differential:
+	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
+	$(PYTHON) tools/frozen_upstream_differential.py --upstream "$(LEANVM_B_UPSTREAM)" --record results/oracle-differential-20260725/differential.log
 
 design-space:
 	$(PYTHON) tools/design_space.py
