@@ -10,6 +10,9 @@ Integrated in this scaffold: SET_CONSTANT, XOR and MUL_NATIVE, including the
 MUL inverse witness.  Everything else raises ``UnsupportedCapability`` naming
 what is missing.
 """
+
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from .errors import ProtocolViolation, TransactionRejected, UnsupportedCapability
@@ -92,37 +95,60 @@ def decode_result_payload(payload: bytes, *, expected_txn_id: int | None = None)
     def u32(offset: int) -> int:
         return int.from_bytes(payload[offset:offset + 4], "little")
 
+    if len(payload) < 12:
+        raise ProtocolViolation("result payload too short for header")
     txn_id, next_pc, next_fp = u32(0), u32(4), u32(8)
     if expected_txn_id is not None and txn_id != expected_txn_id:
         raise ProtocolViolation(
             f"result echoed txn_id {txn_id}, expected {expected_txn_id}"
         )
     cursor = 12
+    if cursor >= len(payload):
+        raise ProtocolViolation("result payload truncated before write count")
     writes = []
-    for _ in range(payload[cursor]):
-        base = cursor + 1
-        writes.append({
-            "address": int.from_bytes(payload[base:base + 4], "little"),
-            "value": int.from_bytes(payload[base + 4:base + 20], "little"),
-        })
-        cursor += protocol.WRITE_BYTES
+    try:
+        for _ in range(payload[cursor]):
+            base = cursor + 1
+            if base + 20 > len(payload):
+                raise ProtocolViolation("result payload truncated in writes")
+            writes.append({
+                "address": int.from_bytes(payload[base:base + 4], "little"),
+                "value": int.from_bytes(payload[base + 4:base + 20], "little"),
+            })
+            cursor += protocol.WRITE_BYTES
+    except IndexError as e:
+        raise ProtocolViolation("result payload truncated in writes") from e
     cursor += 1
+    if cursor >= len(payload):
+        raise ProtocolViolation("result payload truncated before deferred count")
     deferred = []
-    for _ in range(payload[cursor]):
-        base = cursor + 1
-        deferred.append({
-            "target": int.from_bytes(payload[base:base + 4], "little"),
-            "local": int.from_bytes(payload[base + 4:base + 8], "little"),
-        })
-        cursor += protocol.DEFERRED_BYTES
+    try:
+        for _ in range(payload[cursor]):
+            base = cursor + 1
+            if base + 8 > len(payload):
+                raise ProtocolViolation("result payload truncated in deferred")
+            deferred.append({
+                "target": int.from_bytes(payload[base:base + 4], "little"),
+                "local": int.from_bytes(payload[base + 4:base + 8], "little"),
+            })
+            cursor += protocol.DEFERRED_BYTES
+    except IndexError as e:
+        raise ProtocolViolation("result payload truncated in deferred") from e
     cursor += 1
+    if cursor >= len(payload):
+        raise ProtocolViolation("result payload truncated before access count")
     accesses = []
-    for _ in range(payload[cursor]):
-        base = cursor + 1
-        accesses.append(int.from_bytes(payload[base:base + 4], "little"))
-        cursor += protocol.ACCESS_BYTES
+    try:
+        for _ in range(payload[cursor]):
+            base = cursor + 1
+            if base + 4 > len(payload):
+                raise ProtocolViolation("result payload truncated in accesses")
+            accesses.append(int.from_bytes(payload[base:base + 4], "little"))
+            cursor += protocol.ACCESS_BYTES
+    except IndexError as e:
+        raise ProtocolViolation("result payload truncated in accesses") from e
     if cursor + 1 != len(payload):
-        raise ValueError(f"result payload has {len(payload)} bytes, consumed {cursor + 1}")
+        raise ProtocolViolation(f"result payload has {len(payload)} bytes, consumed {cursor + 1}")
     return {
         "txn_id": txn_id,
         "next_pc": next_pc,
@@ -143,11 +169,15 @@ class HostRuntime:
         memory: HostMemory | None = None,
         endpoint=None,
         profile: "protocol.Profile" = protocol.Profile.INTERPRETER_COMPAT,
+        rx_gaps: list[int] | None = None,
+        tx_gaps: list[int] | None = None,
     ) -> None:
         self.program = program
         self.memory = memory or HostMemory.with_public_input(1, 0)
         self.endpoint = endpoint or protocol.Lsc1Endpoint()
         self.profile = profile
+        self.rx_gaps = list(rx_gaps) if rx_gaps else None
+        self.tx_gaps = list(tx_gaps) if tx_gaps else None
         self.pc = program.pc0
         self.fp = program.fp0
         self.txn_id = 0
@@ -159,7 +189,11 @@ class HostRuntime:
     # --- byte lane ----------------------------------------------------------
 
     def _exchange(self, frame: "protocol.RequestFrame") -> "protocol.ResponseFrame":
-        raw, cycles = protocol.drive(self.endpoint, frame.encode())
+        raw, cycles = protocol.drive(
+            self.endpoint, frame.encode(),
+            rx_gaps=self.rx_gaps,
+            tx_gaps=self.tx_gaps,
+        )
         self.lane_cycles += cycles
         return protocol.decode_response(raw)
 
@@ -167,6 +201,11 @@ class HostRuntime:
         reply = self._exchange(protocol.build_negotiate(profile=self.profile))
         if reply.status is not protocol.Status.OK:
             raise TransactionRejected(reply.status, reply.payload)
+        # NEGOTIATE OK response must be exactly 14 bytes per schema §8.4
+        if len(reply.payload) != 14:
+            raise ProtocolViolation(
+                f"NEGOTIATE response payload has {len(reply.payload)} bytes, expected 14"
+            )
 
     # --- request preparation ------------------------------------------------
 
@@ -298,12 +337,20 @@ class HostRuntime:
                 f"{(result['next_pc'], result['next_fp'])}"
             )
 
-        for write in result["writes"]:
+        # Post-RETIRED writes must be atomic: prevalidate all against host write-once,
+        # then apply. A late conflict leaves no partial mutation.
+        writes = result["writes"]
+        for w in writes:
+            self.memory.prevalidate_write(w["address"], w["value"])
+        for write in writes:
             self.memory.apply_write(write["address"], write["value"])
         for address in result["accesses"]:
             self.memory.count_access(address)
         for item in result["deferred"]:
             self.memory.record_deferred(item["target"], item["local"])
+
+        # Reach fixpoint on deferred equalities before the next step (or future DEREF).
+        self.memory.resolve_deferred()
 
         self.pc = result["next_pc"]
         self.fp = result["next_fp"]

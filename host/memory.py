@@ -4,6 +4,9 @@ None of this crosses the LSC-1 boundary.  The ASIC never fetches a cell, never
 holds the written bitmap and never searches the pointer map; the host reads its
 own state and hands each transaction every cell that transition can touch.
 """
+
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from .errors import UnsupportedCapability, WriteOnceViolation
@@ -95,6 +98,18 @@ class HostMemory:
         """Package one cell for a request payload: present with a value, or absent."""
         value = self.cells.get(address)
         return protocol.ABSENT if value is None else protocol.Cell(True, value)
+
+    def prevalidate_write(self, address: int, value: int) -> None:
+        """Prevalidate a write against write-once rules; raises on conflict.
+
+        Does not mutate. Used for atomic post-RETIRED write batches.
+        """
+        existing = self.cells.get(address)
+        if existing is not None and existing != value:
+            raise WriteOnceViolation(
+                f"cell {address} already holds {existing:#034x}, "
+                f"endpoint returned {value:#034x}"
+            )
 
     def apply_write(self, address: int, value: int) -> None:
         existing = self.cells.get(address)

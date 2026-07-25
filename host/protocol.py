@@ -7,6 +7,9 @@ as ``sim.lsc1_transaction`` from here would create a second copy of the frozen
 dataclasses, so ``Cell`` values built by the host would not compare equal to
 ``Cell`` values built by a test.  Bind the same top-level module instead.
 """
+
+from __future__ import annotations
+
 import pathlib
 import sys
 

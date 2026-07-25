@@ -23,6 +23,9 @@ This module does not import Rust and does not shell out.  It reads the JSON
 artifact that the export tool produced from the real compiler, so tests run
 with no toolchain present.
 """
+
+from __future__ import annotations
+
 import json
 import pathlib
 from dataclasses import dataclass
@@ -97,6 +100,9 @@ class Program:
 #: Operand names the artifact carries as ``0x``-prefixed 128-bit hex strings.
 FIELD_OPERANDS = ("k", "metadata")
 
+#: u32 offset operands that must be valid u32 at the adapter boundary.
+U32_OPERANDS = ("o", "a", "b", "c", "alpha", "beta", "gamma", "oc", "od", "of")
+
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
@@ -110,8 +116,37 @@ def _field(text: str, where: str) -> int:
     )
     try:
         return int(text, 16)
-    except ValueError as error:
+    except Exception as error:
         raise AdapterError(f"{where} is not hexadecimal: {text!r}") from error
+
+
+def _u32_operand(val, where: str) -> int:
+    """Validate a u32 operand at the adapter boundary.
+
+    Accepts int in range or 0x-prefixed hex string. Raises AdapterError for
+    malformed/non-int/out-of-u32, never KeyError/TypeError/ValueError/ProtocolFault.
+    """
+    try:
+        if isinstance(val, str):
+            if not (val.startswith("0x") and len(val) <= 10):
+                # allow full 0x hex too but must be <= u32
+                if val.startswith("0x"):
+                    v = int(val, 16)
+                else:
+                    raise ValueError("not hex")
+            else:
+                v = int(val, 16)
+        elif isinstance(val, int):
+            v = val
+        else:
+            raise AdapterError(f"{where} is not an int or 0x-hex: {val!r}")
+    except Exception as error:
+        if isinstance(error, AdapterError):
+            raise
+        raise AdapterError(f"{where} is not a valid u32 operand: {val!r}") from error
+    if not (0 <= v <= 0xFFFFFFFF):
+        raise AdapterError(f"{where} out of u32 range: {val!r}")
+    return v & 0xFFFFFFFF
 
 
 def load(path: str | pathlib.Path) -> Program:
@@ -149,6 +184,9 @@ def load(path: str | pathlib.Path) -> Program:
         for name in FIELD_OPERANDS:
             if name in operands:
                 operands[name] = _field(operands[name], f"slot {expected_index} operand {name!r}")
+        for name in U32_OPERANDS:
+            if name in operands:
+                operands[name] = _u32_operand(operands[name], f"slot {expected_index} operand {name!r}")
         operations.append(Operation(expected_index, kind, operands))
 
     return Program(

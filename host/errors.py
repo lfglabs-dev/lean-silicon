@@ -5,6 +5,8 @@ Every capability the host runtime does not yet implement raises
 package silently degrades, skips an instruction, or invents a result.
 """
 
+from __future__ import annotations
+
 
 class HostError(Exception):
     """Base class for every failure raised by the host runtime."""

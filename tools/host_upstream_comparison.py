@@ -50,7 +50,12 @@ NOT_OBSERVABLE_UPSTREAM = {
 
 
 def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, toolchain: str):
-    """Recorded upstream output, or a live re-run that must reproduce it."""
+    """Recorded upstream output, or a live re-run that must reproduce it.
+
+    In live mode, the fresh probe execution block (mem prefix, mem_used, cycles,
+    and relevant fields) is compared against the recorded upstream_execution and
+    a mismatch refuses stale or tampered evidence. Claims are kept scoped.
+    """
     recorded = artifact["upstream_execution"]
     if upstream is None:
         return recorded, "recorded_artifact", None
@@ -61,12 +66,30 @@ def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, to
         raise SystemExit(
             f"live compile of {artifact_path} does not reproduce the recorded bytecode"
         )
+    live_exec = probe["execution"]
+    # Compare fresh probe against recorded to refuse stale/tampered evidence
+    mismatches = []
+    if live_exec.get("cycles") != recorded.get("cycles"):
+        mismatches.append({"field": "cycles", "live": live_exec.get("cycles"), "recorded": recorded.get("cycles")})
+    if live_exec.get("mem_used") != recorded.get("mem_used"):
+        mismatches.append({"field": "mem_used", "live": live_exec.get("mem_used"), "recorded": recorded.get("mem_used")})
+    if live_exec.get("mem_len") != recorded.get("mem_len"):
+        mismatches.append({"field": "mem_len", "live": live_exec.get("mem_len"), "recorded": recorded.get("mem_len")})
+    live_mem = live_exec.get("mem", [])
+    rec_mem = recorded.get("mem", [])
+    if live_mem != rec_mem:
+        mismatches.append({"field": "mem", "reason": "live mem prefix differs from recorded"})
+    if mismatches:
+        raise SystemExit(
+            "live probe execution does not match recorded upstream_execution: "
+            + json.dumps(mismatches)
+        )
     live = {
-        "public_input": recorded["public_input"],
-        "cycles": probe["execution"]["cycles"],
-        "mem_used": probe["execution"]["mem_used"],
-        "mem_len": probe["execution"]["mem_len"],
-        "mem": probe["execution"]["mem"],
+        "public_input": recorded.get("public_input"),
+        "cycles": live_exec["cycles"],
+        "mem_used": live_exec["mem_used"],
+        "mem_len": live_exec["mem_len"],
+        "mem": live_exec["mem"],
     }
     return live, "live_cargo_run", command
 
@@ -81,6 +104,11 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
     ``upstream["mem"]`` holds the ``mem_used`` prefix that upstream actually
     touched; the rest of its power-of-two buffer is untouched zero.  A host
     write at or past that prefix is a divergence, not a gap in the record.
+
+    When the host run halted, every cell in range(mem_used) must be covered or
+    the comparison is a MISMATCH on missing cells.  When not halted, coverage
+    gaps are recorded explicitly in not_compared and MATCH is never returned
+    for skipped work.
     """
     mem = [int(value, 16) for value in upstream["mem"]]
     addresses = sorted(runtime.memory.cells)
@@ -120,6 +148,28 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
             f"the host run ended as {run.terminal!r} ({run.reason}), so its step "
             f"count covers a prefix of the upstream run"
         )
+
+    # Coverage requirement: halted => every cell in range(mem_used) must be present.
+    # Non-halted => record gaps explicitly; never let skipped work MATCH.
+    covered = set(runtime.memory.cells.keys())
+    expected = set(range(upstream["mem_used"]))
+    missing = sorted(expected - covered)
+    if missing:
+        if run.terminal == "halted":
+            for address in missing:
+                mismatches.append({
+                    "address": address,
+                    "reason": "host did not cover upstream cell (halted run must cover range(mem_used))",
+                })
+        else:
+            not_compared["final_memory_gaps"] = [f"{a:#x}" for a in missing]
+            # Explicitly refuse MATCH when work was skipped
+            if not mismatches:
+                mismatches.append({
+                    "field": "coverage",
+                    "reason": "host run did not cover all upstream cells; gaps recorded in not_compared",
+                })
+
     return {
         "result": "MATCH" if not mismatches else "MISMATCH",
         "compared": {
@@ -141,6 +191,11 @@ def main() -> None:
     args = parser.parse_args()
     args.artifact = args.artifact.resolve()
 
+    try:
+        rel = str(args.artifact.relative_to(ROOT))
+    except ValueError as e:
+        raise SystemExit(f"artifact path must be inside the repo: {args.artifact}") from e
+
     artifact = json.loads(args.artifact.read_text())
     program = lean_compiler_adapter.load(args.artifact)
     upstream, source, command = upstream_execution(
@@ -155,7 +210,7 @@ def main() -> None:
         "schema": SCHEMA,
         "generated_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "artifact": {
-            "path": str(args.artifact.relative_to(ROOT)),
+            "path": rel,
             "sha256": _export.sha256(args.artifact),
         },
         "upstream": {
