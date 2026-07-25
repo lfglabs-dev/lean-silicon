@@ -13,7 +13,9 @@
 | Full scalar semantics | not implemented | planned graph |
 | ULX3S harness bitstream | not implemented | pin contract only |
 | ULX3S macOS preflight | capture tool and procedure; USB/JTAG/toolchain visibility only, no data path | `docs/ULX3S_MAC_PREFLIGHT.md`, `tools/ulx3s_mac_preflight.py` |
-| ULX3S board capture from hardware | not run; no board or Mac has produced an artifact in-repo | `docs/ULX3S_MAC_PREFLIGHT.md` section 7 |
+| ULX3S board visibility from hardware | attested from a Mac with the board attached; USB identity and 85F IDCODE confirmed, archive not committed, no artifact re-derivable in-repo | `results/ulx3s-hardware-preflight-macos-20260725/README.md` |
+| ULX3S data path from hardware | not tested, not validated; nothing programmed and no byte across the ready/valid pins | `docs/ULX3S_MAC_PREFLIGHT.md` section 10 |
+| macOS false negatives in `board_detect.py` | confirmed on hardware, unfixed; owned by the ULX3S harness lane | `docs/ULX3S_MAC_PREFLIGHT.md` section 9 |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
 | RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |

@@ -11,3 +11,9 @@
 | RTL/netlist equivalence | future `equiv/`, synthesis manifests | release RTL or synthesis configuration without rerunning equivalence |
 | Tiny Tapeout PPA | `info.yaml`, `asic_core/` constraints | protocol |
 | zkDSL validation | `docs/semantics/`, future adapters | frozen source evidence |
+
+## Open hand-offs
+
+| From | To | Item |
+|---|---|---|
+| Host packet/runtime | ULX3S harness | Two macOS false negatives in `fpga_harness/board_detect.py`, confirmed against hardware and left unfixed because that file is not host-lane. Call sites and fix shapes: `docs/ULX3S_MAC_PREFLIGHT.md` section 9. Evidence: `results/ulx3s-hardware-preflight-macos-20260725/README.md`. Includes updating `fpga_harness/INVENTORY.md` section 5, which still records the USB VID:PID and the 85F IDCODE as unconfirmed. |

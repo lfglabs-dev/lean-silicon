@@ -26,13 +26,19 @@ in prose, no tool was on PATH, and no IDCODE was found. It is checked in as
 evidence that the tool behaves correctly when it cannot see what it is looking
 for, and as a shape reviewers can diff a real Mac capture against.
 
+A real board *has* been brought up, on a Mac, outside this repository. Those
+facts are attested, not reproducible here, and live in
+`results/ulx3s-hardware-preflight-macos-20260725/README.md`. Nothing in this
+directory inherits them.
+
 ## What this run establishes
 
 - `make check` is green with the preflight tests included (exit 0).
-- The 36 unit tests pass. Their USB and JTAG payloads are **synthetic**: text
-  hand-written in the shape `system_profiler` and `openFPGALoader` emit. They
-  cover parsing, the fixture round-trip through `board_detect.detect`, the
-  non-Darwin refusal and the fail-closed next stage.
+- The 60 unit tests pass. Their USB and JTAG payloads are **synthetic**: text
+  hand-written in the shape `system_profiler`, `ioreg` and `openFPGALoader`
+  emit. They cover parsing of all three USB probe forms and the fallback order,
+  version salvage, the fixture round-trip through `board_detect.detect`, the
+  redaction policy, the non-Darwin refusal and the fail-closed next stage.
 - Off Darwin the USB layer reports `unsupported`, not `absent`, and names the
   `/sys/bus/usb/devices` limit of the harness probe as the reason.
 - The emitted fixture is accepted by `fpga_harness/board_detect.py` unmodified;
@@ -48,10 +54,11 @@ for, and as a shape reviewers can diff a real Mac capture against.
   enumerated, no JTAG chain answered. The synthetic fixtures are not captures.
 - **Nothing about macOS.** The Darwin branch of `capture_usb` was not executed;
   only its refusal branch was. `system_profiler` was never run.
-- **The vendor constants are unconfirmed.** The USB VID:PID and the ECP5
-  IDCODE table are vendor-documented values imported from
-  `fpga_harness/board_detect.py`, not confirmed against hardware anywhere in
-  this repository (`fpga_harness/INVENTORY.md` section 5).
+- **Nothing about the vendor constants.** The USB VID:PID and the ECP5 IDCODE
+  table are vendor-documented values imported from
+  `fpga_harness/board_detect.py`. Nothing in *this* directory confirms them.
+  The attested macOS capture does, for `0403:6015` and the 85F IDCODE; that
+  confirmation is recorded there, not here.
 - **No data path.** No byte crossed the LSC-1 8-bit ready/valid pins. The
   data-path gate remains the official Rust comparison
   (`tools/host_upstream_comparison.py`), unchanged by this lane.

@@ -1,2 +1,4 @@
-platform Linux-6.8.0-136-generic-x86_64-with-glibc2.39
-python 3.12.3
+Linux 6.8.0-136-generic x86_64
+Python 3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]
+openFPGALoader: not on PATH
+yosys: not on PATH

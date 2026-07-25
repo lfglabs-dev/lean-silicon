@@ -12,21 +12,21 @@
       "question": "Which ULX3S board revision is this?",
       "status": "unconfirmed",
       "value": null,
-      "where_to_look": "Silkscreen on the PCB, near the ULX3S logo (for example 'ULX3S v3.0.8')."
+      "where_to_look": "Silkscreen on the PCB, near the ULX3S logo (for example 'v3.1.8'). Read the silkscreen, not the USB product string: on the board captured in results/ulx3s-hardware-preflight-macos-20260725 the descriptor says v3.0.8 while the PCB says v3.1.8, and the silkscreen is authoritative."
     },
     {
       "key": "fpga_density",
       "question": "Which ECP5 density is fitted?",
       "status": "unconfirmed",
       "value": null,
-      "where_to_look": "The marking on the large Lattice package, e.g. LFE5U-85F-6BG381C. Cross-check against the JTAG IDCODE captured in this artifact."
+      "where_to_look": "The marking on the large Lattice package, e.g. LFE5U-85F. Cross-check against the JTAG IDCODE captured in this artifact."
     },
     {
       "key": "sdram_part",
       "question": "What is the SDRAM part number and size?",
       "status": "unconfirmed",
       "value": null,
-      "where_to_look": "The marking on the SDRAM chip, e.g. AS4C32M16SB-7TCN (32Mx16 = 64 MiB). Recorded for inventory only; the LSC-1 harness must not use SDRAM."
+      "where_to_look": "The marking on the SDRAM chip, e.g. AS4C16M16SB-6TIN (16Mx16 = 32 MiB). Recorded for inventory only; the LSC-1 harness must not use SDRAM."
     },
     {
       "key": "us1_connector",
@@ -64,8 +64,10 @@
     ],
     "known_limits": [
       "fpga_harness/board_detect.py enumerates USB from /sys/bus/usb/devices, which does not exist on macOS; its usb level is a false negative on Darwin and is not used here",
-      "the USB VID:PID and the ECP5 IDCODE table are vendor-documented values imported from fpga_harness/board_detect.py, not confirmed against hardware in this repository (fpga_harness/INVENTORY.md section 5)",
-      "checklist entries are human observations; unconfirmed means unknown, not absent"
+      "fpga_harness/board_detect.py scans JTAG with a bare `openFPGALoader --detect`, which exits 1 on a ULX3S because the default cable is FT2232; its jtag level is a false negative there too. That file is owned by the ULX3S harness lane and is not modified here",
+      "system_profiler SPUSBDataType returned an empty tree on macOS 26.5.2 with a board attached, so it is probed first but never trusted alone; ioreg is the fallback and the source field says which one answered",
+      "checklist entries are human observations; unconfirmed means unknown, not absent",
+      "the board serial, unrelated attached devices and the raw USB enumeration are withheld by default so an artifact can be attached to a pull request; a SHA-256 of each raw capture is kept instead"
     ]
   },
   "connection": {
@@ -73,8 +75,8 @@
     "note": "a charge-only cable powers the board but enumerates nothing",
     "port": "US1"
   },
-  "generated_at_utc": "2026-07-25T15:54:55.441396+00:00",
-  "generated_from_repo_head": "5975aa03756a163c274bfcdc7ef93ff998b1a436",
+  "generated_at_utc": "2026-07-25T16:09:16.139601+00:00",
+  "generated_from_repo_head": "71e29c80c482493b6f3723379a342d687fca4a54",
   "host": {
     "machine": "x86_64",
     "platform": "Linux",
@@ -82,12 +84,15 @@
     "release": "6.8.0-136-generic"
   },
   "jtag": {
+    "answered": [],
     "detail": "an IDCODE identifies silicon on the JTAG chain. It says nothing about which design is loaded or whether it works.",
     "idcodes": [],
     "probes": [
       {
         "command": [
           "openFPGALoader",
+          "-b",
+          "ulx3s",
           "--detect"
         ],
         "error": "openFPGALoader is not on PATH",
@@ -102,6 +107,18 @@
           "openFPGALoader",
           "-c",
           "ft232",
+          "--detect"
+        ],
+        "error": "openFPGALoader is not on PATH",
+        "found": false,
+        "returncode": null,
+        "stderr": "",
+        "stdout": "",
+        "truncated": false
+      },
+      {
+        "command": [
+          "openFPGALoader",
           "--detect"
         ],
         "error": "openFPGALoader is not on PATH",
@@ -174,49 +191,60 @@
     ],
     "ready": false
   },
+  "prior_hardware_evidence": {
+    "note": "One macOS capture against a physical ULX3S-85F has been reviewed. It is what confirmed the USB identity and the ECP5 IDCODE against real hardware, and what showed the system_profiler and bare --detect failures this tool now works around. It is a separate record; nothing in this artifact inherits its results.",
+    "record": "results/ulx3s-hardware-preflight-macos-20260725/README.md"
+  },
   "schema": "leansilicon.hardware.preflight/1",
   "tools": {
     "dfu-util": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     },
     "ecppack": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     },
     "fujprog": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     },
     "nextpnr-ecp5": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     },
     "openFPGALoader": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     },
     "yosys": {
       "path": null,
       "probes": [],
       "version": null,
-      "version_command": null
+      "version_command": null,
+      "version_exit_nonzero": false
     }
   },
   "usb": {
     "detail": "USB enumeration in this tool is macOS-only and this host is Linux. fpga_harness/board_detect.py reads /sys/bus/usb/devices, which is Linux sysfs; neither probe is claimed to work here.",
     "devices": [],
     "matches": [],
+    "probes": [],
     "source": "unsupported",
     "supported": false
   }

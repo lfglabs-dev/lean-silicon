@@ -13,6 +13,15 @@ test_a_charge_only_cable_capture_leaves_usb_absent (sim.test_ulx3s_mac_preflight
 test_fixture_carries_only_tools_that_exist (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_fixture_carries_only_tools_that_exist) ... ok
 test_fixture_is_json_serialisable_as_written (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_fixture_is_json_serialisable_as_written) ... ok
 test_replay_never_reaches_the_datapath_level (sim.test_ulx3s_mac_preflight.FixtureRoundTripTests.test_replay_never_reaches_the_datapath_level) ... ok
+test_a_node_without_an_identity_is_not_a_device (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_a_node_without_an_identity_is_not_a_device) ... ok
+test_both_forms_agree (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_both_forms_agree) ... ok
+test_malformed_plist_is_reported_not_raised (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_malformed_plist_is_reported_not_raised) ... ok
+test_plist_form_finds_the_board_under_the_controller (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_plist_form_finds_the_board_under_the_controller) ... ok
+test_text_form_finds_the_same_board (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_text_form_finds_the_same_board) ... ok
+test_text_parser_tolerates_empty_output (sim.test_ulx3s_mac_preflight.IoregParsingTests.test_text_parser_tolerates_empty_output) ... ok
+test_a_bare_detect_is_still_attempted_and_recorded (sim.test_ulx3s_mac_preflight.JtagCommandTests.test_a_bare_detect_is_still_attempted_and_recorded) ... ok
+test_the_answering_command_is_recorded (sim.test_ulx3s_mac_preflight.JtagCommandTests.test_the_answering_command_is_recorded) ... ok
+test_the_board_profile_is_tried_first (sim.test_ulx3s_mac_preflight.JtagCommandTests.test_the_board_profile_is_tried_first) ... ok
 test_an_unknown_idcode_is_recorded_not_dropped (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_an_unknown_idcode_is_recorded_not_dropped) ... ok
 test_idcode_table_is_imported_from_the_harness (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_idcode_table_is_imported_from_the_harness) ... ok
 test_recognises_the_85f_idcode (sim.test_ulx3s_mac_preflight.JtagParsingTests.test_recognises_the_85f_idcode) ... ok
@@ -27,6 +36,16 @@ test_the_harness_probe_really_is_sysfs_only (sim.test_ulx3s_mac_preflight.Platfo
 test_a_missing_program_is_recorded_not_raised (sim.test_ulx3s_mac_preflight.ProbeTests.test_a_missing_program_is_recorded_not_raised) ... ok
 test_output_beyond_the_limit_is_clipped_and_flagged (sim.test_ulx3s_mac_preflight.ProbeTests.test_output_beyond_the_limit_is_clipped_and_flagged) ... ok
 test_short_output_is_kept_whole (sim.test_ulx3s_mac_preflight.ProbeTests.test_short_output_is_kept_whole) ... ok
+test_a_failed_probe_records_its_exit_rather_than_a_parse (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_a_failed_probe_records_its_exit_rather_than_a_parse) ... ok
+test_devices_that_are_not_the_board_are_reduced_to_an_identity (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_devices_that_are_not_the_board_are_reduced_to_an_identity) ... ok
+test_every_probe_is_recorded_even_when_it_answers_nothing (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_every_probe_is_recorded_even_when_it_answers_nothing) ... ok
+test_falls_back_to_ioreg_when_system_profiler_is_empty (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_falls_back_to_ioreg_when_system_profiler_is_empty) ... ok
+test_no_probe_seeing_anything_is_reported_as_such (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_no_probe_seeing_anything_is_reported_as_such) ... ok
+test_raw_usb_output_is_kept_when_explicitly_asked_for (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_raw_usb_output_is_kept_when_explicitly_asked_for) ... ok
+test_raw_usb_output_is_replaced_by_a_digest (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_raw_usb_output_is_replaced_by_a_digest) ... ok
+test_system_profiler_wins_when_it_actually_answers (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_system_profiler_wins_when_it_actually_answers) ... ok
+test_the_board_serial_is_withheld_by_default (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_the_board_serial_is_withheld_by_default) ... ok
+test_the_serial_is_recorded_when_explicitly_asked_for (sim.test_ulx3s_mac_preflight.UsbFallbackTests.test_the_serial_is_recorded_when_explicitly_asked_for) ... ok
 test_bus_with_no_devices_parses_to_nothing (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_bus_with_no_devices_parses_to_nothing) ... ok
 test_flattens_hub_nesting (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_flattens_hub_nesting) ... ok
 test_hex_field_parser_rejects_non_strings (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_hex_field_parser_rejects_non_strings) ... ok
@@ -34,8 +53,13 @@ test_keeps_the_raw_field_alongside_the_parse (sim.test_ulx3s_mac_preflight.UsbPa
 test_non_json_is_reported_not_raised (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_non_json_is_reported_not_raised) ... ok
 test_strips_the_vendor_name_from_the_hex_field (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_strips_the_vendor_name_from_the_hex_field) ... ok
 test_unparseable_identity_is_skipped_rather_than_guessed (sim.test_ulx3s_mac_preflight.UsbParsingTests.test_unparseable_identity_is_skipped_rather_than_guessed) ... ok
+test_a_rejected_flag_does_not_become_the_version (sim.test_ulx3s_mac_preflight.VersionProbeTests.test_a_rejected_flag_does_not_become_the_version) ... ok
+test_a_version_printed_before_a_non_zero_exit_is_salvaged_and_flagged (sim.test_ulx3s_mac_preflight.VersionProbeTests.test_a_version_printed_before_a_non_zero_exit_is_salvaged_and_flagged) ... ok
+test_an_absent_tool_is_not_probed_at_all (sim.test_ulx3s_mac_preflight.VersionProbeTests.test_an_absent_tool_is_not_probed_at_all) ... ok
+test_every_flag_being_rejected_leaves_no_version (sim.test_ulx3s_mac_preflight.VersionProbeTests.test_every_flag_being_rejected_leaves_no_version) ... ok
+test_records_which_flag_answered (sim.test_ulx3s_mac_preflight.VersionProbeTests.test_records_which_flag_answered) ... ok
 
 ----------------------------------------------------------------------
-Ran 36 tests in 0.135s
+Ran 60 tests in 0.155s
 
 OK
