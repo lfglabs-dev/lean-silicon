@@ -16,6 +16,12 @@ recorded byte-exchange log, so there is nothing to validate against.  Raising
 that level requires real hardware logs committed by a later change, not a
 different exit code here.
 
+The ``usb`` and ``jtag`` probes are host-specific: Linux has sysfs, macOS has
+the IOKit registry, and ``openFPGALoader --detect`` has to be told the ULX3S
+board profile before it will talk to an FT231X.  Getting either wrong reports
+an attached board as absent, which is a detection bug, not evidence about the
+fabric.
+
 Every probe is injected through :class:`Environment`, so the whole ladder is
 reproducible from a JSON fixture with no board, no USB, and no toolchain.
 """
@@ -24,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import plistlib
 import re
 import shutil
 import subprocess
@@ -31,6 +38,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
+from xml.parsers.expat import ExpatError
 
 LEVELS = ("toolchain", "usb", "jtag", "datapath")
 
@@ -58,6 +66,60 @@ DATAPATH_PREREQUISITES = (
 )
 
 _IDCODE_RE = re.compile(r"0x([0-9a-fA-F]{8})")
+
+SYSFS_USB_ROOT = Path("/sys/bus/usb/devices")
+
+# macOS has no sysfs. `system_profiler SPUSBDataType` is not a reliable source
+# either — it can return an empty device list on a machine where the board is
+# plainly attached — so the IOKit registry is read directly instead.
+IOREG_COMMAND = ("ioreg", "-p", "IOUSB", "-a", "-l")
+
+# Only these keys are ever read out of the IOKit plist. `USB Serial Number` is
+# a per-board identifier that would end up in reports and CI logs, so it is
+# deliberately not in the allowlist and must never be added.
+IOREG_VENDOR_KEY = "idVendor"
+IOREG_PRODUCT_KEY = "idProduct"
+IOREG_LABEL_KEYS = ("USB Product Name", "IORegistryEntryName")
+IOREG_FORBIDDEN_KEYS = frozenset({"USB Serial Number", "kUSBSerialNumberString"})
+
+# The registry is a tree of untrusted-shaped data; these bound the walk so a
+# hostile or truncated plist cannot exhaust memory or the recursion limit.
+IOREG_MAX_DEPTH = 64
+IOREG_MAX_DEVICES = 512
+USB_LABEL_MAX_LEN = 64
+
+# openFPGALoader's own `--detect` assumes an FT2232 cable, which is not what a
+# ULX3S carries; the board profile has to be named first. The bare form is kept
+# as a fallback so an external JTAG cable still works.
+JTAG_DETECT_COMMANDS: tuple[tuple[str, ...], ...] = (
+    ("-b", "ulx3s", "--detect"),
+    ("--detect",),
+)
+
+# openFPGALoader 1.1.1 spells this with a capital V and rejects `--version`.
+# Older builds only accept the lowercase form, so both are tried in order.
+VERSION_FLAGS: Mapping[str, tuple[str, ...]] = {
+    "openFPGALoader": ("--Version", "--version"),
+}
+DEFAULT_VERSION_FLAGS = ("--version",)
+VERSION_MAX_LEN = 120
+VERSION_SCAN_LINES = 5
+
+# Substrings that mean the tool rejected the flag rather than answering it.
+# Without this, an option-parser complaint gets reported as a version string.
+VERSION_REJECT_MARKERS = (
+    "unrecognized option",
+    "unrecognised option",
+    "unknown option",
+    "invalid option",
+    "no such option",
+    "not expected",
+    "usage:",
+    "error:",
+    "try --help",
+    "run with --help",
+    "for more information",
+)
 
 
 @dataclass(frozen=True)
@@ -168,17 +230,133 @@ def _capture(command: Sequence[str]) -> str:
     return f"{finished.stdout}\n{finished.stderr}"
 
 
-def _tool_version(name: str) -> str:
+def _capture_bytes(command: Sequence[str]) -> bytes:
+    """Raw stdout only. stderr is dropped so it cannot corrupt a plist body."""
+    try:
+        finished = subprocess.run(
+            list(command),
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return b""
+    return finished.stdout or b""
+
+
+def _looks_like_parser_complaint(line: str) -> bool:
+    lowered = line.lower()
+    return any(marker in lowered for marker in VERSION_REJECT_MARKERS)
+
+
+def _first_version_line(text: str) -> str:
+    """First plausible version line, or empty if the flag was rejected.
+
+    A tool that does not know the flag still prints something, so the output is
+    only accepted when it neither reads as an option-parser complaint nor lacks
+    a digit.  Otherwise ``openFPGALoader: unknown option`` becomes a version.
+    """
+    for raw in text.splitlines()[:VERSION_SCAN_LINES]:
+        line = raw.strip()
+        if not line:
+            continue
+        if _looks_like_parser_complaint(line):
+            return ""
+        if any(char.isdigit() for char in line):
+            return line[:VERSION_MAX_LEN]
+    return ""
+
+
+def _tool_version(
+    name: str,
+    capture: Callable[[Sequence[str]], str] = _capture,
+) -> str:
     path = shutil.which(name)
     if path is None:
         return ""
-    lines = _capture([path, "--version"]).strip().splitlines()
-    return lines[0].strip() if lines else ""
+    for flag in VERSION_FLAGS.get(name, DEFAULT_VERSION_FLAGS):
+        version = _first_version_line(capture([path, flag]))
+        if version:
+            return version
+    return ""
+
+
+def _usb_label(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    printable = "".join(char for char in value if char.isprintable())
+    return printable.strip()[:USB_LABEL_MAX_LEN]
+
+
+def _usb_identifier(value: object) -> int | None:
+    """USB ids are 16-bit integers; anything else is not one (bools included)."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if 0 <= value <= 0xFFFF else None
+
+
+def _ioreg_device(node: Mapping[object, object]) -> tuple[int, int, str] | None:
+    vid = _usb_identifier(node.get(IOREG_VENDOR_KEY))
+    pid = _usb_identifier(node.get(IOREG_PRODUCT_KEY))
+    if vid is None or pid is None:
+        return None
+    label = ""
+    for key in IOREG_LABEL_KEYS:
+        label = _usb_label(node.get(key))
+        if label:
+            break
+    return (vid, pid, label or f"{vid:#06x}:{pid:#06x}")
+
+
+def _walk_ioreg(node: object, devices: list[tuple[int, int, str]], depth: int) -> None:
+    """Collect USB identities from the IOKit tree, ignoring every other key."""
+    if depth > IOREG_MAX_DEPTH or len(devices) >= IOREG_MAX_DEVICES:
+        return
+    if isinstance(node, list):
+        for child in node:
+            _walk_ioreg(child, devices, depth + 1)
+        return
+    if not isinstance(node, dict):
+        return
+    device = _ioreg_device(node)
+    if device is not None:
+        devices.append(device)
+    for value in node.values():
+        if isinstance(value, (list, dict)):
+            _walk_ioreg(value, devices, depth + 1)
+
+
+def _enumerate_usb_ioreg(
+    capture: Callable[[Sequence[str]], bytes] = _capture_bytes,
+) -> tuple[tuple[int, int, str], ...]:
+    """Read USB identities from the macOS IOKit registry.
+
+    A missing, truncated, or otherwise unparseable plist is indistinguishable
+    from 'no board here' for detection purposes, so it yields an empty tuple
+    rather than an exception.
+    """
+    raw = capture(list(IOREG_COMMAND))
+    if not raw:
+        return ()
+    try:
+        parsed = plistlib.loads(raw)
+    except (ValueError, ExpatError, TypeError, OverflowError, RecursionError):
+        return ()
+    devices: list[tuple[int, int, str]] = []
+    _walk_ioreg(parsed, devices, 0)
+    return tuple(devices)
 
 
 def _enumerate_usb() -> tuple[tuple[int, int, str], ...]:
+    if sys.platform == "darwin":
+        return _enumerate_usb_ioreg()
+    return _enumerate_usb_sysfs()
+
+
+def _enumerate_usb_sysfs(
+    root: Path = SYSFS_USB_ROOT,
+) -> tuple[tuple[int, int, str], ...]:
     """Read USB identities from sysfs; absent or unreadable means empty."""
-    root = Path("/sys/bus/usb/devices")
     if not root.is_dir():
         return ()
     devices: list[tuple[int, int, str]] = []
@@ -201,11 +379,31 @@ def _enumerate_usb() -> tuple[tuple[int, int, str], ...]:
     return tuple(devices)
 
 
-def _jtag_scan() -> str:
+def _recognised_idcode(output: str) -> int | None:
+    for raw in _IDCODE_RE.findall(output):
+        code = int(raw, 16)
+        if code in ECP5_IDCODES:
+            return code
+    return None
+
+
+def _jtag_scan(capture: Callable[[Sequence[str]], str] = _capture) -> str:
+    """Scan with the ULX3S board profile first, then the bare form.
+
+    Bare ``--detect`` assumes an FT2232 cable and fails on a ULX3S, whose FT231X
+    needs ``-b ulx3s``.  The bare form is still tried when the profile answers
+    with nothing recognised, so an external JTAG cable keeps working.
+    """
     loader = shutil.which("openFPGALoader")
     if loader is None:
         return ""
-    return _capture([loader, "--detect"])
+    attempts: list[str] = []
+    for arguments in JTAG_DETECT_COMMANDS:
+        output = capture([loader, *arguments])
+        if _recognised_idcode(output) is not None:
+            return output
+        attempts.append(output)
+    return next((text for text in attempts if text.strip()), "")
 
 
 def _probe_toolchain(env: Environment) -> list[Finding]:
@@ -276,18 +474,17 @@ def _probe_jtag(env: Environment) -> list[Finding]:
                 "no JTAG scan output (loader missing, or no chain answered)",
             )
         ]
-    for raw in _IDCODE_RE.findall(output):
-        code = int(raw, 16)
-        if code in ECP5_IDCODES:
-            return [
-                Finding(
-                    "jtag",
-                    "ecp5-idcode",
-                    "present",
-                    f"IDCODE {code:#010x} identifies {ECP5_IDCODES[code]}; "
-                    "silicon identity only, says nothing about a loaded design",
-                )
-            ]
+    code = _recognised_idcode(output)
+    if code is not None:
+        return [
+            Finding(
+                "jtag",
+                "ecp5-idcode",
+                "present",
+                f"IDCODE {code:#010x} identifies {ECP5_IDCODES[code]}; "
+                "silicon identity only, says nothing about a loaded design",
+            )
+        ]
     return [
         Finding(
             "jtag",
