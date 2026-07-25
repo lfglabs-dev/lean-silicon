@@ -1,6 +1,8 @@
 # Protocol status
 
-The authoritative LSC-1 v1 contract is [LSC1_PROTOCOL](LSC1_PROTOCOL.md).
+The authoritative LSC-1 v1 contract is [LSC1_PROTOCOL](LSC1_PROTOCOL.md); the
+transaction layer it defers to is
+[LSC1_TRANSACTION_PROTOCOL](LSC1_TRANSACTION_PROTOCOL.md).
 The sole ASIC top is `lean_silicon_lsc1`; it exposes the Tiny Tapeout 8+8+8
 ready/valid pin interface. A future ULX3S harness must use those exact pins.
 

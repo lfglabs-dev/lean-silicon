@@ -20,6 +20,10 @@ Comparison baseline: `leanEthereum/leanVM-b@c308034ab78619b39a59d26f3dc60e7df5b5
 | BLAKE3 | Runner computes it and flock proves it. | Explicit external service boundary; no claim that M0 implements it. |
 | u32 arithmetic ISA | Deferred TeX text is disabled; no current opcode. | No added u32 opcode. Checked arithmetic applies only to host indexes. |
 
+The "compatibility-only" entries above are formalized as negotiable profiles
+in [LSC1_TRANSACTION_PROTOCOL](LSC1_TRANSACTION_PROTOCOL.md) §12, so a host must
+state which reading it wants rather than inherit one.
+
 The existing `docs/FULL_CORE.md` is an implementation sketch, not a substitute
 for this frozen contract. In particular, its use of ordinary indices is valid
 only with `encode`/reverse-lookup boundaries and the checked-index profile
