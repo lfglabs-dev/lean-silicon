@@ -100,8 +100,18 @@ class Program:
 #: Operand names the artifact carries as ``0x``-prefixed 128-bit hex strings.
 FIELD_OPERANDS = ("k", "metadata")
 
-#: u32 offset operands that must be valid u32 at the adapter boundary.
-U32_OPERANDS = ("o", "a", "b", "c", "alpha", "beta", "gamma", "oc", "od", "of")
+#: Exact operand schema exported by the frozen compiler.
+OPERAND_SCHEMA = {
+    "Set": {"o", "k"},
+    "Xor": {"a", "b", "c"},
+    "Mul": {"a", "b", "c"},
+    "Deref": {"alpha", "beta", "gamma", "mode"},
+    "Jump": {"oc", "od", "of"},
+    "Blake3": {"ins", "cv", "out", "metadata"},
+}
+
+#: Scalar u32 operands that must be valid at the adapter boundary.
+U32_OPERANDS = ("o", "a", "b", "c", "alpha", "beta", "gamma", "oc", "od", "of", "cv", "out")
 
 
 def _require(condition: bool, message: str) -> None:
@@ -120,33 +130,16 @@ def _field(text: str, where: str) -> int:
         raise AdapterError(f"{where} is not hexadecimal: {text!r}") from error
 
 
-def _u32_operand(val, where: str) -> int:
+def _u32_operand(value, where: str) -> int:
     """Validate a u32 operand at the adapter boundary.
 
-    Accepts int in range or 0x-prefixed hex string. Raises AdapterError for
-    malformed/non-int/out-of-u32, never KeyError/TypeError/ValueError/ProtocolFault.
+    Raises AdapterError for malformed/non-int/out-of-u32 values.
     """
-    try:
-        if isinstance(val, str):
-            if not (val.startswith("0x") and len(val) <= 10):
-                # allow full 0x hex too but must be <= u32
-                if val.startswith("0x"):
-                    v = int(val, 16)
-                else:
-                    raise ValueError("not hex")
-            else:
-                v = int(val, 16)
-        elif isinstance(val, int):
-            v = val
-        else:
-            raise AdapterError(f"{where} is not an int or 0x-hex: {val!r}")
-    except Exception as error:
-        if isinstance(error, AdapterError):
-            raise
-        raise AdapterError(f"{where} is not a valid u32 operand: {val!r}") from error
-    if not (0 <= v <= 0xFFFFFFFF):
-        raise AdapterError(f"{where} out of u32 range: {val!r}")
-    return v & 0xFFFFFFFF
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise AdapterError(f"{where} is not an integer: {value!r}")
+    if not 0 <= value <= 0xFFFFFFFF:
+        raise AdapterError(f"{where} is outside u32: {value!r}")
+    return value
 
 
 def load(path: str | pathlib.Path) -> Program:
@@ -181,12 +174,32 @@ def load(path: str | pathlib.Path) -> Program:
             f"slot {expected_index} carries unknown opcode {kind!r}",
         )
         operands = {key: value for key, value in slot.items() if key not in ("index", "op")}
+        expected_operands = OPERAND_SCHEMA[kind]
+        _require(
+            set(operands) == expected_operands,
+            f"slot {expected_index} {kind} operands are {sorted(operands)}, "
+            f"expected {sorted(expected_operands)}",
+        )
         for name in FIELD_OPERANDS:
             if name in operands:
                 operands[name] = _field(operands[name], f"slot {expected_index} operand {name!r}")
         for name in U32_OPERANDS:
             if name in operands:
                 operands[name] = _u32_operand(operands[name], f"slot {expected_index} operand {name!r}")
+        if "ins" in operands:
+            _require(
+                isinstance(operands["ins"], list) and len(operands["ins"]) == 4,
+                f"slot {expected_index} operand 'ins' is not a four-element list",
+            )
+            operands["ins"] = [
+                _u32_operand(value, f"slot {expected_index} operand 'ins[{index}]'")
+                for index, value in enumerate(operands["ins"])
+            ]
+        if "mode" in operands:
+            _require(
+                operands["mode"] in ("Cell", "Pc", "Fp"),
+                f"slot {expected_index} operand 'mode' is invalid: {operands['mode']!r}",
+            )
         operations.append(Operation(expected_index, kind, operands))
 
     return Program(

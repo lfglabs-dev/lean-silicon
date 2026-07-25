@@ -201,10 +201,17 @@ class HostRuntime:
         reply = self._exchange(protocol.build_negotiate(profile=self.profile))
         if reply.status is not protocol.Status.OK:
             raise TransactionRejected(reply.status, reply.payload)
-        # NEGOTIATE OK response must be exactly 14 bytes per schema §8.4
-        if len(reply.payload) != 14:
+        expected = (
+            bytes((protocol.PROTOCOL_VERSION, int(self.profile)))
+            + protocol.u16le(protocol.MAX_PAYLOAD_BYTES)
+            + bytes((protocol.INDEX_BITS, 0))
+            + protocol.u32le(protocol.DEVICE_FEATURES)
+            + protocol.u32le(protocol.DEVICE_ID)
+        )
+        if reply.payload != expected:
             raise ProtocolViolation(
-                f"NEGOTIATE response payload has {len(reply.payload)} bytes, expected 14"
+                "NEGOTIATE response does not match the required 14-byte schema: "
+                f"got {reply.payload.hex()}, expected {expected.hex()}"
             )
 
     # --- request preparation ------------------------------------------------

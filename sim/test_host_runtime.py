@@ -6,9 +6,11 @@ re-derives it live from ``leanEthereum/leanVM-b`` when a checkout is supplied.
 """
 import json
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -24,6 +26,7 @@ from host.errors import (  # noqa: E402
 from host.memory import HostMemory, PointerMap, field_inverse  # noqa: E402
 from host.protocol import protocol  # noqa: E402
 from host.runtime import HostRuntime, decode_result_payload  # noqa: E402
+from tools import host_upstream_comparison as comparison_tool  # noqa: E402
 from tools.host_upstream_comparison import compare  # noqa: E402
 
 ARTIFACT = ROOT / "host" / "fixtures" / "assert_set_xor_mul.program.json"
@@ -169,6 +172,46 @@ class AdapterTests(unittest.TestCase):
             "128-bit hex literal",
         )
 
+    def test_malformed_u32_operands_are_adapter_errors(self):
+        for value in ("2", None, True, -1, 1 << 32):
+            with self.subTest(value=value):
+                self._reject(
+                    lambda d, value=value: d["program"]["bytecode"][0].__setitem__("o", value),
+                    "integer|outside u32",
+                )
+
+    def test_missing_and_compound_operands_are_adapter_errors(self):
+        self._reject(
+            lambda d: d["program"]["bytecode"][0].pop("o"),
+            "operands are",
+        )
+
+        def invalid_blake3(document):
+            slot = document["program"]["bytecode"][12]
+            slot.clear()
+            slot.update({
+                "index": 12, "op": "Blake3", "ins": [1, "2", 3, 4],
+                "cv": 5, "out": 6, "metadata": f"{0:#034x}",
+            })
+
+        self._reject(
+            invalid_blake3,
+            r"ins\[1\].*integer",
+        )
+
+        def invalid_deref(document):
+            slot = document["program"]["bytecode"][6]
+            slot.clear()
+            slot.update({
+                "index": 6, "op": "Deref", "alpha": 1, "beta": 2,
+                "gamma": 3, "mode": "Other",
+            })
+
+        self._reject(
+            invalid_deref,
+            "mode.*invalid",
+        )
+
 
 class ResultPayloadTests(unittest.TestCase):
     def test_decode_matches_the_endpoint_encoding(self):
@@ -193,8 +236,20 @@ class ResultPayloadTests(unittest.TestCase):
         })
 
     def test_a_truncated_payload_is_refused(self):
-        with self.assertRaisesRegex(ProtocolViolation, "truncated|consumed"):
-            decode_result_payload(bytes(12) + bytes([0, 0, 0, 0]))
+        payloads = (
+            b"",
+            bytes(12),
+            bytes(12) + bytes([1]),
+            bytes(12) + bytes([0]),
+            bytes(12) + bytes([0, 1]),
+            bytes(12) + bytes([0, 0]),
+            bytes(12) + bytes([0, 0, 1]),
+            bytes(12) + bytes([0, 0, 0, 0]),
+        )
+        for payload in payloads:
+            with self.subTest(length=len(payload)):
+                with self.assertRaisesRegex(ProtocolViolation, "short|truncated|consumed"):
+                    decode_result_payload(payload)
 
     def test_a_result_for_another_transaction_is_refused(self):
         payload = (9).to_bytes(4, "little") + bytes(8) + bytes([0, 0, 0])
@@ -206,13 +261,6 @@ class ResultPayloadTests(unittest.TestCase):
         payload = (5).to_bytes(4, "little") + (1).to_bytes(4, "little") + (0).to_bytes(4, "little") + bytes([0, 0, 0])
         with self.assertRaisesRegex(ProtocolViolation, "echoed txn_id"):
             decode_result_payload(payload, expected_txn_id=7)
-
-    def test_stale_retire_txn_id_is_protocol_violation(self):
-        # After a transaction, a retire echoing a stale txn_id is refused
-        # We simulate by calling retire handling path indirectly via crafted records not needed;
-        # instead ensure runtime step rejects mismatched retire (covered by code), add explicit decode guard
-        # Here we just assert the decode guard exists and retire path uses txn_id
-        pass  # retire path already asserts retired_txn_id == self.txn_id in runtime.step
 
     def test_poisoned_stale_frame_regressions(self):
         """Poisoned or stale frames (wrong txn, tampered CRC) must be refused; F1 binding preserved."""
@@ -226,6 +274,97 @@ class ResultPayloadTests(unittest.TestCase):
 
 
 class RuntimeTests(unittest.TestCase):
+    class _NegotiationRuntime(HostRuntime):
+        def __init__(self, *args, negotiation_payload, **kwargs):
+            self.negotiation_payload = negotiation_payload
+            super().__init__(*args, **kwargs)
+
+        def _exchange(self, frame):
+            return protocol.ResponseFrame(protocol.Status.OK, self.negotiation_payload)
+
+    class _ScriptedRuntime(HostRuntime):
+        def __init__(self, *args, result_payload, retire_payload, **kwargs):
+            self.result_payload = result_payload
+            self.retire_payload = retire_payload
+            super().__init__(*args, **kwargs)
+
+        def _exchange(self, frame):
+            opcode = protocol.Opcode(frame.opcode)
+            if opcode is protocol.Opcode.NEGOTIATE:
+                payload = (
+                    bytes((protocol.PROTOCOL_VERSION, int(self.profile)))
+                    + protocol.u16le(protocol.MAX_PAYLOAD_BYTES)
+                    + bytes((protocol.INDEX_BITS, 0))
+                    + protocol.u32le(protocol.DEVICE_FEATURES)
+                    + protocol.u32le(protocol.DEVICE_ID)
+                )
+                return protocol.ResponseFrame(protocol.Status.OK, payload)
+            if opcode is protocol.Opcode.RETIRE:
+                return protocol.ResponseFrame(protocol.Status.RETIRED, self.retire_payload)
+            return protocol.ResponseFrame(protocol.Status.OK, self.result_payload)
+
+    def test_negotiate_requires_every_schema_field(self):
+        expected = (
+            bytes((protocol.PROTOCOL_VERSION, int(protocol.Profile.INTERPRETER_COMPAT)))
+            + protocol.u16le(protocol.MAX_PAYLOAD_BYTES)
+            + bytes((protocol.INDEX_BITS, 0))
+            + protocol.u32le(protocol.DEVICE_FEATURES)
+            + protocol.u32le(protocol.DEVICE_ID)
+        )
+        self._NegotiationRuntime(program(set_slot(2, 1)), negotiation_payload=expected)
+        for index in range(len(expected)):
+            malformed = bytearray(expected)
+            malformed[index] ^= 1
+            with self.subTest(index=index):
+                with self.assertRaisesRegex(ProtocolViolation, "required 14-byte schema"):
+                    self._NegotiationRuntime(
+                        program(set_slot(2, 1)),
+                        negotiation_payload=bytes(malformed),
+                    )
+        with self.assertRaisesRegex(ProtocolViolation, "required 14-byte schema"):
+            self._NegotiationRuntime(program(set_slot(2, 1)), negotiation_payload=expected[:-1])
+
+    def test_post_retire_write_batch_is_atomic_on_a_late_conflict(self):
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([2])
+            + (2).to_bytes(4, "little") + (0xAA).to_bytes(16, "little")
+            + (3).to_bytes(4, "little") + (0xBB).to_bytes(16, "little")
+            + bytes([0, 0])
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory(cells={3: 0xCC})
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        with self.assertRaises(WriteOnceViolation):
+            runtime.step()
+        self.assertIsNone(memory.read(2))
+        self.assertEqual(memory.read(3), 0xCC)
+
+    def test_stale_retire_txn_id_is_protocol_violation(self):
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([0, 0, 0])
+        )
+        stale_retire = (
+            (0).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            result_payload=result_payload,
+            retire_payload=stale_retire,
+        )
+        with self.assertRaisesRegex(ProtocolViolation, "retire echoed txn_id"):
+            runtime.step()
+
     def test_set_xor_mul_are_driven_end_to_end(self):
         runtime = HostRuntime(program(
             set_slot(2, 3),
@@ -395,6 +534,57 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             {"field": "terminal", "host": "step_limit", "reason": result.reason},
             comparison["mismatches"],
         )
+        self.assertIn("final_memory_gaps", comparison["not_compared"])
+
+    def test_halted_run_missing_an_upstream_cell_is_a_mismatch(self):
+        runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
+        result = runtime.run()
+        result.terminal = "halted"
+        runtime.step_index = self.upstream["cycles"]
+        runtime.memory.cells.pop(self.upstream["mem_used"] - 1)
+        comparison = compare(runtime, result, self.upstream)
+        self.assertEqual(comparison["result"], "MISMATCH")
+        self.assertIn(
+            "host did not cover upstream cell",
+            comparison["mismatches"][-1]["reason"],
+        )
+
+    def test_live_probe_must_reproduce_recorded_execution(self):
+        artifact = json.loads(ARTIFACT.read_text())
+        probe = {
+            "bytecode": artifact["program"]["bytecode"],
+            "execution": dict(artifact["upstream_execution"]),
+        }
+        probe["execution"]["cycles"] += 1
+        with (
+            mock.patch.object(comparison_tool._export, "candidate_head"),
+            mock.patch.object(comparison_tool._export, "require_checkout"),
+            mock.patch.object(
+                comparison_tool._export,
+                "run_probe",
+                return_value=(probe, ["cargo", "run"]),
+            ),
+        ):
+            with self.assertRaisesRegex(SystemExit, "does not match recorded"):
+                comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
+
+    def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            artifact = pathlib.Path(directory) / "artifact.json"
+            artifact.write_text(ARTIFACT.read_text())
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "host_upstream_comparison.py"),
+                    "--artifact",
+                    str(artifact),
+                ],
+                text=True,
+                capture_output=True,
+            )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("artifact path must be inside the repo", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
 
 
 if __name__ == "__main__":
