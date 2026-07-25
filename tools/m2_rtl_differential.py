@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 """Drive Cargo-vetted deterministic vectors through the M2 RTL."""
-import argparse, pathlib, subprocess, sys, tempfile
+import argparse, datetime, hashlib, json, pathlib, subprocess, sys, tempfile
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'sim'))
 sys.path.insert(0,str(ROOT/'tools'))
 from scalar_step_oracle import multiply, inverse
-from frozen_upstream_differential import generate_cases
+from frozen_upstream_differential import COMMIT, REPOSITORY, candidate_head, generate_cases, require_checkout
 parser=argparse.ArgumentParser()
 parser.add_argument("--upstream", type=pathlib.Path, required=True)
+parser.add_argument("--seed", type=lambda value: int(value, 0), default=0xc308034a)
+parser.add_argument("--cases", type=int, default=64)
+parser.add_argument("--record", type=pathlib.Path, help="write reproducibility metadata as JSON")
+parser.add_argument("--rust-toolchain", default="1.88.0")
 args=parser.parse_args()
-seed=0xc308034a
-count=64
+if args.cases <= 0: raise SystemExit('--cases must be positive')
+preflight=require_checkout(args.upstream)
+seed=args.seed
+count=args.cases
 subprocess.run([
     sys.executable, str(ROOT/'tools'/'frozen_upstream_differential.py'),
-    '--upstream', str(args.upstream), '--seed', hex(seed), '--cases', str(count)
+    '--upstream', str(args.upstream), '--seed', hex(seed), '--cases', str(count),
+    '--rust-toolchain', args.rust_toolchain,
 ], check=True)
 cases=generate_cases(seed,count)
 assert multiply(*cases[0]) == 0x328
@@ -62,4 +69,28 @@ endmodule
     seeded=subprocess.run(['vvp',str(seeded_out)],text=True,capture_output=True,check=True)
     if f'PASS {count} seeded Cargo-vetted RTL vectors' not in seeded.stdout:
         raise SystemExit(seeded.stdout)
-print('PASS M2 RTL differential: 64 seeded Cargo-vetted cases driven through RTL plus controller edge regressions')
+postflight=require_checkout(args.upstream)
+message=f'PASS M2 RTL differential: {count} seeded Cargo-vetted cases driven through RTL plus controller edge regressions'
+if args.record:
+    def digest(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+    args.record.parent.mkdir(parents=True, exist_ok=True)
+    args.record.write_text(json.dumps({
+        'schema': 1, 'result': 'PASS', 'exit_status': 0,
+        'tested_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'tested_repo_head': candidate_head(),
+        'upstream': {'repository': REPOSITORY, 'sha': COMMIT, 'preflight': preflight,
+                     'postflight': postflight,
+                     'cargo_lock_sha256': digest(args.upstream/'Cargo.lock')},
+        'profile': 'M2 XOR and MUL only; 64 deterministic seeded full-width vectors plus fixed controller edge regressions.',
+        'limits': 'M2 does not implement full upstream execution; no DEREF, JUMP, BLAKE3, write-once memory, pointer resolution, or trace equivalence is claimed.',
+        'seed': f'{seed:#x}', 'case_count': count,
+        'commands': {'scalar_gate': [sys.executable, str(ROOT/'tools'/'frozen_upstream_differential.py'), '--upstream', str(args.upstream), '--seed', hex(seed), '--cases', str(count), '--rust-toolchain', args.rust_toolchain],
+                     'iverilog_fixed': ['iverilog', '-g2012', '-s', 'tb_m2_scalar_controller'],
+                     'iverilog_seeded': ['iverilog', '-g2012', '-s', 'tb_seeded'],
+                     'vvp_fixed_exit_status': 0, 'vvp_seeded_exit_status': 0},
+        'rust_toolchain': args.rust_toolchain,
+        'provenance': {'checker_sha256': digest(pathlib.Path(__file__)),
+                       'scalar_gate_sha256': digest(ROOT/'tools/frozen_upstream_differential.py'),
+                       'rtl_sha256': digest(ROOT/'src/leanvm_b_m2_scalar_controller.sv')},
+    }, indent=2, sort_keys=True)+'\n')
+print(message)
