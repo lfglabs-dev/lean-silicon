@@ -1,5 +1,2 @@
-python3 tools/frozen_upstream_differential.py --upstream "/tmp/leanVM-b"
-upstream Cargo probe failed (1):
-error: the 'cargo' binary, normally provided by the 'cargo' component, is not applicable to the '1.88.0-x86_64-unknown-linux-gnu' toolchain
-
-make: *** [Makefile:13: scalar-differential] Error 1
+python3 tools/frozen_upstream_differential.py --upstream "/tmp/lean-silicon-review.2CU8LL/leanVM-b"
+PASS upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 seed=0xc308034a cases=64 profile=7-step-set-xor-mul-deref-pc-deref-fp-nontaken-jump
