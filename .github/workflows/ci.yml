@@ -26,10 +26,14 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
-      - name: Checkout frozen upstream oracle
-        run: git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanVM-b && git -C /tmp/leanVM-b checkout c308034ab78619b39a59d26f3dc60e7df5b52649
-      - name: Select current stable Rust for frozen oracle
-        run: rustup update stable && rustup default stable
+      - name: Checkout clean detached frozen upstream oracle
+        run: >-
+          git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanVM-b &&
+          git -C /tmp/leanVM-b checkout --detach c308034ab78619b39a59d26f3dc60e7df5b52649 &&
+          test -z "$(git -C /tmp/leanVM-b status --porcelain --untracked-files=all)" &&
+          test -z "$(git -C /tmp/leanVM-b symbolic-ref -q HEAD)"
+      - name: Install pinned Rust for locked frozen-oracle probe
+        run: rustup toolchain install 1.88.0 --profile minimal
       - name: Compile and simulate RTL
         run: LEANVM_B_UPSTREAM=/tmp/leanVM-b make sim m2-differential
 
