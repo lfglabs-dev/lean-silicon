@@ -1,10 +1,11 @@
 # Current-candidate frozen-oracle evidence
 
-This record was run against candidate source commit
-`debebada1a3913051f1e6e5cdd4e2b1e23915167` before this evidence-only commit.
-The final PR head adds only this record; the implementation and all tested
-source files are the stated tested head. No Actions run/job URL was available
-when this local record was created.
+The scalar record was run against candidate source commit
+`a4a5a55a56e03559ab52b593435f9bbc5ab25cc7`. The M2 record was rerun against
+`debebada1a3913051f1e6e5cdd4e2b1e23915167` after its command-recording fix.
+The final PR head adds only this evidence update; each JSON file identifies
+its exact tested head and source checksums. No Actions run/job URL was
+available when these local records were created.
 
 The frozen oracle checkout was `leanEthereum/leanVM-b` at
 `c308034ab78619b39a59d26f3dc60e7df5b52649`, detached and clean both before
