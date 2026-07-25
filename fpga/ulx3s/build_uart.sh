@@ -26,11 +26,14 @@ if [ -d "$OSS_CAD_BIN" ]; then
     export PATH
 fi
 
-echo "=== TOOL VERSIONS (UART) ===" | tee "$OUTDIR/tool_versions_uart.txt"
-yosys -V 2>&1 | tee -a "$OUTDIR/tool_versions_uart.txt"
-nextpnr-ecp5 --version 2>&1 | tee -a "$OUTDIR/tool_versions_uart.txt"
-ecppack --version 2>&1 | tee -a "$OUTDIR/tool_versions_uart.txt"
-echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "$OUTDIR/tool_versions_uart.txt"
+{
+    echo "=== TOOL VERSIONS (UART) ==="
+    yosys -V
+    nextpnr-ecp5 --version
+    ecppack --version
+    echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$OUTDIR/tool_versions_uart.txt" 2>&1
+cat "$OUTDIR/tool_versions_uart.txt"
 
 # Collect sources: bridge + uart + exact ASIC top + MinCore + multiplier.
 # Relative to this directory, which the cd above guarantees, so the paths that
@@ -53,13 +56,29 @@ hierarchy -check -top ${TOP};
 proc; check;
 synth_ecp5 -top ${TOP};
 write_json ${TOP}.json
-" 2>&1 | tee "$OUTDIR/yosys_uart.log"
+" > "$OUTDIR/yosys_uart.log" 2>&1 || {
+    status=$?
+    cat "$OUTDIR/yosys_uart.log"
+    exit "$status"
+}
+cat "$OUTDIR/yosys_uart.log"
 
 echo "=== PLACE+ROUTE (25 MHz, no --timing-allow-fail) ==="
-nextpnr-ecp5 --85k --package CABGA381 --json ${TOP}.json --lpf ${LPF} --textcfg ${TOP}.config 2>&1 | tee "$OUTDIR/nextpnr_uart.log"
+nextpnr-ecp5 --85k --package CABGA381 --json ${TOP}.json --lpf ${LPF} --textcfg ${TOP}.config \
+    > "$OUTDIR/nextpnr_uart.log" 2>&1 || {
+    status=$?
+    cat "$OUTDIR/nextpnr_uart.log"
+    exit "$status"
+}
+cat "$OUTDIR/nextpnr_uart.log"
 
 echo "=== PACK ==="
-ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit 2>&1 | tee "$OUTDIR/ecppack_uart.log"
+ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit > "$OUTDIR/ecppack_uart.log" 2>&1 || {
+    status=$?
+    cat "$OUTDIR/ecppack_uart.log"
+    exit "$status"
+}
+cat "$OUTDIR/ecppack_uart.log"
 
 cp "${TOP}.bit" "$OUTDIR/$BIT_NAME"
 

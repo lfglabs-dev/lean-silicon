@@ -19,4 +19,6 @@ sim:
 	cd $(ROOT) && $(PYTHON) -m unittest discover -s fpga_harness -v
 
 clean:
-	rm -f *.json *.config *.bit *.svf *.log
+	rm -f smoke_top.json smoke_top.config smoke_top.bit smoke_top.svf
+	rm -f ulx3s_top.json ulx3s_top.config ulx3s_top.bit ulx3s_top.svf
+	rm -f ecppack.log ecppack_uart.log

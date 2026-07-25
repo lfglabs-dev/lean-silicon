@@ -1223,6 +1223,6 @@ Found and reported 0 problems.
 
 6. Executing JSON backend.
 
-End of script. Logfile hash: c514efe384, time: 0.52s, user: 0.37s, system: 0.12s, MEM: 31.38 MB peak
+End of script. Logfile hash: c514efe384, time: 0.52s, user: 0.37s, system: 0.12s, MEM: 31.50 MB peak
 Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
 Time spent: 57% 21x read_verilog (0 sec), 13% 1x synth_lattice (0 sec), ...

@@ -78,11 +78,11 @@ def drain(ser: serial.Serial, max_bytes: int = 256) -> bytes:
     out = bytearray()
     deadline = time.time() + 0.05
     while len(out) < max_bytes and time.time() < deadline:
-        chunk = ser.read(ser.in_waiting or 1)
-        if chunk:
-            out.extend(chunk)
-        else:
+        waiting = ser.in_waiting
+        if not waiting:
             time.sleep(0.001)
+            continue
+        out.extend(ser.read(min(waiting, max_bytes - len(out))))
     return bytes(out)
 
 

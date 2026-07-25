@@ -63,6 +63,15 @@ class FakeSerial:
         return bytes(self._written)
 
 
+class IdleSerial:
+    """An idle port whose configured blocking read must never be called."""
+
+    in_waiting = 0
+
+    def read(self, _n: int = 1) -> bytes:
+        raise AssertionError("drain attempted a blocking read on an idle port")
+
+
 def run_mul(response: bytes) -> int:
     """Run the driver's mul path against a canned 16-byte reply."""
     fake = FakeSerial(response, command_len=1 + 32)
@@ -86,6 +95,14 @@ class ExpectedMulTest(unittest.TestCase):
     def test_rejects_wrong_operand_length(self):
         with self.assertRaises(ValueError):
             expected_mul(MUL_A[:15], MUL_B)
+
+
+class DrainTest(unittest.TestCase):
+    def test_idle_port_is_polled_without_a_blocking_read(self):
+        with mock.patch.object(ulx3s_uart.time, "sleep"), mock.patch.object(
+            ulx3s_uart.time, "time", side_effect=[0.0, 0.01, 0.06]
+        ):
+            self.assertEqual(ulx3s_uart.drain(IdleSerial()), b"")
 
 
 class MulExitStatusTest(unittest.TestCase):
