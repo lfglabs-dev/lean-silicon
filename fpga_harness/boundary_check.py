@@ -31,6 +31,7 @@ INFO_YAML = ROOT / "info.yaml"
 PROTOCOL_DOC = ROOT / "docs" / "LSC1_PROTOCOL.md"
 
 PIN_WIDTH = 8
+RTL_SUFFIXES = (".sv", ".v")
 # Direction mask published by the ASIC top and the protocol contract: bit set
 # means the ASIC drives that uio pin.
 EXPECTED_UIO_OE = 0b10110110
@@ -198,11 +199,19 @@ def check_asic_top(
 def check_harness_width(
     result: Result, sources: dict[str, str] | None = None
 ) -> None:
-    """No ASIC-facing harness port may be wider than the pin interface."""
+    """No harness RTL port may be wider than the pin interface.
+
+    Deliberately conservative: the checker cannot tell an ASIC-facing port from
+    a host-side one, so it rejects every wide port. Wide host-side buffering is
+    still available through internal signals, which are not ports.
+    """
     if sources is None:
+        # Recursive and both Verilog suffixes: a nested directory or a .v file
+        # would otherwise carry a wide bypass straight past this gate.
         sources = {
-            path.name: path.read_text()
-            for path in sorted(HARNESS_RTL_DIR.glob("*.sv"))
+            str(path.relative_to(HARNESS_RTL_DIR)): path.read_text()
+            for path in sorted(HARNESS_RTL_DIR.rglob("*"))
+            if path.is_file() and path.suffix in RTL_SUFFIXES
         }
     if not sources:
         result.errors.append(f"{HARNESS_RTL_DIR}: no harness RTL found")

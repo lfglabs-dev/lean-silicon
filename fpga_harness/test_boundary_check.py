@@ -7,7 +7,10 @@ because the current RTL happens to be correct.
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import boundary_check
 from boundary_check import (
@@ -121,6 +124,37 @@ class HarnessWidthTests(unittest.TestCase):
         result = Result(errors=[], observations=[], facts=[])
         check_harness_width(result, {})
         self.assertTrue(any("no harness RTL" in item for item in result.errors))
+
+
+class HarnessDiscoveryTests(unittest.TestCase):
+    """A wide bypass must not escape by choice of directory or file suffix."""
+
+    WIDE = "module h (output wire [127:0] wide_result_bypass);\nendmodule\n"
+
+    def _scan(self, relative: str) -> Result:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(self.WIDE)
+            result = Result(errors=[], observations=[], facts=[])
+            with mock.patch.object(boundary_check, "HARNESS_RTL_DIR", root):
+                check_harness_width(result)
+        return result
+
+    def test_wide_port_in_nested_directory_is_rejected(self) -> None:
+        errors = self._scan("sub/deeper/bypass.sv").errors
+        self.assertTrue(any("wide bypass" in item for item in errors), errors)
+
+    def test_wide_port_in_plain_verilog_file_is_rejected(self) -> None:
+        errors = self._scan("bypass.v").errors
+        self.assertTrue(any("wide bypass" in item for item in errors), errors)
+
+    def test_shipped_harness_rtl_is_discovered(self) -> None:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result)
+        self.assertEqual(result.errors, [])
+        self.assertTrue(result.facts)
 
 
 class AbbreviationTests(unittest.TestCase):

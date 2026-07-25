@@ -112,6 +112,31 @@ class LevelIsolationTests(unittest.TestCase):
                 report = detect(Environment.from_fixture(fixture))
                 self.assertTrue(report.satisfied("jtag"))
 
+    def test_partial_build_chain_does_not_satisfy_the_toolchain_level(self) -> None:
+        """yosys alone cannot produce a bitstream; nextpnr/ecppack are required."""
+        fixture = dict(
+            FULL_FIXTURE,
+            tools={"yosys": "/usr/bin/yosys", "openFPGALoader": "/usr/bin/openFPGALoader"},
+        )
+        report = detect(Environment.from_fixture(fixture))
+        self.assertFalse(report.satisfied("toolchain"))
+        build = next(
+            item for item in report.findings if item.name == "build-tools"
+        )
+        self.assertEqual(build.status, "absent")
+        self.assertIn("nextpnr-ecp5", build.detail)
+        self.assertIn("ecppack", build.detail)
+
+    def test_either_loader_alone_satisfies_the_load_group(self) -> None:
+        for loader in ("openFPGALoader", "fujprog"):
+            with self.subTest(loader=loader):
+                fixture = dict(FULL_FIXTURE, tools={loader: f"/usr/bin/{loader}"})
+                report = detect(Environment.from_fixture(fixture))
+                load = next(
+                    item for item in report.findings if item.name == "load-tools"
+                )
+                self.assertEqual(load.status, "present")
+
     def test_load_tools_alone_satisfy_the_toolchain_level_partially(self) -> None:
         """A loader without a synthesis flow must not satisfy the level."""
         fixture = dict(FULL_FIXTURE, tools={"openFPGALoader": "/usr/bin/openFPGALoader"})

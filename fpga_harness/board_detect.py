@@ -209,17 +209,28 @@ def _jtag_scan() -> str:
 
 
 def _probe_toolchain(env: Environment) -> list[Finding]:
+    """Build tools are a chain, so all are required; loaders are alternatives."""
     findings: list[Finding] = []
-    for group, tools in (("build", BUILD_TOOLS), ("load", LOAD_TOOLS)):
+    for group, tools, needs_all in (
+        ("build", BUILD_TOOLS, True),
+        ("load", LOAD_TOOLS, False),
+    ):
         found = [name for name in tools if env.which(name)]
-        if found:
+        missing = [name for name in tools if name not in found]
+        if found and (not missing if needs_all else True):
+            status = "present"
             detail = ", ".join(
                 f"{name}={env.version(name) or env.which(name)}" for name in found
             )
-            status = "present"
-        else:
-            detail = f"none of {', '.join(tools)} on PATH"
+        elif found:
             status = "absent"
+            detail = (
+                f"found {', '.join(found)} but missing {', '.join(missing)}; "
+                f"the {' -> '.join(tools)} chain is incomplete"
+            )
+        else:
+            status = "absent"
+            detail = f"none of {', '.join(tools)} on PATH"
         findings.append(Finding("toolchain", f"{group}-tools", status, detail))
     return findings
 

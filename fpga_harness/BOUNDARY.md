@@ -56,6 +56,14 @@ may assemble or buffer whole packets in wide registers or block RAM, provided
 every byte still enters and leaves the ASIC through the 8-bit beats. Buffering
 is allowed; bypassing is not.
 
+One consequence, stated explicitly because the checker is stricter than the
+prose above: `boundary_check.py` cannot tell an ASIC-facing port from a
+host-side one, so it rejects *every* module port under `fpga_harness/rtl/`
+wider than 8 bits. Wide host-side buffering must therefore live in internal
+signals rather than module ports. This is a deliberate fail-safe: relaxing it
+takes a reviewed change to this document and the checker together, not a port
+that happens to be named as if it were host-side.
+
 ## What the harness must not own
 
 The harness is a board/debug target. It is not a service provider, and adding
@@ -79,7 +87,8 @@ self-contained transaction at a time.
 - `uio` roles agree between `info.yaml` and `docs/LSC1_PROTOCOL.md`;
 - every `uio` bit the mask marks as an input is tied to zero in `uio_out`, and
   every bit marked as an output is driven by a real signal;
-- no harness port exceeds 8 bits.
+- no port exceeds 8 bits in any `.sv` or `.v` file found recursively under
+  `fpga_harness/rtl/`.
 
 What it does **not** do, stated plainly: it is a structural source check. It does
 not prove sequential handshake conformance, it does not simulate, and it cannot
