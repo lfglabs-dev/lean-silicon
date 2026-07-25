@@ -50,8 +50,12 @@ The host drains bytes already buffered before each transaction, reads exactly
 the documented response length, rejects immediately buffered extras, times out
 with byte progress, and does not retry.  Querying buffered input is itself an
 I/O operation, so a device that disconnects during the check is reported as a
-transport failure rather than an uncaught error.  `CLEAR` has no response to
-prove its byte was transmitted, so the host flushes the transport before the
+transport failure rather than an uncaught error.  Request operands are checked
+before that drain runs, so a rejected request never consumes a buffered byte,
+and a drain that fails or times out is itself an indeterminate outcome: it
+leaves an unknown number of stale bytes that a later exchange would otherwise
+read back as a response.  `CLEAR` has no response to prove its byte was
+transmitted, so the host flushes the transport before the
 port can be closed; that flush is bounded by `--timeout` because the underlying
 `tcdrain()` accepts no timeout of its own.  After framing loss, timeout, or I/O failure the outcome is
 unknown; the driver refuses all later exchanges on that transport because a raw

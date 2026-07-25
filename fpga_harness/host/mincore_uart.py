@@ -221,15 +221,21 @@ class MinCoreDriver:
             raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}")
 
     def exchange(self, operation: str, *, a: bytes = b"", b: bytes = b"", value: bytes = b"") -> tuple[bytes, bytes]:
-        """Send one request exactly once, then read and validate exactly one response."""
+        """Send one request exactly once, then read and validate exactly one response.
+
+        Arguments are validated before the window opens because encoding touches
+        no bytes, and the preflight drain is inside it: a drain that fails or
+        times out leaves an unknown number of stale bytes on the wire, which a
+        later exchange would otherwise read back as this request's response.
+        """
         if not self._usable:
             raise TransportFailure(
                 "driver is unusable after an indeterminate exchange; create a new transport after explicit resynchronization"
             )
-        self.drain_stale()
         request = encode_request(operation, a=a, b=b, value=value)
         self._usable = False
         try:
+            self.drain_stale()
             self._write_all(request)
             needed = response_length(operation)
             if needed == 0:

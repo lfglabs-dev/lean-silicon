@@ -126,6 +126,49 @@ class MinCoreUartTests(unittest.TestCase):
             MinCoreDriver(DisconnectingSerial(), .2, Clock()).exchange("status")
         self.assertTrue(issubclass(TransportFailure, MinCoreError))
 
+    def test_a_failed_preflight_drain_cannot_be_answered_by_stale_bytes(self):
+        class HiccupSerial(FakeSerial):
+            """in_waiting raises once, then under-reports while bytes stay buffered."""
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs); self.queries = 0
+            @property
+            def in_waiting(self):
+                self.queries += 1
+                if self.queries == 1:
+                    raise OSError("device hiccup")
+                return 0
+
+        serial = HiccupSerial(STATUS_BYTES)  # leftovers from an earlier aborted STATUS
+        driver = MinCoreDriver(serial, .2, Clock())
+        with self.assertRaisesRegex(TransportFailure, "buffered-input query failed"):
+            driver.exchange("status")
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")
+        self.assertEqual(bytes(serial.written), b"")
+        self.assertEqual(bytes(serial.incoming), STATUS_BYTES)
+
+    def test_a_timed_out_preflight_drain_marks_the_transport_unusable(self):
+        class NoisySerial(FakeSerial):
+            @property
+            def in_waiting(self): return 1
+            def read(self, size=1): return b"x"
+
+        driver = MinCoreDriver(NoisySerial(), .03, Clock())
+        with self.assertRaisesRegex(TransportTimeout, "stale-input drain timeout"):
+            driver.exchange("status")
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")
+
+    def test_invalid_operands_are_rejected_before_the_wire_is_touched(self):
+        vector = VECTORS["set128"]
+        serial = FakeSerial(b"stale", responses=(vector.expected,))
+        driver = MinCoreDriver(serial, .2, Clock())
+        with self.assertRaisesRegex(ValueError, "exactly 16 bytes"):
+            driver.exchange("set", value=b"\x00")
+        self.assertEqual(bytes(serial.incoming), b"stale")
+        self.assertEqual(bytes(serial.written), b"")
+        self.assertEqual(driver.exchange("set", value=vector.value)[1], vector.expected)
+
     def test_no_response_transaction_is_flushed_before_the_port_can_close(self):
         events = []
         class FlushingSerial(FakeSerial):
