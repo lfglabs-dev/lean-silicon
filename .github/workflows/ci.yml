@@ -60,6 +60,9 @@ jobs:
       - name: Bound checker is elaborated inside the shipped stream ALU
         # The built-in Yosys frontend silently drops `bind`, which would make
         # the next step a vacuous pass.  Fail loudly if no checker cell exists.
+        # Pre-flight report only: the authoritative gate is the same
+        # `select -assert-min` assertion inside stream_alu_mul_pulse.sby, which
+        # ties the check to the run that actually produces the proof.
         run: >-
           cd formal && yosys -p 'plugin -i slang;
           read_slang --top stream_alu_mul_pulse_formal --keep-hierarchy

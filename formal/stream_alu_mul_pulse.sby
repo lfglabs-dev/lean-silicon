@@ -23,6 +23,13 @@ read_slang --top stream_alu_mul_pulse_formal --keep-hierarchy \
     gf2n_mul_bitstream.sv gf128_mul_bitstream.sv leanvm_b_stream_alu.sv \
     stream_alu_mul_pulse_formal.sv
 prep -top stream_alu_mul_pulse_formal
+# In-run non-vacuity gate. A dropped `bind` leaves the design with no checker
+# cells, and both tasks then pass trivially (mode prove has nothing to
+# disprove, mode cover has nothing to reach). Assert the four bound checks --
+# one assert plus three covers -- inside this very run, so the frontend cannot
+# regress without failing the proof that depends on it.
+select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check
+select -clear
 
 [files]
 ../asic_core/rtl/gf2n_mul_bitstream.sv

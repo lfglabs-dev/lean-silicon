@@ -107,10 +107,22 @@ does not implement the `$onehot0` system function; for three signals
 **This config requires the `yosys-slang` plugin.**  The built-in Yosys Verilog
 frontend parses `bind` without error but silently discards the bound instance
 (it reports `Removing unused module`), which would make the run vacuously pass.
-The script uses `plugin -i slang` and `read_slang --keep-hierarchy`.  Confirm
-the checker is really elaborated with `select -count t:$check` on the prepared
-design; it must report the checker cells under
-`stream_alu_mul_pulse_formal.dut.u_mul_pulse_check`.
+The script uses `plugin -i slang` and `read_slang --keep-hierarchy`.
+
+That vacuity mode is not self-announcing: with the bound instance dropped the
+design contains no checker cells at all, and both tasks still exit 0 -- `mode
+prove` then has no assertion to disprove and `mode cover` has no cover
+statement to miss.  The `[script]` section therefore ends with
+
+```
+select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check
+```
+
+which aborts the run unless the four bound checks (one assert, three covers)
+are present in the elaborated design.  Because this runs inside the proving
+task itself, a frontend regression fails the proof instead of silently passing
+it; the same assertion also runs as a standalone CI pre-flight step.  The
+checker cells appear under `stream_alu_mul_pulse_formal.dut.u_mul_pulse_check`.
 
 The `induction` task is an unbounded `mode prove` result: the pulses are
 mutually exclusive in every reachable state, driven by free `rx_data`,
