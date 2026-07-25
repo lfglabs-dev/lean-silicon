@@ -386,6 +386,20 @@ class HostRuntime:
             proposed[write["address"]] = write["value"]
             self.memory.prevalidate_write(write["address"], write["value"])
 
+        # Deferred equalities can also write cells while they are reconciled.
+        # Exercise the exact post-RETIRED order on isolated state before RETIRE
+        # commits the endpoint.  This includes deferred pairs from earlier steps:
+        # a new direct write may make one of those pairs contradictory.
+        staged = HostMemory(
+            cells=dict(self.memory.cells),
+            deferred=list(self.memory.deferred),
+        )
+        for write in writes:
+            staged.apply_write(write["address"], write["value"])
+        for item in result["deferred"]:
+            staged.record_deferred(item["target"], item["local"])
+        staged.resolve_deferred()
+
         retire = self._exchange(
             protocol.build_retire(
                 txn_id=result["txn_id"],

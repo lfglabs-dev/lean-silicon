@@ -105,10 +105,10 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
     touched; the rest of its power-of-two buffer is untouched zero.  A host
     write at or past that prefix is a divergence, not a gap in the record.
 
-    When the host run halted, every cell in range(mem_used) must be covered or
-    the comparison is a MISMATCH on missing cells.  When not halted, coverage
-    gaps are recorded explicitly in not_compared and MATCH is never returned
-    for skipped work.
+    Unwritten cells are zero on both sides.  For a halted run, an absent host
+    cell below ``mem_used`` is therefore only a mismatch when upstream records
+    a nonzero value there.  When not halted, coverage gaps are recorded
+    explicitly in not_compared and MATCH is never returned for skipped work.
     """
     mem = [int(value, 16) for value in upstream["mem"]]
     addresses = sorted(runtime.memory.cells)
@@ -149,17 +149,20 @@ def compare(runtime: HostRuntime, run, upstream: dict) -> dict:
             f"count covers a prefix of the upstream run"
         )
 
-    # Coverage requirement: halted => every cell in range(mem_used) must be present.
-    # Non-halted => record gaps explicitly; never let skipped work MATCH.
+    # A sparse halted memory image is valid: an absent host cell denotes zero.
+    # A non-halted run still needs full coverage to claim any final-memory
+    # result, even if the unvisited cells happen to be zero.
     covered = set(runtime.memory.cells.keys())
     expected = set(range(upstream["mem_used"]))
     missing = sorted(expected - covered)
     if missing:
         if run.terminal == "halted":
-            for address in missing:
+            for address in (address for address in missing if mem[address] != 0):
                 mismatches.append({
                     "address": address,
-                    "reason": "host did not cover upstream cell (halted run must cover range(mem_used))",
+                    "host": f"{0:#034x}",
+                    "upstream": f"{mem[address]:#034x}",
+                    "reason": "host omitted a nonzero upstream cell",
                 })
         else:
             not_compared["final_memory_gaps"] = [f"{a:#x}" for a in missing]

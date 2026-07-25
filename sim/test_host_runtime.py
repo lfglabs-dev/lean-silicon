@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest import mock
+from types import SimpleNamespace
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -413,6 +414,29 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ProtocolViolation, "conflicting writes"):
             runtime.step()
         self.assertIsNone(memory.read(2))
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_an_invalid_deferred_equality_is_refused_before_retire_is_sent(self):
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([0])
+            + bytes([1]) + (2).to_bytes(4, "little") + (3).to_bytes(4, "little")
+            + bytes([0])
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory(cells={2: 0xAA, 3: 0xBB})
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        with self.assertRaisesRegex(WriteOnceViolation, "deferred equality 2 == 3"):
+            runtime.step()
+        self.assertEqual(memory.cells, {2: 0xAA, 3: 0xBB})
         self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
 
     def test_an_acceptable_write_batch_is_still_retired_and_applied(self):
@@ -856,9 +880,24 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
         comparison = compare(runtime, result, self.upstream)
         self.assertEqual(comparison["result"], "MISMATCH")
         self.assertIn(
-            "host did not cover upstream cell",
+            "host omitted a nonzero upstream cell",
             comparison["mismatches"][-1]["reason"],
         )
+
+    def test_halted_sparse_memory_treats_unwritten_cells_as_zero(self):
+        runtime = SimpleNamespace(
+            memory=HostMemory(cells={10: 0xAB}),
+            step_index=1,
+        )
+        run = SimpleNamespace(terminal="halted", reason="")
+        upstream = {
+            "cycles": 1,
+            "mem_used": 11,
+            "mem": [f"{0:#034x}" for _ in range(10)] + [f"{0xAB:#034x}"],
+        }
+        result = compare(runtime, run, upstream)
+        self.assertEqual(result["result"], "MATCH")
+        self.assertEqual(result["mismatches"], [])
 
     def test_live_probe_must_reproduce_recorded_execution(self):
         artifact = json.loads(ARTIFACT.read_text())
