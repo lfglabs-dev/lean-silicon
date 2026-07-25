@@ -1,7 +1,8 @@
 # Lean proof-foundations evidence
 
-Parent and tested API boundary: `40199b377ecc80115faa5a7331048b522a1f425f`
-(merged protocol PR #3).  This evidence intentionally excludes open PR #5 and
+Parent API boundary: `40199b377ecc80115faa5a7331048b522a1f425f` (merged
+protocol PR #3).  The exact tested proof-source commit is recorded in
+`tested-source-sha.txt`. This evidence intentionally excludes open PR #5 and
 does not inspect, import, or prove claims about its RTL.
 
 Scope added by this change is `LeanVMBMinCore.CheckedIndex`: the frozen strict
