@@ -1,0 +1,17 @@
+# ULX3S v3.1.8 (LFE5U-85F) minimal smoke constraints
+# Source: pin-subset hypothesis derived from ulx3s-misc v316 LPF for v3.1.6/3.1.7
+# Applicability: v3.1.8; G2/B2/M1/L4 are stable across v3.x; full LPF not reproduced here.
+# This file intentionally contains only the pins used by the smoke design.
+# Clock: 25 MHz onboard oscillator
+LOCATE COMP "clk" SITE "G2";
+IOBUF PORT "clk" IO_TYPE=LVCMOS33;
+# LED0 (active low on ULX3S)
+LOCATE COMP "led" SITE "B2";
+IOBUF PORT "led" IO_TYPE=LVCMOS33;
+# UART (US1 FT231X): FPGA RX = M1 (host TX), FPGA TX = L4 (host RX)
+LOCATE COMP "uart_rx" SITE "M1";
+IOBUF PORT "uart_rx" IO_TYPE=LVCMOS33 PULLMODE=UP;
+LOCATE COMP "uart_tx" SITE "L4";
+IOBUF PORT "uart_tx" IO_TYPE=LVCMOS33 DRIVE=4;
+# Explicit: SDRAM pins are NOT constrained or used by this design.
+# Never pass -f to any flash tool for this SRAM-only smoke.
