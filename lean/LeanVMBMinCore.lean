@@ -2,6 +2,7 @@ import LeanVMBMinCore.GF8
 import LeanVMBMinCore.GHASH128
 import LeanVMBMinCore.Stream
 import LeanVMBMinCore.Address
+import LeanVMBMinCore.CheckedIndex
 import LeanVMBMinCore.Memory
 import LeanVMBMinCore.Deref
 import LeanVMBMinCore.ISA

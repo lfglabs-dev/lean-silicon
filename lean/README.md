@@ -18,6 +18,9 @@ Modules:
   optimized SET/NONZERO transforms.
 - `Address.lean` — abstract representation relation between integer indices and
   multiplicative field-address encodings.
+- `CheckedIndex.lean` — executable `u32`-bounded host-index addition plus
+  success, overflow, local-address, and next-PC lemmas for the strict scalar
+  profile. It intentionally does not refine the unmerged full-core RTL.
 - `Memory.lean` — write-once memory success, conflict, idempotence, and
   different-address commutation lemmas.
 - `Deref.lean` — faithful simplified `DEREF Cell` reconciliation: equality,
