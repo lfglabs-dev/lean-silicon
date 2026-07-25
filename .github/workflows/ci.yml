@@ -27,7 +27,7 @@ jobs:
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
       - name: Compile and simulate RTL
-        run: make sim
+        run: make sim m2-differential
 
   lean:
     runs-on: ubuntu-latest
@@ -49,5 +49,9 @@ jobs:
         run: cd formal && sby -f gf8_mul.sby
       - name: Yosys lint and synthesis
         run: >-
-          yosys -p 'read_verilog -sv src/gf2n_mul_bitstream.sv src/gf128_mul_bitstream.sv src/leanvm_b_stream_alu.sv src/tt_um_leanvm_b_mincore.sv;
+          yosys -p 'read_verilog -sv src/gf2n_mul_bitstream.sv src/gf128_mul_bitstream.sv src/leanvm_b_stream_alu.sv src/tt_um_leanvm_b_mincore.sv src/leanvm_b_m2_scalar_controller.sv;
           hierarchy -check -top tt_um_leanvm_b_mincore; proc; check; synth -top tt_um_leanvm_b_mincore; stat'
+      - name: M2 controller lint and synthesis
+        run: >-
+          yosys -p 'read_verilog -sv src/leanvm_b_m2_scalar_controller.sv;
+          hierarchy -check -top leanvm_b_m2_scalar_controller; proc; check; synth -top leanvm_b_m2_scalar_controller; stat'
