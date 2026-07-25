@@ -146,6 +146,7 @@ def main() -> None:
     parser.add_argument("--out", required=True, type=pathlib.Path, help="artifact JSON to write")
     parser.add_argument("--rust-toolchain", default="1.88.0")
     args = parser.parse_args()
+    args.source = args.source.resolve()
 
     tested_head = candidate_head()
     preflight = require_checkout(args.upstream)
