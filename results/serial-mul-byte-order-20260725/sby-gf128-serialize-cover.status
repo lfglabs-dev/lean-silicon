@@ -1,0 +1,2 @@
+command=cd formal && sby -f gf128_serialize.sby cover
+exit=0

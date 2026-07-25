@@ -1,0 +1,2 @@
+command=cd formal && sby -f stream_alu_mul_pulse.sby cover
+exit=0

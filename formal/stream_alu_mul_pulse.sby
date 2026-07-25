@@ -1,0 +1,38 @@
+[tasks]
+induction
+cover
+
+[options]
+induction: mode prove
+induction: depth 8
+cover: mode cover
+# Reaching S_MUL_TX needs the full MUL128 transaction: one command byte,
+# 16 A bytes, then 16 B bytes of eight multiplier-bit steps each.
+cover: depth 200
+timeout 3600
+
+[engines]
+induction: smtbmc yices
+cover: smtbmc yices
+
+[script]
+# The built-in Yosys Verilog frontend silently ignores `bind`, which would
+# drop the checker and make this a vacuous run. yosys-slang elaborates it.
+plugin -i slang
+read_slang --top stream_alu_mul_pulse_formal --keep-hierarchy \
+    gf2n_mul_bitstream.sv gf128_mul_bitstream.sv leanvm_b_stream_alu.sv \
+    stream_alu_mul_pulse_formal.sv
+prep -top stream_alu_mul_pulse_formal
+# In-run non-vacuity gate. A dropped `bind` leaves the design with no checker
+# cells, and both tasks then pass trivially (mode prove has nothing to
+# disprove, mode cover has nothing to reach). Assert the four bound checks --
+# one assert plus three covers -- inside this very run, so the frontend cannot
+# regress without failing the proof that depends on it.
+select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check
+select -clear
+
+[files]
+../asic_core/rtl/gf2n_mul_bitstream.sv
+../asic_core/rtl/gf128_mul_bitstream.sv
+../asic_core/rtl/leanvm_b_stream_alu.sv
+stream_alu_mul_pulse_formal.sv

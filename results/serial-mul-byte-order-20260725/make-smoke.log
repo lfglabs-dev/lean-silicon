@@ -1,0 +1,12 @@
+python3 tools/sv_smoke_check.py asic_core/rtl/*.sv src/leanvm_b_m2_scalar_controller.sv formal/*.sv test/tb_stream_alu.sv test/tb_m2_scalar_controller.sv fpga_harness/rtl/*.sv
+asic_core/rtl/gf128_mul_bitstream.sv: structurally balanced
+asic_core/rtl/gf2n_mul_bitstream.sv: structurally balanced
+asic_core/rtl/lean_silicon_lsc1.sv: structurally balanced
+asic_core/rtl/leanvm_b_stream_alu.sv: structurally balanced
+src/leanvm_b_m2_scalar_controller.sv: structurally balanced
+formal/gf128_serialize_formal.sv: structurally balanced
+formal/gf8_mul_formal.sv: structurally balanced
+formal/stream_alu_mul_pulse_formal.sv: structurally balanced
+test/tb_stream_alu.sv: structurally balanced
+test/tb_m2_scalar_controller.sv: structurally balanced
+fpga_harness/rtl/lean_silicon_lsc1_pins.sv: structurally balanced
