@@ -3,11 +3,13 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from fpga_harness.host import mincore_uart
 from fpga_harness.host.mincore_uart import (AbortUnavailable, MinCoreDriver,
-    ResponseError, STATUS_BYTES, TransportFailure, TransportTimeout, VECTORS,
-    decode_response, encode_request, main, record_evidence)
+    MinCoreError, ResponseError, STATUS_BYTES, TransportFailure, TransportTimeout,
+    VECTORS, decode_response, encode_request, main, record_evidence, repo_provenance)
 
 
 class Clock:
@@ -107,6 +109,46 @@ class MinCoreUartTests(unittest.TestCase):
             driver.exchange("status")
         with self.assertRaises(AbortUnavailable):
             MinCoreDriver(FakeSerial(), .2, Clock()).abort()
+
+    def test_buffered_input_query_failure_is_a_handled_transport_failure(self):
+        class DisconnectingSerial(FakeSerial):
+            @property
+            def in_waiting(self): raise OSError("device disconnected")
+        with self.assertRaisesRegex(TransportFailure, "buffered-input query failed"):
+            MinCoreDriver(DisconnectingSerial(), .2, Clock()).exchange("status")
+        self.assertTrue(issubclass(TransportFailure, MinCoreError))
+
+    def test_no_response_transaction_is_flushed_before_the_port_can_close(self):
+        events = []
+        class FlushingSerial(FakeSerial):
+            def write(self, data): events.append("write"); return super().write(data)
+            def flush(self): events.append("flush")
+        request, response = MinCoreDriver(FlushingSerial(), .2, Clock()).exchange("clear")
+        self.assertEqual(request, b"\x7d")
+        self.assertEqual(response, b"")
+        self.assertEqual(events, ["write", "flush"])
+
+        class BrokenFlush(FakeSerial):
+            def flush(self): raise OSError("link lost")
+        with self.assertRaisesRegex(TransportFailure, "output flush failed"):
+            MinCoreDriver(BrokenFlush(), .2, Clock()).exchange("clear")
+
+    def test_evidence_distinguishes_a_dirty_source_tree(self):
+        head = "0" * 40
+        for dirty in (False, True, None):
+            output = io.BytesIO()
+            with mock.patch.object(mincore_uart, "repo_provenance", return_value=(head, dirty)):
+                record_evidence(output, operation="clear", request=b"\x7d", response=b"",
+                                expected=None, passed=None, execution_attempted=True,
+                                serial_response_observed=False)
+            evidence = json.loads(output.getvalue())
+            self.assertEqual(evidence["repo_head"], head)
+            self.assertEqual(evidence["repo_dirty"], dirty)
+        actual_head, actual_dirty = repo_provenance()
+        self.assertIsInstance(actual_head, str)
+        self.assertIn(actual_dirty, (True, False, None))
+        if actual_head == "unknown":
+            self.assertIsNone(actual_dirty)
 
     def test_transport_failure_is_not_retried(self):
         class BrokenSerial(FakeSerial):

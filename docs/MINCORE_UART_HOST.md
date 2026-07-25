@@ -48,10 +48,13 @@ fault indication must specify out-of-band status rather than overload raw data.
 
 The host drains bytes already buffered before each transaction, reads exactly
 the documented response length, rejects immediately buffered extras, times out
-with byte progress, and does not retry.  After framing loss, timeout, or I/O
-failure the outcome is unknown; the driver refuses all later exchanges on that
-transport because a raw UART-only bridge cannot safely resynchronize a partial
-MinCore command.
+with byte progress, and does not retry.  Querying buffered input is itself an
+I/O operation, so a device that disconnects during the check is reported as a
+transport failure rather than an uncaught error.  `CLEAR` has no response to
+prove its byte was transmitted, so the host flushes the transport before the
+port can be closed.  After framing loss, timeout, or I/O failure the outcome is
+unknown; the driver refuses all later exchanges on that transport because a raw
+UART-only bridge cannot safely resynchronize a partial MinCore command.
 
 ## Usage
 
@@ -76,3 +79,9 @@ substitute a golden expected value for an observed response.
 Decode-only mode does not encode or require request operands.  Decode or serial
 execution without a selected golden vector also records `pass: null`, because
 fixed-size validation alone is not a functional oracle.
+
+Each record carries `repo_head` plus `repo_dirty`, which reports whether that
+checkout had uncommitted or untracked changes (`git status --porcelain=v1
+--untracked-files=all`).  A head alone cannot distinguish evidence produced by a
+modified tree from a clean run at the same commit.  `repo_dirty: null` means the
+tree state could not be determined and must not be read as clean.

@@ -124,12 +124,20 @@ class MinCoreDriver:
         self.transport, self.timeout, self.clock = transport, timeout, clock
         self._usable = True
 
+    def _buffered_count(self) -> int:
+        """Query buffered RX bytes; pyserial raises I/O errors from this property."""
+        try:
+            buffered = int(getattr(self.transport, "in_waiting", 0))
+        except Exception as error:
+            raise TransportFailure("buffered-input query failed") from error
+        return max(0, buffered)
+
     def drain_stale(self) -> bytes:
         """Remove already-buffered RX bytes before one diagnostic exchange."""
         deadline, drained = self.clock() + self.timeout, bytearray()
-        while getattr(self.transport, "in_waiting", 0):
+        while (buffered := self._buffered_count()) > 0:
             try:
-                chunk = self.transport.read(max(1, min(int(self.transport.in_waiting), 4096)))
+                chunk = self.transport.read(min(buffered, 4096))
             except Exception as error:
                 raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes") from error
             if not chunk:
@@ -180,6 +188,16 @@ class MinCoreDriver:
                 raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
         return bytes(data)
 
+    def _flush_output(self) -> None:
+        """A zero-length response is no evidence that queued bytes actually left."""
+        flush = getattr(self.transport, "flush", None)
+        if not callable(flush):
+            return
+        try:
+            flush()
+        except Exception as error:
+            raise TransportFailure("output flush failed; transaction was not retried") from error
+
     def _reject_buffered_extra(self) -> None:
         extra = self.drain_stale()
         if extra:
@@ -196,7 +214,10 @@ class MinCoreDriver:
         self._usable = False
         try:
             self._write_all(request)
-            response = self._read_exact(response_length(operation))
+            needed = response_length(operation)
+            if needed == 0:
+                self._flush_output()
+            response = self._read_exact(needed)
             decode_response(operation, response)
             self._reject_buffered_extra()
         except Exception:
@@ -212,12 +233,21 @@ class MinCoreDriver:
         abort_method()
 
 
-def repo_head() -> str:
+def repo_provenance() -> tuple[str, Optional[bool]]:
+    """Head commit plus whether that tree had uncommitted changes.
+
+    A head alone cannot distinguish evidence produced by a modified checkout
+    from a clean run at the same commit.  A null dirty flag means unknown, which
+    must not be read as clean.
+    """
     root = Path(__file__).resolve().parents[2]
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+        head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+        status = subprocess.check_output(
+            ["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=root, text=True)
     except (OSError, subprocess.CalledProcessError):
-        return "unknown"
+        return "unknown", None
+    return head, bool(status.strip())
 
 
 def record_evidence(
@@ -234,7 +264,8 @@ def record_evidence(
 ) -> None:
     """Write one JSONL record without a port or raw payloads by default."""
     digest = lambda value: hashlib.sha256(value).hexdigest()
-    record = {"tool_version": VERSION, "repo_head": repo_head(), "operation": operation,
+    head, dirty = repo_provenance()
+    record = {"tool_version": VERSION, "repo_head": head, "repo_dirty": dirty, "operation": operation,
               "request_length": len(request), "request_sha256": digest(request),
               "response_length": len(response), "response_sha256": digest(response),
               "expected_length": None if expected is None else len(expected),
