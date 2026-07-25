@@ -1,0 +1,2 @@
+command=cd formal && sby -f gf128_serialize.sby bmc
+exit=0

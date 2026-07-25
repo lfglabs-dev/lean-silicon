@@ -1,0 +1,2 @@
+command=cd formal && sby -f gf128_serialize.sby induction
+exit=0

@@ -1,0 +1,9 @@
+Lean (version 4.32.1, x86_64-unknown-linux-gnu, commit f054605aea4b840552cca2e725580bffd1e1b704, Release)
+leanprover/lean4:v4.32.1
+
+oss-cad-suite 2025-07-01
+Yosys 0.54+29 (git sha1 7b0c1fe49, clang++ 18.1.8 -fPIC -O3)
+yosys-slang plugin (bundled with oss-cad-suite 2025-07-01)
+SBY v0.54
+Yices 2.6.5
+Icarus Verilog version 13.0 (devel) (s20250103-42-ga05da1ca0)

@@ -1,0 +1,2 @@
+command=yosys -p 'plugin -i slang; read_slang ...; select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check'
+exit=0

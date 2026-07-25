@@ -1,0 +1,2 @@
+command=cd lean && lake build
+exit=0
