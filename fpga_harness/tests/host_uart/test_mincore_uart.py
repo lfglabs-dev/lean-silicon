@@ -87,7 +87,7 @@ class MinCoreUartTests(unittest.TestCase):
 
         # The budget is shared, so the read phase starts with the write already charged to it.
         serial = FakeSerial(read_limit=1, responses=(STATUS_BYTES,))
-        with self.assertRaisesRegex(TransportTimeout, r"read timeout after 3/4 response bytes"):
+        with self.assertRaisesRegex(TransportTimeout, r"read timeout after 1/4 response bytes"):
             MinCoreDriver(serial, .035, Clock()).exchange("status")
 
     def test_one_timeout_bounds_the_whole_exchange_not_each_phase(self):
@@ -128,6 +128,21 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertLess(time.monotonic() - start, 1)  # an unbounded write would wait ~30s
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
             driver.exchange("status")  # an abandoned write leaves the stream unknown
+
+    def test_a_blocking_read_cannot_outlast_the_remaining_budget(self):
+        """A transport read must not get a fresh, unbounded timeout."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledRead(FakeSerial):
+            def read(self, size=1): release.wait(30); return b""
+
+        driver = MinCoreDriver(StalledRead(), .05)  # real clock: measure wall time
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, r"read timeout after 0/4 response bytes"):
+            driver.exchange("status")
+        self.assertLess(time.monotonic() - start, 1)  # an unbounded read would wait ~30s
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")  # an abandoned read leaves the stream unknown
 
     def test_a_drain_that_spends_the_budget_leaves_the_write_none(self):
         """The write phase inherits what the drain left, never a fresh budget."""

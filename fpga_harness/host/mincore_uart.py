@@ -215,8 +215,14 @@ class MinCoreDriver:
     def _read_exact(self, size: int, deadline: Optional[float] = None) -> bytes:
         deadline, data = self._deadline(deadline), bytearray()
         while len(data) < size:
+            message = f"read timeout after {len(data)}/{size} response bytes"
+            remaining = deadline - self.clock()
+            if remaining <= 0:
+                raise TransportTimeout(message, observed=bytes(data))
             try:
-                chunk = self.transport.read(size - len(data))
+                chunk = self._bounded(lambda: self.transport.read(size - len(data)), remaining, message)
+            except TransportTimeout as error:
+                raise TransportTimeout(message, observed=bytes(data)) from error
             except Exception as error:
                 raise TransportFailure(f"read failed after {len(data)}/{size} response bytes; transaction was not retried",
                                        observed=bytes(data)) from error
