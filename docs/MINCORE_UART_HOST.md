@@ -61,7 +61,14 @@ python3 fpga_harness/host/mincore_uart.py --operation mul --vector mul128 --enco
 python3 fpga_harness/host/mincore_uart.py --operation set --vector set128 --dry-run --evidence evidence.jsonl
 ```
 
-Physical operation requires both an explicit port and `--execute`; `pyserial`
-is optional and only needed then.  Evidence is JSONL and deliberately omits
-the port name.  It records `hardware_observed: false` for dry-run/decode
-records, so it never claims a hardware run without actual response bytes.
+Serial execution requires both an explicit port and `--execute`; `pyserial`
+is optional and only needed then.  This only demonstrates a host exchange with
+the selected serial endpoint: it is not physical FPGA validation and does not
+identify what is attached to that endpoint.
+
+Evidence is JSONL and deliberately omits the port name.  Raw request, response,
+and expected payloads are also omitted by default; lengths and SHA-256 digests
+are recorded instead.  `--evidence-payloads` opts into recording those
+potentially sensitive bytes.  Dry-run and encode records have
+`execution_attempted: false`, an empty response, and `pass: null`; they never
+substitute a golden expected value for an observed response.

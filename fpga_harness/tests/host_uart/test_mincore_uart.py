@@ -69,6 +69,19 @@ class MinCoreUartTests(unittest.TestCase):
             MinCoreDriver(serial, .03, Clock()).exchange("set", value=VECTORS["set128"].value)
         self.assertEqual(bytes(serial.written), encode_request("set", value=VECTORS["set128"].value))
 
+    def test_stale_drain_is_bounded_and_invalid_write_counts_fail(self):
+        class NoisySerial(FakeSerial):
+            @property
+            def in_waiting(self): return 1
+            def read(self, size=1): return b"x"
+        with self.assertRaisesRegex(TransportTimeout, "stale-input drain timeout"):
+            MinCoreDriver(NoisySerial(), .03, Clock()).exchange("status")
+
+        class BadWriteCount(FakeSerial):
+            def write(self, data): return len(data) + 1
+        with self.assertRaisesRegex(TransportFailure, "invalid write count"):
+            MinCoreDriver(BadWriteCount(), .2, Clock()).exchange("status")
+
     def test_extra_bytes_and_bad_status_are_rejected(self):
         serial = FakeSerial(responses=(STATUS_BYTES + b"\x00",))
         with self.assertRaisesRegex(ResponseError, "unexpected buffered"):
@@ -94,6 +107,24 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as stopped:
             main(["--execute", "--port", "opaque", "--encode"])
         self.assertEqual(stopped.exception.code, 2)
+        for option, value in (("--timeout", "nan"), ("--timeout", "0"),
+                              ("--baud", "0"), ("--baud", "4000001")):
+            with self.assertRaises(SystemExit) as stopped:
+                main([option, value])
+            self.assertEqual(stopped.exception.code, 2)
+
+    def test_encode_and_dry_run_do_not_fabricate_a_response(self):
+        output = io.StringIO()
+        old_stdout, sys.stdout = sys.stdout, output
+        try:
+            self.assertEqual(main(["--operation", "mul", "--vector", "mul128", "--encode"]), 0)
+        finally:
+            sys.stdout = old_stdout
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["response_hex"], "")
+        self.assertIsNone(result["pass"])
+        self.assertFalse(result["execution_attempted"])
+        self.assertFalse(result["serial_response_observed"])
 
     def test_consecutive_commands_response_validation_and_evidence_redaction(self):
         serial = FakeSerial(read_limit=2, responses=(STATUS_BYTES, VECTORS["mul128"].expected))
@@ -102,9 +133,16 @@ class MinCoreUartTests(unittest.TestCase):
         request, actual = driver.exchange("mul", a=VECTORS["mul128"].a, b=VECTORS["mul128"].b)
         self.assertEqual(actual, VECTORS["mul128"].expected)
         output = io.BytesIO()
-        record_evidence(output, operation="mul", request=request, response=actual, expected=actual, passed=True, hardware_observed=False)
+        record_evidence(output, operation="mul", request=request, response=actual, expected=actual,
+                        passed=True, execution_attempted=False, serial_response_observed=False)
         evidence = json.loads(output.getvalue())
-        self.assertNotIn("port", evidence); self.assertFalse(evidence["hardware_observed"]); self.assertTrue(evidence["pass"])
+        self.assertNotIn("port", evidence)
+        self.assertNotIn("request_hex", evidence)
+        self.assertNotIn("response_hex", evidence)
+        self.assertEqual(evidence["request_length"], len(request))
+        self.assertFalse(evidence["execution_attempted"])
+        self.assertFalse(evidence["serial_response_observed"])
+        self.assertTrue(evidence["pass"])
 
 
 if __name__ == "__main__": unittest.main()

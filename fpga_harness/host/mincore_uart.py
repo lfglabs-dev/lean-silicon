@@ -8,7 +8,9 @@ stream, and never retries a transaction.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import subprocess
 import sys
 import time
@@ -123,12 +125,17 @@ class MinCoreDriver:
 
     def drain_stale(self) -> bytes:
         """Remove already-buffered RX bytes before one diagnostic exchange."""
-        drained = bytearray()
+        deadline, drained = self.clock() + self.timeout, bytearray()
         while getattr(self.transport, "in_waiting", 0):
-            chunk = self.transport.read(max(1, min(int(self.transport.in_waiting), 4096)))
+            try:
+                chunk = self.transport.read(max(1, min(int(self.transport.in_waiting), 4096)))
+            except Exception as error:
+                raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes") from error
             if not chunk:
                 break
             drained.extend(chunk)
+            if self.clock() >= deadline:
+                raise TransportTimeout(f"stale-input drain timeout after {len(drained)} bytes")
         return bytes(drained)
 
     def _write_all(self, data: bytes) -> None:
@@ -140,6 +147,10 @@ class MinCoreDriver:
                 raise TransportFailure(f"write failed after {offset}/{len(data)} request bytes; transaction was not retried") from error
             if written is None:
                 written = len(data) - offset
+            if not isinstance(written, int) or written < 0 or written > len(data) - offset:
+                raise TransportFailure(
+                    f"transport reported invalid write count after {offset}/{len(data)} request bytes"
+                )
             if written > 0:
                 offset += written
                 continue
@@ -154,7 +165,11 @@ class MinCoreDriver:
             except Exception as error:
                 raise TransportFailure(f"read failed after {len(data)}/{size} response bytes; transaction was not retried") from error
             if chunk:
-                data.extend(chunk[: size - len(data)])
+                if len(chunk) > size - len(data):
+                    raise TransportFailure(
+                        f"transport returned too many bytes after {len(data)}/{size} response bytes"
+                    )
+                data.extend(chunk)
                 continue
             if self.clock() >= deadline:
                 raise TransportTimeout(f"read timeout after {len(data)}/{size} response bytes")
@@ -190,12 +205,30 @@ def repo_head() -> str:
         return "unknown"
 
 
-def record_evidence(stream: BinaryIO, *, operation: str, request: bytes, response: bytes, expected: Optional[bytes], passed: bool, hardware_observed: bool) -> None:
-    """Write one redacted JSONL record.  Deliberately accepts no port argument."""
+def record_evidence(
+    stream: BinaryIO,
+    *,
+    operation: str,
+    request: bytes,
+    response: bytes,
+    expected: Optional[bytes],
+    passed: Optional[bool],
+    execution_attempted: bool,
+    serial_response_observed: bool,
+    include_payloads: bool = False,
+) -> None:
+    """Write one JSONL record without a port or raw payloads by default."""
+    digest = lambda value: hashlib.sha256(value).hexdigest()
     record = {"tool_version": VERSION, "repo_head": repo_head(), "operation": operation,
-              "request_hex": request.hex(), "response_hex": response.hex(),
-              "expected_hex": None if expected is None else expected.hex(), "actual_hex": response.hex(),
-              "pass": passed, "hardware_observed": hardware_observed}
+              "request_length": len(request), "request_sha256": digest(request),
+              "response_length": len(response), "response_sha256": digest(response),
+              "expected_length": None if expected is None else len(expected),
+              "expected_sha256": None if expected is None else digest(expected),
+              "pass": passed, "execution_attempted": execution_attempted,
+              "serial_response_observed": serial_response_observed}
+    if include_payloads:
+        record.update(request_hex=request.hex(), response_hex=response.hex(),
+                      expected_hex=None if expected is None else expected.hex())
     stream.write((json.dumps(record, sort_keys=True) + "\n").encode("utf-8"))
     stream.flush()
 
@@ -205,6 +238,26 @@ def _hex_arg(value: str) -> bytes:
         return bytes.fromhex(value)
     except ValueError as error:
         raise argparse.ArgumentTypeError("must be an even-length hexadecimal string") from error
+
+
+def _positive_finite(value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be a positive finite number") from error
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive finite number")
+    return parsed
+
+
+def _baud_arg(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be an integer from 1 through 4000000") from error
+    if not 1 <= parsed <= 4_000_000:
+        raise argparse.ArgumentTypeError("must be an integer from 1 through 4000000")
+    return parsed
 
 
 def _operation_inputs(args: argparse.Namespace) -> tuple[bytes, bytes, bytes, Optional[bytes]]:
@@ -231,8 +284,8 @@ def _physical_transport(port: str, baud: int, timeout: float) -> ByteTransport:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Versioned MinCore raw-byte diagnostic transport (not LSC-1).")
     parser.add_argument("--port", help="explicit serial port; never enumerated or recorded")
-    parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--timeout", type=float, default=1.0)
+    parser.add_argument("--baud", type=_baud_arg, default=115200)
+    parser.add_argument("--timeout", type=_positive_finite, default=1.0)
     parser.add_argument("--operation", choices=("set", "xor", "mul", "status", "clear"), default="set")
     parser.add_argument("--vector", choices=tuple(VECTORS), help="hardcoded independent golden vector")
     parser.add_argument("--a", type=_hex_arg, default=b"")
@@ -242,8 +295,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     modes.add_argument("--dry-run", action="store_true", help="encode and report; default unless --execute")
     modes.add_argument("--encode", action="store_true", help="encode request only")
     modes.add_argument("--decode", type=_hex_arg, metavar="RESPONSE_HEX", help="validate a supplied response only")
-    parser.add_argument("--execute", action="store_true", help="allow a physical serial transaction exactly once")
+    parser.add_argument("--execute", action="store_true", help="allow a serial transaction exactly once")
     parser.add_argument("--evidence", type=Path, help="append redacted JSONL evidence")
+    parser.add_argument("--evidence-payloads", action="store_true",
+                        help="include raw request/response payloads in evidence (may be sensitive)")
     args = parser.parse_args(argv)
     if args.execute and not args.port:
         parser.error("--execute requires explicit --port")
@@ -257,7 +312,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.decode is not None:
             response = decode_response(args.operation, args.decode)
             passed = expected is None or response == expected
-            hardware = False
+            execution_attempted, serial_response_observed = False, False
         elif args.execute:
             transport = _physical_transport(args.port, args.baud, args.timeout)
             try:
@@ -265,14 +320,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             finally:
                 close = getattr(transport, "close", None)
                 if callable(close): close()
-            passed, hardware = expected is None or response == expected, bool(response)
+            passed = expected is None or response == expected
+            execution_attempted, serial_response_observed = True, bool(response)
         else:
-            response, passed, hardware = expected or b"", True, False
+            response, passed = b"", None
+            execution_attempted, serial_response_observed = False, False
         if args.evidence:
             with args.evidence.open("ab") as stream:
-                record_evidence(stream, operation=args.operation, request=request, response=response, expected=expected, passed=passed, hardware_observed=hardware)
-        print(json.dumps({"operation": args.operation, "request_hex": request.hex(), "response_hex": response.hex(), "expected_hex": None if expected is None else expected.hex(), "pass": passed, "hardware_observed": hardware}, sort_keys=True))
-        return 0 if passed else 1
+                record_evidence(
+                    stream, operation=args.operation, request=request, response=response,
+                    expected=expected, passed=passed, execution_attempted=execution_attempted,
+                    serial_response_observed=serial_response_observed,
+                    include_payloads=args.evidence_payloads,
+                )
+        print(json.dumps({"operation": args.operation, "request_hex": request.hex(),
+                          "response_hex": response.hex(),
+                          "expected_hex": None if expected is None else expected.hex(),
+                          "pass": passed, "execution_attempted": execution_attempted,
+                          "serial_response_observed": serial_response_observed}, sort_keys=True))
+        return 0 if passed is not False else 1
     except (MinCoreError, ResponseError, ValueError) as error:
         print(f"mincore-uart: {error}", file=sys.stderr)
         return 2
