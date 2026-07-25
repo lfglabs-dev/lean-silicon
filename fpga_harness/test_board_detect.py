@@ -312,12 +312,14 @@ class CommandLineTests(unittest.TestCase):
         for i, (fx, expected_code, expected_highest) in enumerate(cases):
             with self.subTest(case=i):
                 path = self._fixture_file(fx)
-                code, out = self._run(["--fixture", str(path), "--require", "jtag"])
+                code, out = self._run(
+                    ["--fixture", str(path), "--require", "jtag", "--json"]
+                )
                 self.assertEqual(code, expected_code)
-                if out.strip().startswith("{"):
-                    payload = json.loads(out)
-                    if expected_highest is not None:
-                        self.assertEqual(payload.get("highest_satisfied_level"), expected_highest)
+                payload = json.loads(out)
+                self.assertEqual(
+                    payload["highest_satisfied_level"], expected_highest
+                )
 
 
 FAKE_SERIAL = "FAKESERIALDONOTLOG0001"
