@@ -560,10 +560,14 @@ Codes at or above `0x80` are faults and drive the `FAULT` pin.
 This distinction is normative.
 
 - A fault raised **before the endpoint touches the staged transaction** —
-  framing faults (`BAD_SOF` … `BAD_FLAGS`), and the guard faults `BAD_STATE`,
-  `BAD_PROFILE`, `STATE_MISMATCH`, `INDEX_RANGE` on a preamble — is a rejection
-  of *that frame only*. Any transaction already staged survives untouched. A
-  duplicate, stale or corrupt frame therefore cannot destroy decided work.
+  framing faults (`BAD_SOF` … `BAD_FLAGS`), the guard faults `BAD_STATE`,
+  `BAD_PROFILE`, `STATE_MISMATCH`, `INDEX_RANGE` on a preamble, and
+  `BAD_SERVICE` — is a rejection of *that frame only*. Any transaction already
+  staged survives untouched. A duplicate, stale or corrupt frame therefore
+  cannot destroy decided work. `BAD_SERVICE` is checked before the digest is
+  folded in, so a suspended transaction stays in `SERVICE_PENDING` and the host
+  may retry it with a correctly addressed `SERVICE_RESPONSE`; only a digest that
+  reaches the write-once rule and fails it discards the transaction.
 - A fault raised **while deciding a transition** leaves nothing staged; the
   transition never existed.
 - A fault raised **after the endpoint began folding host input into a staged

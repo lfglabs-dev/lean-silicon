@@ -1170,6 +1170,24 @@ class Blake3ServiceTests(unittest.TestCase):
                 )
                 self.assertIs(reply.status, Status.BAD_SERVICE)
 
+    def test_a_refused_service_response_leaves_the_transaction_retryable(self) -> None:
+        """`BAD_SERVICE` is checked before the digest folds in, so §9.1 puts it
+        in the reject-this-frame-only class."""
+        endpoint = Lsc1Endpoint()
+        self.request(endpoint)
+        refused = exchange(
+            endpoint,
+            lsc1.build_service_response(txn_id=1, service_id=99, digest=(7, 8)),
+        )
+        self.assertIs(refused.status, Status.BAD_SERVICE)
+        self.assertIs(endpoint.state, TxnState.SERVICE_PENDING)
+        resumed = exchange(
+            endpoint,
+            lsc1.build_service_response(txn_id=1, service_id=1, digest=(7, 8)),
+        )
+        self.assertIs(resumed.status, Status.OK)
+        self.assertIs(endpoint.state, TxnState.RESULT_PENDING)
+
     def test_a_response_of_the_wrong_kind_is_refused(self) -> None:
         endpoint = Lsc1Endpoint()
         self.request(endpoint)
