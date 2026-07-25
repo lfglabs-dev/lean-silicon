@@ -120,8 +120,8 @@ def decode_response(operation: str, response: bytes) -> bytes:
 
 class MinCoreDriver:
     def __init__(self, transport: ByteTransport, timeout: float = 1.0, clock: Callable[[], float] = time.monotonic):
-        if timeout <= 0:
-            raise ValueError("timeout must be positive")
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be a positive finite number")
         self.transport, self.timeout, self.clock = transport, timeout, clock
         self._usable = True
 

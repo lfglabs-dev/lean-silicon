@@ -113,6 +113,11 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaises(AbortUnavailable):
             MinCoreDriver(FakeSerial(), .2, Clock()).abort()
 
+    def test_driver_rejects_timeouts_that_could_never_expire(self):
+        for bad in (float("nan"), float("inf"), 0, -1.5):
+            with self.assertRaisesRegex(ValueError, "positive finite"):
+                MinCoreDriver(FakeSerial(), bad, Clock())
+
     def test_buffered_input_query_failure_is_a_handled_transport_failure(self):
         class DisconnectingSerial(FakeSerial):
             @property
