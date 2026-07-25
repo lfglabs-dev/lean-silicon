@@ -1,0 +1,285 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Running command `read_verilog -sv src/leanvm_b_m2_scalar_controller.sv; hierarchy -check -top leanvm_b_m2_scalar_controller; proc; check; synth -top leanvm_b_m2_scalar_controller; stat' --
+
+1. Executing Verilog-2005 frontend: src/leanvm_b_m2_scalar_controller.sv
+Parsing SystemVerilog input from `src/leanvm_b_m2_scalar_controller.sv' to AST representation.
+Generating RTLIL representation for module `\leanvm_b_m2_scalar_controller'.
+Successfully finished Verilog frontend.
+
+2. Executing HIERARCHY pass (managing design hierarchy).
+
+2.1. Analyzing design hierarchy..
+Top module:  \leanvm_b_m2_scalar_controller
+
+2.2. Analyzing design hierarchy..
+Top module:  \leanvm_b_m2_scalar_controller
+Removed 0 unused modules.
+
+3. Executing PROC pass (convert processes to netlists).
+
+3.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+3.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 403 switch rules as full_case in process $proc$src/leanvm_b_m2_scalar_controller.sv:35$540 in module leanvm_b_m2_scalar_controller.
+Removed a total of 0 dead cases.
+
+3.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 966 assignments to connections.
+
+3.4. Executing PROC_INIT pass (extract init attributes).
+
+3.5. Executing PROC_ARST pass (detect async resets in processes).
+
+3.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~403 debug messages>
+
+3.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\leanvm_b_m2_scalar_controller.$proc$src/leanvm_b_m2_scalar_controller.sv:35$540'.
+     1/5308: $71\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8198
+     2/5308: $70\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8194
+     3/5308: $69\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8190
+     4/5308: $68\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8186
+     5/5308: $67\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8182
+     6/5308: $66\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8178
+     7/5308: $65\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8174
+     8/5308: $64\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8170
+     9/5308: $63\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8166
+    10/5308: $62\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8162
+    11/5308: $61\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8158
+    12/5308: $60\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8154
+    13/5308: $59\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8150
+    14/5308: $58\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8146
+    15/5308: $57\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8142
+    16/5308: $56\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8138
+    17/5308: $55\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8134
+    18/5308: $54\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8130
+    19/5308: $53\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8126
+    20/5308: $52\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8122
+    21/5308: $51\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8118
+    22/5308: $50\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8114
+    23/5308: $49\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8110
+    24/5308: $48\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8106
+    25/5308: $47\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8102
+    26/5308: $46\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8098
+    27/5308: $45\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8094
+    28/5308: $44\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8090
+    29/5308: $43\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8086
+    30/5308: $42\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8082
+    31/5308: $41\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8078
+    32/5308: $40\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8074
+    33/5308: $39\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8070
+    34/5308: $38\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8066
+    35/5308: $37\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8062
+    36/5308: $36\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8058
+    37/5308: $35\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8054
+    38/5308: $34\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8050
+    39/5308: $33\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8046
+    40/5308: $32\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8042
+    41/5308: $31\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8038
+    42/5308: $30\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8034
+    43/5308: $29\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8030
+    44/5308: $28\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8026
+    45/5308: $27\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8022
+    46/5308: $26\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8018
+    47/5308: $25\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8014
+    48/5308: $24\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8010
+    49/5308: $23\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8006
+    50/5308: $22\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$8002
+    51/5308: $21\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7998
+    52/5308: $20\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7994
+    53/5308: $19\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7990
+    54/5308: $18\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7986
+    55/5308: $17\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7982
+    56/5308: $16\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7978
+    57/5308: $15\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7974
+    58/5308: $14\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7970
+    59/5308: $13\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7966
+    60/5308: $12\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7962
+    61/5308: $11\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7958
+    62/5308: $10\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7954
+    63/5308: $9\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7950
+    64/5308: $8\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$327.$result[32:0]$7947
+    65/5308: $71\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7943
+    66/5308: $70\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7939
+    67/5308: $69\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7935
+    68/5308: $68\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7931
+    69/5308: $67\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7927
+    70/5308: $66\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7923
+    71/5308: $65\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7919
+    72/5308: $64\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7915
+    73/5308: $63\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7911
+    74/5308: $62\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7907
+    75/5308: $61\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7903
+    76/5308: $60\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7899
+    77/5308: $59\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7895
+    78/5308: $58\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7891
+    79/5308: $57\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7887
+    80/5308: $56\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7883
+    81/5308: $55\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7879
+    82/5308: $54\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7875
+    83/5308: $53\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7871
+    84/5308: $52\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7867
+    85/5308: $51\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7863
+    86/5308: $50\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7859
+    87/5308: $49\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7855
+    88/5308: $48\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7851
+    89/5308: $47\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7847
+    90/5308: $46\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7843
+    91/5308: $45\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7839
+    92/5308: $44\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7835
+    93/5308: $43\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7831
+    94/5308: $42\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7827
+    95/5308: $41\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7823
+    96/5308: $40\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7819
+    97/5308: $39\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7815
+    98/5308: $38\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7811
+    99/5308: $37\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7807
+   100/5308: $36\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7803
+   101/5308: $35\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7799
+   102/5308: $34\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7795
+   103/5308: $33\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7791
+   104/5308: $32\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7787
+   105/5308: $31\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7783
+   106/5308: $30\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7779
+   107/5308: $29\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7775
+   108/5308: $28\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7771
+   109/5308: $27\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7767
+   110/5308: $26\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7763
+   111/5308: $25\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7759
+   112/5308: $24\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7755
+   113/5308: $23\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7751
+   114/5308: $22\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7747
+   115/5308: $21\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7743
+   116/5308: $20\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7739
+   117/5308: $19\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7735
+   118/5308: $18\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7731
+   119/5308: $17\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7727
+   120/5308: $16\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7723
+   121/5308: $15\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7719
+   122/5308: $14\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7715
+   123/5308: $13\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7711
+   124/5308: $12\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7707
+   125/5308: $11\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7703
+   126/5308: $10\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7699
+   127/5308: $9\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7695
+   128/5308: $8\reverse_g$func$src/leanvm_b_m2_scalar_controller.sv:77$262.$result[32:0]$7692
+   129/5308: $7\controller.reverse_ok_f[0:0]
+   130/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$391.$result[127:0]$7688
+   131/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$390.x[127:0]$7687
+   132/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$390.$result[127:0]$7686
+   133/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$389.x[127:0]$7685
+   134/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$389.$result[127:0]$7684
+   135/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$388.x[127:0]$7683
+   136/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$388.$result[127:0]$7682
+   137/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$387.x[127:0]$7681
+   138/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$387.$result[127:0]$7680
+   139/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$386.x[127:0]$7679
+   140/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$386.$result[127:0]$7678
+   141/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$385.x[127:0]$7677
+   142/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$385.$result[127:0]$7676
+   143/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$384.x[127:0]$7675
+   144/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$384.$result[127:0]$7674
+   145/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$383.x[127:0]$7673
+   146/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$383.$result[127:0]$7672
+   147/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$382.x[127:0]$7671
+   148/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$382.$result[127:0]$7670
+   149/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$381.x[127:0]$7669
+   150/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$381.$result[127:0]$7668
+   151/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$380.x[127:0]$7667
+   152/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$380.$result[127:0]$7666
+   153/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$379.x[127:0]$7665
+   154/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$379.$result[127:0]$7664
+   155/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$378.x[127:0]$7663
+   156/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$378.$result[127:0]$7662
+   157/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$377.x[127:0]$7661
+   158/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$377.$result[127:0]$7660
+   159/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$376.x[127:0]$7659
+   160/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$376.$result[127:0]$7658
+   161/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$375.x[127:0]$7657
+   162/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$375.$result[127:0]$7656
+   163/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$374.x[127:0]$7655
+   164/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$374.$result[127:0]$7654
+   165/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$373.x[127:0]$7653
+   166/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$373.$result[127:0]$7652
+   167/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$372.x[127:0]$7651
+   168/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$372.$result[127:0]$7650
+   169/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$371.x[127:0]$7649
+   170/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$371.$result[127:0]$7648
+   171/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$370.x[127:0]$7647
+   172/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$370.$result[127:0]$7646
+   173/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$369.x[127:0]$7645
+   174/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$369.$result[127:0]$7644
+   175/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$368.x[127:0]$7643
+   176/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$368.$result[127:0]$7642
+   177/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$367.x[127:0]$7641
+   178/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$367.$result[127:0]$7640
+   179/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$366.x[127:0]$7639
+   180/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$366.$result[127:0]$7638
+   181/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$365.x[127:0]$7637
+   182/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$365.$result[127:0]$7636
+   183/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$364.x[127:0]$7635
+   184/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$364.$result[127:0]$7634
+   185/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$363.x[127:0]$7633
+   186/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$363.$result[127:0]$7632
+   187/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$362.x[127:0]$7631
+   188/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$362.$result[127:0]$7630
+   189/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$361.x[127:0]$7629
+   190/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$361.$result[127:0]$7628
+   191/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$360.x[127:0]$7627
+   192/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$360.$result[127:0]$7626
+   193/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$359.x[127:0]$7625
+   194/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$359.$result[127:0]$7624
+   195/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$358.x[127:0]$7623
+   196/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$358.$result[127:0]$7622
+   197/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$357.x[127:0]$7621
+   198/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$357.$result[127:0]$7620
+   199/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$356.x[127:0]$7619
+   200/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$356.$result[127:0]$7618
+   201/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$355.x[127:0]$7617
+   202/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$355.$result[127:0]$7616
+   203/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$354.x[127:0]$7615
+   204/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$354.$result[127:0]$7614
+   205/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$353.x[127:0]$7613
+   206/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$353.$result[127:0]$7612
+   207/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$352.x[127:0]$7611
+   208/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$352.$result[127:0]$7610
+   209/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$351.x[127:0]$7609
+   210/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$351.$result[127:0]$7608
+   211/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$350.x[127:0]$7607
+   212/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$350.$result[127:0]$7606
+   213/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$349.x[127:0]$7605
+   214/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$349.$result[127:0]$7604
+   215/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$348.x[127:0]$7603
+   216/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$348.$result[127:0]$7602
+   217/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$347.x[127:0]$7601
+   218/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$347.$result[127:0]$7600
+   219/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$346.x[127:0]$7599
+   220/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$346.$result[127:0]$7598
+   221/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$345.x[127:0]$7597
+   222/5308: $7\xtime$func$src/leanvm_b_m2_scalar_controller.sv:31$34

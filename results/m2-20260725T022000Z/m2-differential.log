@@ -1,0 +1,2 @@
+python3 tools/m2_rtl_differential.py
+PASS M2 RTL differential: xor, mul, XOR backsolve, MUL inverse-service backsolve, set, jump, halt

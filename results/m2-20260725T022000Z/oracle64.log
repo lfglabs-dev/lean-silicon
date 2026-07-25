@@ -1,0 +1,2 @@
+python3 tools/frozen_upstream_differential.py --upstream "/workspaces/mission-19b61c63/upstream-leanVM-b" --record results/oracle-differential-20260725/differential.log
+PASS upstream=c308034ab78619b39a59d26f3dc60e7df5b52649 seed=0xc308034a cases=64 program=7-step-set-xor-mul-deref-jump
