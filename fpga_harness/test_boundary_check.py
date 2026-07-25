@@ -327,6 +327,132 @@ class HarnessDiscoveryTests(unittest.TestCase):
         self.assertTrue(result.facts)
 
 
+class ConcatenationTermWidthTests(unittest.TestCase):
+    """Eight comma-separated terms is not the same as eight bits."""
+
+    def test_ranged_bit_select_term_is_rejected(self) -> None:
+        bad = GOOD_TOP.replace("tx_valid, rx_ready,", "tx_valid, rx_ready_bus[7:0],")
+        errors = check(bad).errors
+        self.assertTrue(any("rx_ready_bus[7:0]" in item for item in errors), errors)
+        self.assertTrue(any("exactly one bit" in item for item in errors), errors)
+
+    def test_wide_net_named_as_a_bare_term_is_rejected(self) -> None:
+        """A bare identifier looks like one pin, so its declaration decides."""
+        bad = GOOD_TOP.replace("tx_valid, rx_ready,", "tx_valid, status_bus,").replace(
+            "endmodule", "wire [7:0] status_bus;\nendmodule"
+        )
+        errors = check(bad).errors
+        self.assertTrue(any("status_bus" in item for item in errors), errors)
+        self.assertTrue(any("is 8 bits" in item for item in errors), errors)
+
+    def test_single_bit_select_term_is_accepted(self) -> None:
+        good = GOOD_TOP.replace("tx_valid, rx_ready,", "tx_valid, status_bus[3],")
+        self.assertEqual(check(good).errors, [])
+
+    def test_scalar_net_term_is_accepted(self) -> None:
+        good = GOOD_TOP.replace("endmodule", "wire rx_ready;\nendmodule")
+        self.assertEqual(check(good).errors, [])
+
+
+class AsicPortDirectionTests(unittest.TestCase):
+    """A [7:0] port facing the wrong way reverses the data boundary."""
+
+    def test_reversing_an_input_pin_port_is_rejected(self) -> None:
+        bad = GOOD_TOP.replace("input wire [7:0] ui_in", "output wire [7:0] ui_in")
+        errors = check(bad).errors
+        self.assertTrue(any("ui_in" in item for item in errors), errors)
+        self.assertTrue(any("requires input" in item for item in errors), errors)
+
+    def test_reversing_an_output_pin_port_is_rejected(self) -> None:
+        bad = GOOD_TOP.replace("output wire [7:0] uio_oe", "input wire [7:0] uio_oe")
+        errors = check(bad).errors
+        self.assertTrue(any("uio_oe" in item for item in errors), errors)
+        self.assertTrue(any("requires output" in item for item in errors), errors)
+
+    def test_inout_on_a_pin_port_is_rejected(self) -> None:
+        bad = GOOD_TOP.replace("input wire [7:0] uio_in", "inout wire [7:0] uio_in")
+        self.assertTrue(any("uio_in" in item for item in check(bad).errors))
+
+    def test_shipped_top_declares_every_pin_port_correctly(self) -> None:
+        result = Result(errors=[], observations=[], facts=[])
+        check_asic_top(result)
+        self.assertEqual(result.errors, [])
+
+
+class DirectionlessPortTests(unittest.TestCase):
+    """A port with no direction keyword never reaches the width scan."""
+
+    @staticmethod
+    def _scan(source: str) -> Result:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result, {"t.sv": source})
+        return result
+
+    def test_interface_port_is_rejected(self) -> None:
+        errors = self._scan(
+            "module h(wide_if bus, input wire clk);\nendmodule\n"
+        ).errors
+        self.assertTrue(any("no direction keyword" in item for item in errors), errors)
+
+    def test_modport_qualified_interface_port_is_rejected(self) -> None:
+        errors = self._scan("module h(wide_if.slave bus);\nendmodule\n").errors
+        self.assertTrue(any("no direction keyword" in item for item in errors), errors)
+
+    def test_non_ansi_port_names_are_left_to_the_body_scan(self) -> None:
+        """`module h(a, b);` is legal; the real widths are declared inside."""
+        errors = self._scan(
+            "module h(a, b);\n  input wire [31:0] a;\n  output wire b;\nendmodule\n"
+        ).errors
+        self.assertTrue(any("wide bypass" in item for item in errors), errors)
+        self.assertFalse(any("no direction keyword" in item for item in errors), errors)
+
+    def test_direction_persists_across_commas_in_an_ansi_list(self) -> None:
+        self.assertEqual(
+            self._scan("module h(input wire clk, rst_n);\nendmodule\n").errors, []
+        )
+
+
+class SubprogramScopeTests(unittest.TestCase):
+    """Function and task arguments are internal, not boundary ports."""
+
+    @staticmethod
+    def _scan(source: str) -> Result:
+        result = Result(errors=[], observations=[], facts=[])
+        check_harness_width(result, {"t.sv": source})
+        return result
+
+    def test_wide_function_argument_is_not_a_boundary_violation(self) -> None:
+        source = (
+            "module h(input wire clk, output wire q);\n"
+            "  function automatic logic [127:0] f(input logic [127:0] a);\n"
+            "    f = a;\n"
+            "  endfunction\n"
+            "  assign q = 1'b0;\n"
+            "endmodule\n"
+        )
+        self.assertEqual(self._scan(source).errors, [])
+
+    def test_wide_task_argument_is_not_a_boundary_violation(self) -> None:
+        source = (
+            "module h(input wire clk);\n"
+            "  task t(input logic [63:0] payload);\n"
+            "  endtask\n"
+            "endmodule\n"
+        )
+        self.assertEqual(self._scan(source).errors, [])
+
+    def test_a_real_wide_port_beside_a_function_is_still_rejected(self) -> None:
+        source = (
+            "module h(input wire [31:0] bypass);\n"
+            "  function automatic logic [127:0] f(input logic [127:0] a);\n"
+            "    f = a;\n"
+            "  endfunction\n"
+            "endmodule\n"
+        )
+        errors = self._scan(source).errors
+        self.assertTrue(any("bypass" in item for item in errors), errors)
+
+
 class AbbreviationTests(unittest.TestCase):
     def test_leading_token_abbreviation_is_accepted(self) -> None:
         self.assertTrue(_is_abbreviation("DONE", "DONE_PULSE"))

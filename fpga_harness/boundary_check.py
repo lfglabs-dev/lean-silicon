@@ -39,6 +39,14 @@ EXPECTED_UIO_OE = 0b10110110
 
 # Substring fingerprints for the roles the ASIC drives, used only to attribute
 # a driven bit to a documented role. Unknown names are observations, not errors.
+ASIC_PORT_DIRECTIONS = {
+    "ui_in": "input",
+    "uo_out": "output",
+    "uio_in": "input",
+    "uio_out": "output",
+    "uio_oe": "output",
+}
+
 DRIVEN_ROLE_HINTS = {
     "RX_READY": "rx_ready",
     "TX_VALID": "tx_valid",
@@ -139,6 +147,21 @@ _LINE_COMMENT_RE = re.compile(r"//[^\n]*")
 def _strip_comments(text: str) -> str:
     """Remove Verilog comments so stale commented-out code cannot mask drift."""
     return _LINE_COMMENT_RE.sub("", _BLOCK_COMMENT_RE.sub("", text))
+
+
+_SUBPROGRAM_RE = re.compile(
+    r"\bfunction\b.*?\bendfunction\b|\btask\b.*?\bendtask\b", re.DOTALL
+)
+
+
+def _strip_subprogram_bodies(text: str) -> str:
+    """Drop function and task bodies before the port scan.
+
+    Their arguments also use ``input``/``output``, but they are internal to the
+    module. Wide internal datapaths are permitted by the boundary contract, so
+    scanning them would reject a legal helper as a module-level wide bypass.
+    """
+    return _SUBPROGRAM_RE.sub(" ", text)
 _PARAM_RE = re.compile(
     r"\b(?:parameter|localparam)\b[^;=]*?(\w+)\s*=\s*([^,;)]+)"
 )
@@ -280,6 +303,7 @@ def _dimension_factor(bounds: str, params: dict[str, int]) -> int | None:
 
 def _port_widths(text: str) -> list[tuple[str, int | None, str]]:
     """Every declared port as (name, width, detail); width None means unresolved."""
+    text = _strip_subprogram_bodies(text)
     params = _constant_bindings(text)
     ports: list[tuple[str, int | None, str]] = []
     for group in _declaration_groups(text):
@@ -330,12 +354,32 @@ def check_asic_top(
 ) -> None:
     text = _strip_comments(ASIC_TOP.read_text() if text is None else text)
 
-    for port in ("ui_in", "uo_out", "uio_in", "uio_out", "uio_oe"):
+    for port, expected in ASIC_PORT_DIRECTIONS.items():
         if not re.search(rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b", text):
             result.errors.append(
                 f"{ASIC_TOP.name}: port {port} is not declared "
                 f"[{PIN_WIDTH - 1}:0]; the pin interface must stay {PIN_WIDTH} bits"
             )
+            continue
+        # The nearest direction keyword that no comma, semicolon or paren
+        # separates from the port is the one that declares it.
+        declared = re.search(
+            rf"\b(input|output|inout)\b[^;,()]*?"
+            rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b",
+            text,
+        )
+        if declared is None or declared.group(1) != expected:
+            found = declared.group(1) if declared else "no"
+            result.errors.append(
+                f"{ASIC_TOP.name}: port {port} is declared {found} direction but "
+                f"the pin contract requires {expected}; reversing a port "
+                "direction turns the host-to-ASIC data boundary around"
+            )
+    if not result.errors:
+        result.facts.append(
+            "ASIC pin ports are all "
+            f"[{PIN_WIDTH - 1}:0] and face the direction the contract requires"
+        )
 
     oe = _declared_oe(text)
     if oe is None:
@@ -381,6 +425,24 @@ def check_asic_top(
         )
         return
 
+    # Eight terms is not eight bits. A single wide term makes the concatenation
+    # overflow uio_out, and the silent truncation shifts every status pin below
+    # it while the term-to-pin mapping below still looks correct.
+    nets = _net_widths(text)
+    oversized = False
+    for term in terms:
+        bits = _term_bit_width(term, nets)
+        if bits != 1:
+            oversized = True
+            measured = "cannot be sized" if bits is None else f"is {bits} bits"
+            result.errors.append(
+                f"{ASIC_TOP.name}: uio_out term {term!r} {measured}; every term "
+                "must be exactly one bit or the concatenation no longer lines up "
+                f"with the {PIN_WIDTH} pins"
+            )
+    if oversized:
+        return
+
     for index in range(PIN_WIDTH):
         term = terms[PIN_WIDTH - 1 - index]
         drives = bool(oe & (1 << index))
@@ -411,6 +473,116 @@ def check_asic_top(
     )
 
 
+_MODULE_HEADER_RE = re.compile(
+    r"\bmodule\s+[A-Za-z_]\w*\s*(?:#\s*\((?:[^()]|\([^()]*\))*\)\s*)?\(", re.DOTALL
+)
+# A non-ANSI header names ports and nothing else; the real declarations live in
+# the body and the direction scan reaches them there.
+_BARE_PORT_NAME_RE = re.compile(r"^[A-Za-z_]\w*$")
+
+
+def _directionless_ports(text: str) -> list[str]:
+    """Header ports that no direction keyword governs.
+
+    An interface port such as ``module h(wide_if bus);`` carries no
+    ``input``/``output``/``inout``, so the direction scan never sees it. A wide
+    member on that interface is exactly the path this gate exists to prohibit,
+    so a port whose direction cannot be established is reported rather than
+    assumed narrow.
+    """
+    text = _strip_subprogram_bodies(text)
+    flagged: list[str] = []
+    for header in _MODULE_HEADER_RE.finditer(text):
+        start = header.end()
+        depth = 0
+        end = len(text)
+        for index in range(start, len(text)):
+            char = text[index]
+            if char in "([{":
+                depth += 1
+            elif char in ")]}":
+                if depth == 0:
+                    end = index
+                    break
+                depth -= 1
+        governed = False
+        for item in _split_top_level(text[start:end]):
+            item = item.strip()
+            if not item:
+                continue
+            # In an ANSI list the direction persists across commas, so once a
+            # keyword appears the remaining items inherit it.
+            if _DIRECTION_RE.search(item):
+                governed = True
+                continue
+            if governed or _BARE_PORT_NAME_RE.match(item):
+                continue
+            flagged.append(item)
+    return flagged
+
+
+# A term that occupies exactly one pin: a one-bit literal, a scalar signal, or a
+# single-index bit-select. A ranged select such as ``bus[7:0]`` is not here.
+_SINGLE_BIT_TERM_RE = re.compile(
+    r"""^(?:
+        1'[bBdDhH][0-9a-fA-F]
+        | [01]
+        | [A-Za-z_]\w*\s*\[\s*\d+\s*\]
+        | [A-Za-z_]\w*
+    )$""",
+    re.VERBOSE,
+)
+_NET_KIND_RE = re.compile(r"\b(?:wire|logic|reg|bit)\b([^;]*);")
+
+
+def _net_widths(text: str) -> dict[str, int]:
+    """Declared width of each internal net.
+
+    A bare identifier in a concatenation looks like one pin, so a net that is
+    actually wide has to be resolved by name before the term can be trusted.
+    """
+    params = _constant_bindings(text)
+    widths: dict[str, int] = {}
+    for declaration in _NET_KIND_RE.finditer(_strip_subprogram_bodies(text)):
+        inherited: str | None = None
+        for item in _split_top_level(declaration.group(1)):
+            item = item.split("=")[0].strip()
+            if not item:
+                continue
+            match = _PORT_ITEM_RE.match(item)
+            if match is None:
+                continue
+            prefix, name, unpacked = match.groups()
+            if inherited is None:
+                inherited = prefix
+            elif not prefix.strip():
+                prefix = inherited
+            width: int | None = 1
+            for bounds in _ONE_RANGE_RE.findall(prefix) + _ONE_RANGE_RE.findall(
+                unpacked
+            ):
+                if not bounds.strip():
+                    continue
+                factor = _dimension_factor(bounds, params)
+                if factor is None:
+                    width = None
+                    break
+                width *= factor
+            if width is not None:
+                widths[name] = width
+    return widths
+
+
+def _term_bit_width(term: str, nets: dict[str, int]) -> int | None:
+    """Pins a concatenation term occupies, or None when it cannot be sized."""
+    term = term.strip()
+    if not _SINGLE_BIT_TERM_RE.match(term):
+        return None
+    if re.fullmatch(r"[A-Za-z_]\w*", term):
+        return nets.get(term, 1)
+    return 1
+
+
 def check_harness_width(
     result: Result, sources: dict[str, str] | None = None
 ) -> None:
@@ -433,6 +605,14 @@ def check_harness_width(
         return
     for name, text in sources.items():
         flagged = False
+        for item in _directionless_ports(_strip_comments(text)):
+            flagged = True
+            result.errors.append(
+                f"{name}: port {item!r} has no direction keyword, so its width "
+                "cannot be checked; an interface or directionless port can carry "
+                "a wide bypass past this gate. Declare it as an input, output, "
+                "or inout of a built-in type"
+            )
         for port, width, detail in _port_widths(_strip_comments(text)):
             if width is None:
                 flagged = True
