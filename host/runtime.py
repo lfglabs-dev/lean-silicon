@@ -90,6 +90,34 @@ class RunResult:
         }
 
 
+#: Protocol section 8.6: ``u32le`` txn_id plus one non-normative detail byte.
+FAULT_PAYLOAD_BYTES = 5
+
+
+def check_fault_response(reply: "protocol.ResponseFrame", *, expected_txn_id: int) -> None:
+    """Refuse a non-``OK`` response that cannot be this instruction's fault.
+
+    A well-framed response is not evidence on its own: only a defined fault
+    status carrying the section 8.6 payload and echoing the transaction in
+    flight may be recorded against this step.  Anything else is a protocol
+    violation, and treating it as a fault would end the run while the real
+    transaction is still staged on the endpoint.
+    """
+    if int(reply.status) < 0x80:
+        raise ProtocolViolation(
+            f"instruction answered {reply.status.name}, which is not a fault status"
+        )
+    if len(reply.payload) != FAULT_PAYLOAD_BYTES:
+        raise ProtocolViolation(
+            f"fault payload has {len(reply.payload)} bytes, expected {FAULT_PAYLOAD_BYTES}"
+        )
+    echoed = int.from_bytes(reply.payload[0:4], "little")
+    if echoed != expected_txn_id:
+        raise ProtocolViolation(
+            f"fault echoed txn_id {echoed}, expected {expected_txn_id}"
+        )
+
+
 def decode_result_payload(payload: bytes, *, expected_txn_id: int | None = None) -> dict:
     """Decode an ``OK`` transition result (protocol section 8)."""
     def u32(offset: int) -> int:
@@ -307,6 +335,7 @@ class HostRuntime:
         before = self.lane_cycles
         reply = self._exchange(frame)
         if reply.status is not protocol.Status.OK:
+            check_fault_response(reply, expected_txn_id=self.txn_id)
             record.status = reply.status.name
             record.fault = reply.status.name
             record.lane_cycles = self.lane_cycles - before

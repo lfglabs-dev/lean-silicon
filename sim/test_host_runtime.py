@@ -200,6 +200,21 @@ class AdapterTests(unittest.TestCase):
                     "integer|outside u32",
                 )
 
+    def test_malformed_initial_scalars_are_adapter_errors(self):
+        for name in ("pc0", "fp0"):
+            for value in ("2", None, True, False, -1, 1 << 32):
+                with self.subTest(field=name, value=value):
+                    self._reject(
+                        lambda d, name=name, value=value: d["program"].__setitem__(name, value),
+                        "integer|outside u32",
+                    )
+
+    def test_pc0_outside_the_bytecode_is_refused(self):
+        self._reject(
+            lambda d: d["program"].__setitem__("pc0", 16),
+            "pc0 16 is outside the 16-slot bytecode",
+        )
+
     def test_missing_and_compound_operands_are_adapter_errors(self):
         self._reject(
             lambda d: d["program"]["bytecode"][0].pop("o"),
@@ -407,6 +422,67 @@ class RuntimeTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ProtocolViolation, "retire echoed txn_id"):
             runtime.step()
+
+    class _FaultingRuntime(HostRuntime):
+        """Answers the instruction with one scripted non-``OK`` frame."""
+
+        def __init__(self, *args, fault_reply, **kwargs):
+            self.fault_reply = fault_reply
+            super().__init__(*args, **kwargs)
+
+        def _exchange(self, frame):
+            if protocol.Opcode(frame.opcode) is protocol.Opcode.NEGOTIATE:
+                return super()._exchange(frame)
+            return self.fault_reply
+
+    def _refuse_fault(self, reply, message):
+        runtime = self._FaultingRuntime(program(set_slot(2, 1)), fault_reply=reply)
+        with self.assertRaisesRegex(ProtocolViolation, message):
+            runtime.step()
+        self.assertFalse(runtime.faulted)
+
+    def test_a_non_fault_status_is_not_recorded_as_a_fault(self):
+        for status in (
+            protocol.Status.SERVICE_REQUIRED,
+            protocol.Status.RETIRED,
+            protocol.Status.INFO,
+        ):
+            with self.subTest(status=status.name):
+                self._refuse_fault(
+                    protocol.ResponseFrame(status, (1).to_bytes(4, "little") + bytes(1)),
+                    f"answered {status.name}, which is not a fault status",
+                )
+
+    def test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation(self):
+        for payload in (b"", (1).to_bytes(4, "little"), (1).to_bytes(4, "little") + bytes(2)):
+            with self.subTest(length=len(payload)):
+                self._refuse_fault(
+                    protocol.ResponseFrame(protocol.Status.WRITE_CONFLICT, payload),
+                    f"fault payload has {len(payload)} bytes, expected 5",
+                )
+
+    def test_a_fault_bound_to_another_transaction_is_a_protocol_violation(self):
+        for echoed in (0, 2, 9):
+            with self.subTest(txn_id=echoed):
+                self._refuse_fault(
+                    protocol.ResponseFrame(
+                        protocol.Status.WRITE_CONFLICT,
+                        echoed.to_bytes(4, "little") + bytes(1),
+                    ),
+                    f"fault echoed txn_id {echoed}, expected 1",
+                )
+
+    def test_a_well_formed_fault_is_still_attributed_to_the_step(self):
+        runtime = self._FaultingRuntime(
+            program(set_slot(2, 1)),
+            fault_reply=protocol.ResponseFrame(
+                protocol.Status.WRITE_CONFLICT,
+                (1).to_bytes(4, "little") + bytes([7]),
+            ),
+        )
+        record = runtime.step()
+        self.assertEqual(record.fault, "WRITE_CONFLICT")
+        self.assertTrue(runtime.faulted)
 
     def test_set_xor_mul_are_driven_end_to_end(self):
         runtime = HostRuntime(program(

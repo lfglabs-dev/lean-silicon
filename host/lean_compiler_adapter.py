@@ -202,10 +202,17 @@ def load(path: str | pathlib.Path) -> Program:
             )
         operations.append(Operation(expected_index, kind, operands))
 
+    pc0 = _u32_operand(program.get("pc0"), "program field 'pc0'")
+    fp0 = _u32_operand(program.get("fp0"), "program field 'fp0'")
+    _require(
+        pc0 < len(operations),
+        f"program pc0 {pc0} is outside the {len(operations)}-slot bytecode",
+    )
+
     return Program(
         operations=tuple(operations),
-        pc0=program["pc0"],
-        fp0=program["fp0"],
+        pc0=pc0,
+        fp0=fp0,
         fn_ranges=tuple(tuple(item) for item in program.get("fn_ranges", [])),
         source=document.get("source", {}).get("text", ""),
         upstream_sha=upstream["sha"],
