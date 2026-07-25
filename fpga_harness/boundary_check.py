@@ -108,13 +108,22 @@ def _is_literal_zero(term: str) -> bool:
     return re.fullmatch(r"(1'b0|1'h0|1'd0|0)", term) is not None
 
 
-# All consecutive packed dimensions of a port, captured raw so that neither a
-# non-literal bound (``[W-1:0]``) nor a multi-dimensional declaration
-# (``[7:0][3:0]``, 32 bits) escapes by simply not matching.
-_PORT_RANGE_RE = re.compile(
-    r"\b(?:input|output|inout)\b[^;,()\[\]]*?((?:\[[^\]]+\]\s*)+)(\w+)"
+# A whole port declaration: everything before the name (which carries the packed
+# dimensions), the name, and any unpacked dimensions after it. Both dimension
+# groups count towards the width, so neither ``[7:0][3:0]`` nor
+# ``[7:0] bytes [15:0]`` can present 128 bits as 8.
+_PORT_DECL_RE = re.compile(
+    r"\b(?:input|output|inout)\b([^;,()]*?)(\w+)\s*((?:\[[^\]]+\]\s*)*)(?=[,;)]|$)",
+    re.MULTILINE,
 )
 _ONE_RANGE_RE = re.compile(r"\[([^\]]+)\]")
+_BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
+_LINE_COMMENT_RE = re.compile(r"//[^\n]*")
+
+
+def _strip_comments(text: str) -> str:
+    """Remove Verilog comments so stale commented-out code cannot mask drift."""
+    return _LINE_COMMENT_RE.sub("", _BLOCK_COMMENT_RE.sub("", text))
 _PARAM_RE = re.compile(
     r"\b(?:parameter|localparam)\b[^;=]*?(\w+)\s*=\s*([^,;)]+)"
 )
@@ -186,7 +195,7 @@ def check_asic_top(
     info_roles: dict[int, str] | None = None,
     doc_roles: dict[int, str] | None = None,
 ) -> None:
-    text = ASIC_TOP.read_text() if text is None else text
+    text = _strip_comments(ASIC_TOP.read_text() if text is None else text)
 
     for port in ("ui_in", "uo_out", "uio_in", "uio_out", "uio_oe"):
         if not re.search(rf"\[\s*{PIN_WIDTH - 1}\s*:\s*0\s*\]\s*{port}\b", text):
@@ -290,11 +299,14 @@ def check_harness_width(
         result.errors.append(f"{HARNESS_RTL_DIR}: no harness RTL found")
         return
     for name, text in sources.items():
-        params = _constant_bindings(text)
         flagged = False
-        for match in _PORT_RANGE_RE.finditer(text):
-            dimensions, port = match.group(1), match.group(2)
-            bounds_list = _ONE_RANGE_RE.findall(dimensions)
+        text = _strip_comments(text)
+        params = _constant_bindings(text)
+        for match in _PORT_DECL_RE.finditer(text):
+            port = match.group(2)
+            bounds_list = _ONE_RANGE_RE.findall(match.group(1)) + _ONE_RANGE_RE.findall(
+                match.group(3)
+            )
             width = 1
             unresolved: str | None = None
             for bounds in bounds_list:

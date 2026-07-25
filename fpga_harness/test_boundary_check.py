@@ -95,6 +95,21 @@ class AsicTopViolationTests(unittest.TestCase):
         )
         self.assertTrue(any("concatenation" in item for item in check(bad).errors))
 
+    def test_commented_out_declaration_cannot_mask_a_widened_port(self) -> None:
+        """A stale `// input wire [7:0] ui_in` must not excuse a real [31:0]."""
+        bad = GOOD_TOP.replace(
+            "[7:0] ui_in", "[31:0] ui_in"
+        ).replace("endmodule", "// legacy: input wire [7:0] ui_in\nendmodule")
+        errors = check(bad).errors
+        self.assertTrue(any("ui_in" in item for item in errors), errors)
+
+    def test_commented_out_direction_mask_cannot_mask_drift(self) -> None:
+        bad = GOOD_TOP.replace(
+            "assign uio_oe = 8'b10110110;",
+            "assign uio_oe = 8'b11111111; // assign uio_oe = 8'b10110110;",
+        )
+        self.assertTrue(any("uio_oe" in item for item in check(bad).errors))
+
     def test_unexpected_driver_name_is_an_observation_not_an_error(self) -> None:
         renamed = GOOD_TOP.replace("busy,", "occupied_flag,")
         result = check(renamed)
@@ -169,6 +184,25 @@ class ParameterisedWidthTests(unittest.TestCase):
             "module b #(parameter N = 16) (output wire [N-1:0][7:0] bp);endmodule"
         )
         self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_unpacked_array_port_counts_towards_the_width(self) -> None:
+        """[7:0] bytes [15:0] exposes 128 bits, not 8."""
+        result = self._scan("module b (input wire [7:0] bytes [15:0]);endmodule")
+        self.assertTrue(any("128 bits" in item for item in result.errors), result.errors)
+
+    def test_unpacked_only_port_is_measured(self) -> None:
+        result = self._scan("module b (input wire bytes [15:0]);endmodule")
+        self.assertTrue(any("16 bits" in item for item in result.errors), result.errors)
+
+    def test_scalar_ports_are_accepted(self) -> None:
+        result = self._scan("module b (input wire clk, input rst_n);endmodule")
+        self.assertEqual(result.errors, [])
+
+    def test_a_wide_port_inside_a_comment_is_not_a_violation(self) -> None:
+        result = self._scan(
+            "module h (input wire [7:0] a); // output wire [127:0] bp\nendmodule"
+        )
+        self.assertEqual(result.errors, [])
 
     def test_no_within_width_fact_is_claimed_for_a_failing_file(self) -> None:
         """The checker must not assert 'within 8 bits' about a file it rejected."""
