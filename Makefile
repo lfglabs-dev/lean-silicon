@@ -10,7 +10,8 @@ scalar-differential:
 	$(PYTHON) tools/frozen_upstream_differential.py --upstream "$(LEANVM_B_UPSTREAM)" --record results/oracle-differential-20260725/differential.log
 
 m2-differential:
-	$(PYTHON) tools/m2_rtl_differential.py
+	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
+	$(PYTHON) tools/m2_rtl_differential.py --upstream "$(LEANVM_B_UPSTREAM)"
 
 design-space:
 	$(PYTHON) tools/design_space.py

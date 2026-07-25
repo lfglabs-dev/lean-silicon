@@ -13,3 +13,7 @@ trace counting, byte-RPC compatibility, or upstream-complete execution.
 Addresses are bounded by the instantiated test memory and JUMP reverse lookup
 is bounded likewise.  These are test-adapter limits, not a replacement for the
 frozen u32/reverse-map host contract.
+
+Instruction operands are offsets relative to `fp`; offset addition and
+`pc + 1` fault on u32 overflow.  HALT is terminal until reset.  The test loader
+uses the same idempotent write-once rule as instruction writes.

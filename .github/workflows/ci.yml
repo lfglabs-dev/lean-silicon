@@ -26,8 +26,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Checkout frozen upstream oracle
+        run: git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanVM-b && git -C /tmp/leanVM-b checkout c308034ab78619b39a59d26f3dc60e7df5b52649
+      - name: Select current stable Rust for frozen oracle
+        run: rustup update stable && rustup default stable
       - name: Compile and simulate RTL
-        run: make sim m2-differential
+        run: LEANVM_B_UPSTREAM=/tmp/leanVM-b make sim m2-differential
 
   lean:
     runs-on: ubuntu-latest

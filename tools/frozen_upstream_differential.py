@@ -60,10 +60,16 @@ def main() -> None:
     example.parent.mkdir(exist_ok=True)
     example.write_text(PROBE)
     rng = random.Random(args.seed)
-    cases = [(rng.getrandbits(128), rng.getrandbits(128)) for _ in range(args.cases)]
+    # Keep the first cases aligned with the M2 RTL regression, then fill the
+    # requested total with seeded full-width cases.
+    fixed = [(0x12, 0x34), (0x55, 0x66), (0x0A, 0x05)]
+    cases = (fixed + [(rng.getrandbits(128), rng.getrandbits(128))
+                      for _ in range(max(0, args.cases - len(fixed)))])[:args.cases]
     payload = "".join(f"{a:032x},{b:032x}\n" for a, b in cases)
     command = ["cargo", "run", "--quiet", "-p", "lean_vm", "--example", "scalar_probe"]
-    completed = subprocess.run(command, cwd=args.upstream, input=payload, text=True, capture_output=True, check=True)
+    completed = subprocess.run(command, cwd=args.upstream, input=payload, text=True, capture_output=True)
+    if completed.returncode:
+        raise SystemExit(f"upstream Cargo probe failed ({completed.returncode}):\n{completed.stderr}")
     rows = [row.split(",") for row in completed.stdout.splitlines()]
     if len(rows) != len(cases): raise SystemExit(f"probe returned {len(rows)} rows for {len(cases)} cases")
     for index, ((a, b), row) in enumerate(zip(cases, rows)):
