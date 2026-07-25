@@ -1,0 +1,195 @@
+SBY 13:07:13 [stream_alu_mul_pulse_cover] Removing directory '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_cover'.
+SBY 13:07:13 [stream_alu_mul_pulse_cover] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf2n_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_cover/src/gf2n_mul_bitstream.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_cover] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf128_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_cover/src/gf128_mul_bitstream.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_cover] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/leanvm_b_stream_alu.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_cover/src/leanvm_b_stream_alu.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_cover] Copy '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_formal.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_cover/src/stream_alu_mul_pulse_formal.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_cover] engine_0: smtbmc yices
+SBY 13:07:13 [stream_alu_mul_pulse_cover] base: starting process "cd stream_alu_mul_pulse_cover/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY 13:07:13 [stream_alu_mul_pulse_cover] base: Top level design units:
+SBY 13:07:13 [stream_alu_mul_pulse_cover] base: stream_alu_mul_pulse_formal
+SBY 13:07:13 [stream_alu_mul_pulse_cover] base: Build succeeded: 0 errors, 0 warnings
+SBY 13:07:13 [stream_alu_mul_pulse_cover] base: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_cover] prep: starting process "cd stream_alu_mul_pulse_cover/model; yosys -ql design_prep.log design_prep.ys"
+SBY 13:07:13 [stream_alu_mul_pulse_cover] prep: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_cover] smt2: starting process "cd stream_alu_mul_pulse_cover/model; yosys -ql design_smt2.log design_smt2.ys"
+SBY 13:07:14 [stream_alu_mul_pulse_cover] smt2: finished (returncode=0)
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: starting process "cd stream_alu_mul_pulse_cover; yosys-smtbmc -s yices --presat --unroll -c --noprogress -t 200  --append 0 --dump-vcd engine_0/trace%.vcd --dump-yw engine_0/trace%.yw --dump-vlogtb engine_0/trace%_tb.v --dump-smtc engine_0/trace%.smtc model/design_smt2.smt2"
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Solver: yices
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 0..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 1..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 2..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 3..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Reached cover statement in step 3 at stream_alu_mul_pulse_formal.dut.u_mul_pulse_check: stream_alu_mul_pulse_formal.sv:46.13-46.29 (_witness_.check_9)
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to VCD file: engine_0/trace0.vcd
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to Verilog testbench: engine_0/trace0_tb.v
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to constraints file: engine_0/trace0.smtc
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to Yosys witness file: engine_0/trace0.yw
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 3..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 4..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 5..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 6..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 7..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 8..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 9..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 10..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 11..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 12..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 13..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 14..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 15..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 16..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 17..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 18..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 19..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Reached cover statement in step 19 at stream_alu_mul_pulse_formal.dut.u_mul_pulse_check: stream_alu_mul_pulse_formal.sv:47.13-47.31 (_witness_.check_11)
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to VCD file: engine_0/trace1.vcd
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to Verilog testbench: engine_0/trace1_tb.v
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to constraints file: engine_0/trace1.smtc
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Writing trace to Yosys witness file: engine_0/trace1.yw
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 19..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 20..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 21..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 22..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 23..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 24..
+SBY 13:07:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 25..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:00  Checking cover reachability in step 26..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 27..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 28..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 29..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 30..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 31..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 32..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 33..
+SBY 13:07:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:01  Checking cover reachability in step 34..
+SBY 13:07:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:02  Checking cover reachability in step 35..
+SBY 13:07:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:02  Checking cover reachability in step 36..
+SBY 13:07:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:02  Checking cover reachability in step 37..
+SBY 13:07:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:02  Checking cover reachability in step 38..
+SBY 13:07:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:02  Checking cover reachability in step 39..
+SBY 13:07:17 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:03  Checking cover reachability in step 40..
+SBY 13:07:17 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:03  Checking cover reachability in step 41..
+SBY 13:07:17 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:03  Checking cover reachability in step 42..
+SBY 13:07:18 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:04  Checking cover reachability in step 43..
+SBY 13:07:18 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:04  Checking cover reachability in step 44..
+SBY 13:07:19 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:04  Checking cover reachability in step 45..
+SBY 13:07:19 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:05  Checking cover reachability in step 46..
+SBY 13:07:19 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:05  Checking cover reachability in step 47..
+SBY 13:07:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:06  Checking cover reachability in step 48..
+SBY 13:07:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:06  Checking cover reachability in step 49..
+SBY 13:07:21 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:07  Checking cover reachability in step 50..
+SBY 13:07:21 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:07  Checking cover reachability in step 51..
+SBY 13:07:22 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:08  Checking cover reachability in step 52..
+SBY 13:07:23 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:09  Checking cover reachability in step 53..
+SBY 13:07:24 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:10  Checking cover reachability in step 54..
+SBY 13:07:24 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:10  Checking cover reachability in step 55..
+SBY 13:07:25 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:11  Checking cover reachability in step 56..
+SBY 13:07:26 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:11  Checking cover reachability in step 57..
+SBY 13:07:26 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:12  Checking cover reachability in step 58..
+SBY 13:07:27 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:13  Checking cover reachability in step 59..
+SBY 13:07:28 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:14  Checking cover reachability in step 60..
+SBY 13:07:29 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:15  Checking cover reachability in step 61..
+SBY 13:07:30 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:16  Checking cover reachability in step 62..
+SBY 13:07:31 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:17  Checking cover reachability in step 63..
+SBY 13:07:32 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:18  Checking cover reachability in step 64..
+SBY 13:07:33 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:19  Checking cover reachability in step 65..
+SBY 13:07:34 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:20  Checking cover reachability in step 66..
+SBY 13:07:35 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:21  Checking cover reachability in step 67..
+SBY 13:07:36 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:22  Checking cover reachability in step 68..
+SBY 13:07:38 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:24  Checking cover reachability in step 69..
+SBY 13:07:39 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:25  Checking cover reachability in step 70..
+SBY 13:07:40 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:26  Checking cover reachability in step 71..
+SBY 13:07:43 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:29  Checking cover reachability in step 72..
+SBY 13:07:44 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:30  Checking cover reachability in step 73..
+SBY 13:07:46 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:32  Checking cover reachability in step 74..
+SBY 13:07:48 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:34  Checking cover reachability in step 75..
+SBY 13:07:49 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:35  Checking cover reachability in step 76..
+SBY 13:07:51 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:37  Checking cover reachability in step 77..
+SBY 13:07:53 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:39  Checking cover reachability in step 78..
+SBY 13:07:56 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:41  Checking cover reachability in step 79..
+SBY 13:07:57 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:43  Checking cover reachability in step 80..
+SBY 13:07:59 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:45  Checking cover reachability in step 81..
+SBY 13:08:02 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:48  Checking cover reachability in step 82..
+SBY 13:08:05 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:51  Checking cover reachability in step 83..
+SBY 13:08:08 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:54  Checking cover reachability in step 84..
+SBY 13:08:11 [stream_alu_mul_pulse_cover] engine_0: ##   0:00:56  Checking cover reachability in step 85..
+SBY 13:08:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:00  Checking cover reachability in step 86..
+SBY 13:08:17 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:03  Checking cover reachability in step 87..
+SBY 13:08:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:06  Checking cover reachability in step 88..
+SBY 13:08:23 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:09  Checking cover reachability in step 89..
+SBY 13:08:27 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:13  Checking cover reachability in step 90..
+SBY 13:08:29 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:15  Checking cover reachability in step 91..
+SBY 13:08:32 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:18  Checking cover reachability in step 92..
+SBY 13:08:36 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:22  Checking cover reachability in step 93..
+SBY 13:08:40 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:26  Checking cover reachability in step 94..
+SBY 13:08:43 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:29  Checking cover reachability in step 95..
+SBY 13:08:47 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:33  Checking cover reachability in step 96..
+SBY 13:08:51 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:37  Checking cover reachability in step 97..
+SBY 13:08:54 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:40  Checking cover reachability in step 98..
+SBY 13:08:59 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:45  Checking cover reachability in step 99..
+SBY 13:09:02 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:48  Checking cover reachability in step 100..
+SBY 13:09:07 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:53  Checking cover reachability in step 101..
+SBY 13:09:12 [stream_alu_mul_pulse_cover] engine_0: ##   0:01:58  Checking cover reachability in step 102..
+SBY 13:09:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:02  Checking cover reachability in step 103..
+SBY 13:09:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:06  Checking cover reachability in step 104..
+SBY 13:09:25 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:11  Checking cover reachability in step 105..
+SBY 13:09:30 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:16  Checking cover reachability in step 106..
+SBY 13:09:35 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:21  Checking cover reachability in step 107..
+SBY 13:09:42 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:28  Checking cover reachability in step 108..
+SBY 13:09:46 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:32  Checking cover reachability in step 109..
+SBY 13:09:52 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:38  Checking cover reachability in step 110..
+SBY 13:09:57 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:43  Checking cover reachability in step 111..
+SBY 13:10:02 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:48  Checking cover reachability in step 112..
+SBY 13:10:08 [stream_alu_mul_pulse_cover] engine_0: ##   0:02:54  Checking cover reachability in step 113..
+SBY 13:10:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:00  Checking cover reachability in step 114..
+SBY 13:10:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:06  Checking cover reachability in step 115..
+SBY 13:10:28 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:13  Checking cover reachability in step 116..
+SBY 13:10:35 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:21  Checking cover reachability in step 117..
+SBY 13:10:43 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:29  Checking cover reachability in step 118..
+SBY 13:10:51 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:37  Checking cover reachability in step 119..
+SBY 13:10:59 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:45  Checking cover reachability in step 120..
+SBY 13:11:08 [stream_alu_mul_pulse_cover] engine_0: ##   0:03:54  Checking cover reachability in step 121..
+SBY 13:11:15 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:01  Checking cover reachability in step 122..
+SBY 13:11:23 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:09  Checking cover reachability in step 123..
+SBY 13:11:30 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:16  Checking cover reachability in step 124..
+SBY 13:11:39 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:25  Checking cover reachability in step 125..
+SBY 13:11:47 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:33  Checking cover reachability in step 126..
+SBY 13:11:55 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:41  Checking cover reachability in step 127..
+SBY 13:12:06 [stream_alu_mul_pulse_cover] engine_0: ##   0:04:52  Checking cover reachability in step 128..
+SBY 13:12:16 [stream_alu_mul_pulse_cover] engine_0: ##   0:05:02  Checking cover reachability in step 129..
+SBY 13:12:29 [stream_alu_mul_pulse_cover] engine_0: ##   0:05:15  Checking cover reachability in step 130..
+SBY 13:12:41 [stream_alu_mul_pulse_cover] engine_0: ##   0:05:26  Checking cover reachability in step 131..
+SBY 13:12:51 [stream_alu_mul_pulse_cover] engine_0: ##   0:05:37  Checking cover reachability in step 132..
+SBY 13:13:02 [stream_alu_mul_pulse_cover] engine_0: ##   0:05:48  Checking cover reachability in step 133..
+SBY 13:13:14 [stream_alu_mul_pulse_cover] engine_0: ##   0:06:00  Checking cover reachability in step 134..
+SBY 13:13:26 [stream_alu_mul_pulse_cover] engine_0: ##   0:06:12  Checking cover reachability in step 135..
+SBY 13:13:38 [stream_alu_mul_pulse_cover] engine_0: ##   0:06:24  Checking cover reachability in step 136..
+SBY 13:13:53 [stream_alu_mul_pulse_cover] engine_0: ##   0:06:39  Checking cover reachability in step 137..
+SBY 13:14:07 [stream_alu_mul_pulse_cover] engine_0: ##   0:06:53  Checking cover reachability in step 138..
+SBY 13:14:20 [stream_alu_mul_pulse_cover] engine_0: ##   0:07:06  Checking cover reachability in step 139..
+SBY 13:14:32 [stream_alu_mul_pulse_cover] engine_0: ##   0:07:18  Checking cover reachability in step 140..
+SBY 13:14:44 [stream_alu_mul_pulse_cover] engine_0: ##   0:07:30  Checking cover reachability in step 141..
+SBY 13:14:56 [stream_alu_mul_pulse_cover] engine_0: ##   0:07:42  Checking cover reachability in step 142..
+SBY 13:15:09 [stream_alu_mul_pulse_cover] engine_0: ##   0:07:55  Checking cover reachability in step 143..
+SBY 13:15:21 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:07  Checking cover reachability in step 144..
+SBY 13:15:32 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:18  Checking cover reachability in step 145..
+SBY 13:15:47 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:33  Checking cover reachability in step 146..
+SBY 13:15:59 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:44  Checking cover reachability in step 147..
+SBY 13:16:11 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:57  Reached cover statement in step 147 at stream_alu_mul_pulse_formal.dut.u_mul_pulse_check: stream_alu_mul_pulse_formal.sv:48.13-48.34 (_witness_.check_13)
+SBY 13:16:11 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:57  Writing trace to VCD file: engine_0/trace2.vcd
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:58  Writing trace to Verilog testbench: engine_0/trace2_tb.v
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:58  Writing trace to constraints file: engine_0/trace2.smtc
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:58  Writing trace to Yosys witness file: engine_0/trace2.yw
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: ##   0:08:58  Status: passed
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: finished (returncode=0)
+SBY 13:16:12 [stream_alu_mul_pulse_cover] engine_0: Status returned by engine: pass
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: Elapsed clock time [H:MM:SS (secs)]: 0:08:59 (539)
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: Elapsed process time [H:MM:SS (secs)]: 0:08:58 (538)
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: engine_0 (smtbmc yices) returned pass
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: cover trace: stream_alu_mul_pulse_cover/engine_0/trace0.vcd
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary:   reached cover statement stream_alu_mul_pulse_formal.dut.u_mul_pulse_check._witness_.check_9 at stream_alu_mul_pulse_formal.sv:46.13-46.29 in step 3
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: cover trace: stream_alu_mul_pulse_cover/engine_0/trace1.vcd
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary:   reached cover statement stream_alu_mul_pulse_formal.dut.u_mul_pulse_check._witness_.check_11 at stream_alu_mul_pulse_formal.sv:47.13-47.31 in step 19
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary: cover trace: stream_alu_mul_pulse_cover/engine_0/trace2.vcd
+SBY 13:16:12 [stream_alu_mul_pulse_cover] summary:   reached cover statement stream_alu_mul_pulse_formal.dut.u_mul_pulse_check._witness_.check_13 at stream_alu_mul_pulse_formal.sv:48.13-48.34 in step 147
+SBY 13:16:12 [stream_alu_mul_pulse_cover] DONE (PASS, rc=0)

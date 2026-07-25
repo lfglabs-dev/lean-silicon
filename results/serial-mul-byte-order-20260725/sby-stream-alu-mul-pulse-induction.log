@@ -1,0 +1,51 @@
+SBY 13:07:13 [stream_alu_mul_pulse_induction] Removing directory '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_induction'.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf2n_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_induction/src/gf2n_mul_bitstream.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/gf128_mul_bitstream.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_induction/src/gf128_mul_bitstream.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] Copy '/workspaces/mission-2e52a6f8/repo/asic_core/rtl/leanvm_b_stream_alu.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_induction/src/leanvm_b_stream_alu.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] Copy '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_formal.sv' to '/workspaces/mission-2e52a6f8/repo/formal/stream_alu_mul_pulse_induction/src/stream_alu_mul_pulse_formal.sv'.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0: smtbmc yices
+SBY 13:07:13 [stream_alu_mul_pulse_induction] base: starting process "cd stream_alu_mul_pulse_induction/src; yosys -ql ../model/design.log ../model/design.ys"
+SBY 13:07:13 [stream_alu_mul_pulse_induction] base: Top level design units:
+SBY 13:07:13 [stream_alu_mul_pulse_induction] base: stream_alu_mul_pulse_formal
+SBY 13:07:13 [stream_alu_mul_pulse_induction] base: Build succeeded: 0 errors, 0 warnings
+SBY 13:07:13 [stream_alu_mul_pulse_induction] base: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] prep: starting process "cd stream_alu_mul_pulse_induction/model; yosys -ql design_prep.log design_prep.ys"
+SBY 13:07:13 [stream_alu_mul_pulse_induction] prep: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] smt2: starting process "cd stream_alu_mul_pulse_induction/model; yosys -ql design_smt2.log design_smt2.ys"
+SBY 13:07:13 [stream_alu_mul_pulse_induction] smt2: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: starting process "cd stream_alu_mul_pulse_induction; yosys-smtbmc -s yices --presat --unroll --noprogress -t 8  --append 0 --dump-vcd engine_0/trace.vcd --dump-yw engine_0/trace.yw --dump-vlogtb engine_0/trace_tb.v --dump-smtc engine_0/trace.smtc model/design_smt2.smt2"
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: starting process "cd stream_alu_mul_pulse_induction; yosys-smtbmc -s yices --presat --unroll -i --noprogress -t 8  --append 0 --dump-vcd engine_0/trace_induct.vcd --dump-yw engine_0/trace_induct.yw --dump-vlogtb engine_0/trace_induct_tb.v --dump-smtc engine_0/trace_induct.smtc model/design_smt2.smt2"
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Solver: yices
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: ##   0:00:00  Solver: yices
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 0..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 0..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: ##   0:00:00  Trying induction in step 8..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 1..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 1..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: ##   0:00:00  Trying induction in step 7..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: ##   0:00:00  Temporal induction successful.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: ##   0:00:00  Status: passed
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 2..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 2..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.induction: Status returned by engine for induction: pass
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 3..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 3..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 4..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 4..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 5..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 5..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 6..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 6..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assumptions in step 7..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Checking assertions in step 7..
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: ##   0:00:00  Status: passed
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: finished (returncode=0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] engine_0.basecase: Status returned by engine for basecase: pass
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:00 (0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:00 (0)
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: engine_0 (smtbmc yices) returned pass for basecase
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: engine_0 (smtbmc yices) returned pass for induction
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: engine_0 did not produce any traces
+SBY 13:07:13 [stream_alu_mul_pulse_induction] summary: successful proof by k-induction.
+SBY 13:07:13 [stream_alu_mul_pulse_induction] DONE (PASS, rc=0)

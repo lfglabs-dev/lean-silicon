@@ -1,0 +1,2 @@
+command=cd formal && sby -f gf8_mul.sby
+exit=0

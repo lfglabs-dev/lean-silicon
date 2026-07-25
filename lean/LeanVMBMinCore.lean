@@ -1,3 +1,4 @@
+import LeanVMBMinCore.ByteSerialization
 import LeanVMBMinCore.GF8
 import LeanVMBMinCore.GHASH128
 import LeanVMBMinCore.Stream

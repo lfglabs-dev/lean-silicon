@@ -1,0 +1,807 @@
+
+ /----------------------------------------------------------------------------\
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |  Copyright (C) 2012 - 2025  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |  Distributed under an ISC-like license, type "license" to see terms        |
+ \----------------------------------------------------------------------------/
+ Yosys 0.54+29 (git sha1 7b0c1fe49, clang++ 18.1.8 -fPIC -O3)
+
+-- Running command `plugin -i slang; read_slang --top stream_alu_mul_pulse_formal --keep-hierarchy ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv ../asic_core/rtl/leanvm_b_stream_alu.sv stream_alu_mul_pulse_formal.sv; prep -top stream_alu_mul_pulse_formal; select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check; select -list t:$check' --
+
+1. Executing SLANG frontend.
+Top level design units:
+    stream_alu_mul_pulse_formal
+
+Build succeeded: 0 errors, 0 warnings
+
+1.1. Executing UNDRIVEN pass. (resolve undriven signals)
+
+1.2. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 1 empty switch in `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$2'.
+Found and cleaned up 1 empty switch in `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$52'.
+Found and cleaned up 1 empty switch in `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$7'.
+Removing empty process `stream_alu_mul_pulse_formal.$0'.
+Cleaned up 3 empty switches.
+
+1.3. Executing TRIBUF pass.
+
+1.4. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 10 switch rules as full_case in process $2 in module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Marked 34 switch rules as full_case in process $52 in module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Marked 5 switch rules as full_case in process $7 in module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Removed a total of 0 dead cases.
+
+1.5. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 23 redundant assignments.
+Promoted 0 assignments to connections.
+
+1.6. Executing PROC_INIT pass (extract init attributes).
+
+1.7. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~64 debug messages>
+
+1.8. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$2'.
+     1/11: $accumulator$11
+     2/11: $accumulator$13
+     3/11: $a_shift$9
+     4/11: $a_shift$12
+     5/11: $accumulator$15
+     6/11: $a_shift$14
+     7/11: $accumulator$5
+     8/11: $accumulator$17
+     9/11: $a_shift$16
+    10/11: $accumulator$19
+    11/11: $a_shift$18
+Creating decoders for process `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.$6'.
+     1/4: $14
+     2/4: $12
+     3/4: $10
+     4/4: $8
+Creating decoders for process `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$52'.
+     1/53: $state$110
+     2/53: $byte_index$107
+     3/53: $state$106
+     4/53: $byte_index$109
+     5/53: $state$108
+     6/53: $byte_index$101
+     7/53: $state$100
+     8/53: $byte_index$103
+     9/53: $state$102
+    10/53: $scratch_byte$113 [7:1]
+    11/53: $state$92
+    12/53: $scratch_byte$97
+    13/53: $byte_index$96
+    14/53: $state$95
+    15/53: $scratch_byte$113 [0]
+    16/53: $state$88
+    17/53: $byte_index$85
+    18/53: $state$84
+    19/53: $byte_index$87
+    20/53: $state$86
+    21/53: $byte_index$93
+    22/53: $scratch_byte$89
+    23/53: $byte_index$77
+    24/53: $state$73
+    25/53: $scratch_byte[0]$81
+    26/53: $byte_index$80
+    27/53: $state$79
+    28/53: $byte_index$69
+    29/53: $state$68
+    30/53: $byte_index$71
+    31/53: $state$70
+    32/53: $state$62
+    33/53: $byte_index$63
+    34/53: $byte_index$65
+    35/53: $state$64
+    36/53: $scratch_byte$59
+    37/53: $state$58
+    38/53: $state$111
+    39/53: $state$54
+    40/53: $fault$55
+    41/53: $fault$57
+    42/53: $state$56
+    43/53: $fault$114
+    44/53: $scratch_byte[0]$78
+    45/53: $byte_index$112
+    46/53: $fault$118
+    47/53: $scratch_byte$117
+    48/53: $byte_index$116
+    49/53: $state$115
+    50/53: $fault$122
+    51/53: $scratch_byte$121
+    52/53: $byte_index$120
+    53/53: $state$119
+Creating decoders for process `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$7'.
+     1/11: $status_byte.status_byte$15
+     2/11: $rx_ready$12
+     3/11: $tx_valid$14
+     4/11: $tx_data$13
+     5/11: $tx_valid$22
+     6/11: $tx_data$21
+     7/11: $mul_result_shift$20
+     8/11: $mul_bit_value$19
+     9/11: $mul_bit_valid$18
+    10/11: $mul_a_valid$17
+    11/11: $rx_ready$16
+
+1.9. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 13 empty switches in `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$2'.
+Removing empty process `gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$2'.
+Found and cleaned up 1 empty switch in `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.$6'.
+Removing empty process `leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.$6'.
+Found and cleaned up 45 empty switches in `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$52'.
+Removing empty process `leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$52'.
+Found and cleaned up 5 empty switches in `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$7'.
+Removing empty process `leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$7'.
+Cleaned up 64 empty switches.
+
+1.10. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+<suppressed ~14 debug messages>
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+<suppressed ~69 debug messages>
+Optimizing module stream_alu_mul_pulse_formal.
+
+2. Executing PREP pass.
+
+2.1. Executing HIERARCHY pass (managing design hierarchy).
+
+2.1.1. Analyzing design hierarchy..
+Top module:  \stream_alu_mul_pulse_formal
+Used module:     \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut
+Used module:         \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check
+Used module:         \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier
+Used module:             \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl
+
+2.1.2. Analyzing design hierarchy..
+Top module:  \stream_alu_mul_pulse_formal
+Used module:     \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut
+Used module:         \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check
+Used module:         \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier
+Used module:             \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl
+Removed 0 unused modules.
+Module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check directly or indirectly contains formal properties -> setting "keep" attribute.
+Module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut directly or indirectly contains formal properties -> setting "keep" attribute.
+Module stream_alu_mul_pulse_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+2.2. Executing PROC pass (convert processes to netlists).
+
+2.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+2.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Removed a total of 0 dead cases.
+
+2.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 0 assignments to connections.
+
+2.2.4. Executing PROC_INIT pass (extract init attributes).
+
+2.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+2.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+
+2.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+
+2.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+2.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+
+2.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+2.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+2.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.3. Executing FUTURE pass.
+
+2.4. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.5. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+Removed 3 unused cells and 302 unused wires.
+<suppressed ~10 debug messages>
+
+2.6. Executing CHECK pass (checking for obvious problems).
+Checking module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier...
+Checking module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl...
+Checking module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check...
+Checking module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut...
+Checking module stream_alu_mul_pulse_formal...
+Found and reported 0 problems.
+
+2.7. Executing OPT pass (performing simple optimizations).
+
+2.7.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.7.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier'.
+Finding identical cells in module `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl'.
+Finding identical cells in module `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check'.
+Finding identical cells in module `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut'.
+<suppressed ~402 debug messages>
+Finding identical cells in module `\stream_alu_mul_pulse_formal'.
+Removed a total of 134 cells.
+
+2.7.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 1/2 on $mux $procmux$10.
+    dead port 2/2 on $mux $procmux$101.
+    dead port 2/2 on $mux $procmux$13.
+    dead port 1/2 on $mux $procmux$21.
+    dead port 1/2 on $mux $procmux$24.
+    dead port 2/2 on $mux $procmux$27.
+    dead port 2/2 on $mux $procmux$32.
+    dead port 1/2 on $mux $procmux$35.
+    dead port 1/2 on $mux $procmux$38.
+    dead port 1/2 on $mux $procmux$4.
+    dead port 2/2 on $mux $procmux$41.
+    dead port 1/2 on $mux $procmux$48.
+    dead port 1/2 on $mux $procmux$51.
+    dead port 2/2 on $mux $procmux$54.
+    dead port 1/2 on $mux $procmux$62.
+    dead port 2/2 on $mux $procmux$65.
+    dead port 1/2 on $mux $procmux$7.
+    dead port 1/2 on $mux $procmux$73.
+    dead port 2/2 on $mux $procmux$76.
+    dead port 2/2 on $mux $procmux$81.
+    dead port 1/2 on $mux $procmux$84.
+    dead port 2/2 on $mux $procmux$87.
+    dead port 2/2 on $mux $procmux$94.
+Running muxtree optimizer on module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 2/2 on $mux $procmux$178.
+    dead port 1/2 on $mux $procmux$181.
+    dead port 2/2 on $mux $procmux$184.
+    dead port 2/2 on $mux $procmux$192.
+    dead port 2/2 on $mux $procmux$194.
+    dead port 1/2 on $mux $procmux$197.
+    dead port 2/2 on $mux $procmux$200.
+    dead port 2/2 on $mux $procmux$208.
+    dead port 2/2 on $mux $procmux$210.
+    dead port 1/2 on $mux $procmux$213.
+    dead port 2/2 on $mux $procmux$216.
+    dead port 2/2 on $mux $procmux$224.
+    dead port 1/2 on $mux $procmux$227.
+    dead port 2/2 on $mux $procmux$230.
+    dead port 2/2 on $mux $procmux$238.
+    dead port 1/2 on $mux $procmux$241.
+    dead port 2/2 on $mux $procmux$244.
+    dead port 1/2 on $mux $procmux$260.
+    dead port 2/2 on $mux $procmux$263.
+    dead port 2/2 on $mux $procmux$273.
+    dead port 2/2 on $mux $procmux$275.
+    dead port 1/2 on $mux $procmux$278.
+    dead port 2/2 on $mux $procmux$281.
+    dead port 2/2 on $mux $procmux$290.
+    dead port 1/2 on $mux $procmux$293.
+    dead port 2/2 on $mux $procmux$296.
+    dead port 2/2 on $mux $procmux$306.
+    dead port 1/2 on $mux $procmux$309.
+    dead port 2/2 on $mux $procmux$312.
+    dead port 2/2 on $mux $procmux$322.
+    dead port 1/2 on $mux $procmux$325.
+    dead port 2/2 on $mux $procmux$328.
+    dead port 2/2 on $mux $procmux$1021.
+    dead port 1/2 on $mux $procmux$346.
+    dead port 2/2 on $mux $procmux$349.
+    dead port 2/2 on $mux $procmux$358.
+    dead port 1/2 on $mux $procmux$361.
+    dead port 2/2 on $mux $procmux$364.
+    dead port 2/2 on $mux $procmux$375.
+    dead port 2/2 on $mux $procmux$377.
+    dead port 2/2 on $mux $procmux$1033.
+    dead port 1/2 on $mux $procmux$380.
+    dead port 2/2 on $mux $procmux$383.
+    dead port 2/2 on $mux $procmux$394.
+    dead port 2/2 on $mux $procmux$396.
+    dead port 1/2 on $mux $procmux$399.
+    dead port 2/2 on $mux $procmux$402.
+    dead port 2/2 on $mux $procmux$413.
+    dead port 1/2 on $mux $procmux$416.
+    dead port 2/2 on $mux $procmux$419.
+    dead port 2/2 on $mux $procmux$430.
+    dead port 2/2 on $mux $procmux$1045.
+    dead port 1/2 on $mux $procmux$433.
+    dead port 2/2 on $mux $procmux$436.
+    dead port 2/2 on $mux $procmux$446.
+    dead port 2/2 on $mux $procmux$448.
+    dead port 1/2 on $mux $procmux$451.
+    dead port 2/2 on $mux $procmux$454.
+    dead port 2/2 on $mux $procmux$463.
+    dead port 1/2 on $mux $procmux$466.
+    dead port 2/2 on $mux $procmux$469.
+    dead port 1/2 on $mux $procmux$481.
+    dead port 2/2 on $mux $procmux$483.
+    dead port 2/2 on $mux $procmux$1057.
+    dead port 1/2 on $mux $procmux$486.
+    dead port 2/2 on $mux $procmux$489.
+    dead port 2/2 on $mux $procmux$501.
+    dead port 2/2 on $mux $procmux$503.
+    dead port 1/2 on $mux $procmux$506.
+    dead port 2/2 on $mux $procmux$509.
+    dead port 2/2 on $mux $procmux$522.
+    dead port 1/2 on $mux $procmux$525.
+    dead port 2/2 on $mux $procmux$528.
+    dead port 2/2 on $mux $procmux$541.
+    dead port 1/2 on $mux $procmux$544.
+    dead port 2/2 on $mux $procmux$547.
+    dead port 2/2 on $mux $procmux$560.
+    dead port 1/2 on $mux $procmux$563.
+    dead port 2/2 on $mux $procmux$566.
+    dead port 2/2 on $mux $procmux$579.
+    dead port 2/2 on $mux $procmux$581.
+    dead port 1/2 on $mux $procmux$584.
+    dead port 2/2 on $mux $procmux$587.
+    dead port 2/2 on $mux $procmux$600.
+    dead port 2/2 on $mux $procmux$602.
+    dead port 1/2 on $mux $procmux$605.
+    dead port 2/2 on $mux $procmux$608.
+    dead port 2/2 on $mux $procmux$621.
+    dead port 1/2 on $mux $procmux$624.
+    dead port 2/2 on $mux $procmux$627.
+    dead port 2/2 on $mux $procmux$640.
+    dead port 1/2 on $mux $procmux$643.
+    dead port 2/2 on $mux $procmux$646.
+    dead port 2/2 on $mux $procmux$660.
+    dead port 2/2 on $mux $procmux$662.
+    dead port 1/2 on $mux $procmux$665.
+    dead port 2/2 on $mux $procmux$668.
+    dead port 2/2 on $mux $procmux$682.
+    dead port 2/2 on $mux $procmux$684.
+    dead port 1/2 on $mux $procmux$687.
+    dead port 2/2 on $mux $procmux$690.
+    dead port 2/2 on $mux $procmux$704.
+    dead port 1/2 on $mux $procmux$707.
+    dead port 2/2 on $mux $procmux$710.
+    dead port 2/2 on $mux $procmux$724.
+    dead port 1/2 on $mux $procmux$727.
+    dead port 2/2 on $mux $procmux$730.
+    dead port 2/2 on $mux $procmux$744.
+    dead port 1/2 on $mux $procmux$747.
+    dead port 2/2 on $mux $procmux$750.
+    dead port 2/2 on $mux $procmux$764.
+    dead port 1/2 on $mux $procmux$767.
+    dead port 2/2 on $mux $procmux$770.
+    dead port 1/2 on $mux $procmux$797.
+    dead port 2/2 on $mux $procmux$800.
+    dead port 2/2 on $mux $procmux$821.
+    dead port 2/2 on $mux $procmux$823.
+    dead port 1/2 on $mux $procmux$826.
+    dead port 2/2 on $mux $procmux$829.
+    dead port 2/2 on $mux $procmux$850.
+    dead port 2/2 on $mux $procmux$852.
+    dead port 1/2 on $mux $procmux$855.
+    dead port 2/2 on $mux $procmux$858.
+    dead port 2/2 on $mux $procmux$874.
+    dead port 2/2 on $mux $procmux$122.
+    dead port 1/2 on $mux $procmux$877.
+    dead port 2/2 on $mux $procmux$880.
+    dead port 2/2 on $mux $procmux$896.
+    dead port 1/2 on $mux $procmux$899.
+    dead port 2/2 on $mux $procmux$902.
+    dead port 1/2 on $mux $procmux$125.
+    dead port 2/2 on $mux $procmux$128.
+    dead port 2/2 on $mux $procmux$135.
+    dead port 2/2 on $mux $procmux$137.
+    dead port 1/2 on $mux $procmux$140.
+    dead port 2/2 on $mux $procmux$143.
+    dead port 2/2 on $mux $procmux$150.
+    dead port 2/2 on $mux $procmux$152.
+    dead port 1/2 on $mux $procmux$919.
+    dead port 2/2 on $mux $procmux$922.
+    dead port 1/2 on $mux $procmux$934.
+    dead port 2/2 on $mux $procmux$936.
+    dead port 1/2 on $mux $procmux$939.
+    dead port 2/2 on $mux $procmux$942.
+    dead port 1/2 on $mux $procmux$155.
+    dead port 2/2 on $mux $procmux$158.
+    dead port 2/2 on $mux $procmux$165.
+    dead port 1/2 on $mux $procmux$168.
+    dead port 2/2 on $mux $procmux$171.
+    dead port 1/2 on $mux $procmux$964.
+    dead port 2/2 on $mux $procmux$967.
+    dead port 2/2 on $mux $procmux$974.
+    dead port 2/2 on $mux $procmux$981.
+    dead port 2/2 on $mux $procmux$988.
+    dead port 2/2 on $mux $procmux$995.
+Running muxtree optimizer on module \stream_alu_mul_pulse_formal..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 178 multiplexer ports.
+<suppressed ~22 debug messages>
+
+2.7.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+  Optimizing cells in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+  Optimizing cells in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+  Optimizing cells in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+    New ctrl vector for $pmux cell $procmux$1060: { $auto$opt_reduce.cc:137:opt_pmux$1123 $36y $auto$opt_reduce.cc:137:opt_pmux$1121 }
+    New ctrl vector for $pmux cell $procmux$1111: { $auto$opt_reduce.cc:137:opt_pmux$1127 $36y $auto$opt_reduce.cc:137:opt_pmux$1125 }
+    New ctrl vector for $pmux cell $procmux$843: { $auto$opt_reduce.cc:137:opt_pmux$1129 $27y }
+    New ctrl vector for $pmux cell $procmux$1016: { $auto$opt_reduce.cc:137:opt_pmux$1131 $procmux$1018_CMP $104y }
+    New ctrl vector for $pmux cell $procmux$905: { $25y $auto$opt_reduce.cc:137:opt_pmux$1133 }
+  Optimizing cells in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+  Optimizing cells in module \stream_alu_mul_pulse_formal.
+Performed a total of 5 changes.
+
+2.7.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier'.
+Finding identical cells in module `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl'.
+Finding identical cells in module `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check'.
+<suppressed ~9 debug messages>
+Finding identical cells in module `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut'.
+<suppressed ~27 debug messages>
+Finding identical cells in module `\stream_alu_mul_pulse_formal'.
+Removed a total of 12 cells.
+
+2.7.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+Removed 0 unused cells and 324 unused wires.
+<suppressed ~3 debug messages>
+
+2.7.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.7.8. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.7.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \stream_alu_mul_pulse_formal..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+2.7.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+  Optimizing cells in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+  Optimizing cells in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+  Optimizing cells in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+    New ctrl vector for $pmux cell $procmux$774: { $25y $procmux$1118_CMP $29y $36y $procmux$1105_CMP $procmux$1090_CMP $1y $auto$opt_reduce.cc:137:opt_pmux$1135 $44y $48y }
+    New ctrl vector for $pmux cell $procmux$947: { $25y $36y $procmux$1105_CMP $1y $auto$opt_reduce.cc:137:opt_pmux$1137 $44y }
+  Optimizing cells in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+  Optimizing cells in module \stream_alu_mul_pulse_formal.
+Performed a total of 2 changes.
+
+2.7.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier'.
+Finding identical cells in module `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl'.
+Finding identical cells in module `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check'.
+Finding identical cells in module `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut'.
+Finding identical cells in module `\stream_alu_mul_pulse_formal'.
+Removed a total of 0 cells.
+
+2.7.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+
+2.7.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.7.14. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.7.15. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \stream_alu_mul_pulse_formal..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+<suppressed ~21 debug messages>
+
+2.7.16. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+  Optimizing cells in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+  Optimizing cells in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+  Optimizing cells in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+  Optimizing cells in module \stream_alu_mul_pulse_formal.
+Performed a total of 0 changes.
+
+2.7.17. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier'.
+Finding identical cells in module `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl'.
+Finding identical cells in module `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check'.
+Finding identical cells in module `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut'.
+Finding identical cells in module `\stream_alu_mul_pulse_formal'.
+Removed a total of 0 cells.
+
+2.7.18. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+
+2.7.19. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.7.20. Finished OPT passes. (There is nothing left to do.)
+
+2.8. Executing WREDUCE pass (reducing word size of cells).
+Removed top 120 bits (of 128) from mux cell gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$7 ($mux).
+Removed top 120 bits (of 128) from port B of cell gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$8 ($xor).
+Removed top 120 bits (of 128) from wire gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.$7y.
+Removed top 6 bits (of 7) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$0 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$1 ($eq).
+Removed top 1 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$27 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$29 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$32 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$36 ($eq).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$104 ($eq).
+Removed top 3 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$105 ($add).
+Removed top 3 bits (of 4) from mux cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$658 ($mux).
+Removed top 1 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$816_CMP0 ($eq).
+Removed top 5 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$817_CMP0 ($eq).
+Removed top 6 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$818_CMP0 ($eq).
+Removed top 6 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$819_CMP0 ($eq).
+Removed top 7 bits (of 8) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$820_CMP0 ($eq).
+Removed top 4 bits (of 8) from mux cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1016 ($pmux).
+Removed top 2 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1018_CMP0 ($eq).
+Removed top 3 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1019_CMP0 ($eq).
+Removed top 7 bits (of 8) from mux cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1055 ($mux).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1090_CMP0 ($eq).
+Removed top 1 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1105_CMP0 ($eq).
+Removed top 3 bits (of 4) from port B of cell leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1118_CMP0 ($eq).
+Removed top 4 bits (of 8) from wire leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1016_Y.
+Removed top 7 bits (of 8) from wire leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$1055_Y.
+Removed top 3 bits (of 4) from wire leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.$procmux$658_Y.
+
+2.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+Removed 0 unused cells and 4 unused wires.
+<suppressed ~2 debug messages>
+
+2.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+2.11. Executing OPT pass (performing simple optimizations).
+
+2.11.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.
+Optimizing module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl.
+Optimizing module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check.
+Optimizing module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut.
+Optimizing module stream_alu_mul_pulse_formal.
+
+2.11.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier'.
+Finding identical cells in module `\gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl'.
+Finding identical cells in module `\leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check'.
+Finding identical cells in module `\leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut'.
+Finding identical cells in module `\stream_alu_mul_pulse_formal'.
+Removed a total of 0 cells.
+
+2.11.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier..
+Finding unused cells or wires in module \gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl..
+Finding unused cells or wires in module \leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check..
+Finding unused cells or wires in module \leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut..
+Finding unused cells or wires in module \stream_alu_mul_pulse_formal..
+
+2.11.4. Finished fast OPT passes.
+
+2.12. Printing statistics.
+
+=== gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier ===
+
+   Number of wires:                 11
+   Number of wire bits:             25
+   Number of public wires:          11
+   Number of public wire bits:      25
+   Number of ports:                 11
+   Number of port bits:             25
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl      1
+
+=== gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl ===
+
+   Number of wires:                 28
+   Number of wire bits:           2081
+   Number of public wires:          15
+   Number of public wire bits:     537
+   Number of ports:                 11
+   Number of port bits:             25
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 17
+     $dff                            2
+     $mux                           13
+     $xor                            2
+
+=== leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check ===
+
+   Number of wires:                 12
+   Number of wire bits:             12
+   Number of public wires:           6
+   Number of public wire bits:       6
+   Number of ports:                  5
+   Number of port bits:              5
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 11
+     $check                          4
+     $logic_and                      3
+     $logic_not                      1
+     $logic_or                       2
+     $mux                            1
+
+=== leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut ===
+
+   Number of wires:                121
+   Number of wire bits:            313
+   Number of public wires:          24
+   Number of public wire bits:      58
+   Number of ports:                 12
+   Number of port bits:             26
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                116
+     $add                            1
+     $dff                            4
+     $eq                            21
+     $logic_and                     12
+     $logic_not                      2
+     $logic_or                       7
+     $mux                           43
+     $pmux                          13
+     $reduce_bool                    2
+     $reduce_or                      8
+     $xor                            1
+     gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier      1
+     leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check      1
+
+=== stream_alu_mul_pulse_formal ===
+
+   Number of wires:                 12
+   Number of wire bits:             26
+   Number of public wires:          12
+   Number of public wire bits:      26
+   Number of ports:                  5
+   Number of port bits:             12
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  2
+     $dff                            1
+     leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut      1
+
+=== design hierarchy ===
+
+   stream_alu_mul_pulse_formal       1
+     leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut      1
+       gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier      1
+         gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl      1
+       leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check      1
+
+   Number of wires:                184
+   Number of wire bits:           2457
+   Number of public wires:          68
+   Number of public wire bits:     652
+   Number of ports:                 44
+   Number of port bits:             93
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                143
+     $add                            1
+     $check                          4
+     $dff                            7
+     $eq                            21
+     $logic_and                     15
+     $logic_not                      3
+     $logic_or                       9
+     $mux                           57
+     $pmux                          13
+     $reduce_bool                    2
+     $reduce_or                      8
+     $xor                            3
+
+2.13. Executing CHECK pass (checking for obvious problems).
+Checking module gf128_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier...
+Checking module gf2n_mul_bitstream$stream_alu_mul_pulse_formal.dut.multiplier.impl...
+Checking module leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check...
+Checking module leanvm_b_stream_alu$stream_alu_mul_pulse_formal.dut...
+Checking module stream_alu_mul_pulse_formal...
+Found and reported 0 problems.
+leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check/$11
+leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check/$13
+leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check/$7
+leanvm_b_mul_pulse_check$stream_alu_mul_pulse_formal.dut.u_mul_pulse_check/$9
+
+End of script. Logfile hash: 25e07c5a9e, CPU: user 0.12s system 0.01s, MEM: 24.75 MB peak
+Yosys 0.54+29 (git sha1 7b0c1fe49, clang++ 18.1.8 -fPIC -O3)
+Time spent: 22% 6x opt_clean (0 sec), 18% 8x opt_expr (0 sec), ...

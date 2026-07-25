@@ -1,0 +1,2 @@
+command=make smoke
+exit=0

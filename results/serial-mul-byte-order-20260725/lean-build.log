@@ -1,0 +1,24 @@
+⚠ [7/13] Replayed LeanVMBMinCore.CheckedIndex
+warning: LeanVMBMinCore/CheckedIndex.lean:45:13: This simp argument is unused:
+  valid
+
+Hint: Omit it from the simp argument list.
+  simp [add,̵ ̵v̵a̵l̵i̵d̵] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [9/13] Replayed LeanVMBMinCore.Deref
+warning: LeanVMBMinCore/Deref.lean:79:21: This simp argument is unused:
+  Ne.symm h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h,̵ ̵N̵e̵.̵s̵y̵m̵m̵ ̵h̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Deref.lean:86:18: This simp argument is unused:
+  h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h̵,̵ ̵Ne.symm h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Build completed successfully (13 jobs).

@@ -1,5 +1,17 @@
 # RTL formal check
 
+Three independent harnesses live here.  Each has a different boundary; none of
+them proves the full LSC-1 controller or ISA correspondence.  See
+`docs/PROOF_BOUNDARIES.md`.
+
+| Config | Boundary proved | Mode |
+|---|---|---|
+| `gf8_mul.sby` | GF(2^8) product of the generic multiplier at WIDTH=8 | bounded BMC |
+| `gf128_serialize.sby` | WIDTH=128 16-beat little-endian byte load and result shift-out ordering | BMC + k-induction + cover |
+| `stream_alu_mul_pulse.sby` | `mul_a_valid`/`mul_bit_valid`/`mul_result_shift` are mutually exclusive in the shipped `leanvm_b_stream_alu` FSM | k-induction + cover |
+
+## GF(2^8) product check
+
 The required M0 finite check, run from this directory, is:
 
 ```sh
@@ -39,3 +51,85 @@ recorded cap. `gf8_mul_depth22_z3.sby` and
 the same frame-21 timeout and Boolector's incompatibility with SBY's universal
 `anyconst` encoding. Use the versioned driver under `results/` to reproduce all
 of these outcomes and their time limits.
+
+## WIDTH=128 byte-serialization order check
+
+```sh
+sby -f gf128_serialize.sby            # runs bmc, induction, cover
+```
+
+`gf128_serialize_formal.sv` instantiates the production `gf128_mul_bitstream`
+(and through it the production `gf2n_mul_bitstream`) at its shipped WIDTH=128
+parameterization.  A single `(* anyconst *) operand_a` symbolically covers all
+2^128 operand values.  The harness sequences the module through the real
+protocol: 16 `a_valid` load beats, a terminating `a_last`, one `bit_valid` beat
+with `bit_value = 1` and `bit_last = 1`, then 16 `result_shift` beats.
+
+Because the multiplier bit stream is the field identity, the accumulator after
+the multiply phase is exactly the loaded A register.  The assertion therefore
+compares each emitted `result_byte` against the corresponding little-endian
+byte lane of `operand_a`, which makes any load-order or shift-order defect
+observable.  Concretely this proves, for every 128-bit operand:
+
+- load beat `i` supplies `operand_a[8*i +: 8]` and lands in lane `i`, and
+- shift beat `j` emits `operand_a[8*j +: 8]`.
+
+This is the property that `gf8_mul_formal.sv` cannot reach: that harness ties
+`a_last = 1` and `result_shift = 0`, so it exercises neither the 16-beat
+operand load nor the 16-beat destructive result serialization.  The 8-bit
+exhaustive product check remains additional evidence for the arithmetic, not a
+substitute for this ordering property.
+
+`induction` is an unbounded k-induction proof (`mode prove`), not a bounded
+run.  `cover` shows the final shift beat is reachable, so the assertion is not
+vacuously true on an unreachable path.
+
+**Assumptions.** The harness drives a deterministic schedule and a fixed
+`bit_value`/`bit_last`; it constrains `abort = 0` and holds reset for the first
+cycle.  It therefore says nothing about aborts, back-to-back transactions,
+partial loads, or interleaved phases, and it is not a GF(2^128) product proof.
+
+## Mutual-exclusion check on the shipped stream ALU
+
+```sh
+sby -f stream_alu_mul_pulse.sby       # runs induction, cover
+```
+
+`gf2n_mul_bitstream.sv` documents that the parent "must issue mutually
+exclusive `a_valid`, `bit_valid`, and `result_shift` pulses", but until now
+nothing checked it.  `stream_alu_mul_pulse_formal.sv` attaches a checker to the
+shipped `leanvm_b_stream_alu` with a SystemVerilog `bind`, so no functional RTL
+is modified.  The property is `$onehot0({mul_a_valid, mul_bit_valid,
+mul_result_shift})`, written in expanded pairwise form because `yosys-slang`
+does not implement the `$onehot0` system function; for three signals
+`!((x&y) | (x&z) | (y&z))` is exactly `$onehot0({x,y,z})`.
+
+**This config requires the `yosys-slang` plugin.**  The built-in Yosys Verilog
+frontend parses `bind` without error but silently discards the bound instance
+(it reports `Removing unused module`), which would make the run vacuously pass.
+The script uses `plugin -i slang` and `read_slang --keep-hierarchy`.  Confirm
+the checker is really elaborated with `select -count t:$check` on the prepared
+design; it must report the checker cells under
+`stream_alu_mul_pulse_formal.dut.u_mul_pulse_check`.
+
+The `induction` task is an unbounded `mode prove` result: the pulses are
+mutually exclusive in every reachable state, driven by free `rx_data`,
+`rx_valid`, `tx_ready`, and `abort` inputs.  The `cover` task reaches
+`a_valid` at step 3, `bit_valid` at step 19, and `result_shift` at step 147,
+so all three arms of the property are individually reachable.
+
+**Assumptions.** Reset is asserted low for the first cycle and released
+thereafter, and the assertion is gated on `rst_n`; behavior during reset is not
+constrained.  Only the multiplier handshake is checked — this is not a proof of
+the ALU's opcode decode, its result values, or the full controller.
+
+## Non-vacuity
+
+All three new properties were mutation-tested; each mutation was reverted after
+the run and none is present in the tree:
+
+| Mutation | Expected | Observed |
+|---|---|---|
+| Reverse the expected shift-out byte order in the 128-bit harness | fail | `Assert failed` at step 37 |
+| Reverse the load byte order in the 128-bit harness | fail | `Assert failed` |
+| Drive `mul_bit_valid = tx_ready` in `S_MUL_TX` of the stream ALU | fail | induction-step assertion failure |

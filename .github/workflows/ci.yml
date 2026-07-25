@@ -55,6 +55,20 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde
       - name: Bounded GF(2^8) proof
         run: cd formal && sby -f gf8_mul.sby
+      - name: WIDTH=128 byte-serialization order proof
+        run: cd formal && sby -f gf128_serialize.sby
+      - name: Bound checker is elaborated inside the shipped stream ALU
+        # The built-in Yosys frontend silently drops `bind`, which would make
+        # the next step a vacuous pass.  Fail loudly if no checker cell exists.
+        run: >-
+          cd formal && yosys -p 'plugin -i slang;
+          read_slang --top stream_alu_mul_pulse_formal --keep-hierarchy
+          ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv
+          ../asic_core/rtl/leanvm_b_stream_alu.sv stream_alu_mul_pulse_formal.sv;
+          prep -top stream_alu_mul_pulse_formal;
+          select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check'
+      - name: Multiplier pulse mutual-exclusion proof on shipped RTL
+        run: cd formal && sby -f stream_alu_mul_pulse.sby
       - name: Yosys lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lean_silicon_lsc1.sv;
