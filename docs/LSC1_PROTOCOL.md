@@ -18,8 +18,11 @@ DEREF_FP, JUMP, and BLAKE3_REQUEST.  Each request carries current `pc:u32`,
 `fp:u32`, decoded operands/values, written bits, and any host witness needed
 to validate the transition.  Responses carry `next_pc:u32`, `next_fp:u32`,
 zero or more write-once updates, deferred-equality events, optional BLAKE3
-service request, and retirement/fault.  Exact payload schemas are a host-packet
-lane deliverable; this document deliberately does not pretend they are RTL.
+service request, and retirement/fault.  Exact payload schemas, status and fault
+codes, the transaction state machine, profile negotiation, the trust boundary,
+and byte/cycle budgets are specified normatively in
+[LSC1_TRANSACTION_PROTOCOL](LSC1_TRANSACTION_PROTOCOL.md), with the executable
+model in `sim/lsc1_transaction.py`.  Neither document pretends to be RTL.
 
 The present RTL top is protocol **seed-0**, not v1: it accepts the historical
 fixed stream commands solely to keep MinCore arithmetic executable.  It must
