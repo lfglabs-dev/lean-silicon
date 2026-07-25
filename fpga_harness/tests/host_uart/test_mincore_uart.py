@@ -1,6 +1,9 @@
 import io
 import json
 import sys
+import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -133,14 +136,23 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportFailure, "output flush failed"):
             MinCoreDriver(BrokenFlush(), .2, Clock()).exchange("clear")
 
+    def test_a_stalled_flush_cannot_outlast_the_configured_timeout(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledFlush(FakeSerial):
+            def flush(self): release.wait(30)
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, "flush timeout"):
+            MinCoreDriver(StalledFlush(), .1, Clock()).exchange("clear")
+        self.assertLess(time.monotonic() - start, 5)
+
     def test_evidence_distinguishes_a_dirty_source_tree(self):
         head = "0" * 40
         for dirty in (False, True, None):
             output = io.BytesIO()
-            with mock.patch.object(mincore_uart, "repo_provenance", return_value=(head, dirty)):
-                record_evidence(output, operation="clear", request=b"\x7d", response=b"",
-                                expected=None, passed=None, execution_attempted=True,
-                                serial_response_observed=False)
+            record_evidence(output, provenance=(head, dirty), operation="clear",
+                            request=b"\x7d", response=b"", expected=None, passed=None,
+                            execution_attempted=True, serial_response_observed=False)
             evidence = json.loads(output.getvalue())
             self.assertEqual(evidence["repo_head"], head)
             self.assertEqual(evidence["repo_dirty"], dirty)
@@ -149,6 +161,24 @@ class MinCoreUartTests(unittest.TestCase):
         self.assertIn(actual_dirty, (True, False, None))
         if actual_head == "unknown":
             self.assertIsNone(actual_dirty)
+
+    def test_provenance_is_sampled_before_evidence_creates_an_untracked_file(self):
+        observed = []
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "evidence.jsonl"
+            def provenance():
+                observed.append(evidence.exists())
+                return ("0" * 40, False)
+            old_stdout, sys.stdout = sys.stdout, io.StringIO()
+            try:
+                with mock.patch.object(mincore_uart, "repo_provenance", provenance):
+                    self.assertEqual(main(["--operation", "set", "--vector", "set128",
+                                           "--dry-run", "--evidence", str(evidence)]), 0)
+            finally:
+                sys.stdout = old_stdout
+            record = json.loads(evidence.read_text())
+        self.assertEqual(observed, [False])
+        self.assertFalse(record["repo_dirty"])
 
     def test_transport_failure_is_not_retried(self):
         class BrokenSerial(FakeSerial):
@@ -199,8 +229,9 @@ class MinCoreUartTests(unittest.TestCase):
         request, actual = driver.exchange("mul", a=VECTORS["mul128"].a, b=VECTORS["mul128"].b)
         self.assertEqual(actual, VECTORS["mul128"].expected)
         output = io.BytesIO()
-        record_evidence(output, operation="mul", request=request, response=actual, expected=actual,
-                        passed=True, execution_attempted=False, serial_response_observed=False)
+        record_evidence(output, provenance=("0" * 40, False), operation="mul", request=request,
+                        response=actual, expected=actual, passed=True,
+                        execution_attempted=False, serial_response_observed=False)
         evidence = json.loads(output.getvalue())
         self.assertNotIn("port", evidence)
         self.assertNotIn("request_hex", evidence)

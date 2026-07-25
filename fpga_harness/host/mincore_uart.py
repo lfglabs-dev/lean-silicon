@@ -13,6 +13,7 @@ import json
 import math
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -189,14 +190,30 @@ class MinCoreDriver:
         return bytes(data)
 
     def _flush_output(self) -> None:
-        """A zero-length response is no evidence that queued bytes actually left."""
+        """A zero-length response is no evidence that queued bytes actually left.
+
+        `serial.Serial.flush()` is `tcdrain()`, which takes no timeout and blocks
+        while a stalled device never drains, so it runs on a worker thread and is
+        bounded like every other phase of the exchange.
+        """
         flush = getattr(self.transport, "flush", None)
         if not callable(flush):
             return
+        deadline, failures = self.clock() + self.timeout, []
+        worker = threading.Thread(target=lambda: self._call_flush(flush, failures), daemon=True)
+        worker.start()
+        worker.join(max(0.0, deadline - self.clock()))
+        if worker.is_alive():
+            raise TransportTimeout("flush timeout before the no-response request drained")
+        if failures:
+            raise TransportFailure("output flush failed; transaction was not retried") from failures[0]
+
+    @staticmethod
+    def _call_flush(flush: Callable[[], object], failures: list) -> None:
         try:
             flush()
-        except Exception as error:
-            raise TransportFailure("output flush failed; transaction was not retried") from error
+        except BaseException as error:  # reported on the calling thread
+            failures.append(error)
 
     def _reject_buffered_extra(self) -> None:
         extra = self.drain_stale()
@@ -253,6 +270,7 @@ def repo_provenance() -> tuple[str, Optional[bool]]:
 def record_evidence(
     stream: BinaryIO,
     *,
+    provenance: tuple[str, Optional[bool]],
     operation: str,
     request: bytes,
     response: bytes,
@@ -264,7 +282,7 @@ def record_evidence(
 ) -> None:
     """Write one JSONL record without a port or raw payloads by default."""
     digest = lambda value: hashlib.sha256(value).hexdigest()
-    head, dirty = repo_provenance()
+    head, dirty = provenance
     record = {"tool_version": VERSION, "repo_head": head, "repo_dirty": dirty, "operation": operation,
               "request_length": len(request), "request_sha256": digest(request),
               "response_length": len(response), "response_sha256": digest(response),
@@ -353,6 +371,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.execute and (args.encode or args.decode is not None or args.dry_run):
         parser.error("--execute cannot be combined with --dry-run, --encode, or --decode")
     try:
+        # Sampled before --evidence can create an untracked file in the checkout.
+        provenance = repo_provenance()
         a, b, value, expected = _operation_inputs(args)
         if args.decode is not None:
             request = b""
@@ -376,7 +396,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.evidence:
             with args.evidence.open("ab") as stream:
                 record_evidence(
-                    stream, operation=args.operation, request=request, response=response,
+                    stream, provenance=provenance,
+                    operation=args.operation, request=request, response=response,
                     expected=expected, passed=passed, execution_attempted=execution_attempted,
                     serial_response_observed=serial_response_observed,
                     include_payloads=args.evidence_payloads,
