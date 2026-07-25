@@ -59,6 +59,39 @@ class ProtocolContractTests(unittest.TestCase):
         self.assertFalse(after.pins.fault)
         self.assertFalse(after.pins.busy)
 
+    def test_reset_during_status_preserves_pre_reset_pins_but_discards_byte(self) -> None:
+        lane = ProtocolLane()
+        lane.step(rx_data=Command.STATUS, rx_valid=True)
+        reset = lane.step(tx_ready=True, reset_n=False)
+        self.assertTrue(reset.pins.tx_valid)
+        self.assertEqual(reset.pins.tx_data, 0x01)
+        self.assertTrue(reset.pins.busy)
+        self.assertFalse(reset.rx_committed)
+        self.assertFalse(reset.tx_committed)
+        after = lane.step()
+        self.assertTrue(after.pins.rx_ready)
+        self.assertFalse(after.pins.busy)
+        self.assertFalse(after.pins.fault)
+
+    def test_abort_and_reset_discard_same_edge_status_done_pulse(self) -> None:
+        for abort, reset_n in ((True, True), (False, False)):
+            with self.subTest(abort=abort, reset_n=reset_n):
+                lane = ProtocolLane()
+                lane.step(rx_data=Command.STATUS, rx_valid=True)
+                for _ in range(3):
+                    lane.step(tx_ready=True)
+                terminal = lane.step(
+                    tx_ready=True, abort=abort, reset_n=reset_n
+                )
+                self.assertTrue(terminal.pins.tx_valid)
+                self.assertEqual(terminal.pins.tx_data, 0x08)
+                self.assertTrue(terminal.pins.done_pulse)
+                self.assertFalse(terminal.tx_committed)
+                after = lane.step()
+                self.assertTrue(after.pins.rx_ready)
+                self.assertFalse(after.pins.busy)
+                self.assertEqual(after.pins.fault, abort)
+
     def test_unknown_command_has_exactly_one_error_byte(self) -> None:
         lane = ProtocolLane()
         lane.step(rx_data=0x99, rx_valid=True)

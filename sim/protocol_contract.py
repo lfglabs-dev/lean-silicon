@@ -28,9 +28,11 @@ class ProtocolLane:
     """A resettable byte-lane contract wrapper around ``StreamALUCycleModel``.
 
     ``reset_n`` represents the top-level synchronous active-low reset sampled
-    at this edge.  The Python cycle model begins in the reset state, so a reset
-    edge replaces it with a fresh instance.  This mirrors the architectural
-    state visible at the wrapper boundary (IDLE, no fault, no response).
+    at this edge.  Observable pins are always sampled from the pre-edge state,
+    just as in the synchronous RTL.  A reset edge then replaces the Python
+    cycle model with a fresh instance, leaving the following edge in IDLE with
+    no fault or response.  Thus a reset edge can still expose a pre-reset
+    candidate beat (and `done_pulse`), but it never commits that beat.
     """
 
     def __init__(self) -> None:
@@ -46,10 +48,14 @@ class ProtocolLane:
         reset_n: bool = True,
     ) -> CycleRecord:
         if not reset_n:
-            self.core = StreamALUCycleModel()
+            # The RTL's combinational outputs are driven by the state before
+            # the active clock edge; reset only takes precedence in the
+            # sequential block.  Preserve those observable pins before
+            # replacing state, while qualifying all transfers as discarded.
             pins, _ = self.core.combinational(
                 rx_data=rx_data, rx_valid=rx_valid, tx_ready=tx_ready
             )
+            self.core = StreamALUCycleModel()
             return CycleRecord(pins, False, False)
 
         pins = self.core.step(

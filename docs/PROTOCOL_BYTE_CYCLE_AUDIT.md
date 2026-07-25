@@ -14,12 +14,16 @@ is true and neither synchronous reset nor `ABORT` is asserted for that edge.
 This qualification is necessary because reset and abort have sequential
 priority over the FSM; they discard same-edge candidate transfers.
 
-`rst_n` is synchronous and active low.  On a reset edge the engine becomes
-IDLE, deasserts `BUSY` and `FAULT`, and has no outstanding output.  `ABORT` is
-synchronous: it becomes IDLE, clears in-flight arithmetic, and sets sticky
-`FAULT`.  It is not an acknowledged cancellation message.  The host must stop
-counting a transaction on an abort edge and resynchronize from IDLE; it must
-not interpret the simultaneously visible `TX_VALID` byte as delivered.
+`rst_n` is synchronous and active low.  Pins for an edge are combinationally
+observable from the pre-edge state; therefore reset or abort can coincide with
+an apparent `TX_VALID` byte and/or `DONE_PULSE`.  Neither observation commits
+a transfer on that edge.  After a reset edge the engine is IDLE, deasserts
+`BUSY` and `FAULT`, and has no outstanding output.  `ABORT` is synchronous:
+after its edge the engine is IDLE, in-flight arithmetic is cleared, and sticky
+`FAULT` is set.  It is not an acknowledged cancellation message.  The host
+must stop counting a transaction on either reset or abort and resynchronize
+from IDLE; it must not interpret a simultaneously visible `TX_VALID` byte or
+`DONE_PULSE` as delivered or complete.
 
 For an ordinary ready/valid stall, the sender holds `VALID` and data stable
 until a committed beat.  The core holds registered responses (MUL, STATUS,
@@ -47,9 +51,12 @@ MinCore grammar.
 
 The listed ideal counts assume `rst_n=1`, `ABORT=0`, an always-valid source,
 and an always-ready sink.  Every source gap or sink stall adds one or more
-wall-clock cycles; no maximum completion time exists.  `DONE_PULSE` occurs on
-the final committed response beat, or on committed `CLEAR`.  It is a pulse,
-not durable completion state; a host that can miss it must track transfers.
+wall-clock cycles; no maximum completion time exists.  With neither reset nor
+abort asserted, `DONE_PULSE` marks the final committed response beat, or a
+committed `CLEAR`.  It is a combinational pulse and can also be visibly high
+on a reset/abort edge whose candidate transfer is discarded; it is not durable
+completion state.  A host must qualify completion with the committed-beat rule
+and synchronize/capture it if it can miss the pulse.
 
 ## Framing and malformed/partial behavior
 
@@ -93,11 +100,12 @@ own envelope supplies an operation ID and durable acknowledgement.
 | Medium | `ABORT` can coincide with apparent valid/ready transfers, which RTL discards. | Resolved in the byte/cycle contract and executable vector; bridge must apply committed-beat rule. |
 | Medium | Combinational stream commands create a ready/valid dependency and require a non-waiting source or external byte buffer. | Residual architectural constraint, explicitly documented and tested under backpressure. |
 | Medium | Partial fixed-length transactions can stall forever and have no in-band error code. | Residual; bridge timeout/abort/resync required. |
-| Low | `DONE_PULSE` is one cycle and may be missed by asynchronous/polled software. | Residual; count committed responses or synchronize/capture externally. |
+| Low | `DONE_PULSE` is one cycle and can be visibly high for a reset/abort-discarded candidate transfer. | Residual; qualify it with reset/abort and committed beats, then synchronize/capture externally. |
 | Low | Reset clears `FAULT`, so it is not persistent diagnostic evidence. | Residual; bridge logging required. |
 
 The test vectors cover pin-level stall stability, registered response
-backpressure, abort priority, reset cancellation, and unknown-command error
-serialization.  They do not establish metastability safety, physical timing,
-cryptographic transport integrity, full-core correctness, or exhaustive RTL
-verification.
+backpressure, abort priority, reset cancellation with pre-reset STATUS pins,
+reset/abort qualification of a same-edge STATUS `DONE_PULSE`, and
+unknown-command error serialization.  They do not establish metastability
+safety, physical timing, cryptographic transport integrity, full-core
+correctness, or exhaustive RTL verification.
