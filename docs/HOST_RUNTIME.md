@@ -91,8 +91,15 @@ that commit and cannot be read from outside the crate:
 This is a recorded limit of the frozen source, not a workaround target. Every
 artifact carries the same list under `upstream.not_exposed_by_public_interface`.
 
+`Execution::mem` is padded to a power of two and only the first `mem_used`
+cells are ever touched. The artifact records that prefix as
+`upstream_execution.mem` plus the full buffer length as
+`upstream_execution.mem_len`, rather than megabytes of untouched zeros.
+
 The adapter reads only the exported artifact. It never shells out and never
-imports Rust, so the tests run with no toolchain installed.
+imports Rust, so the tests run with no toolchain installed. It validates the
+schema, the frozen commit, the bytecode length and slot labelling, and rejects
+an unknown opcode or a malformed field operand instead of guessing.
 
 ## 5. Comparison against the official runner
 
@@ -116,6 +123,12 @@ memory image, `cycles` and `mem_used`. The tool therefore:
 
 Equivalence is claimed only for the entries under `comparison.compared`.
 
+For the checked-in fixture the compared set is the 12 cells the frozen run
+touched, and `cycles` is explicitly not compared: the fixture's terminating
+`JUMP` is not integrated, so the host executes a 12-step prefix of the 13-cycle
+upstream run. `sim/test_host_runtime.py` asserts that boundary directly, so a
+future change that silently claimed more would fail.
+
 ## 6. Reproducing
 
 ```sh
@@ -125,7 +138,13 @@ make host-export LEANVM_B_UPSTREAM=/tmp/leanvm-b
 make host-comparison LEANVM_B_UPSTREAM=/tmp/leanvm-b
 ```
 
-Both targets require `cargo` and reject an upstream checkout that is not a
-clean detached checkout of the frozen commit. `make host-comparison` without
-`LEANVM_B_UPSTREAM` compares against the upstream execution recorded in the
-artifact instead of re-running it, and says which one it used.
+`make host-export` requires `cargo`, and both targets reject an upstream
+checkout that is not a clean detached checkout of the frozen commit.
+`make host-comparison` without `LEANVM_B_UPSTREAM` compares against the
+upstream execution recorded in the artifact instead of re-running it, and says
+which one it used. With a checkout it re-compiles live and refuses to continue
+unless the live compile reproduces the recorded bytecode.
+
+`make python` runs `sim/test_host_runtime.py`, which needs no toolchain: it
+exercises the memory, pointer, adapter, transaction and fault paths, and
+re-checks the host run against the upstream execution recorded in the artifact.
