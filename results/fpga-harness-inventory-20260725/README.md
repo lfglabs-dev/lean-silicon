@@ -4,7 +4,7 @@ Evidence for the lane that added `fpga_harness/INVENTORY.md`,
 `fpga_harness/BOUNDARY.md`, `fpga_harness/BUILD_PLAN.md`,
 `fpga_harness/boundary_check.py`, and `fpga_harness/board_detect.py`.
 
-Branch base: `main` at `40320dcfe56fad4d262d2a7ef08b6ed96a43dbf2` (merged in after PR #10).
+Branch base: `main` at `1811202c20f10eea590890cf3c65c7503557f9b6` (merged in after PR #11).
 Tested source: `fpga_harness/` tree object recorded in `tested-source-sha.txt`.
 Environment: see `toolchain.txt`.
 
@@ -21,7 +21,7 @@ directory should be read as hardware validation.
 |---|---|---|---|
 | `make-check.log` | `make check` | 0 | Full gating suite, including the two new targets |
 | `fpga-boundary.log` | `python3 fpga_harness/boundary_check.py` | 0 | Pin/no-bypass structural check passes on current RTL |
-| `fpga-harness-tests.log` | `unittest discover -s fpga_harness -v` | 0 | 62 deterministic tests, no board touched |
+| `fpga-harness-tests.log` | `unittest discover -s fpga_harness -v` | 0 | 77 deterministic tests, no board touched |
 | `fpga-detect-real.log` | `board_detect.py` | 0 | Real probe of this container: every level absent |
 | `fpga-detect-mock-full.log` | `board_detect.py --fixture ... --json` | 0 | Synthetic full visibility; `datapath_validated: false` |
 | `fpga-detect-require-datapath.log` | `board_detect.py --fixture ... --require datapath` | 1 | Fails as designed even with full visibility |

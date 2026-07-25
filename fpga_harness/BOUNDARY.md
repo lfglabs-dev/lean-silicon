@@ -82,9 +82,15 @@ self-contained transaction at a time.
 
 `boundary_check.py` checks, from source, on every `make check`:
 
-- the five interface ports are each declared `[7:0]`;
+- the five interface ports are each declared `[7:0]` **and face the direction
+  the contract requires** — `ui_in` and `uio_in` in, `uo_out`, `uio_out` and
+  `uio_oe` out — so a reversed port cannot pass on width alone;
 - `uio_oe` equals `8'b10110110`;
 - `uio` roles agree between `info.yaml` and `docs/LSC1_PROTOCOL.md`;
+- every term of the `uio_out` concatenation is exactly one bit. Eight
+  comma-separated terms is not eight bits: a ranged select such as `bus[7:0]`,
+  or a bare name that resolves to a wide net, would overflow the concatenation
+  and silently shift every status pin below it;
 - every `uio` bit the mask marks as an input is tied to zero in `uio_out`, and
   every bit marked as an output is driven by a real signal;
 - no port exceeds 8 bits in any `.sv` or `.v` file found recursively under
@@ -93,7 +99,12 @@ self-contained transaction at a time.
   `[7:0][3:0]`, `[7:0] b [15:0]`, and a name sharing a declaration after a
   comma are all measured. A port whose width cannot be resolved — an
   unresolvable parameter, or a user-defined or package-scoped type — is
-  rejected rather than assumed narrow.
+  rejected rather than assumed narrow;
+- every module port is governed by a direction keyword. A directionless port,
+  such as a SystemVerilog interface, carries no `input`/`output`/`inout` for
+  the width scan to find, so it is reported rather than assumed narrow.
+  Function and task arguments are excluded from this scan: they are internal,
+  and wide internal datapaths are permitted.
 
 What it does **not** do, stated plainly: it is a structural source check. It does
 not prove sequential handshake conformance, it does not simulate, and it cannot

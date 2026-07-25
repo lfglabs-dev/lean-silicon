@@ -21,6 +21,10 @@ test_unrecognised_idcode_is_absent (test_board_detect.LevelIsolationTests.test_u
 test_wrong_usb_identity_is_absent (test_board_detect.LevelIsolationTests.test_wrong_usb_identity_is_absent) ... ok
 test_different_roles_are_not_abbreviations (test_boundary_check.AbbreviationTests.test_different_roles_are_not_abbreviations) ... ok
 test_leading_token_abbreviation_is_accepted (test_boundary_check.AbbreviationTests.test_leading_token_abbreviation_is_accepted) ... ok
+test_inout_on_a_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_inout_on_a_pin_port_is_rejected) ... ok
+test_reversing_an_input_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_reversing_an_input_pin_port_is_rejected) ... ok
+test_reversing_an_output_pin_port_is_rejected (test_boundary_check.AsicPortDirectionTests.test_reversing_an_output_pin_port_is_rejected) ... ok
+test_shipped_top_declares_every_pin_port_correctly (test_boundary_check.AsicPortDirectionTests.test_shipped_top_declares_every_pin_port_correctly) ... ok
 test_back_driving_an_input_pin_is_rejected (test_boundary_check.AsicTopViolationTests.test_back_driving_an_input_pin_is_rejected)
 uio[0] is RX_VALID, an input; the ASIC must not drive it. ... ok
 test_commented_out_declaration_cannot_mask_a_widened_port (test_boundary_check.AsicTopViolationTests.test_commented_out_declaration_cannot_mask_a_widened_port)
@@ -32,6 +36,16 @@ test_tying_a_documented_output_to_zero_is_rejected (test_boundary_check.AsicTopV
 test_unexpected_driver_name_is_an_observation_not_an_error (test_boundary_check.AsicTopViolationTests.test_unexpected_driver_name_is_an_observation_not_an_error) ... ok
 test_widened_pin_port_is_rejected (test_boundary_check.AsicTopViolationTests.test_widened_pin_port_is_rejected) ... ok
 test_wrong_direction_mask_is_rejected (test_boundary_check.AsicTopViolationTests.test_wrong_direction_mask_is_rejected) ... ok
+test_ranged_bit_select_term_is_rejected (test_boundary_check.ConcatenationTermWidthTests.test_ranged_bit_select_term_is_rejected) ... ok
+test_scalar_net_term_is_accepted (test_boundary_check.ConcatenationTermWidthTests.test_scalar_net_term_is_accepted) ... ok
+test_single_bit_select_term_is_accepted (test_boundary_check.ConcatenationTermWidthTests.test_single_bit_select_term_is_accepted) ... ok
+test_wide_net_named_as_a_bare_term_is_rejected (test_boundary_check.ConcatenationTermWidthTests.test_wide_net_named_as_a_bare_term_is_rejected)
+A bare identifier looks like one pin, so its declaration decides. ... ok
+test_direction_persists_across_commas_in_an_ansi_list (test_boundary_check.DirectionlessPortTests.test_direction_persists_across_commas_in_an_ansi_list) ... ok
+test_interface_port_is_rejected (test_boundary_check.DirectionlessPortTests.test_interface_port_is_rejected) ... ok
+test_modport_qualified_interface_port_is_rejected (test_boundary_check.DirectionlessPortTests.test_modport_qualified_interface_port_is_rejected) ... ok
+test_non_ansi_port_names_are_left_to_the_body_scan (test_boundary_check.DirectionlessPortTests.test_non_ansi_port_names_are_left_to_the_body_scan)
+`module h(a, b);` is legal; the real widths are declared inside. ... ok
 test_shipped_harness_rtl_is_discovered (test_boundary_check.HarnessDiscoveryTests.test_shipped_harness_rtl_is_discovered) ... ok
 test_wide_port_in_nested_directory_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_nested_directory_is_rejected) ... ok
 test_wide_port_in_plain_verilog_file_is_rejected (test_boundary_check.HarnessDiscoveryTests.test_wide_port_in_plain_verilog_file_is_rejected) ... ok
@@ -71,8 +85,11 @@ test_second_name_in_a_declaration_is_scanned (test_boundary_check.SharedDeclarat
 test_second_name_inherits_the_packed_width (test_boundary_check.SharedDeclarationTests.test_second_name_inherits_the_packed_width)
 `input wire [7:0] a, b` makes `b` eight bits, not one. ... ok
 test_wide_port_after_a_narrow_group_is_still_found (test_boundary_check.SharedDeclarationTests.test_wide_port_after_a_narrow_group_is_still_found) ... ok
+test_a_real_wide_port_beside_a_function_is_still_rejected (test_boundary_check.SubprogramScopeTests.test_a_real_wide_port_beside_a_function_is_still_rejected) ... ok
+test_wide_function_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_function_argument_is_not_a_boundary_violation) ... ok
+test_wide_task_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_task_argument_is_not_a_boundary_violation) ... ok
 
 ----------------------------------------------------------------------
-Ran 62 tests in 0.010s
+Ran 77 tests in 0.016s
 
 OK
