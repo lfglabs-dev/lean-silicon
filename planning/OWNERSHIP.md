@@ -2,7 +2,7 @@
 
 | Lane | Owns | Must not change without coordination |
 |---|---|---|
-| Host packet/runtime | `docs/LSC1_PROTOCOL.md`, future `host/` | ASIC pin mapping |
+| Host packet/runtime | `docs/LSC1_PROTOCOL.md`, `docs/LSC1_TRANSACTION_PROTOCOL.md`, `sim/lsc1_transaction.py`, future `host/` | ASIC pin mapping |
 | LSC-1 RTL | `asic_core/` | host-owned VM state |
 | ULX3S harness | `fpga_harness/` | wide ASIC bypasses |
 | Differential tests | `sim/`, `test/` | protocol semantics |

@@ -25,6 +25,8 @@ Frozen leanVM-b evidence remains tied to
 - `asic_core/`: exact Tiny Tapeout LSC-1 RTL boundary.
 - `fpga_harness/`: ULX3S pin-accurate harness boundary.
 - `docs/LSC1_PROTOCOL.md`: versioned transport/packet contract.
+- `docs/LSC1_TRANSACTION_PROTOCOL.md`: normative transaction protocol v1,
+  modelled executably by `sim/lsc1_transaction.py`.
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
 
