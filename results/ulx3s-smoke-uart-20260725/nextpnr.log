@@ -21,7 +21,7 @@ Info:     25 FFs paired with LUTs.
 Info: Generating derived timing constraints...
 Info: Promoting globals...
 Info:     promoting clock net clk$TRELLIS_IO_IN to global network
-Info: Checksum: 0xbc4b80bf
+Info: Checksum: 0xf9bca309
 
 Info: Device utilisation:
 Info: 	          TRELLIS_IO:       2/    365     0%
@@ -71,7 +71,7 @@ Info:     at iteration #8, type TRELLIS_COMB: wirelen solved = 14, spread = 14, 
 Info:     at iteration #9, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 20; time = 0.00s
 Info:     at iteration #10, type TRELLIS_COMB: wirelen solved = 14, spread = 21, legal = 22; time = 0.00s
 Info:     at iteration #11, type TRELLIS_COMB: wirelen solved = 16, spread = 16, legal = 18; time = 0.00s
-Info: HeAP Placer Time: 0.11s
+Info: HeAP Placer Time: 0.10s
 Info:   of which solving equations: 0.00s
 Info:   of which spreading cells: 0.02s
 Info:   of which strict legalisation: 0.00s
@@ -108,7 +108,7 @@ Info: [ 38828,  38932) |
 Info: [ 38932,  39036) | 
 Info: [ 39036,  39140) | 
 Info: [ 39140,  39244) |* 
-Info: Checksum: 0x3e3ba1e7
+Info: Checksum: 0x1494b81a
 Info: Routing globals...
 Info:     routing clock net $glbnet$clk$TRELLIS_IO_IN using global 0
 
@@ -120,7 +120,7 @@ Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) tota
 Info:         84 |        0         69 |    0    69 |         0|       0.01       0.01|
 Info: Routing complete.
 Info: Router1 time 0.01s
-Info: Checksum: 0x1acc39d2
+Info: Checksum: 0x2e9a1022
 
 Info: Critical path report for clock '$glbnet$clk$TRELLIS_IO_IN' (posedge -> posedge):
 Info:       type curr  total name
@@ -137,8 +137,8 @@ Info:    routing  0.00  2.07 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2_COUT (2,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.14 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB0.FCO
 Info:    routing  0.00  2.14 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_FCI_INT (2,31) -> (2,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB1.FCI
@@ -147,8 +147,8 @@ Info:    routing  0.00  2.14 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6_COUT (2,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.21 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB0.FCO
 Info:    routing  0.00  2.21 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_FCI_INT (2,31) -> (2,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB1.FCI
@@ -157,8 +157,8 @@ Info:    routing  0.00  2.21 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7_COUT (2,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.28 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB0.FCO
 Info:    routing  0.00  2.28 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_FCI_INT (3,31) -> (3,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB1.FCI
@@ -167,8 +167,8 @@ Info:    routing  0.00  2.28 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4_COUT (3,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.36 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB0.FCO
 Info:    routing  0.00  2.36 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_FCI_INT (3,31) -> (3,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB1.FCI
@@ -177,8 +177,8 @@ Info:    routing  0.00  2.36 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1_COUT (3,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.43 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB0.FCO
 Info:    routing  0.00  2.43 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_FCI_INT (3,31) -> (3,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB1.FCI
@@ -187,8 +187,8 @@ Info:    routing  0.00  2.43 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_COUT (3,31) -> (3,
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.50 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB0.FCO
 Info:    routing  0.00  2.50 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_FCI_INT (3,31) -> (3,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB1.FCI
@@ -197,8 +197,8 @@ Info:    routing  0.00  2.50 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3_COUT (3,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.57 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB0.FCO
 Info:    routing  0.00  2.57 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_FCI_INT (4,31) -> (4,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB1.FCI
@@ -207,8 +207,8 @@ Info:    routing  0.00  2.57 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9_COUT (4,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.64 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB0.FCO
 Info:    routing  0.00  2.64 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_FCI_INT (4,31) -> (4,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB1.FCI
@@ -217,8 +217,8 @@ Info:    routing  0.00  2.64 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8_COUT (4,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.71 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB0.FCO
 Info:    routing  0.00  2.71 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_FCI_INT (4,31) -> (4,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB1.FCI
@@ -227,8 +227,8 @@ Info:    routing  0.00  2.71 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11_COUT (4,31) -> 
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.78 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB0.FCO
 Info:    routing  0.00  2.78 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_FCI_INT (4,31) -> (4,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB1.FCI
@@ -237,8 +237,8 @@ Info:    routing  0.00  2.78 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5_COUT (4,31) -> (
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.07  2.85 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB0.FCO
 Info:    routing  0.00  2.85 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_FCI_INT (5,31) -> (5,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB1.FCI
@@ -247,14 +247,14 @@ Info:    routing  0.00  2.85 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10_COUT (5,31) -> 
 Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S0$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /workspaces/yosys-clean/build/share/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.44  3.30 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S0$CCU2_COMB0.F
 Info:    routing  0.13  3.42 Net cnt_TRELLIS_FF_Q_DI[24] (5,31) -> (5,31)
 Info:                          Sink cnt_TRELLIS_FF_Q_23.DI
 Info:                          Defined in:
 Info:                               smoke_top.sv:14.16-14.26
-Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:34.26-34.27
+Info:                               /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v:34.26-34.27
 Info:      setup  0.00  3.42 Source cnt_TRELLIS_FF_Q_23.DI
 Info: 2.20 ns logic, 1.23 ns routing
 

@@ -4,7 +4,7 @@
  |  Copyright (C) 2012 - 2026  Claire Xenia Wolf <claire@yosyshq.com>         |
  |  Distributed under an ISC-like license, type "license" to see terms        |
  \----------------------------------------------------------------------------/
- Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+ Yosys 0.67+94 (git sha1 7defa5186, Release, GNU /usr/bin/c++ 13.3.0)
 
 -- Running command `
 read_verilog -sv ulx3s_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv          ../../asic_core/rtl/lean_silicon_lsc1.sv          ../../asic_core/rtl/leanvm_b_stream_alu.sv          ../../asic_core/rtl/gf128_mul_bitstream.sv          ../../asic_core/rtl/gf2n_mul_bitstream.sv;
@@ -375,8 +375,8 @@ Found and reported 0 problems.
 
 12. Executing SYNTH_LATTICE pass.
 
-12.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/cells_sim_ecp5.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/cells_sim_ecp5.v' to AST representation.
+12.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/cells_sim_ecp5.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/cells_sim_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\LUT4'.
 Generating RTLIL representation for module `\$__ABC9_LUT5'.
 Generating RTLIL representation for module `\$__ABC9_LUT6'.
@@ -428,76 +428,76 @@ Generating RTLIL representation for module `\ILVDS'.
 Generating RTLIL representation for module `\OLVDS'.
 Generating RTLIL representation for module `\CCU2C'.
 Generating RTLIL representation for module `\DP16KD'.
-Replacing existing blackbox module `\FD1P3AX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:2.1-2.261.
+Replacing existing blackbox module `\FD1P3AX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:2.1-2.261.
 Generating RTLIL representation for module `\FD1P3AX'.
-Replacing existing blackbox module `\FD1P3AY' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:3.1-3.261.
+Replacing existing blackbox module `\FD1P3AY' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:3.1-3.261.
 Generating RTLIL representation for module `\FD1P3AY'.
-Replacing existing blackbox module `\FD1P3BX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:4.1-4.261.
+Replacing existing blackbox module `\FD1P3BX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:4.1-4.261.
 Generating RTLIL representation for module `\FD1P3BX'.
-Replacing existing blackbox module `\FD1P3DX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:5.1-5.261.
+Replacing existing blackbox module `\FD1P3DX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:5.1-5.261.
 Generating RTLIL representation for module `\FD1P3DX'.
-Replacing existing blackbox module `\FD1P3IX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:6.1-6.261.
+Replacing existing blackbox module `\FD1P3IX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:6.1-6.261.
 Generating RTLIL representation for module `\FD1P3IX'.
-Replacing existing blackbox module `\FD1P3JX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:7.1-7.261.
+Replacing existing blackbox module `\FD1P3JX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:7.1-7.261.
 Generating RTLIL representation for module `\FD1P3JX'.
-Replacing existing blackbox module `\FD1S3AX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:8.1-8.261.
+Replacing existing blackbox module `\FD1S3AX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:8.1-8.261.
 Generating RTLIL representation for module `\FD1S3AX'.
-Replacing existing blackbox module `\FD1S3AY' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:9.1-9.261.
+Replacing existing blackbox module `\FD1S3AY' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:9.1-9.261.
 Generating RTLIL representation for module `\FD1S3AY'.
-Replacing existing blackbox module `\FD1S3BX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:10.1-10.261.
+Replacing existing blackbox module `\FD1S3BX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:10.1-10.261.
 Generating RTLIL representation for module `\FD1S3BX'.
-Replacing existing blackbox module `\FD1S3DX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:11.1-11.261.
+Replacing existing blackbox module `\FD1S3DX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:11.1-11.261.
 Generating RTLIL representation for module `\FD1S3DX'.
-Replacing existing blackbox module `\FD1S3IX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:12.1-12.261.
+Replacing existing blackbox module `\FD1S3IX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:12.1-12.261.
 Generating RTLIL representation for module `\FD1S3IX'.
-Replacing existing blackbox module `\FD1S3JX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:13.1-13.261.
+Replacing existing blackbox module `\FD1S3JX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:13.1-13.261.
 Generating RTLIL representation for module `\FD1S3JX'.
-Replacing existing blackbox module `\IFS1P3BX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:26.1-26.301.
+Replacing existing blackbox module `\IFS1P3BX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:26.1-26.301.
 Generating RTLIL representation for module `\IFS1P3BX'.
-Replacing existing blackbox module `\IFS1P3DX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:27.1-27.301.
+Replacing existing blackbox module `\IFS1P3DX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:27.1-27.301.
 Generating RTLIL representation for module `\IFS1P3DX'.
-Replacing existing blackbox module `\IFS1P3IX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:28.1-28.301.
+Replacing existing blackbox module `\IFS1P3IX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:28.1-28.301.
 Generating RTLIL representation for module `\IFS1P3IX'.
-Replacing existing blackbox module `\IFS1P3JX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:29.1-29.301.
+Replacing existing blackbox module `\IFS1P3JX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:29.1-29.301.
 Generating RTLIL representation for module `\IFS1P3JX'.
-Replacing existing blackbox module `\OFS1P3BX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:31.1-31.302.
+Replacing existing blackbox module `\OFS1P3BX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:31.1-31.302.
 Generating RTLIL representation for module `\OFS1P3BX'.
-Replacing existing blackbox module `\OFS1P3DX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:32.1-32.302.
+Replacing existing blackbox module `\OFS1P3DX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:32.1-32.302.
 Generating RTLIL representation for module `\OFS1P3DX'.
-Replacing existing blackbox module `\OFS1P3IX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:33.1-33.302.
+Replacing existing blackbox module `\OFS1P3IX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:33.1-33.302.
 Generating RTLIL representation for module `\OFS1P3IX'.
-Replacing existing blackbox module `\OFS1P3JX' at /root/oss/lib/../share/yosys/lattice/cells_ff.vh:34.1-34.302.
+Replacing existing blackbox module `\OFS1P3JX' at /workspaces/yosys-clean/build/share/lattice/cells_ff.vh:34.1-34.302.
 Generating RTLIL representation for module `\OFS1P3JX'.
-Replacing existing blackbox module `\IB' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:2.1-2.157.
+Replacing existing blackbox module `\IB' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:2.1-2.157.
 Generating RTLIL representation for module `\IB'.
-Replacing existing blackbox module `\IBPU' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:3.1-3.157.
+Replacing existing blackbox module `\IBPU' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:3.1-3.157.
 Generating RTLIL representation for module `\IBPU'.
-Replacing existing blackbox module `\IBPD' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:4.1-4.157.
+Replacing existing blackbox module `\IBPD' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:4.1-4.157.
 Generating RTLIL representation for module `\IBPD'.
-Replacing existing blackbox module `\OB' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:5.1-5.157.
+Replacing existing blackbox module `\OB' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:5.1-5.157.
 Generating RTLIL representation for module `\OB'.
-Replacing existing blackbox module `\OBZ' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:6.1-6.164.
+Replacing existing blackbox module `\OBZ' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:6.1-6.164.
 Generating RTLIL representation for module `\OBZ'.
-Replacing existing blackbox module `\OBZPU' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:7.1-7.164.
+Replacing existing blackbox module `\OBZPU' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:7.1-7.164.
 Generating RTLIL representation for module `\OBZPU'.
-Replacing existing blackbox module `\OBZPD' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:8.1-8.164.
+Replacing existing blackbox module `\OBZPD' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:8.1-8.164.
 Generating RTLIL representation for module `\OBZPD'.
-Replacing existing blackbox module `\OBCO' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:9.1-9.90.
+Replacing existing blackbox module `\OBCO' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:9.1-9.90.
 Generating RTLIL representation for module `\OBCO'.
-Replacing existing blackbox module `\BB' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:10.1-10.179.
+Replacing existing blackbox module `\BB' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:10.1-10.179.
 Generating RTLIL representation for module `\BB'.
-Replacing existing blackbox module `\BBPU' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:11.1-11.179.
+Replacing existing blackbox module `\BBPU' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:11.1-11.179.
 Generating RTLIL representation for module `\BBPU'.
-Replacing existing blackbox module `\BBPD' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:12.1-12.179.
+Replacing existing blackbox module `\BBPD' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:12.1-12.179.
 Generating RTLIL representation for module `\BBPD'.
-Replacing existing blackbox module `\ILVDS' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:13.1-13.139.
+Replacing existing blackbox module `\ILVDS' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:13.1-13.139.
 Generating RTLIL representation for module `\ILVDS'.
-Replacing existing blackbox module `\OLVDS' at /root/oss/lib/../share/yosys/lattice/cells_io.vh:14.1-14.146.
+Replacing existing blackbox module `\OLVDS' at /workspaces/yosys-clean/build/share/lattice/cells_io.vh:14.1-14.146.
 Generating RTLIL representation for module `\OLVDS'.
 Successfully finished Verilog frontend.
 
-12.2. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/cells_bb_ecp5.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/cells_bb_ecp5.v' to AST representation.
+12.2. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/cells_bb_ecp5.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/cells_bb_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\GSR'.
 Generating RTLIL representation for module `\PUR'.
 Generating RTLIL representation for module `\SGSR'.
@@ -1223,8 +1223,8 @@ Removed 0 unused cells and 3 unused wires.
 
 12.19. Executing TECHMAP pass (map to technology primitives).
 
-12.19.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/cmp2lut.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/cmp2lut.v' to AST representation.
+12.19.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/cmp2lut.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/cmp2lut.v' to AST representation.
 Generating RTLIL representation for module `\_90_lut_cmp_'.
 Successfully finished Verilog frontend.
 
@@ -1243,8 +1243,8 @@ Removed 0 unused cells and 3 unused wires.
 
 12.22. Executing TECHMAP pass (map to technology primitives).
 
-12.22.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/mul2dsp.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/mul2dsp.v' to AST representation.
+12.22.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/mul2dsp.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/mul2dsp.v' to AST representation.
 Generating RTLIL representation for module `\_80_mul'.
 Generating RTLIL representation for module `\_90_soft_mul'.
 Successfully finished Verilog frontend.
@@ -1255,8 +1255,8 @@ No more expansions possible.
 
 12.23. Executing TECHMAP pass (map to technology primitives).
 
-12.23.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/dsp_map_18x18.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/dsp_map_18x18.v' to AST representation.
+12.23.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/dsp_map_18x18.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/dsp_map_18x18.v' to AST representation.
 Generating RTLIL representation for module `$__MUL18X18'.
 Successfully finished Verilog frontend.
 
@@ -1365,13 +1365,13 @@ Finding unused cells or wires in module \ulx3s_top..
 
 12.29. Executing TECHMAP pass (map to technology primitives).
 
-12.29.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/lutrams_map_trellis.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/lutrams_map_trellis.v' to AST representation.
+12.29.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/lutrams_map_trellis.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/lutrams_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$__TRELLIS_DPR16X4_'.
 Successfully finished Verilog frontend.
 
-12.29.2. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/brams_map_16kd.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/brams_map_16kd.v' to AST representation.
+12.29.2. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/brams_map_16kd.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/brams_map_16kd.v' to AST representation.
 Generating RTLIL representation for module `$__DP16KD_'.
 Generating RTLIL representation for module `$__PDPW16KD_'.
 Successfully finished Verilog frontend.
@@ -1516,8 +1516,8 @@ Optimizing module ulx3s_top.
 
 12.33. Executing TECHMAP pass (map to technology primitives).
 
-12.33.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/techmap.v' to AST representation.
+12.33.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/techmap.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -1545,8 +1545,8 @@ Generating RTLIL representation for module `$connect'.
 Generating RTLIL representation for module `$input_port'.
 Successfully finished Verilog frontend.
 
-12.33.2. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v' to AST representation.
+12.33.2. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/arith_map_ccu2c.v' to AST representation.
 Generating RTLIL representation for module `\_80_ccu2c_alu'.
 Successfully finished Verilog frontend.
 
@@ -1695,8 +1695,8 @@ Removed a total of 84 cells.
 
 12.38. Executing TECHMAP pass (map to technology primitives).
 
-12.38.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+12.38.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/cells_map_trellis.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -1799,8 +1799,8 @@ Found and reported 0 problems.
 
 12.45. Executing TECHMAP pass (map to technology primitives).
 
-12.45.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/latches_map.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/latches_map.v' to AST representation.
+12.45.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/latches_map.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/latches_map.v' to AST representation.
 Generating RTLIL representation for module `$_DLATCH_N_'.
 Generating RTLIL representation for module `$_DLATCH_P_'.
 Successfully finished Verilog frontend.
@@ -1823,8 +1823,8 @@ Found 0 SCCs.
 
 12.46.5. Executing TECHMAP pass (map to technology primitives).
 
-12.46.5.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/techmap.v' to AST representation.
+12.46.5.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/techmap.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -1882,16 +1882,16 @@ Removed a total of 0 cells.
 
 12.46.7. Executing TECHMAP pass (map to technology primitives).
 
-12.46.7.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/abc9_map.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/abc9_map.v' to AST representation.
+12.46.7.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/abc9_map.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/abc9_map.v' to AST representation.
 Successfully finished Verilog frontend.
 
 12.46.7.2. Continuing TECHMAP pass.
 No more expansions possible.
 <suppressed ~2 debug messages>
 
-12.46.8. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/abc9_model.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/abc9_model.v' to AST representation.
+12.46.8. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/abc9_model.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/abc9_model.v' to AST representation.
 Generating RTLIL representation for module `$__ABC9_DELAY'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Generating RTLIL representation for module `$__DFF_N__$abc9_flop'.
@@ -1908,8 +1908,8 @@ Successfully finished Verilog frontend.
 
 12.46.12. Executing TECHMAP pass (map to technology primitives).
 
-12.46.12.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/techmap.v' to AST representation.
+12.46.12.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/techmap.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -2077,7 +2077,7 @@ ABC: P:  Del = 2605.00.  Ar =     694.0.  Edge =     2006.  Cut =    41222.  T =
 ABC: F:  Del = 2605.00.  Ar =     612.0.  Edge =     1977.  Cut =    40210.  T =     0.01 sec
 ABC: A:  Del = 2605.00.  Ar =     612.0.  Edge =     1931.  Cut =    39578.  T =     0.01 sec
 ABC: A:  Del = 2605.00.  Ar =     611.0.  Edge =     1928.  Cut =    39794.  T =     0.01 sec
-ABC: Total time =     0.04 sec
+ABC: Total time =     0.03 sec
 ABC: + &write -n <abc-temp-dir>/output.aig 
 ABC: + &mfs 
 ABC: + &ps -l 
@@ -2088,7 +2088,7 @@ ABC: + &write -n <abc-temp-dir>/output.aig
 ABC: + &verify 
 ABC: Networks are equivalent.  Time =     0.05 sec
 ABC: + time 
-ABC: elapse: 0.17 seconds, total: 0.17 seconds
+ABC: elapse: 0.16 seconds, total: 0.16 seconds
 
 12.46.15.6. Executing AIGER frontend.
 <suppressed ~10 debug messages>
@@ -2104,8 +2104,8 @@ Removing temp directory.
 
 12.46.16. Executing TECHMAP pass (map to technology primitives).
 
-12.46.16.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/abc9_unmap.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/abc9_unmap.v' to AST representation.
+12.46.16.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/abc9_unmap.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/abc9_unmap.v' to AST representation.
 Generating RTLIL representation for module `$__DFF_x__$abc9_flop'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Successfully finished Verilog frontend.
@@ -2118,8 +2118,8 @@ Removed 160 unused cells and 9280 unused wires.
 
 12.47. Executing TECHMAP pass (map to technology primitives).
 
-12.47.1. Executing Verilog-2005 frontend: /root/oss/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/root/oss/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+12.47.1. Executing Verilog-2005 frontend: /workspaces/yosys-clean/build/share/lattice/cells_map_trellis.v
+Parsing Verilog input from `/workspaces/yosys-clean/build/share/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -2393,6 +2393,6 @@ Found and reported 0 problems.
 
 13. Executing JSON backend.
 
-End of script. Logfile hash: bd83122aed, time: 1.55s, user: 1.20s, system: 0.17s, MEM: 60.54 MB peak
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
-Time spent: 21% 28x read_verilog (0 sec), 12% 1x abc9_exe (0 sec), ...
+End of script. Logfile hash: 13d1b9a9c8, time: 1.42s, user: 1.10s, system: 0.15s, MEM: 62.34 MB peak
+Yosys 0.67+94 (git sha1 7defa5186, Release, GNU /usr/bin/c++ 13.3.0)
+Time spent: 19% 28x read_verilog (0 sec), 13% 1x abc9_exe (0 sec), ...

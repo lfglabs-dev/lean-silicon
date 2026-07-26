@@ -7,7 +7,7 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `a14973063fe223457d79dc465c51403cae3d6d55`
+- Artefact source revision: `a11c521a0a09168ff91a0ffcf0aa3fd5787f8271`
   (clean tree at the point provenance was recorded). Both source manifests record
   this full object ID, including every RTL, constraint, recipe and build-support
   input. The ID is historical context only: a squash may legitimately make this
@@ -46,7 +46,7 @@
 ### Toolchain (pinned OSS CAD Suite 2026-07-25)
 Reproduced verbatim in `results/ulx3s-smoke-uart-20260725/tool_versions.txt`:
 ```
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+Yosys 0.67+94 (git sha1 7defa5186, Release, GNU /usr/bin/c++ 13.3.0)
 "nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.10-100-gfb95bb8e)
 Project Trellis ecppack Version 1.4-79-g56bb170
 ```
