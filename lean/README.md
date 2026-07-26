@@ -21,10 +21,13 @@ Modules:
 - `CheckedIndex.lean` — executable `u32`-bounded host-index addition plus
   success, overflow, local-address, and next-PC lemmas for the strict scalar
   profile. It intentionally does not refine the unmerged full-core RTL.
-- `Memory.lean` — write-once memory success, conflict, idempotence, and
+- `Memory.lean` — 128-bit write-once memory success, conflict, idempotence, and
   different-address commutation lemmas.
 - `Deref.lean` — faithful simplified `DEREF Cell` reconciliation: equality,
   conflict, either-direction fill, and deferred both-unwritten behavior.
+- `ControlPrimitives.lean` — strict-host pure semantics for checked signed
+  DEREF address preparation and Cell/Pc/Fp effects, fetch-free JUMP control
+  updates, and host-proposed GF(2^128) inverse-witness acceptance.
 - `ISA.lean` — simplified XOR/MUL/SET/JUMP transition refinement; hardware MUL
   uses the serial implementation while the specification uses the independent
   polynomial implementation.
