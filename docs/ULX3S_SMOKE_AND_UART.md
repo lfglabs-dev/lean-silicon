@@ -7,7 +7,7 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `c7fa2de2ee1ecb84b653a4334932b6eba4b843ec`
+- Artefact source revision: `e2f802e4667675e8cc22f37b407e8913097db5aa`
   (clean tree at the point provenance was recorded). Both source manifests record
   this full object ID, including every RTL, constraint, recipe and build-support
   input. The ID is historical context only: a squash may legitimately make this
@@ -221,7 +221,8 @@ All bytes traverse ui_in/uo_out/uio_* ready/valid. No wide bypass.
 
 ## Artefact manifest (local)
 Every file listed below is present in the committed results directory. Verify with
-`cd results/ulx3s-smoke-uart-20260725 && sha256sum -c SHA256SUMS && sha256sum -c SHA256SUMS_bridge.txt`.
+`cd results/ulx3s-smoke-uart-20260725 && sha256sum -c SHA256SUMS && sha256sum -c SHA256SUMS_bridge.txt` on Linux, or
+`cd results/ulx3s-smoke-uart-20260725 && shasum -a 256 -c SHA256SUMS && shasum -a 256 -c SHA256SUMS_bridge.txt` on stock macOS.
 ```
 results/ulx3s-smoke-uart-20260725/
   SHA256SUMS               # ulx3s_smoke.bit, smoke.config, smoke.svf
