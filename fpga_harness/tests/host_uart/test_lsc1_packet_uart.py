@@ -10,6 +10,7 @@ from fpga_harness.host.lsc1_packet_uart import (
     PacketSerialDriver,
     PacketTransportError,
     _instruction_frame,
+    _validate_fresh_status,
     _validate_instruction_result,
     _validate_retired,
     _validate_capabilities,
@@ -107,6 +108,15 @@ class PacketSerialDriverTests(unittest.TestCase):
         PacketSerialDriver(transport).abort()
         self.assertEqual(transport.breaks, 1)
 
+    def test_uart_break_is_bounded(self) -> None:
+        transport = FakeTransport(b"")
+        blocker = threading.Event()
+        transport.send_break = lambda duration: blocker.wait()
+        started = time.monotonic()
+        with self.assertRaisesRegex(PacketTransportError, "abort deadline"):
+            PacketSerialDriver(transport, timeout=0.02).abort()
+        self.assertLess(time.monotonic() - started, 0.2)
+
     def test_instruction_builders_use_independent_field_oracles(self) -> None:
         for operation, expected in (("set", 7), ("xor", 3 ^ 5),
                                     ("mul", protocol.field_mul(3, 5))):
@@ -157,6 +167,17 @@ class PacketSerialDriverTests(unittest.TestCase):
             with self.assertRaises(PacketTransportError):
                 _validate_retired(
                     protocol.ResponseFrame(protocol.Status.RETIRED, changed), args
+                )
+
+    def test_fresh_status_rejects_reused_committed_endpoint(self) -> None:
+        fresh = bytes(20)
+        _validate_fresh_status(protocol.ResponseFrame(protocol.Status.INFO, fresh))
+        for offset, value in ((0, 1), (1, 1), (6, 1), (11, 1), (15, 1), (19, 1)):
+            changed = bytearray(fresh)
+            changed[offset] = value
+            with self.subTest(offset=offset), self.assertRaises(PacketTransportError):
+                _validate_fresh_status(
+                    protocol.ResponseFrame(protocol.Status.INFO, bytes(changed))
                 )
 
 

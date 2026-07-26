@@ -156,9 +156,14 @@ class PacketSerialDriver:
         send_break = getattr(self.transport, "send_break", None)
         if not callable(send_break):
             raise PacketTransportError("transport cannot issue the out-of-band UART BREAK abort")
-        send_break(duration=0.002)
-        time.sleep(0.003)
-        self.drain(time.monotonic() + self.timeout)
+        deadline = time.monotonic() + self.timeout
+        self._bounded(
+            lambda: send_break(duration=0.002),
+            deadline,
+            "packet abort deadline expired while issuing UART BREAK",
+        )
+        time.sleep(min(0.003, self._remaining(deadline)))
+        self.drain(deadline)
 
     def exchange_encoded(self, request: bytes) -> protocol.ResponseFrame:
         """Exchange an already encoded frame, including adversarial test bytes."""
@@ -292,11 +297,34 @@ def _validate_retired(reply: protocol.ResponseFrame, args: argparse.Namespace) -
         )
 
 
+def _validate_fresh_status(reply: protocol.ResponseFrame) -> None:
+    if reply.status is not protocol.Status.INFO or len(reply.payload) != 20:
+        raise PacketTransportError("STATUS_QUERY did not return the 20-byte INFO schema")
+    transaction_state = reply.payload[0]
+    staged_txn = int.from_bytes(reply.payload[1:5], "little")
+    retire_seq = int.from_bytes(reply.payload[6:10], "little")
+    committed_pc = int.from_bytes(reply.payload[11:15], "little")
+    committed_fp = int.from_bytes(reply.payload[15:19], "little")
+    state_valid = reply.payload[19]
+    if (
+        transaction_state != 0
+        or staged_txn != 0
+        or retire_seq != 0
+        or committed_pc != 0
+        or committed_fp != 0
+        or state_valid != 0
+    ):
+        raise PacketTransportError(
+            "endpoint is not in fresh reset state; reset the hardware before running"
+        )
+
+
 def _run(args: argparse.Namespace) -> dict:
     transport = _physical_transport(args.port, args.baud, args.timeout)
     try:
         driver = PacketSerialDriver(transport, args.timeout, args.baud)
         driver.abort()
+        _validate_fresh_status(driver.exchange(protocol.build_status_query()))
         if args.operation == "program":
             program = load_program(args.program_artifact)
             runtime = PhysicalHostRuntime(program, driver)
@@ -324,8 +352,7 @@ def _run(args: argparse.Namespace) -> dict:
         _validate_capabilities(negotiate.payload, protocol.Profile.INTERPRETER_COMPAT)
         if args.operation == "status":
             reply = driver.exchange(protocol.build_status_query())
-            if reply.status is not protocol.Status.INFO or len(reply.payload) != 20:
-                raise PacketTransportError("STATUS_QUERY did not return the 20-byte INFO schema")
+            _validate_fresh_status(reply)
             result = {"status": reply.status.name, "payload_hex": reply.payload.hex()}
         else:
             frame, expected = _instruction_frame(args)
