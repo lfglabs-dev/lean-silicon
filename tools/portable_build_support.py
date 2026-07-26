@@ -40,6 +40,7 @@ def write_manifest(directory: Path, names: list[str], output: str) -> None:
 
 def check_manifest(directory: Path, manifest: str) -> None:
     failed = False
+    entries = 0
     for line in (directory / manifest).read_text(encoding="ascii").splitlines():
         try:
             expected, name = line.split("  ", 1)
@@ -47,6 +48,7 @@ def check_manifest(directory: Path, manifest: str) -> None:
                 raise ValueError
             if Path(name).name != name or not name:
                 raise ValueError
+            entries += 1
             actual = digest(directory / name)
         except (OSError, ValueError):
             print(f"{line}: FAILED", file=sys.stderr)
@@ -57,6 +59,9 @@ def check_manifest(directory: Path, manifest: str) -> None:
         else:
             print(f"{name}: FAILED", file=sys.stderr)
             failed = True
+    if entries == 0:
+        print(f"{manifest}: FAILED (no well-formed checksum entries)", file=sys.stderr)
+        failed = True
     if failed:
         raise SystemExit(1)
 

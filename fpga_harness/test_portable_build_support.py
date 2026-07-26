@@ -41,6 +41,26 @@ class PortableBuildSupportTest(unittest.TestCase):
         self.assertNotEqual(broken.returncode, 0)
         self.assertIn("artifact.bit: FAILED", broken.stderr)
 
+    def test_check_rejects_an_empty_manifest(self) -> None:
+        archive = self.work / "archive"
+        archive.mkdir()
+        (archive / "SHA256SUMS").write_text("", encoding="ascii")
+
+        result = self.command("check", str(archive), "SHA256SUMS")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SHA256SUMS: FAILED (no well-formed checksum entries)", result.stderr)
+
+    def test_check_rejects_manifest_with_no_well_formed_entries(self) -> None:
+        archive = self.work / "archive"
+        archive.mkdir()
+        (archive / "SHA256SUMS").write_text("not a checksum entry\n", encoding="ascii")
+
+        result = self.command("check", str(archive), "SHA256SUMS")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SHA256SUMS: FAILED (no well-formed checksum entries)", result.stderr)
+
     def test_lock_is_cross_process_and_released_after_interruption(self) -> None:
         lock = self.work / "publish.lock"
         marker = self.work / "started"
