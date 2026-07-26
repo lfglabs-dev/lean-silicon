@@ -704,7 +704,7 @@ module lsc1_packet_frontend (
                             alu_start <= 1'b1;
                             compute_state <= C_FORWARD;
                             decision_deferred = 1'b1;
-                        end else if (decision_ok && frame_opcode == OP_XOR) begin
+                        end else if (decision_ok && !decision_deferred && frame_opcode == OP_XOR) begin
                             alu_operation <= OP_XOR;
                             alu_operand_a <= solved_a;
                             alu_operand_b <= solved_b;

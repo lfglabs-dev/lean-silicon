@@ -10,8 +10,8 @@
 | Host runtime, BLAKE3 | not implemented, explicit unsupported path | `host/lean_compiler_adapter.py` |
 | lean_compiler integration | artifact exported from the frozen compiler; `hints`/`main_frame`/`witness`/`trace` are `pub(crate)` upstream | `tools/lean_compiler_export.py`, `docs/HOST_RUNTIME.md` section 4 |
 | Host vs frozen Rust comparison | final memory for all 12 touched cells and all 13 cycles match; per-step upstream trace remains unavailable | `tools/host_upstream_comparison.py`, `docs/HOST_RUNTIME.md` section 5 |
-| Full scalar semantics | implemented in model, host and RTL; finite differential evidence, no refinement theorem | `sim/test_packet_frontend_rtl_differential.py` |
-| ULX3S harness bitstream | packetized arithmetic build physically exercised; scalar-opcode rebuild/validation pending | `fpga/ulx3s/build_packet_uart.sh`, `results/ulx3s-lsc1-packet-20260726/` |
+| Scalar packet subset | SET/XOR/MUL/DEREF/JUMP implemented in the executable model, host path and RTL; finite differential evidence only, with no full-scalar refinement theorem | `sim/test_packet_frontend_rtl_differential.py`, `docs/PROOF_BOUNDARIES.md` |
+| ULX3S harness bitstream | historical packetized arithmetic artefacts are documented separately; no current physical scalar-opcode validation claim | `docs/ULX3S_SMOKE_AND_UART.md` |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
 | RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |

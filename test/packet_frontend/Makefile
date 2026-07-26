@@ -7,7 +7,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim mutation clean
+.PHONY: sim mutation differential-mutation clean
 
 sim:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
@@ -58,6 +58,22 @@ mutation:
 	  fi; \
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
+
+differential-mutation:
+	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp $(RTL) "$$d/"; \
+	  sed -i.bak 's/body_index < MAX_PAYLOAD/body_index < 16'"'"'d94/' "$$d/lsc1_packet_rx.sv"; \
+	  if LSC1_RTL_DIR="$$d" python3 -m unittest sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model >"$$d/jump.out" 2>&1; then \
+	    echo "JUMP inverse payload-bound mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "AssertionError" "$$d/jump.out"; \
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak 's/decision_ok && !decision_deferred && frame_opcode == OP_XOR/decision_ok \&\& frame_opcode == OP_XOR/' "$$d/lsc1_packet_frontend.sv"; \
+	  if LSC1_RTL_DIR="$$d" python3 -m unittest sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model >"$$d/xor.out" 2>&1; then \
+	    echo "XOR deferred-decision mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "AssertionError" "$$d/xor.out"; \
+	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
 	rm -f tb_lsc1_packet_frontend.vvp

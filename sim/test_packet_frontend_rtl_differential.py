@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import random
 import shutil
 import subprocess
@@ -25,6 +26,14 @@ RTL = [
 ]
 
 
+def rtl_path(path: str) -> Path:
+    """Allow the mutation target to substitute only flattened RTL inputs."""
+    override = os.environ.get("LSC1_RTL_DIR")
+    if override and path.startswith("asic_core/rtl/"):
+        return Path(override) / Path(path).name
+    return ROOT / path
+
+
 def model_exchange(frame: protocol.RequestFrame) -> bytes:
     endpoint = protocol.Lsc1Endpoint()
     response, _ = protocol.drive(endpoint, frame.encode())
@@ -40,7 +49,7 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         cls.simulator = Path(cls.temporary.name) / "packet-vector.vvp"
         subprocess.run(
             ["iverilog", "-g2012", "-s", "tb_lsc1_packet_vector", "-o", str(cls.simulator)]
-            + [str(ROOT / path) for path in RTL],
+            + [str(rtl_path(path)) for path in RTL],
             cwd=ROOT,
             check=True,
             capture_output=True,
@@ -141,6 +150,46 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         ]
         for frame in frames:
             with self.subTest(opcode=int(frame.opcode)):
+                self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+
+    def test_adversarial_jump_inverse_and_xor_backsolve_match_model(self) -> None:
+        condition = 0xD3A5_9C71_E246_B8F0_1357_9BDF_2468_ACE1
+        inverse = 1
+        base = condition
+        exponent = (1 << 128) - 2
+        while exponent:
+            if exponent & 1:
+                inverse = protocol.field_mul(inverse, base)
+            base = protocol.field_mul(base, base)
+            exponent >>= 1
+        self.assertGreater(inverse.bit_length(), 120)
+
+        known = 0x81_0000_0000_0000_0000_0000_0000_0000_5A
+        result = 0xFE_DCBA_9876_5432_10FE_DCBA_9876_5432_10
+        frames = [
+            protocol.build_jump(
+                txn_id=0x51, pc=12, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(10, 11, 12),
+                cells=(protocol.Cell(True, condition), protocol.ABSENT, protocol.ABSENT),
+                taken=True, dest_pc=15, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, inverse),
+            ),
+            protocol.build_binary_op(
+                protocol.Opcode.XOR, txn_id=0x52, pc=0, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(1, 2, 3),
+                cells=(protocol.ABSENT, protocol.Cell(True, known), protocol.Cell(True, result)),
+            ),
+            protocol.build_binary_op(
+                protocol.Opcode.XOR, txn_id=0x53, pc=0, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(4, 5, 6),
+                cells=(protocol.Cell(True, known), protocol.ABSENT, protocol.Cell(True, result)),
+            ),
+        ]
+        for frame in frames:
+            with self.subTest(opcode=int(frame.opcode), txn=frame.payload[:4].hex()):
                 self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
 
     def test_deref_and_jump_faults_match_the_executable_model(self) -> None:
