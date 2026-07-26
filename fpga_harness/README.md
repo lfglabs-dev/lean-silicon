@@ -17,6 +17,7 @@ ULX3S bitstream or USB implementation.
 | [BOUNDARY.md](BOUNDARY.md) | Normative pin-accurate boundary and the prohibition on wide bypasses |
 | [BUILD_PLAN.md](BUILD_PLAN.md) | Ordered plan: what runs today, and the entry condition for each unimplemented stage |
 | `rtl/lean_silicon_lsc1_pins.sv` | Port-list-only pin contract; no bitstream, no handshake yet |
+| `host/mincore_program.py` | Restricted leanVM-b SET/XOR/MUL program runner |
 | `boundary_check.py` | Structural pin/no-bypass check, run by `make check` |
 | `board_detect.py` | Layered board detection that never claims data-path validation |
 | `test_boundary_check.py`, `test_board_detect.py` | Deterministic tests; no board required |
@@ -33,3 +34,20 @@ make fpga-boundary   # structural boundary check (gating)
 make fpga-harness    # deterministic unit tests, no board (gating)
 make fpga-detect     # local detection ladder, reporting only
 ```
+
+The historical MinCore candidate preserved in
+`results/fpga-lsc1-20260726/` can also be driven as a host-owned compiled
+program prefix, with each supported arithmetic instruction delegated to its
+raw UART endpoint:
+
+```sh
+make fpga-run-program FPGA_PORT=/dev/cu.usbserial-D01623
+```
+
+The runner checks STATUS first, preserves write-once VM memory on the Mac,
+checks every FPGA result against the host field oracle before committing it,
+and stops before sending an unsupported instruction. The checked-in fixture
+runs 12 SET/XOR/MUL instructions and stops at its JUMP with a `PREFIX_MATCH`
+against all 12 upstream memory cells. This remains historical evidence for one
+candidate bitstream and is not a maintained harness implementation or v1
+packet endpoint.

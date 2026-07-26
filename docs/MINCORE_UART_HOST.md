@@ -3,6 +3,29 @@
 This is a versioned diagnostic transport for the historical MinCore byte lane,
 not LSC-1 packet execution.  The host CLI is `fpga_harness/host/mincore_uart.py`.
 
+## Restricted leanVM-b program runner
+
+`fpga_harness/host/mincore_program.py` builds a deliberately restricted
+interpreter on top of this raw transport. It loads the frozen compiler artifact,
+owns `pc`, `fp`, bytecode and write-once memory on the Mac, and delegates every
+integrated `Set`, `Xor` and `Mul` arithmetic result to physical MinCore. Each
+response is checked against the host oracle before the destination cell is
+written. A conflict, missing operand or wrong hardware value changes no cell.
+
+This is not the v1 transaction endpoint: raw MinCore receives values, not cell
+addresses or scalar state. The runner therefore stops explicitly before
+`Deref`, `Jump` or `Blake3`, and cannot back-solve an absent operand. For the
+checked-in fixture it executes bytecode slots 0–11, stops at the `Jump` in slot
+12 without sending it, and compares the resulting cells 0–11 with the frozen
+upstream execution.
+
+```sh
+python3 fpga_harness/host/mincore_program.py --execute \
+  --port /dev/cu.usbserial-D01623 \
+  --artifact host/fixtures/assert_set_xor_mul.program.json \
+  --evidence results/fpga-lsc1-20260726/program-run.json
+```
+
 ## Byte API supplied to the bridge writer
 
 The host currently supports one transparent, ordered UART byte stream at an

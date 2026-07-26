@@ -1,0 +1,270 @@
+{
+  "artifact": {
+    "path": "host/fixtures/assert_set_xor_mul.program.json",
+    "sha256": "874459bdbf12b235ed93f333f5f4db176008b43c02e943d38e44fefc974c9b5a",
+    "upstream_sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+  },
+  "comparison": {
+    "compared_memory_addresses": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "hardware_prefix_steps": 12,
+    "mismatches": [],
+    "missing_upstream_addresses": [],
+    "result": "PREFIX_MATCH",
+    "upstream_cycles": 13
+  },
+  "execution_attempted": true,
+  "fp": 0,
+  "memory": [
+    "0x00000000000000000000000000000001",
+    "0x00000000000000000000000000000000",
+    "0x00000000000000000000000000000003",
+    "0x00000000000000000000000000000005",
+    "0x00000000000000000000000000000006",
+    "0x00000000000000000000000000000006",
+    "0x00000000000000000000000000000000",
+    "0x0000000000000000000000000000000f",
+    "0x0000000000000000000000000000000f",
+    "0x00000000000000000000000000000000",
+    "0x00000000000000000000000000000001",
+    "0x00000000000000000000000000008000"
+  ],
+  "pc": 12,
+  "reason": "pc 12: Jump is not supported by the seed-0 UART program runner",
+  "repo_dirty": true,
+  "repo_head": "e14902d4ca50c3c58037ad825774f0c160d74ab6",
+  "schema": "leansilicon.mincore-program-run/1",
+  "steps": [
+    {
+      "addresses": [
+        2
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000003"
+      ],
+      "kind": "Set",
+      "pc": 0,
+      "request_length": 17,
+      "request_sha256": "20208df8b9b02e3106079e973981c9b7d2def1837885758835b409a704b8a99a",
+      "response_hex": "03000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "59d5966c96af7ecad5c9d2918d6582d102b2c67f6b765ea28ac24371ab4f93be",
+      "result": "0x00000000000000000000000000000003"
+    },
+    {
+      "addresses": [
+        3
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000005"
+      ],
+      "kind": "Set",
+      "pc": 1,
+      "request_length": 17,
+      "request_sha256": "23c16c0e2bd3cc92341f8378469a1262b9940365b7e6ee758db1918b63d47bd0",
+      "response_hex": "05000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "966a28d35016032ee27b1860df4a9b16b6c007da76b2e4f94e7526e31c48959b",
+      "result": "0x00000000000000000000000000000005"
+    },
+    {
+      "addresses": [
+        2,
+        3,
+        4
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000003",
+        "0x00000000000000000000000000000005"
+      ],
+      "kind": "Xor",
+      "pc": 2,
+      "request_length": 33,
+      "request_sha256": "39aeb4cec841f9703b5d1600c1d8d2cedd19a08f66c4fec1023d27565441fdb9",
+      "response_hex": "06000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "5e9a5de4a59a7c3c9ba8846060ba77ab402e3088658aa705e1a64e796f6cd5cf",
+      "result": "0x00000000000000000000000000000006"
+    },
+    {
+      "addresses": [
+        5
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000006"
+      ],
+      "kind": "Set",
+      "pc": 3,
+      "request_length": 17,
+      "request_sha256": "9f99418614c7e90a385e37504d2a53dd60a59a09709dad2961e5be3e9156bdda",
+      "response_hex": "06000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "5e9a5de4a59a7c3c9ba8846060ba77ab402e3088658aa705e1a64e796f6cd5cf",
+      "result": "0x00000000000000000000000000000006"
+    },
+    {
+      "addresses": [
+        4,
+        5,
+        6
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000006",
+        "0x00000000000000000000000000000006"
+      ],
+      "kind": "Xor",
+      "pc": 4,
+      "request_length": 33,
+      "request_sha256": "c2d238ef89436e260faa99aad7b3f317577c1e2e72cef13b8e4e58bde0c89e7d",
+      "response_hex": "00000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "result": "0x00000000000000000000000000000000"
+    },
+    {
+      "addresses": [
+        6
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000000"
+      ],
+      "kind": "Set",
+      "pc": 5,
+      "request_length": 17,
+      "request_sha256": "6ad36d3f69c5684bd1021eeb3a8038250f424dca6d96600d2a7d22101dbd436d",
+      "response_hex": "00000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "result": "0x00000000000000000000000000000000"
+    },
+    {
+      "addresses": [
+        2,
+        3,
+        7
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000003",
+        "0x00000000000000000000000000000005"
+      ],
+      "kind": "Mul",
+      "pc": 6,
+      "request_length": 33,
+      "request_sha256": "5adc2de01fa0ed41e1492ccbf97108fa7aeb4d7a33a944f6198d53319e655070",
+      "response_hex": "0f000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "7c49374fc75f13496c5a27eb05a244bdeb7623cf396daf34fd7f9fbe5caed00e",
+      "result": "0x0000000000000000000000000000000f"
+    },
+    {
+      "addresses": [
+        8
+      ],
+      "inputs": [
+        "0x0000000000000000000000000000000f"
+      ],
+      "kind": "Set",
+      "pc": 7,
+      "request_length": 17,
+      "request_sha256": "3e63201f23347dda861efacede7bfaf2ffd56a2922fea66b9648f4418f7a2e4f",
+      "response_hex": "0f000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "7c49374fc75f13496c5a27eb05a244bdeb7623cf396daf34fd7f9fbe5caed00e",
+      "result": "0x0000000000000000000000000000000f"
+    },
+    {
+      "addresses": [
+        7,
+        8,
+        9
+      ],
+      "inputs": [
+        "0x0000000000000000000000000000000f",
+        "0x0000000000000000000000000000000f"
+      ],
+      "kind": "Xor",
+      "pc": 8,
+      "request_length": 33,
+      "request_sha256": "02de6694ac8ffcf978bf2f68898cc3164d3b933070f7412d40ea790267c45377",
+      "response_hex": "00000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "result": "0x00000000000000000000000000000000"
+    },
+    {
+      "addresses": [
+        9
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000000"
+      ],
+      "kind": "Set",
+      "pc": 9,
+      "request_length": 17,
+      "request_sha256": "6ad36d3f69c5684bd1021eeb3a8038250f424dca6d96600d2a7d22101dbd436d",
+      "response_hex": "00000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "result": "0x00000000000000000000000000000000"
+    },
+    {
+      "addresses": [
+        10
+      ],
+      "inputs": [
+        "0x00000000000000000000000000000001"
+      ],
+      "kind": "Set",
+      "pc": 10,
+      "request_length": 17,
+      "request_sha256": "6848e970aa15ec6d43883d292d93b9d581e118f518bb0c9c6dea010a8995cbc7",
+      "response_hex": "01000000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "4cbbd8ca5215b8d161aec181a74b694f4e24b001d5b081dc0030ed797a8973e0",
+      "result": "0x00000000000000000000000000000001"
+    },
+    {
+      "addresses": [
+        11
+      ],
+      "inputs": [
+        "0x00000000000000000000000000008000"
+      ],
+      "kind": "Set",
+      "pc": 11,
+      "request_length": 17,
+      "request_sha256": "23e2bb2a0673d2e0f960a713515d23326c311d8ab2d354ae62e78a9bcafcafc0",
+      "response_hex": "00800000000000000000000000000000",
+      "response_length": 16,
+      "response_sha256": "91ca72ed8c6aa8ff1a57899318ad792a0fc24a71ce445dd886a32770ef19ef1e",
+      "result": "0x00000000000000000000000000008000"
+    }
+  ],
+  "terminal": "unsupported",
+  "written": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ]
+}

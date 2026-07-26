@@ -48,6 +48,21 @@ are checked by `fpga_harness/test_fpga_lsc1_evidence.py` against decoded bytes
 and a frozen oracle. `EVIDENCE_SHA256SUMS` authenticates the verbatim records
 and candidate patch.
 
+## Compiled-program prefix
+
+`program-run.json` records a later physical run of the frozen compiler artifact
+`host/fixtures/assert_set_xor_mul.program.json`. The Mac maintained bytecode,
+`pc`, `fp` and write-once memory while the FPGA executed, in order, 12
+instructions: eight SET, three XOR and one MUL. Every returned value matched
+the independent host oracle before its destination cell was committed.
+
+The run stopped explicitly at bytecode slot 12 because it is a JUMP, which the
+seed-0 raw UART endpoint cannot execute. Cells 0 through 11 exactly match the
+12 cells recorded by the frozen upstream leanVM-b execution: comparison result
+`PREFIX_MATCH`, with no mismatch and no missing upstream address. The record
+omits the serial-port name and honestly carries `repo_dirty: true` because the
+adapter was exercised before its follow-up commit.
+
 ## Independent controller replay
 
 The controller replay on the integrated PR #19 head used no board:
