@@ -7,7 +7,7 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `e2f802e4667675e8cc22f37b407e8913097db5aa`
+- Artefact source revision: `0112ffb68c6ed45168971027c7156a02b339efb5`
   (clean tree at the point provenance was recorded). Both source manifests record
   this full object ID, including every RTL, constraint, recipe and build-support
   input. The ID is historical context only: a squash may legitimately make this
