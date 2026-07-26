@@ -82,12 +82,25 @@ def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> byt
     """Drain up to N stale bytes; used between transactions and after reset."""
     out = bytearray()
     deadline = time.time() + settle
-    while len(out) < max_bytes and time.time() < deadline:
-        waiting = ser.in_waiting
-        if not waiting:
-            time.sleep(0.001)
-            continue
-        out.extend(ser.read(min(waiting, max_bytes - len(out))))
+    restore = getattr(ser, "timeout", None)
+    try:
+        while len(out) < max_bytes:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            waiting = ser.in_waiting
+            if not waiting:
+                time.sleep(min(0.001, remaining))
+                continue
+            # in_waiting is only a snapshot. A disconnect or another reader can
+            # make the following read block despite the positive count, so bind
+            # that read to the drain operation's remaining settle budget.
+            if hasattr(ser, "timeout"):
+                ser.timeout = remaining
+            out.extend(ser.read(min(waiting, max_bytes - len(out))))
+    finally:
+        if restore is not None:
+            ser.timeout = restore
     return bytes(out)
 
 

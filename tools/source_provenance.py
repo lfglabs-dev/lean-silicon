@@ -24,13 +24,45 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def verify(manifest: Path) -> int:
+    """Revalidate recorded inputs immediately before artifact publication."""
+    failed = False
+    entries = 0
+    for line in manifest.read_text(encoding="ascii").splitlines():
+        parts = line.split()
+        if len(parts) != 2 or len(parts[0]) != 64:
+            continue
+        expected, rel = parts
+        if any(char not in "0123456789abcdef" for char in expected):
+            continue
+        path = (ROOT / rel).resolve()
+        try:
+            path.relative_to(ROOT)
+            actual = sha256(path.read_bytes()).hexdigest()
+        except (OSError, ValueError):
+            actual = ""
+        entries += 1
+        if actual != expected:
+            print(f"{rel}: CHANGED DURING BUILD", file=sys.stderr)
+            failed = True
+    if entries == 0:
+        print(f"{manifest}: no source digest entries", file=sys.stderr)
+        failed = True
+    return 1 if failed else 0
+
+
 def _git(*args: str) -> str:
     return check_output(["git", *args], cwd=ROOT, stderr=DEVNULL).decode().strip()
 
 
 def main(argv: list[str]) -> int:
+    if len(argv) == 2 and argv[0] == "--check":
+        return verify(Path(argv[1]))
     if len(argv) < 2:
-        raise SystemExit("usage: source_provenance.py <output-file> <source>...")
+        raise SystemExit(
+            "usage: source_provenance.py <output-file> <source>... | "
+            "source_provenance.py --check <manifest>"
+        )
     out, sources = Path(argv[0]), argv[1:]
 
     try:

@@ -121,6 +121,24 @@ class DrainTest(unittest.TestCase):
         ):
             self.assertEqual(ulx3s_uart.drain(IdleSerial()), b"")
 
+    def test_available_byte_read_is_bounded_by_settle_deadline(self):
+        class StaleCountSerial:
+            timeout = 2.0
+            in_waiting = 1
+
+            def read(self, _n: int = 1) -> bytes:
+                self.observed_timeout = self.timeout
+                return b""
+
+        fake = StaleCountSerial()
+        with mock.patch.object(
+            ulx3s_uart.time, "time", side_effect=[10.0, 10.0, 10.051]
+        ):
+            self.assertEqual(ulx3s_uart.drain(fake, settle=0.05), b"")
+        self.assertGreater(fake.observed_timeout, 0)
+        self.assertAlmostEqual(fake.observed_timeout, 0.05)
+        self.assertEqual(fake.timeout, 2.0)
+
 
 class MulExitStatusTest(unittest.TestCase):
     def test_correct_product_succeeds(self):
