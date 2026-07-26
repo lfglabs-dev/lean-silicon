@@ -276,6 +276,22 @@ def _validate_instruction_result(decoded: dict, args: argparse.Namespace, expect
         )
 
 
+def _validate_retired(reply: protocol.ResponseFrame, args: argparse.Namespace) -> None:
+    if reply.status is not protocol.Status.RETIRED:
+        raise PacketTransportError(f"RETIRE returned {reply.status.name}")
+    if len(reply.payload) != 16:
+        raise PacketTransportError("RETIRED did not return the 16-byte schema")
+    retired_txn = int.from_bytes(reply.payload[0:4], "little")
+    committed_pc = int.from_bytes(reply.payload[8:12], "little")
+    committed_fp = int.from_bytes(reply.payload[12:16], "little")
+    if (retired_txn, committed_pc, committed_fp) != (
+        args.txn_id, args.pc + 1, args.fp,
+    ):
+        raise PacketTransportError(
+            "RETIRED acknowledgement does not match the requested scalar transition"
+        )
+
+
 def _run(args: argparse.Namespace) -> dict:
     transport = _physical_transport(args.port, args.baud, args.timeout)
     try:
@@ -321,8 +337,7 @@ def _run(args: argparse.Namespace) -> dict:
             retired = driver.exchange(protocol.build_retire(
                 txn_id=args.txn_id, result_crc=protocol.crc32(reply.payload)
             ))
-            if retired.status is not protocol.Status.RETIRED:
-                raise PacketTransportError(f"RETIRE returned {retired.status.name}")
+            _validate_retired(retired, args)
             result = {
                 "status": reply.status.name,
                 "retire_status": retired.status.name,

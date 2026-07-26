@@ -11,6 +11,7 @@ from fpga_harness.host.lsc1_packet_uart import (
     PacketTransportError,
     _instruction_frame,
     _validate_instruction_result,
+    _validate_retired,
     _validate_capabilities,
     protocol,
 )
@@ -137,6 +138,26 @@ class PacketSerialDriverTests(unittest.TestCase):
         ):
             with self.subTest(field=field), self.assertRaises(PacketTransportError):
                 _validate_instruction_result(valid | {field: bad_value}, args, expected)
+
+    def test_retired_validation_binds_transaction_and_committed_state(self) -> None:
+        args = argparse.Namespace(txn_id=9, pc=7, fp=11)
+        payload = (
+            (9).to_bytes(4, "little")
+            + (1).to_bytes(4, "little")
+            + (8).to_bytes(4, "little")
+            + (11).to_bytes(4, "little")
+        )
+        _validate_retired(protocol.ResponseFrame(protocol.Status.RETIRED, payload), args)
+        for changed in (
+            payload[:-1],
+            (10).to_bytes(4, "little") + payload[4:],
+            payload[:8] + (9).to_bytes(4, "little") + payload[12:],
+            payload[:12] + (12).to_bytes(4, "little"),
+        ):
+            with self.assertRaises(PacketTransportError):
+                _validate_retired(
+                    protocol.ResponseFrame(protocol.Status.RETIRED, changed), args
+                )
 
 
 if __name__ == "__main__":
