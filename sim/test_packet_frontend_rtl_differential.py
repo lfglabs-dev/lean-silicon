@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -32,6 +33,8 @@ def model_exchange(frame: protocol.RequestFrame) -> bytes:
 class PacketFrontendRtlDifferentialTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        if shutil.which("iverilog") is None or shutil.which("vvp") is None:
+            raise unittest.SkipTest("Icarus Verilog is exercised by the systemverilog CI job")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "packet-vector.vvp"
         subprocess.run(

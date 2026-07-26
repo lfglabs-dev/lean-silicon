@@ -1,3 +1,5 @@
+PYTHON ?= python3
+
 PROJECT_SOURCES = \
   ../asic_core/rtl/gf2n_mul_bitstream.sv \
   ../asic_core/rtl/gf128_mul_bitstream.sv \
@@ -14,9 +16,9 @@ BRIDGE_SOURCES = \
   ../fpga/ulx3s/uart_tx.sv \
   ../fpga/ulx3s/uart_bridge.sv
 
-.PHONY: sim stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation clean
+.PHONY: sim stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation packet-rtl-differential clean
 
-sim: stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation
+sim: stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation packet-rtl-differential
 
 stream-alu:
 	iverilog -g2012 -Wall -s tb_stream_alu -o tb_stream_alu.vvp $(PROJECT_SOURCES) tb_stream_alu.sv
@@ -35,6 +37,9 @@ packet-frontend-sim:
 
 packet-frontend-mutation:
 	$(MAKE) -C packet_frontend mutation
+
+packet-rtl-differential:
+	cd .. && $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential -v
 
 clean:
 	rm -f tb_stream_alu.vvp tb_uart_bridge.vvp tb_packet_uart_bridge.vvp
