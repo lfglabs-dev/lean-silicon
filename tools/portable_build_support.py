@@ -65,11 +65,22 @@ def locked(lock_path: Path, command: list[str]) -> int:
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        child = subprocess.Popen(command, env=os.environ | {"ULX3S_BUILD_LOCKED": "1"})
+        # Start in its own session so the shell and its toolchain children
+        # (yosys, nextpnr, ecppack) form a distinct process group.  This lets
+        # forwarded cancellation reach grandchildren that the shell would
+        # otherwise leave running while it defers its own trap.
+        child = subprocess.Popen(
+            command,
+            env=os.environ | {"ULX3S_BUILD_LOCKED": "1"},
+            start_new_session=True,
+        )
 
         def forward(signum: int, _frame: object) -> None:
             if child.poll() is None:
-                child.send_signal(signum)
+                try:
+                    os.killpg(child.pid, signum)
+                except ProcessLookupError:
+                    pass
 
         signal.signal(signal.SIGINT, forward)
         signal.signal(signal.SIGTERM, forward)

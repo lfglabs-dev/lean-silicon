@@ -32,7 +32,7 @@ b81b89574ed84c67b64ae7b56001bf9d03b9d66be2bed7977d8adc715481eafb  ./docs/PROTOCO
 02e8a5b52b341390f008ff8bc62f5d2d982b23adb8b26cb73ef3b07dddeed807  ./docs/SOURCE_AUDIT.md
 1ce879d29924a6c8d1c507c6233879428e25b204c6645493b71c401e8a7fcc49  ./docs/STATUS.md
 9c2582c40fbd9a4e2b163abed784f5a6c82b2cb3136c37a4123a0ba6584f6136  ./docs/TAPEOUT.md
-ca8d66492ca9461942af18267a4838926f3c99e254eb3b22d08add38d81442bd  ./docs/ULX3S_SMOKE_AND_UART.md
+fa0cf76d2f1be51c7975144ee47a945dff162caec6af8a3858f66cb313dd493a  ./docs/ULX3S_SMOKE_AND_UART.md
 a08743f1a3cf4af68683cdaac5b00ca624ac875dbeef9f78614bda7297579df8  ./docs/USE_CASES.md
 20aa56b3f69c28c9639e9bd16b8239f0ef511d8fded9340185814b3257e25f01  ./docs/VALIDATION.md
 c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semantics/reference/README.md
@@ -275,8 +275,8 @@ fdaaf4cb8aa31e55146a860f3abb039cfcd5e4d712f07aedb1406944569e6221  ./results/ulx3
 13c3ff3ee139afcfb34d3d5f3c34d0b707853e1d27c8d90c84c405a8f79e2251  ./results/ulx3s-smoke-uart-20260725/smoke.svf
 a5d633cdaf0370bafb94774b77420516867808f7e33948ef95f3894693fe6ad4  ./results/ulx3s-smoke-uart-20260725/timing.txt
 105e52f2a9ef1fed048e75dd0ba9ada59ff027e1cf1656b37c740dcb6b8e0908  ./results/ulx3s-smoke-uart-20260725/timing_uart.txt
-f9b29a035613690ad4621d87338c116492022265f37e933753adb3579c9be11e  ./results/ulx3s-smoke-uart-20260725/tool_versions.txt
-81ce01535d6e52dd3bdd8961d6154b3b4bdd367220eab1859c10644ffbf1f180  ./results/ulx3s-smoke-uart-20260725/tool_versions_uart.txt
+9eeef8a84a704da1ebaa95bb73969e2e784d9afaa417db1565a7abe41eee5e06  ./results/ulx3s-smoke-uart-20260725/tool_versions.txt
+c1ad4fa749c8eb8f7cccbe0c64c9ba787911fd60d6987017f07ceca9923a31c8  ./results/ulx3s-smoke-uart-20260725/tool_versions_uart.txt
 7272b0d8f5ccbe5de328aa1f0d1461e6e35b58cc4a2e132e5024aedeed08c187  ./results/ulx3s-smoke-uart-20260725/ulx3s_bridge.bit
 eb3d81acee7562549af79f6c6d03d713c86f5a46a0892b6fd056f2c073cb45d2  ./results/ulx3s-smoke-uart-20260725/ulx3s_smoke.bit
 8972d87123e82539a632ba3bd4b462a73cbe7323c9e8a169e36c9da2e489f9b8  ./results/ulx3s-smoke-uart-20260725/yosys.log
@@ -305,7 +305,7 @@ a3574d9d454d7b7580d2dcdc2801013a7648c48358a3f4a90a5c876ae9791331  ./src/user_con
 d0c03fb87fe5f08fbec435d485e4dd14c96d164e90b0e8b0ed8980cf27e8c077  ./test/tb_m2_scalar_controller.sv
 b78b938f396ae20d1fdccde99281430778a879808e60a35788b6fe044151329c  ./test/tb_stream_alu.sv
 1cdfef46a813dd43f5700b5e3ed7ec0bfb07e07403c82f8ac8fa4fb4dfbd0d55  ./test/tb_uart_bridge.sv
-bf3a91b99e93d8c6f192b8e50a77027172770bc74a9c237d24b33b458e4b375d  ./tools/atomic_publish.py
+e401ecd06a20a3f1e54de6e47ff6e12f61064bd2b9278517fe3d0db97933bd8a  ./tools/atomic_publish.py
 008f814b114282389ae48ff82e4412fe455cbe8c377cf71e534862d490d3cb79  ./tools/design_space.csv
 54dca27c0adde9d13728952216a7cb7027cabacb4742e5bb26f063613c05c557  ./tools/design_space.md
 63693e361330234c6ba3cbfff282f808cc9ffda85cb074ec1de1d7d1fb3954b5  ./tools/design_space.py
@@ -316,7 +316,7 @@ a1fbbcbe225a1e2edb2456f92825e7b6853f224e8d0379aa4454d298c2419919  ./tools/frozen
 16a04bf83da566c67f35f43d46db71c464b9f08e60952cae9b51419b33ec65fe  ./tools/interface_consistency.py
 87bf0131d197add11cab19ba34e9278a16dddcc066e254ca77b3c28d46b9da4b  ./tools/lean_compiler_export.py
 13cda9f3b47fda14a1ea23b3e210212eacd7250ea15ffd1e1ac638ea0d5bff3a  ./tools/m2_rtl_differential.py
-165a9e1346b22678c3fd6744ae3f4914be5614e807e8de12097b98b40f8558ac  ./tools/portable_build_support.py
+a8529af667102c08b8ee2622f60b56fa28bb301655a79ebd81db2cac030c1425  ./tools/portable_build_support.py
 af28d238b411fcc075bb00b09a204ed1a98c4b4c36479ab5aa6ca611928efba0  ./tools/repo_consistency.py
 8b848ef50be2f01f34cac16e44469a18e3b4c087a5d6434cae71d4919a446c6b  ./tools/rtl_state_count.py
 372c695649eaa9636c11a2d93b5fcc2570d0982f570857ab23c141f6cf2dc2ea  ./tools/source_provenance.py
