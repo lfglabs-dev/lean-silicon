@@ -160,6 +160,28 @@ class PacketExecutorTests(unittest.TestCase):
         self.assertEqual((endpoint.committed_pc, endpoint.committed_fp), (1, 0))
         self.assertEqual(endpoint.retire_seq, 1)
 
+    def test_retirement_and_done_pulse_are_end_to_end_differential(self):
+        candidate = PacketExecutor()
+        expected = reference.Lsc1Endpoint()
+        request = set_request(0xA0B0C0D0, 7, 0x112233445566778899AABBCCDDEEFF00)
+        candidate_result = drive_request(candidate, request)
+        expected_result = drive_request(expected, request)
+        self.assertEqual(candidate_result, expected_result)
+        result_payload = decode_response(candidate_result)[1]
+        retirement = retire(0xA0B0C0D0, crc32(result_payload))
+
+        candidate_retired = drive_request(candidate, retirement, tx_pattern=(False, True))
+        expected_retired = drive_request(expected, retirement, tx_pattern=(False, True))
+        self.assertEqual(candidate_retired, expected_retired)
+        self.assertEqual(
+            (candidate.committed_pc, candidate.committed_fp, candidate.retire_seq),
+            (expected.committed_pc, expected.committed_fp, expected.retire_seq),
+        )
+        # The driver consumed the response, so DONE has already appeared for
+        # exactly its first drain cycle and must now be low on both endpoints.
+        self.assertFalse(candidate.pins().done_pulse)
+        self.assertFalse(expected.pins().done_pulse)
+
     def test_seeded_random_differential_and_scalar_oracle(self):
         rng = random.Random(0xC308034A)
         edges = [0, 1, 2, 0x87, 1 << 127, (1 << 128) - 1]
@@ -358,6 +380,23 @@ class PacketExecutorTests(unittest.TestCase):
         self.assertEqual(fault[0], Status.STATE_MISMATCH)
         self.assertEqual((endpoint.committed_pc, endpoint.retire_seq), (1, 1))
         self.assertIsNone(endpoint.staged)
+
+    def test_execution_fault_rollback_is_differential_and_reusable(self):
+        candidate = PacketExecutor()
+        expected = reference.Lsc1Endpoint()
+        conflict = set_request(55, 3, 0xAA, old=0xBB)
+        self.assertEqual(
+            drive_request(candidate, conflict),
+            drive_request(expected, conflict),
+        )
+        self.assertEqual((candidate.state, candidate.staged), (State.IDLE, None))
+        self.assertEqual((expected.state.value, expected.staged), ("idle", None))
+        self.assertEqual(
+            (candidate.committed_pc, candidate.committed_fp, candidate.retire_seq),
+            (expected.committed_pc, expected.committed_fp, expected.retire_seq),
+        )
+        valid = set_request(56, 3, 0xAA)
+        self.assertEqual(drive_request(candidate, valid), drive_request(expected, valid))
 
 
 if __name__ == "__main__":
