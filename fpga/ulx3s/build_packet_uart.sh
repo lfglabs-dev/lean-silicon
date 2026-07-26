@@ -20,6 +20,8 @@ STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.packet-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 
 BIT_NAME=ulx3s_lsc1_packet.bit
+CONFIG_NAME=ulx3s_lsc1_packet.config
+SVF_NAME=ulx3s_lsc1_packet.svf
 OSS_CAD_BIN=${OSS_CAD_BIN:-/root/oss/bin}
 if [ -d "$OSS_CAD_BIN" ]; then
     PATH="$OSS_CAD_BIN:$PATH"
@@ -67,9 +69,12 @@ nextpnr-ecp5 --85k --package CABGA381 --json "${TOP}.json" \
 ecppack --svf "${TOP}.svf" "${TOP}.config" "${TOP}.bit" \
     > "$STAGE/ecppack.log" 2>&1
 cp "${TOP}.bit" "$STAGE/$BIT_NAME"
+cp "${TOP}.config" "$STAGE/$CONFIG_NAME"
+cp "${TOP}.svf" "$STAGE/$SVF_NAME"
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 \
     > "$STAGE/timing.txt" || true
-python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS "$BIT_NAME"
+python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS \
+    "$BIT_NAME" "$CONFIG_NAME" "$SVF_NAME"
 python3 "$SUPPORT" check "$STAGE" SHA256SUMS
 python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 
