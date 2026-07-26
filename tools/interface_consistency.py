@@ -69,6 +69,7 @@ def main() -> None:
         "asic_core/rtl/gf128_mul_bitstream.sv",
         "asic_core/rtl/leanvm_b_stream_alu.sv",
         "asic_core/rtl/lsc1_stream_adapter.sv",
+        "asic_core/rtl/lsc1_field_encoder.sv",
         "asic_core/rtl/lsc1_packet_rx.sv",
         "asic_core/rtl/lsc1_packet_tx.sv",
         "asic_core/rtl/lsc1_packet_frontend.sv",
