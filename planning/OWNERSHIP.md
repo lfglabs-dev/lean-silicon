@@ -11,3 +11,4 @@
 | RTL/netlist equivalence | future `equiv/`, synthesis manifests | release RTL or synthesis configuration without rerunning equivalence |
 | Tiny Tapeout PPA | `info.yaml`, `asic_core/` constraints | protocol |
 | zkDSL validation | `docs/semantics/`, future adapters | frozen source evidence |
+| silicon-blender-package | `blender_physical_study/` | RTL, runtime, formal, release claims, or physical-design claims |
