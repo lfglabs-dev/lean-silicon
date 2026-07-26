@@ -9,6 +9,7 @@ non-zero exit. No serial port and no board are involved.
 from __future__ import annotations
 
 import re
+import shlex
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -223,6 +224,73 @@ class StatusSignatureTest(unittest.TestCase):
     def test_short_reply_is_not_silently_accepted(self):
         with self.assertRaises(TimeoutError):
             run_status(ulx3s_uart.STATUS_SIGNATURE[:3])
+
+
+_DOC = (
+    Path(__file__).resolve().parent.parent / "docs" / "ULX3S_SMOKE_AND_UART.md"
+)
+_INVOCATION = "python3 -m fpga_harness.ulx3s_uart"
+
+
+def _documented_invocations():
+    """Every advertised command line, as (source, argv-after-the-module-name)."""
+    sources = [("ulx3s_uart docstring", ulx3s_uart.__doc__), (_DOC.name, _DOC.read_text())]
+    for origin, text in sources:
+        for raw in text.splitlines():
+            line = raw.strip().lstrip("$ ").strip()
+            if not line.startswith(_INVOCATION):
+                continue
+            yield origin, line, shlex.split(line)[3:]
+
+
+class DocumentedUsageTest(unittest.TestCase):
+    """A copy-pasteable example that argparse rejects is a broken example.
+
+    The shipped usage line said `--tx 03` -- the opcode byte rather than the
+    command name -- so the one command a new user runs first exited 2 before
+    ever opening the port.
+    """
+
+    def test_examples_are_actually_found(self):
+        # Guards the parser below from passing vacuously if the docs are reshaped.
+        found = list(_documented_invocations())
+        self.assertGreaterEqual(len(found), 3, f"only found: {found}")
+
+    def test_every_documented_command_line_parses(self):
+        parser = ulx3s_uart.build_parser()
+        for origin, line, argv in _documented_invocations():
+            with self.subTest(source=origin, line=line):
+                # parse_args calls sys.exit on a bad option instead of raising.
+                try:
+                    parser.parse_args(argv)
+                except SystemExit as exc:
+                    self.fail(f"{origin} advertises a command argparse rejects: {line} ({exc})")
+
+    def test_every_documented_payload_has_the_right_width(self):
+        parser = ulx3s_uart.build_parser()
+        for origin, line, argv in _documented_invocations():
+            with self.subTest(source=origin, line=line):
+                args = parser.parse_args(argv)
+                want = ulx3s_uart.PAYLOAD_BYTES[args.tx]
+                payload = bytes.fromhex(args.payload) if args.payload else b""
+                self.assertEqual(
+                    len(payload), want, f"{origin}: {args.tx} needs {want} payload bytes"
+                )
+
+    def test_opcode_byte_is_not_accepted_as_a_command_name(self):
+        # The exact regression: `--tx 03` must stay rejected, and must not be
+        # silently coerced into SET128 either.
+        for opcode in ("03", "0x03", str(ulx3s_uart.SET128)):
+            with self.subTest(opcode=opcode):
+                with self.assertRaises(SystemExit):
+                    ulx3s_uart.build_parser().parse_args(
+                        ["--port", "/dev/null", "--tx", opcode]
+                    )
+
+    def test_parser_choices_cover_every_payload_width_entry(self):
+        parser = ulx3s_uart.build_parser()
+        choices = next(a.choices for a in parser._actions if a.dest == "tx")
+        self.assertEqual(set(choices), set(ulx3s_uart.PAYLOAD_BYTES))
 
 
 if __name__ == "__main__":

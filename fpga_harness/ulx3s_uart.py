@@ -12,8 +12,9 @@ Protocol: exact lean_silicon_lsc1 / MinCore byte stream:
 
 Every byte crosses the 8-bit ready/valid boundary. This driver only speaks bytes.
 
-Usage (explicit path):
-  python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx 03 --payload $(python3 -c 'print("00"*16)')
+Usage (explicit path). --tx takes the command name, not the opcode byte:
+  python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx status
+  python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 000102030405060708090a0b0c0d0e0f
 """
 from __future__ import annotations
 
@@ -192,13 +193,22 @@ def tx_status(ser: serial.Serial, timeout: float = TIMEOUT_S) -> bytes:
     return recv_exact(ser, 4, timeout=timeout)
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+# Payload width each command consumes, in bytes. Single source of truth for the
+# CLI validation below and for the usage examples the docs advertise.
+PAYLOAD_BYTES = {"set": 16, "xor": 32, "mul": 32, "status": 0, "clear": 0}
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="ULX3S UART driver for LSC-1 MinCore smoke")
     ap.add_argument("--port", required=True, help="Explicit serial device, e.g. /dev/ttyUSB0 or /dev/cu.usbserial-XXXX")
-    ap.add_argument("--tx", choices=["set", "xor", "mul", "status", "clear"], default="status")
+    ap.add_argument("--tx", choices=sorted(PAYLOAD_BYTES), default="status")
     ap.add_argument("--payload", default="", help="hex payload (for set: 32 hex chars; xor/mul: 64 hex chars)")
     ap.add_argument("--timeout", type=float, default=TIMEOUT_S)
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
 
     port_path = args.port
     try:
@@ -234,10 +244,15 @@ def main(argv: Optional[list[str]] = None) -> int:
             print("ERROR: payload must be hex", file=sys.stderr)
             return 2
 
+        want = PAYLOAD_BYTES[args.tx]
+        if len(pay) != want:
+            print(
+                f"ERROR: {args.tx} expects {want} bytes ({want * 2} hex chars)",
+                file=sys.stderr,
+            )
+            return 2
+
         if args.tx == "set":
-            if len(pay) != 16:
-                print("ERROR: set expects 16 bytes (32 hex chars)", file=sys.stderr)
-                return 2
             echo = tx_set(ser, pay, timeout=args.timeout)
             print("SET echo:", echo.hex())
             ok = echo == pay
@@ -245,9 +260,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0 if ok else 1
 
         if args.tx == "xor":
-            if len(pay) != 32:
-                print("ERROR: xor expects 32 bytes (64 hex chars)", file=sys.stderr)
-                return 2
             a, b = pay[:16], pay[16:]
             res = tx_xor(ser, a, b, timeout=args.timeout)
             exp = bytes(x ^ y for x, y in zip(a, b))
@@ -257,9 +269,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0 if res == exp else 1
 
         if args.tx == "mul":
-            if len(pay) != 32:
-                print("ERROR: mul expects 32 bytes (64 hex chars)", file=sys.stderr)
-                return 2
             a, b = pay[:16], pay[16:]
             res = tx_mul(ser, a, b, timeout=args.timeout)
             exp = expected_mul(a, b)
