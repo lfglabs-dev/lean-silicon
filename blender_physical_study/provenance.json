@@ -1,0 +1,36 @@
+{
+  "blender": "4.2.9 LTS",
+  "demo_only": true,
+  "generator": "generate.py",
+  "inventory": {
+    "base_commit": "618b39923862e660589cc6258e258783904b3861",
+    "cell_total": 167885,
+    "cell_types": {
+      "$_ANDNOT_": 6810,
+      "$_AND_": 36526,
+      "$_DFFE_PP_": 8192,
+      "$_DFF_P_": 64,
+      "$_MUX_": 46717,
+      "$_NAND_": 17710,
+      "$_NOR_": 2339,
+      "$_NOT_": 134,
+      "$_ORNOT_": 9497,
+      "$_OR_": 5675,
+      "$_SDFFE_PN0P_": 308,
+      "$_SDFFE_PP0P_": 1,
+      "$_SDFF_PN0_": 12,
+      "$_SDFF_PP0_": 2,
+      "$_XNOR_": 33552,
+      "$_XOR_": 346
+    },
+    "interpretation": "Final flattened Yosys generic-cell statistics after ABC; this is logical inventory, not a SKY130 library mapping or physical netlist.",
+    "schema": "lean-silicon.blender-physical-study.inventory.v1",
+    "source": "results/m2-20260725T022000Z/m2-controller-synthesis.log",
+    "source_sha256": "59c7a6d9046e9492170248df19002c5cf9fc7fcf8ac4d525609382e1709eefb2"
+  },
+  "merge_permitted": false,
+  "notice": "CONCEPTUAL \u00b7 SKY130-INFORMED \u00b7 NOT GDS/P&R",
+  "python_host": "3.12.3",
+  "render_engine": "BLENDER_EEVEE_NEXT",
+  "schema": "lean-silicon.blender-physical-study.provenance.v1"
+}
