@@ -33,6 +33,8 @@ actually tested.
   `Disable configuration: DONE`.
 - STATUS at 1 Mbaud returned exactly `01010f08` before and after a second SRAM
   reload.
+- A human observer identified D0 as the red LED carrying the regular UART-image
+  heartbeat. D18 was also green but is not driven by this design.
 
 Deterministic primitives, including the PR #16 `0x7f` resynchronization byte:
 
@@ -73,8 +75,15 @@ provenance.
 - the host runner commits no VM destination until a full response has passed
   its oracle comparison, covered by its deterministic mismatch/timeout tests.
 
-## Unperformed manual observations
+## Manual power-cycle observation
 
-The terminal cannot observe LED0 or physically remove board power. Therefore
-the LED pattern and disappearance of SRAM configuration after a real
-power-cycle remain explicitly unverified here.
+A human observer removed board power, waited, and reconnected it. The previous
+D0-only heartbeat was replaced by illuminated D0, D1 and D2 (red, orange and
+green), while D18 remained illuminated. JTAG still detected the same ECP5, but
+the maintained STATUS signature disappeared: the serial endpoint drained and
+returned surplus zero bytes instead of `01010f08`. This proves the tested UART
+image was no longer active after the power-cycle; it does not identify or
+authenticate the configuration that booted afterward.
+
+The exact `efa908bc...` UART image was then checksum-verified, reloaded in SRAM,
+and STATUS returned exactly `01010f08` again.

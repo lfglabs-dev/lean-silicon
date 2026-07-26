@@ -246,8 +246,10 @@ All bytes traverse ui_in/uo_out/uio_* ready/valid. No wide bypass.
 
 ## Blockers / limits
 - The original PR #16 sprint had no physical board; the PR #19 follow-up used
-  one LFE5U-85F (`IDCODE 0x41113043`). LED0 observation and a real power-cycle
-  remain manual observations and are not claimed by the terminal evidence.
+  one LFE5U-85F (`IDCODE 0x41113043`). A human observer confirmed the D0
+  heartbeat and performed a real power-cycle. The changed D0-D2 LED state and
+  loss of the UART STATUS signature confirm that the tested SRAM image did not
+  persist; the configuration that booted afterward was not authenticated.
 - No Verilator full bridge test (Icarus only; Verilator would require additional wrapper).
 - Bridge driver lacks host-side flow control backpressure beyond TX_READY gating.
 - LPF is hypothesis only for v3.1.8; full pin list and bank voltages unverified here.

@@ -32,7 +32,7 @@ b81b89574ed84c67b64ae7b56001bf9d03b9d66be2bed7977d8adc715481eafb  ./docs/PROTOCO
 02e8a5b52b341390f008ff8bc62f5d2d982b23adb8b26cb73ef3b07dddeed807  ./docs/SOURCE_AUDIT.md
 5d29581d66ed1b8d1d76dae9348699e41a9d7fbd2fa5c6de581a2afddb481a7a  ./docs/STATUS.md
 9c2582c40fbd9a4e2b163abed784f5a6c82b2cb3136c37a4123a0ba6584f6136  ./docs/TAPEOUT.md
-d0232e3a5b17a6042ee9a0492519dbab6e9eef0ee92722925fa6e4f013dff513  ./docs/ULX3S_SMOKE_AND_UART.md
+284f9c9fccb9550b9d2b1a4cb68734ceb3367a0f969f22142e238b0db5cf9a3e  ./docs/ULX3S_SMOKE_AND_UART.md
 a08743f1a3cf4af68683cdaac5b00ca624ac875dbeef9f78614bda7297579df8  ./docs/USE_CASES.md
 20aa56b3f69c28c9639e9bd16b8239f0ef511d8fded9340185814b3257e25f01  ./docs/VALIDATION.md
 c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semantics/reference/README.md
@@ -139,7 +139,7 @@ d92c38ece57279c4f3bf68255fd40f38635c9f0ba828d9e014f309fe6ca44484  ./results/fpga
 76c91c23eb16b8d931c0c9235773ea03b7ae5bf8f938fcd7d3fe26f106ee5955  ./results/fpga-lsc1-20260726/openfpgaloader-sram.txt
 9766cee905c6182ab32a2ef5e680cbbd6ad84f5b81aa2dba9af03fd22555129a  ./results/fpga-lsc1-20260726/program-run.json
 508ce5a78e5256916c79a62684d5995b337aa98e37b1c6a2472b328f8cefcdf9  ./results/fpga-pr16-pr19-20260726/EVIDENCE_SHA256SUMS
-a8d73b65ad3312238d001d22938f8704456a97b13af0a96f317bbe2092f60dc8  ./results/fpga-pr16-pr19-20260726/README.md
+1d7ff57acc9aa79a042ed211a805ce775e4f6a91143d65b6b158f972faa71de0  ./results/fpga-pr16-pr19-20260726/README.md
 2e1cf626de629936a828ba890eeae4d0177fe87c69bac2eb25012c4c1178af6b  ./results/fpga-pr16-pr19-20260726/program-run.json
 be0da30a37ab97160fe55efe0ac74c986a452772454b725862cdd099aeabe448  ./results/frozen-oracle-evidence-20260725/README.md
 2d55eb5eeca0baa3e8f941de57632f6810a71feefbfc31be9999b5e4b21fb147  ./results/frozen-oracle-evidence-20260725/SHA256SUMS
