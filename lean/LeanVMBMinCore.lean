@@ -6,5 +6,6 @@ import LeanVMBMinCore.Address
 import LeanVMBMinCore.CheckedIndex
 import LeanVMBMinCore.Memory
 import LeanVMBMinCore.Deref
+import LeanVMBMinCore.ControlPrimitives
 import LeanVMBMinCore.ISA
 import LeanVMBMinCore.Optimality

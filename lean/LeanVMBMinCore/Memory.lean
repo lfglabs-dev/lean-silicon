@@ -1,4 +1,5 @@
 import Std.Tactic.BVDecide
+import LeanVMBMinCore.GHASH128
 
 /-!
 A small write-once memory model.  It separates the deterministic cell update
@@ -7,7 +8,7 @@ from the policy check so the useful update lemmas remain simple.
 
 namespace LeanVMBMinCore.Memory
 
-abbrev Word := BitVec 8
+abbrev Word := GHASH128.Word
 
 structure Cell where
   written : Bool
@@ -16,7 +17,7 @@ structure Cell where
 
 abbrev Mem := Nat → Cell
 
-def empty : Mem := fun _ => { written := false, value := 0#8 }
+def empty : Mem := fun _ => { written := false, value := 0#128 }
 
 /-- Functional update used after the write-once guard succeeds. -/
 def writeRaw (m : Mem) (address : Nat) (value : Word) : Mem :=
