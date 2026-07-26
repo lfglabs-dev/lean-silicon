@@ -32,6 +32,8 @@ module tb_lsc1_packet_frontend;
 
     always @(posedge clk) begin
         cycle_count <= cycle_count + 1;
+        if (rst_n && dut.tx_start && !busy)
+            $fatal(1, "BUSY dropped while a response was queued");
         if (tx_valid && tx_ready) begin
             response[response_count] <= tx_data;
             response_count <= response_count + 1;
@@ -204,6 +206,9 @@ module tb_lsc1_packet_frontend;
             response[38] !== 0 || response[39] !== 1 ||
             {response[43],response[42],response[41],response[40]} !== 11)
             $fatal(1, "SET result payload schema mismatch");
+        for (i = 0; i < 16; i = i + 1)
+            if (response[22+i] !== 8'h40 + i)
+                $fatal(1, "SET result write value mismatch at byte %0d", i);
         retire_last(32'h11, 0);
         wait_response(8'h02);
         if (done_count != 1 || dut.retire_seq != 1)
@@ -242,8 +247,13 @@ module tb_lsc1_packet_frontend;
         build_set(32'h15, 1, 4);
         send_frame(1, 8'h03, 0, 51, 0);
         wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
+        saved_result_length = response[3] | (response[4] << 8);
+        saved_result_crc = 32'hffffffff;
+        for (i = 0; i < saved_result_length; i = i + 1)
+            saved_result_crc = crc_byte(saved_result_crc, response[5+i]);
+        saved_result_crc = ~saved_result_crc;
         response_count = 0;
-        clear_payload(); put_u32(0, 32'h99); put_u32(4, 0);
+        clear_payload(); put_u32(0, 32'h99); put_u32(4, saved_result_crc);
         send_frame(1, 8'h12, 0, 8, 0);
         wait_response(8'h92);
         clear_payload(); put_u32(0, 32'h15); put_u32(4, 0);

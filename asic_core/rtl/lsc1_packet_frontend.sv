@@ -92,7 +92,7 @@ module lsc1_packet_frontend (
     );
 
     assign rx_ready = parser_rx_ready && lane_enable;
-    assign busy = rx_busy || tx_busy || event_valid || result_pending ||
+    assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
                   abort_response_pending || compute_state != C_IDLE || mul_busy;
 
     task automatic emit_fault;
