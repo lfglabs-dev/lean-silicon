@@ -30,6 +30,9 @@ _LSC1_OPCODE = {
     "Set": protocol.Opcode.SET_CONSTANT,
     "Xor": protocol.Opcode.XOR,
     "Mul": protocol.Opcode.MUL_NATIVE,
+    "Cell": protocol.Opcode.DEREF_CELL,
+    "Pc": protocol.Opcode.DEREF_PC,
+    "Fp": protocol.Opcode.DEREF_FP,
 }
 
 
@@ -346,6 +349,62 @@ class HostRuntime:
                 cell=self.memory.cell(address),
             )
             return frame, [address]
+
+        if operation.kind == "Deref":
+            alpha = operation.operands["alpha"]
+            beta = operation.operands["beta"]
+            gamma = operation.operands["gamma"]
+            pointer_address = self._address(alpha)
+            pointer = self.memory.read(pointer_address)
+            if pointer is None:
+                raise PreparationFault(protocol.Status.BAD_POINTER)
+            try:
+                base = self.memory.pointers.index_of(pointer)
+            except UnsupportedCapability as error:
+                raise PreparationFault(protocol.Status.BAD_POINTER) from error
+            try:
+                target_address = protocol.checked_add(base, beta)
+            except protocol.ProtocolFault as fault:
+                raise PreparationFault(fault.status) from fault
+            local_address = self._address(gamma)
+            mode = operation.operands["mode"]
+            frame = protocol.build_deref(
+                _LSC1_OPCODE[mode], txn_id=self.txn_id, pc=self.pc, fp=self.fp,
+                profile=self.profile, alpha=alpha, beta=beta, gamma=gamma,
+                pointer=self.memory.cell(pointer_address), base=base,
+                target=self.memory.cell(target_address),
+                local=self.memory.cell(local_address),
+            )
+            return frame, [pointer_address, target_address, local_address]
+
+        if operation.kind == "Jump":
+            offsets = (
+                operation.operands["oc"], operation.operands["od"],
+                operation.operands["of"],
+            )
+            addresses = [self._address(offset) for offset in offsets]
+            cells = self._cells(addresses)
+            condition = cells[0].value if cells[0].present else 0
+            taken = condition != 0
+            if taken:
+                if not cells[1].present or not cells[2].present:
+                    raise PreparationFault(protocol.Status.BAD_POINTER)
+                try:
+                    dest_pc = self.memory.pointers.index_of(cells[1].value)
+                    dest_fp = self.memory.pointers.index_of(cells[2].value)
+                except UnsupportedCapability as error:
+                    raise PreparationFault(protocol.Status.BAD_POINTER) from error
+                inverse = protocol.Cell(True, field_inverse(condition))
+            else:
+                dest_pc = dest_fp = 0
+                inverse = protocol.ABSENT
+            frame = protocol.build_jump(
+                txn_id=self.txn_id, pc=self.pc, fp=self.fp,
+                profile=self.profile, offsets=offsets, cells=cells,
+                taken=taken, dest_pc=dest_pc, dest_fp=dest_fp,
+                proposed_inverse=inverse,
+            )
+            return frame, addresses
 
         offsets = (operation.operands["a"], operation.operands["b"], operation.operands["c"])
         addresses = [self._address(offset) for offset in offsets]
