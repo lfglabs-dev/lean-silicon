@@ -66,7 +66,7 @@ class MinCoreUartTests(unittest.TestCase):
     def test_partial_reads_writes_and_stale_drain(self):
         v = VECTORS["set128"]
         serial = FakeSerial(b"stale", read_limit=3, write_limit=4, responses=(v.expected,))
-        request, response = MinCoreDriver(serial, .22, Clock()).exchange("set", value=v.value)
+        request, response = MinCoreDriver(serial, .3, Clock()).exchange("set", value=v.value)
         self.assertEqual(request, encode_request("set", value=v.value)); self.assertEqual(response, v.expected)
         self.assertEqual(bytes(serial.written), request)
 
@@ -92,7 +92,7 @@ class MinCoreUartTests(unittest.TestCase):
 
     def test_one_timeout_bounds_the_whole_exchange_not_each_phase(self):
         """Phases that each stay just inside the limit must not sum past it."""
-        clock, timeout = Clock(), .2
+        clock, timeout = Clock(), .3
         serial = FakeSerial(b"stale bytes", read_limit=1, write_limit=1,
                             responses=(VECTORS["set128"].expected,))
         start = clock.value
@@ -107,8 +107,8 @@ class MinCoreUartTests(unittest.TestCase):
         class StalledFlush(FakeSerial):
             def flush(self): release.wait(30)
 
-        # 90 single-byte drain reads consume ~0.90 of the 1.0 budget on the fake clock.
-        serial = StalledFlush(b"x" * 90, read_limit=1)
+        # 45 single-byte drain reads, two clock reads each, consume ~0.90 of the 1.0 budget.
+        serial = StalledFlush(b"x" * 45, read_limit=1)
         start = time.monotonic()
         with self.assertRaisesRegex(TransportTimeout, "flush timeout"):
             MinCoreDriver(serial, 1.0, Clock()).exchange("clear")
@@ -175,6 +175,30 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
             driver.exchange("status")  # an abandoned query leaves the stream unknown
 
+    def test_a_slow_buffered_count_query_is_charged_against_the_drain_read(self):
+        """The drain read inherits what the query left, not a stale allowance."""
+        class SlowQueryThenRead(FakeSerial):
+            @property
+            def in_waiting(self): time.sleep(.04); return 4
+            def read(self, size=1): time.sleep(.04); return b"\x00" * 4
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, "stale-input drain timeout"):
+            MinCoreDriver(SlowQueryThenRead(), .05).exchange("status")
+        self.assertLess(time.monotonic() - start, .075)  # one shared budget returned at ~.08
+
+    def test_a_flush_with_no_budget_left_never_starts_a_worker(self):
+        """A zero-budget flush must not run against a port the caller is closing."""
+        started, release = threading.Event(), threading.Event()
+        self.addCleanup(release.set)
+        class StalledFlush(FakeSerial):
+            def flush(self): started.set(); release.wait(30)
+
+        # On the fake clock the drain and write leave exactly no budget for the flush.
+        with self.assertRaisesRegex(TransportTimeout, "flush timeout"):
+            MinCoreDriver(StalledFlush(), .03, Clock()).exchange("clear")
+        self.assertFalse(started.is_set())  # nothing may touch a transport past the deadline
+
     def test_a_slow_drain_cannot_stretch_the_exchange_past_the_timeout(self):
         """The reported case: a 300ms drain read under a 50ms budget."""
         class SlowDrain(FakeSerial):
@@ -192,8 +216,8 @@ class MinCoreUartTests(unittest.TestCase):
         class StalledWriteAfterStale(FakeSerial):
             def write(self, data): release.wait(30); return len(data)
 
-        # 90 single-byte drain reads consume ~0.90 of the 1.0 budget on the fake clock.
-        serial = StalledWriteAfterStale(b"x" * 90, read_limit=1)
+        # 45 single-byte drain reads, two clock reads each, consume ~0.90 of the 1.0 budget.
+        serial = StalledWriteAfterStale(b"x" * 45, read_limit=1)
         start = time.monotonic()
         with self.assertRaisesRegex(TransportTimeout, "write timeout"):
             MinCoreDriver(serial, 1.0, Clock()).exchange("status")

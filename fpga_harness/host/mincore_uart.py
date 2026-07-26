@@ -160,18 +160,18 @@ class MinCoreDriver:
 
         The buffered-count query and the drain read are both backend calls that
         can block on a stalled device, so each runs under what is left of the
-        transaction budget instead of being checked only once it returns.
+        transaction budget instead of being checked only once it returns.  The
+        budget is re-read between them so that a slow query is charged against
+        the read that follows it rather than granting it a stale allowance.
         """
         deadline, drained = self._deadline(deadline), bytearray()
         while True:
             message = f"stale-input drain timeout after {len(drained)} bytes"
-            remaining = deadline - self.clock()
-            if remaining <= 0:
-                raise TransportTimeout(message)
             try:
-                if (buffered := self._buffered_count(remaining, message)) <= 0:
+                if (buffered := self._buffered_count(deadline - self.clock(), message)) <= 0:
                     break
-                chunk = self._bounded(lambda: self.transport.read(min(buffered, 4096)), remaining, message)
+                chunk = self._bounded(lambda: self.transport.read(min(buffered, 4096)),
+                                      deadline - self.clock(), message)
             except TransportTimeout:
                 self._usable = False  # an abandoned call may still consume bytes later
                 raise
@@ -191,8 +191,14 @@ class MinCoreDriver:
         and is abandoned once the budget is gone.  Every path that abandons a
         call also leaves the driver poisoned, so an abandoned write can never be
         mistaken for part of a later exchange.  The caller passes a remaining
-        budget rather than a deadline so that one phase costs one clock read.
+        budget rather than a deadline so that one call costs one clock read.
+
+        An exhausted budget starts nothing: a worker launched only to be joined
+        for zero seconds would keep running against a transport the caller is
+        already tearing down.
         """
+        if budget <= 0:
+            raise TransportTimeout(timeout_message)
         outcome: list = []
         failures: list = []
 
