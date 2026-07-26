@@ -68,9 +68,10 @@ class AtomicPublishTests(unittest.TestCase):
         root = Path(__file__).parents[1]
         for name in ("build_smoke.sh", "build_uart.sh"):
             script = (root / "fpga" / "ulx3s" / name).read_text()
-            lock = script.index('flock 9')
+            lock = script.index('"$SUPPORT" lock "$LOCK"')
             snapshot = script.index('cp -a "$OUTDIR/." "$STAGE/"')
             self.assertLess(lock, snapshot, f"{name} snapshots before locking")
+            self.assertNotIn("flock 9", script, f"{name} requires Linux flock(1)")
 
 
 if __name__ == "__main__":

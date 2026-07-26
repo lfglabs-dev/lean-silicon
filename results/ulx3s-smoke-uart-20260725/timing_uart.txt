@@ -1,4 +1,4 @@
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 161.47 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 81.04 MHz (PASS at 25.00 MHz)
 Info: Slack histogram:
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 154.37 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 85.65 MHz (PASS at 25.00 MHz)
 Info: Slack histogram:

@@ -1,6 +1,7 @@
 === SOURCE PROVENANCE ===
-revision: 62e96e76f7a9f395b0f3e8edf409bade6d282a05
+revision: a472265112bb0183587bfdd81e6a61312b048185
 inputs-match-revision: yes
-a4b75f43d2a1c331999b7032ff35b27b94479a993c540ef218c35e4c6ddf3ce2  fpga/ulx3s/build_smoke.sh
+165a9e1346b22678c3fd6744ae3f4914be5614e807e8de12097b98b40f8558ac  tools/portable_build_support.py
+7c90180efe945d2ab0fcae3fdcc00830af8ad960f8f377a40f1db7ebf61ffd09  fpga/ulx3s/build_smoke.sh
 cd4a528e8502a4761efa123743afd1f6e180681af3349f05c5777ee489a92689  fpga/ulx3s/smoke_top.sv
 1b2982830abbaaf932c48f8df3d0163e450e9cab6d065998f25984b677d415f2  fpga/ulx3s/ulx3s_v318_smoke.lpf
