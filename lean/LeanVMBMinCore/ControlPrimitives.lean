@@ -23,7 +23,8 @@ abbrev Index := CheckedIndex.Index
 /-- A checked signed displacement into the scalar profile's `u32` index space. -/
 def checkedOffset (base : Index) (offset : Int) : Option Index :=
   let result := (base : Int) + offset
-  if 0 ≤ result ∧ result ≤ (CheckedIndex.max : Int) then
+  if base ≤ CheckedIndex.max ∧
+      0 ≤ result ∧ result ≤ (CheckedIndex.max : Int) then
     some result.toNat
   else
     none
@@ -31,14 +32,17 @@ def checkedOffset (base : Index) (offset : Int) : Option Index :=
 @[simp] theorem checkedOffset_zero {base : Index}
     (h : CheckedIndex.valid base) :
     checkedOffset base 0 = some base := by
-  simp [checkedOffset, CheckedIndex.valid] at h ⊢
-  exact h
+  have hb : base ≤ CheckedIndex.max := h
+  simp [checkedOffset, hb]
 
 @[simp] theorem checkedOffset_negative :
     checkedOffset 0 (-1) = none := by decide
 
 @[simp] theorem checkedOffset_overflow :
     checkedOffset CheckedIndex.max 1 = none := by decide
+
+@[simp] theorem checkedOffset_rejects_invalid_base :
+    checkedOffset (CheckedIndex.max + 1) (-1) = none := by decide
 
 theorem checkedOffset_some_bounds {base result : Index} {offset : Int}
     (h : checkedOffset base offset = some result) :
@@ -49,7 +53,7 @@ theorem checkedOffset_some_bounds {base result : Index} {offset : Int}
     simp only [Option.some.injEq] at h
     subst result
     simp only [CheckedIndex.valid]
-    exact Int.toNat_le.mpr hbounds.2
+    exact Int.toNat_le.mpr hbounds.2.2
   next => contradiction
 
 structure Control where
@@ -169,6 +173,75 @@ theorem executeDeref_rejects_unwritten_pointer
       .fault .unresolvedPointer := by
   simp [executeDeref, h]
 
+theorem reconcile_success_frame {memory memory' : Mem}
+    {target localAddress query : Index}
+    (h : Deref.reconcile memory target localAddress = .ok memory')
+    (ht : query ≠ target) (hl : query ≠ localAddress) :
+    memory' query = memory query := by
+  by_cases htw : (memory target).written = true
+  · by_cases hlw : (memory localAddress).written = true
+    · by_cases hv : (memory target).value = (memory localAddress).value
+      · simp [Deref.reconcile, htw, hlw, hv] at h
+        subst memory'
+        rfl
+      · simp [Deref.reconcile, htw, hlw, hv] at h
+    · have hlwf : (memory localAddress).written = false := by
+        exact Bool.eq_false_iff.mpr hlw
+      simp [Deref.reconcile, htw, hlwf] at h
+      subst memory'
+      exact read_write_other _ _ _ _ hl
+  · have htwf : (memory target).written = false := by
+      exact Bool.eq_false_iff.mpr htw
+    by_cases hlw : (memory localAddress).written = true
+    · simp [Deref.reconcile, htwf, hlw] at h
+      subst memory'
+      exact read_write_other _ _ _ _ ht
+    · have hlwf : (memory localAddress).written = false := by
+        exact Bool.eq_false_iff.mpr hlw
+      simp [Deref.reconcile, htwf, hlwf] at h
+
+theorem derefEffect_success_frame {encode : Index → Word} {mode : DerefMode}
+    {control control' : Control} {memory memory' : Mem}
+    {target localAddress nextPc query : Index}
+    (h : derefEffect encode mode control memory target localAddress nextPc =
+      .ok control' memory')
+    (ht : query ≠ target) (hl : query ≠ localAddress) :
+    memory' query = memory query := by
+  cases mode with
+  | cell =>
+      simp only [derefEffect] at h
+      split at h
+      · cases h
+        exact reconcile_success_frame ‹_› ht hl
+      · contradiction
+      · contradiction
+  | pc =>
+      simp only [derefEffect] at h
+      split at h
+      · contradiction
+      · split at h
+        · cases h
+          exact writeOnce_success_frame ‹_› ht
+        · contradiction
+  | fp =>
+      simp only [derefEffect] at h
+      split at h
+      · cases h
+        exact writeOnce_success_frame ‹_› ht
+      · contradiction
+
+theorem executeDeref_success_frame {encode : Index → Word} {mode : DerefMode}
+    {control control' : Control} {memory memory' : Mem}
+    {prepared : PreparedDeref} {query : Index}
+    (h : executeDeref encode mode control memory prepared =
+      .ok control' memory')
+    (ht : query ≠ prepared.target) (hl : query ≠ prepared.localAddress) :
+    memory' query = memory query := by
+  simp only [executeDeref] at h
+  split at h
+  · contradiction
+  · exact derefEffect_success_frame h ht hl
+
 /-! JUMP is a control update only.  It performs no fetch and owns no resolver. -/
 
 inductive JumpResult where
@@ -176,7 +249,8 @@ inductive JumpResult where
   | fault (reason : Fault)
   deriving DecidableEq, Repr
 
-def jump (control : Control) (condition : Word)
+def jump (encode : Index → Word) (control : Control) (condition : Word)
+    (targetPcWord targetFpWord : Word)
     (resolvedTargets : Option (Index × Index)) : JumpResult :=
   if condition = 0#128 then
     match checkedOffset control.pc 1 with
@@ -184,23 +258,46 @@ def jump (control : Control) (condition : Word)
     | none => .fault .address
   else
     match resolvedTargets with
-    | some (targetPc, targetFp) => .ok { pc := targetPc, fp := targetFp }
+    | some (targetPc, targetFp) =>
+        if targetPc ≤ CheckedIndex.max ∧ targetFp ≤ CheckedIndex.max ∧
+            encode targetPc = targetPcWord ∧ encode targetFp = targetFpWord then
+          .ok { pc := targetPc, fp := targetFp }
+        else
+          .fault .unresolvedPointer
     | none => .fault .unresolvedPointer
 
-@[simp] theorem jump_not_taken {control : Control} {nextPc : Index}
+@[simp] theorem jump_not_taken {encode : Index → Word} {control : Control}
+    {nextPc : Index} {targetPcWord targetFpWord : Word}
     (h : checkedOffset control.pc 1 = some nextPc) :
-    jump control 0#128 none = .ok { control with pc := nextPc } := by
+    jump encode control 0#128 targetPcWord targetFpWord none =
+      .ok { control with pc := nextPc } := by
   simp [jump, h]
 
-@[simp] theorem jump_taken {control : Control} {condition : Word}
-    (hnz : condition ≠ 0#128) (targetPc targetFp : Index) :
-    jump control condition (some (targetPc, targetFp)) =
+@[simp] theorem jump_taken {encode : Index → Word} {control : Control}
+    {condition : Word} (hnz : condition ≠ 0#128) (targetPc targetFp : Index)
+    (hpc : CheckedIndex.valid targetPc) (hfp : CheckedIndex.valid targetFp) :
+    jump encode control condition (encode targetPc) (encode targetFp)
+      (some (targetPc, targetFp)) =
       .ok { pc := targetPc, fp := targetFp } := by
-  simp [jump, hnz]
+  have hpc' : targetPc ≤ CheckedIndex.max := hpc
+  have hfp' : targetFp ≤ CheckedIndex.max := hfp
+  simp [jump, hnz, hpc', hfp']
 
-theorem jump_not_taken_preserves_fp {control control' : Control}
+@[simp] theorem jump_rejects_bad_target {encode : Index → Word}
+    {control : Control} {condition : Word} (hnz : condition ≠ 0#128)
+    {targetPc targetFp : Index} {targetPcWord targetFpWord : Word}
+    (hbad : encode targetPc ≠ targetPcWord ∨ encode targetFp ≠ targetFpWord) :
+    jump encode control condition targetPcWord targetFpWord
+      (some (targetPc, targetFp)) = .fault .unresolvedPointer := by
+  rcases hbad with hbad | hbad
+  · simp [jump, hnz, hbad]
+  · simp [jump, hnz, hbad]
+
+theorem jump_not_taken_preserves_fp {encode : Index → Word}
+    {control control' : Control} {targetPcWord targetFpWord : Word}
     {targets : Option (Index × Index)}
-    (h : jump control 0#128 targets = .ok control') :
+    (h : jump encode control 0#128 targetPcWord targetFpWord targets =
+      .ok control') :
     control'.fp = control.fp := by
   simp only [jump, ↓reduceIte] at h
   split at h
@@ -209,10 +306,11 @@ theorem jump_not_taken_preserves_fp {control control' : Control}
     rfl
   next => cases h
 
-theorem jump_deterministic (control : Control) (condition : Word)
+theorem jump_deterministic (encode : Index → Word) (control : Control)
+    (condition targetPcWord targetFpWord : Word)
     (targets : Option (Index × Index)) (r₁ r₂ : JumpResult)
-    (h₁ : jump control condition targets = r₁)
-    (h₂ : jump control condition targets = r₂) :
+    (h₁ : jump encode control condition targetPcWord targetFpWord targets = r₁)
+    (h₂ : jump encode control condition targetPcWord targetFpWord targets = r₂) :
     r₁ = r₂ := by
   rw [← h₁, ← h₂]
 
