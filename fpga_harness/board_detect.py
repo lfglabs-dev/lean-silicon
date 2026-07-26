@@ -502,7 +502,7 @@ def _probe_jtag(env: Environment) -> list[Finding]:
 
 
 def _probe_datapath(_env: Environment) -> list[Finding]:
-    """Always unvalidated: there is nothing in-repo to validate against."""
+    """Always unvalidated: no physical board byte-exchange evidence is archived."""
     missing = "; ".join(DATAPATH_PREREQUISITES)
     return [
         Finding(

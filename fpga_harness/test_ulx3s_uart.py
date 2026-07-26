@@ -308,8 +308,11 @@ class StatusSignatureTest(unittest.TestCase):
         self.assertIn("expected 4 bytes, got 3", str(stderr.write.call_args_list))
 
     def test_serial_transport_failure_is_reported_as_communication_error(self):
-        if ulx3s_uart.serial is None:
-            self.skipTest("pyserial is not installed")
+        # CI installs requirements.txt before this board-free suite. Do not
+        # allow the deferred import to hide a missing runtime dependency.
+        self.assertIsNotNone(
+            ulx3s_uart.serial, "pyserial must be installed from requirements.txt"
+        )
         fake = FakeSerial(b"", command_len=2)
         with mock.patch.object(
             ulx3s_uart, "open_port", return_value=fake
