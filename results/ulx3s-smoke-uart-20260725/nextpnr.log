@@ -1,8 +1,8 @@
 Info: constraining clock net 'clk' to 25.00 MHz
 
 Info: Logic utilisation before packing:
-Info:     Total LUT4s:        27/83640     0%
-Info:         logic LUTs:      1/83640     0%
+Info:     Total LUT4s:        28/83640     0%
+Info:         logic LUTs:      2/83640     0%
 Info:         carry LUTs:     26/83640     0%
 Info:           RAM LUTs:      0/10455     0%
 Info:          RAMW LUTs:      0/20910     0%
@@ -21,270 +21,283 @@ Info:     25 FFs paired with LUTs.
 Info: Generating derived timing constraints...
 Info: Promoting globals...
 Info:     promoting clock net clk$TRELLIS_IO_IN to global network
-Info: Checksum: 0x27aa008c
-
-Info: Annotating ports with timing budgets for target frequency 12.00 MHz
-Info: Checksum: 0xf25198f2
+Info: Checksum: 0x090a641a
 
 Info: Device utilisation:
-Info: 	          TRELLIS_IO:     2/  365     0%
-Info: 	                DCCA:     1/   56     1%
-Info: 	              DP16KD:     0/  208     0%
-Info: 	          MULT18X18D:     0/  156     0%
-Info: 	              ALU54B:     0/   78     0%
-Info: 	             EHXPLLL:     0/    4     0%
-Info: 	             EXTREFB:     0/    2     0%
-Info: 	                DCUA:     0/    2     0%
-Info: 	           PCSCLKDIV:     0/    2     0%
-Info: 	             IOLOGIC:     0/  224     0%
-Info: 	            SIOLOGIC:     0/  141     0%
-Info: 	                 GSR:     0/    1     0%
-Info: 	               JTAGG:     0/    1     0%
-Info: 	                OSCG:     0/    1     0%
-Info: 	               SEDGA:     0/    1     0%
-Info: 	                 DTR:     0/    1     0%
-Info: 	             USRMCLK:     0/    1     0%
-Info: 	             CLKDIVF:     0/    4     0%
-Info: 	           ECLKSYNCB:     0/   10     0%
-Info: 	             DLLDELD:     0/    8     0%
-Info: 	              DDRDLL:     0/    4     0%
-Info: 	             DQSBUFM:     0/   14     0%
-Info: 	     TRELLIS_ECLKBUF:     0/    8     0%
-Info: 	        ECLKBRIDGECS:     0/    2     0%
-Info: 	                DCSC:     0/    2     0%
-Info: 	          TRELLIS_FF:    25/83640     0%
-Info: 	        TRELLIS_COMB:    33/83640     0%
-Info: 	        TRELLIS_RAMW:     0/10455     0%
+Info: 	          TRELLIS_IO:       2/    365     0%
+Info: 	                DCCA:       1/     56     1%
+Info: 	              DP16KD:       0/    208     0%
+Info: 	          MULT18X18D:       0/    156     0%
+Info: 	              ALU54B:       0/     78     0%
+Info: 	             EHXPLLL:       0/      4     0%
+Info: 	             EXTREFB:       0/      2     0%
+Info: 	                DCUA:       0/      2     0%
+Info: 	           PCSCLKDIV:       0/      2     0%
+Info: 	             IOLOGIC:       0/    224     0%
+Info: 	            SIOLOGIC:       0/    141     0%
+Info: 	                 GSR:       0/      1     0%
+Info: 	               JTAGG:       0/      1     0%
+Info: 	                OSCG:       0/      1     0%
+Info: 	               SEDGA:       0/      1     0%
+Info: 	                 DTR:       0/      1     0%
+Info: 	             USRMCLK:       0/      1     0%
+Info: 	             CLKDIVF:       0/      4     0%
+Info: 	           ECLKSYNCB:       0/     10     0%
+Info: 	             DLLDELD:       0/      8     0%
+Info: 	              DDRDLL:       0/      4     0%
+Info: 	             DQSBUFM:       0/     14     0%
+Info: 	     TRELLIS_ECLKBUF:       0/      8     0%
+Info: 	        ECLKBRIDGECS:       0/      2     0%
+Info: 	                DCSC:       0/      2     0%
+Info: 	          TRELLIS_FF:      25/  83640     0%
+Info: 	        TRELLIS_COMB:      34/  83640     0%
+Info: 	        TRELLIS_RAMW:       0/  10455     0%
 
 Info: Placed 2 cells based on constraints.
-Info: Creating initial analytic placement for 3 cells, random placement wirelen = 373.
+Info: Creating initial analytic placement for 4 cells, random placement wirelen = 308.
 Info:     at initial placer iter 0, wirelen = 10
 Info:     at initial placer iter 1, wirelen = 10
 Info:     at initial placer iter 2, wirelen = 10
 Info:     at initial placer iter 3, wirelen = 10
 Info: Running main analytical placer, max placement attempts per cell = 10000.
-Info:     at iteration #1, type TRELLIS_COMB: wirelen solved = 10, spread = 10, legal = 17; time = 0.02s
-Info:     at iteration #2, type TRELLIS_COMB: wirelen solved = 10, spread = 10, legal = 22; time = 0.00s
+Info:     at iteration #1, type TRELLIS_COMB: wirelen solved = 10, spread = 21, legal = 23; time = 0.02s
+Info:     at iteration #2, type TRELLIS_COMB: wirelen solved = 10, spread = 10, legal = 19; time = 0.00s
 Info:     at iteration #3, type TRELLIS_COMB: wirelen solved = 11, spread = 11, legal = 19; time = 0.00s
-Info:     at iteration #4, type TRELLIS_COMB: wirelen solved = 11, spread = 11, legal = 19; time = 0.00s
-Info:     at iteration #5, type TRELLIS_COMB: wirelen solved = 11, spread = 11, legal = 20; time = 0.00s
-Info:     at iteration #6, type TRELLIS_COMB: wirelen solved = 12, spread = 12, legal = 21; time = 0.00s
-Info: HeAP Placer Time: 0.08s
+Info:     at iteration #4, type TRELLIS_COMB: wirelen solved = 13, spread = 13, legal = 21; time = 0.00s
+Info:     at iteration #5, type TRELLIS_COMB: wirelen solved = 13, spread = 20, legal = 22; time = 0.00s
+Info:     at iteration #6, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 18; time = 0.00s
+Info:     at iteration #7, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 23; time = 0.00s
+Info:     at iteration #8, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 18; time = 0.00s
+Info:     at iteration #9, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 20; time = 0.00s
+Info:     at iteration #10, type TRELLIS_COMB: wirelen solved = 14, spread = 21, legal = 22; time = 0.00s
+Info:     at iteration #11, type TRELLIS_COMB: wirelen solved = 16, spread = 16, legal = 18; time = 0.00s
+Info: HeAP Placer Time: 0.11s
 Info:   of which solving equations: 0.00s
-Info:   of which spreading cells: 0.01s
+Info:   of which spreading cells: 0.02s
 Info:   of which strict legalisation: 0.00s
 
 Info: Running simulated annealing placer for refinement.
-Info:   at iteration #1: temp = 0.000000, timing cost = 0, wirelen = 17
-Info:   at iteration #4: temp = 0.000000, timing cost = 0, wirelen = 15 
+Info:   at iteration #1: temp = 0.000000, timing cost = 1, wirelen = 18
+Info:   at iteration #2: temp = 0.000000, timing cost = 1, wirelen = 18 
 Info: SA placement time 0.00s
 
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 455.37 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 352.61 MHz (PASS at 25.00 MHz)
 
 Info: Max delay posedge $glbnet$clk$TRELLIS_IO_IN -> <async>: 3.16 ns
 
 Info: Slack histogram:
 Info:  legend: * represents 1 endpoint(s)
 Info:          + represents [1,1) endpoint(s)
-Info: [ 37804,  39923) |************************* 
-Info: [ 39923,  42042) | 
-Info: [ 42042,  44161) | 
-Info: [ 44161,  46280) | 
-Info: [ 46280,  48399) | 
-Info: [ 48399,  50518) | 
-Info: [ 50518,  52637) | 
-Info: [ 52637,  54756) | 
-Info: [ 54756,  56875) | 
-Info: [ 56875,  58994) | 
-Info: [ 58994,  61113) | 
-Info: [ 61113,  63232) | 
-Info: [ 63232,  65351) | 
-Info: [ 65351,  67470) | 
-Info: [ 67470,  69589) | 
-Info: [ 69589,  71708) | 
-Info: [ 71708,  73827) | 
-Info: [ 73827,  75946) | 
-Info: [ 75946,  78065) | 
-Info: [ 78065,  80184) |* 
-Info: Checksum: 0xcb832155
+Info: [ 37164,  37268) |*** 
+Info: [ 37268,  37372) |*** 
+Info: [ 37372,  37476) |*** 
+Info: [ 37476,  37580) |*** 
+Info: [ 37580,  37684) |*** 
+Info: [ 37684,  37788) |*** 
+Info: [ 37788,  37892) |*** 
+Info: [ 37892,  37996) |*** 
+Info: [ 37996,  38100) | 
+Info: [ 38100,  38204) | 
+Info: [ 38204,  38308) | 
+Info: [ 38308,  38412) | 
+Info: [ 38412,  38516) | 
+Info: [ 38516,  38620) | 
+Info: [ 38620,  38724) | 
+Info: [ 38724,  38828) | 
+Info: [ 38828,  38932) | 
+Info: [ 38932,  39036) | 
+Info: [ 39036,  39140) | 
+Info: [ 39140,  39244) |* 
+Info: Checksum: 0x303fc692
 Info: Routing globals...
 Info:     routing clock net $glbnet$clk$TRELLIS_IO_IN using global 0
 
 Info: Routing..
 Info: Setting up routing queue.
-Info: Routing 83 arcs.
+Info: Routing 84 arcs.
 Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
 Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
-Info:         83 |        0         68 |    0    68 |         0|       0.00       0.00|
+Info:         84 |        0         69 |    0    69 |         0|       0.02       0.02|
 Info: Routing complete.
-Info: Router1 time 0.00s
-Info: Checksum: 0xee552816
+Info: Router1 time 0.02s
+Info: Checksum: 0x2c186d87
 
 Info: Critical path report for clock '$glbnet$clk$TRELLIS_IO_IN' (posedge -> posedge):
-Info: curr total
-Info:  0.5  0.5  Source cnt_TRELLIS_FF_Q_24.Q
-Info:  0.8  1.4    Net cnt[0] budget 18.902000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_12$CCU2_COMB0.B
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.4  1.8  Source cnt_CCU2C_B0_12$CCU2_COMB0.FCO
-Info:  0.0  1.8    Net cnt_CCU2C_B0_12$CCU2_FCI_INT budget 0.000000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_12$CCU2_COMB1.FCI
-Info:  0.0  1.8  Source cnt_CCU2C_B0_12$CCU2_COMB1.FCO
-Info:  0.0  1.8    Net cnt_CCU2C_B0_4_COUT[0] budget 0.000000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_3$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  1.9  Source cnt_CCU2C_B0_3$CCU2_COMB0.FCO
-Info:  0.0  1.9    Net cnt_CCU2C_B0_3$CCU2_FCI_INT budget 0.000000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_3$CCU2_COMB1.FCI
-Info:  0.0  1.9  Source cnt_CCU2C_B0_3$CCU2_COMB1.FCO
-Info:  0.0  1.9    Net cnt_CCU2C_B0_4_COUT[2] budget 0.000000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_2$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  1.9  Source cnt_CCU2C_B0_2$CCU2_COMB0.FCO
-Info:  0.0  1.9    Net cnt_CCU2C_B0_2$CCU2_FCI_INT budget 0.000000 ns (2,37) -> (2,37)
-Info:                Sink cnt_CCU2C_B0_2$CCU2_COMB1.FCI
-Info:  0.0  1.9  Source cnt_CCU2C_B0_2$CCU2_COMB1.FCO
-Info:  0.0  1.9    Net cnt_CCU2C_B0_4_COUT[4] budget 0.000000 ns (2,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_1$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.0  Source cnt_CCU2C_B0_1$CCU2_COMB0.FCO
-Info:  0.0  2.0    Net cnt_CCU2C_B0_1$CCU2_FCI_INT budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_1$CCU2_COMB1.FCI
-Info:  0.0  2.0  Source cnt_CCU2C_B0_1$CCU2_COMB1.FCO
-Info:  0.0  2.0    Net cnt_CCU2C_B0_4_COUT[6] budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.1  Source cnt_CCU2C_B0$CCU2_COMB0.FCO
-Info:  0.0  2.1    Net cnt_CCU2C_B0$CCU2_FCI_INT budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0$CCU2_COMB1.FCI
-Info:  0.0  2.1  Source cnt_CCU2C_B0$CCU2_COMB1.FCO
-Info:  0.0  2.1    Net cnt_CCU2C_B0_4_COUT[8] budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_11$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.2  Source cnt_CCU2C_B0_11$CCU2_COMB0.FCO
-Info:  0.0  2.2    Net cnt_CCU2C_B0_11$CCU2_FCI_INT budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_11$CCU2_COMB1.FCI
-Info:  0.0  2.2  Source cnt_CCU2C_B0_11$CCU2_COMB1.FCO
-Info:  0.0  2.2    Net cnt_CCU2C_B0_4_COUT[10] budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_10$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.2  Source cnt_CCU2C_B0_10$CCU2_COMB0.FCO
-Info:  0.0  2.2    Net cnt_CCU2C_B0_10$CCU2_FCI_INT budget 0.000000 ns (3,37) -> (3,37)
-Info:                Sink cnt_CCU2C_B0_10$CCU2_COMB1.FCI
-Info:  0.0  2.2  Source cnt_CCU2C_B0_10$CCU2_COMB1.FCO
-Info:  0.0  2.2    Net cnt_CCU2C_B0_4_COUT[12] budget 0.000000 ns (3,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_9$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.3  Source cnt_CCU2C_B0_9$CCU2_COMB0.FCO
-Info:  0.0  2.3    Net cnt_CCU2C_B0_9$CCU2_FCI_INT budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_9$CCU2_COMB1.FCI
-Info:  0.0  2.3  Source cnt_CCU2C_B0_9$CCU2_COMB1.FCO
-Info:  0.0  2.3    Net cnt_CCU2C_B0_4_COUT[14] budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_8$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.4  Source cnt_CCU2C_B0_8$CCU2_COMB0.FCO
-Info:  0.0  2.4    Net cnt_CCU2C_B0_8$CCU2_FCI_INT budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_8$CCU2_COMB1.FCI
-Info:  0.0  2.4  Source cnt_CCU2C_B0_8$CCU2_COMB1.FCO
-Info:  0.0  2.4    Net cnt_CCU2C_B0_4_COUT[16] budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_7$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.4  Source cnt_CCU2C_B0_7$CCU2_COMB0.FCO
-Info:  0.0  2.4    Net cnt_CCU2C_B0_7$CCU2_FCI_INT budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_7$CCU2_COMB1.FCI
-Info:  0.0  2.4  Source cnt_CCU2C_B0_7$CCU2_COMB1.FCO
-Info:  0.0  2.4    Net cnt_CCU2C_B0_4_COUT[18] budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_6$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.5  Source cnt_CCU2C_B0_6$CCU2_COMB0.FCO
-Info:  0.0  2.5    Net cnt_CCU2C_B0_6$CCU2_FCI_INT budget 0.000000 ns (4,37) -> (4,37)
-Info:                Sink cnt_CCU2C_B0_6$CCU2_COMB1.FCI
-Info:  0.0  2.5  Source cnt_CCU2C_B0_6$CCU2_COMB1.FCO
-Info:  0.0  2.5    Net cnt_CCU2C_B0_4_COUT[20] budget 0.000000 ns (4,37) -> (5,37)
-Info:                Sink cnt_CCU2C_B0_5$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.1  2.6  Source cnt_CCU2C_B0_5$CCU2_COMB0.FCO
-Info:  0.0  2.6    Net cnt_CCU2C_B0_5$CCU2_FCI_INT budget 0.000000 ns (5,37) -> (5,37)
-Info:                Sink cnt_CCU2C_B0_5$CCU2_COMB1.FCI
-Info:  0.0  2.6  Source cnt_CCU2C_B0_5$CCU2_COMB1.FCO
-Info:  0.0  2.6    Net cnt_CCU2C_B0_4_COUT[22] budget 0.000000 ns (5,37) -> (5,37)
-Info:                Sink cnt_CCU2C_B0_4$CCU2_COMB0.FCI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
-Info:  0.4  3.0  Source cnt_CCU2C_B0_4$CCU2_COMB0.F
-Info:  0.1  3.2    Net cnt_TRELLIS_FF_Q_DI[24] budget 18.902000 ns (5,37) -> (5,37)
-Info:                Sink cnt_TRELLIS_FF_Q.DI
-Info:                Defined in:
-Info:                  smoke_top.sv:14.16-14.26
-Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:34.26-34.27
-Info:  0.0  3.2  Setup cnt_TRELLIS_FF_Q.DI
-Info: 2.2 ns logic, 1.0 ns routing
+Info:       type curr  total name
+Info:   clk-to-q  0.52  0.52 Source cnt_TRELLIS_FF_Q_10.Q
+Info:    routing  1.10  1.62 Net cnt[0] (2,30) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2$CCU2_COMB0.B
+Info:                          Defined in:
+Info:                               smoke_top.sv:12.16-12.19
+Info:      logic  0.45  2.07 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2$CCU2_COMB0.FCO
+Info:    routing  0.00  2.07 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2$CCU2_FCI_INT (2,31) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2$CCU2_COMB1.FCI
+Info:      logic  0.00  2.07 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2$CCU2_COMB1.FCO
+Info:    routing  0.00  2.07 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_2_COUT (2,31) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.14 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB0.FCO
+Info:    routing  0.00  2.14 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_FCI_INT (2,31) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB1.FCI
+Info:      logic  0.00  2.14 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6$CCU2_COMB1.FCO
+Info:    routing  0.00  2.14 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_6_COUT (2,31) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.21 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB0.FCO
+Info:    routing  0.00  2.21 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_FCI_INT (2,31) -> (2,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB1.FCI
+Info:      logic  0.00  2.21 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7$CCU2_COMB1.FCO
+Info:    routing  0.00  2.21 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_7_COUT (2,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.28 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB0.FCO
+Info:    routing  0.00  2.28 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_FCI_INT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB1.FCI
+Info:      logic  0.00  2.28 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4$CCU2_COMB1.FCO
+Info:    routing  0.00  2.28 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_4_COUT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.36 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB0.FCO
+Info:    routing  0.00  2.36 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_FCI_INT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB1.FCI
+Info:      logic  0.00  2.36 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1$CCU2_COMB1.FCO
+Info:    routing  0.00  2.36 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_1_COUT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.43 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB0.FCO
+Info:    routing  0.00  2.43 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_FCI_INT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB1.FCI
+Info:      logic  0.00  2.43 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1$CCU2_COMB1.FCO
+Info:    routing  0.00  2.43 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_COUT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.50 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB0.FCO
+Info:    routing  0.00  2.50 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_FCI_INT (3,31) -> (3,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB1.FCI
+Info:      logic  0.00  2.50 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3$CCU2_COMB1.FCO
+Info:    routing  0.00  2.50 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_3_COUT (3,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.57 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB0.FCO
+Info:    routing  0.00  2.57 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_FCI_INT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB1.FCI
+Info:      logic  0.00  2.57 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9$CCU2_COMB1.FCO
+Info:    routing  0.00  2.57 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_9_COUT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.64 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB0.FCO
+Info:    routing  0.00  2.64 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_FCI_INT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB1.FCI
+Info:      logic  0.00  2.64 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8$CCU2_COMB1.FCO
+Info:    routing  0.00  2.64 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_8_COUT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.71 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB0.FCO
+Info:    routing  0.00  2.71 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_FCI_INT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB1.FCI
+Info:      logic  0.00  2.71 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11$CCU2_COMB1.FCO
+Info:    routing  0.00  2.71 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_11_COUT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.78 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB0.FCO
+Info:    routing  0.00  2.78 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_FCI_INT (4,31) -> (4,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB1.FCI
+Info:      logic  0.00  2.78 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5$CCU2_COMB1.FCO
+Info:    routing  0.00  2.78 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_5_COUT (4,31) -> (5,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.07  2.85 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB0.FCO
+Info:    routing  0.00  2.85 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_FCI_INT (5,31) -> (5,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB1.FCI
+Info:      logic  0.00  2.85 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10$CCU2_COMB1.FCO
+Info:    routing  0.00  2.85 Net cnt_TRELLIS_FF_Q_DI_CCU2C_S1_10_COUT (5,31) -> (5,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_DI_CCU2C_S0$CCU2_COMB0.FCI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:      logic  0.44  3.30 Source cnt_TRELLIS_FF_Q_DI_CCU2C_S0$CCU2_COMB0.F
+Info:    routing  0.13  3.42 Net cnt_TRELLIS_FF_Q_DI[24] (5,31) -> (5,31)
+Info:                          Sink cnt_TRELLIS_FF_Q_23.DI
+Info:                          Defined in:
+Info:                               smoke_top.sv:14.16-14.26
+Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:34.26-34.27
+Info:      setup  0.00  3.42 Source cnt_TRELLIS_FF_Q_23.DI
+Info: 2.20 ns logic, 1.23 ns routing
 
 Info: Critical path report for cross-domain path 'posedge $glbnet$clk$TRELLIS_IO_IN' -> '<async>':
-Info: curr total
-Info:  0.5  0.5  Source cnt_TRELLIS_FF_Q.Q
-Info:  0.7  1.3    Net cnt[24] budget 41.285999 ns (5,37) -> (4,36)
-Info:                Sink led_LUT4_Z.D
-Info:                Defined in:
-Info:                  smoke_top.sv:12.16-12.19
-Info:  0.2  1.5  Source led_LUT4_Z.F
-Info:  1.1  2.6    Net led$TRELLIS_IO_OUT budget 41.285999 ns (4,36) -> (0,35)
-Info:                Sink led$tr_io.I
-Info:                Defined in:
-Info:                  smoke_top.sv:9.17-9.20
-Info: 0.8 ns logic, 1.8 ns routing
+Info:       type curr  total name
+Info:   clk-to-q  0.52  0.52 Source cnt_TRELLIS_FF_Q_23.Q
+Info:    routing  0.75  1.28 Net cnt[24] (5,31) -> (3,33)
+Info:                          Sink led_LUT4_Z.D
+Info:                          Defined in:
+Info:                               smoke_top.sv:12.16-12.19
+Info:      logic  0.24  1.51 Source led_LUT4_Z.F
+Info:    routing  1.38  2.89 Net led$TRELLIS_IO_OUT (3,33) -> (0,35)
+Info:                          Sink led$tr_io.I
+Info:                          Defined in:
+Info:                               smoke_top.sv:9.17-9.20
+Info: 0.76 ns logic, 2.13 ns routing
 
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 316.46 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 25.00 MHz)
 
-Info: Max delay posedge $glbnet$clk$TRELLIS_IO_IN -> <async>: 2.61 ns
+Info: Max delay posedge $glbnet$clk$TRELLIS_IO_IN -> <async>: 2.89 ns
 
 Info: Slack histogram:
 Info:  legend: * represents 1 endpoint(s)
 Info:          + represents [1,1) endpoint(s)
-Info: [ 36840,  39035) |************************* 
-Info: [ 39035,  41230) | 
-Info: [ 41230,  43425) | 
-Info: [ 43425,  45620) | 
-Info: [ 45620,  47815) | 
-Info: [ 47815,  50010) | 
-Info: [ 50010,  52205) | 
-Info: [ 52205,  54400) | 
-Info: [ 54400,  56595) | 
-Info: [ 56595,  58790) | 
-Info: [ 58790,  60985) | 
-Info: [ 60985,  63180) | 
-Info: [ 63180,  65375) | 
-Info: [ 65375,  67570) | 
-Info: [ 67570,  69765) | 
-Info: [ 69765,  71960) | 
-Info: [ 71960,  74155) | 
-Info: [ 74155,  76350) | 
-Info: [ 76350,  78545) | 
-Info: [ 78545,  80740) |* 
+Info: [ 36575,  36691) |**** 
+Info: [ 36691,  36807) |** 
+Info: [ 36807,  36923) |**** 
+Info: [ 36923,  37039) |*** 
+Info: [ 37039,  37155) |**** 
+Info: [ 37155,  37271) |*** 
+Info: [ 37271,  37387) |** 
+Info: [ 37387,  37503) |** 
+Info: [ 37503,  37619) | 
+Info: [ 37619,  37735) | 
+Info: [ 37735,  37851) | 
+Info: [ 37851,  37967) | 
+Info: [ 37967,  38083) | 
+Info: [ 38083,  38199) | 
+Info: [ 38199,  38315) | 
+Info: [ 38315,  38431) | 
+Info: [ 38431,  38547) | 
+Info: [ 38547,  38663) | 
+Info: [ 38663,  38779) | 
+Info: [ 38779,  38895) |* 
 
 Info: Program finished normally.

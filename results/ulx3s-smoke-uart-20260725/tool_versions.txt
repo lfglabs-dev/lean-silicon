@@ -1,5 +1,5 @@
 === TOOL VERSIONS ===
-Yosys 0.33 (git sha1 2584903a060)
-"nextpnr-ecp5" -- Next Generation Place and Route (Version 0.6-3build5)
-Project Trellis ecppack Version 1.4-2build4
-date: 2026-07-26T05:56:44Z
+Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+"nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.10-100-gfb95bb8e)
+Project Trellis ecppack Version 1.4-79-g56bb170
+date: 2026-07-26T07:15:36Z

@@ -1,1 +1,1 @@
-7272b0d8f5ccbe5de328aa1f0d1461e6e35b58cc4a2e132e5024aedeed08c187  ulx3s_bridge.bit
+eacee77bdca486f173cacdb56709e442942eb85f9111eabcb96026976f8bae51  ulx3s_bridge.bit
