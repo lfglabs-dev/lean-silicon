@@ -85,3 +85,13 @@ async def test_pilot_navigation_progression_and_narrow():
         assert app.screen.has_class("narrow")
         await pilot.press("r")
         assert app.replay.cursor == 0
+
+
+@pytest.mark.asyncio
+async def test_demo_auto_animates_to_prefix_match():
+    app = SiliconLive(auto_run=True)
+    async with app.run_test(size=(120, 40)) as pilot:
+        await asyncio.sleep(6.0)
+        await pilot.pause()
+        assert app.replay.cursor == 12
+        assert app.replay.terminal == "PREFIX MATCH ✓"
