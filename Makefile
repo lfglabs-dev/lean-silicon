@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight sim lean formal clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -58,6 +58,9 @@ fpga-harness:
 # Reporting only: absent tools or absent board must not fail a build.
 fpga-detect:
 	$(PYTHON) fpga_harness/board_detect.py
+
+fpga-preflight:
+	$(PYTHON) fpga_harness/hardware_preflight.py
 
 check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
 

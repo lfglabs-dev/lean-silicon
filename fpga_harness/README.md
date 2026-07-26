@@ -32,4 +32,14 @@ are not evidence that bytes cross the interface correctly.
 make fpga-boundary   # structural boundary check (gating)
 make fpga-harness    # deterministic unit tests, no board (gating)
 make fpga-detect     # local detection ladder, reporting only
+make fpga-preflight  # bounded USB/JTAG/UART preflight, never programs hardware
 ```
+
+`hardware_preflight.py` writes a JSON evidence record of the exact commit and
+clean state, tool versions, host boundary, USB identity, stable Linux serial
+path/permissions, and a bounded `openFPGALoader -b ulx3s --detect` result. It
+has no bitstream parameter and rejects flash/programming flags. Linux selects
+`/dev/serial/by-id/*D01623*` before a bounded `/dev/ttyUSB*` fallback; macOS
+keeps its `cu.usbserial` discovery. If a UART candidate exists, it is only
+opened then closed in a deadline-bounded child process after the loader scan;
+it sends no protocol bytes or BREAK.
