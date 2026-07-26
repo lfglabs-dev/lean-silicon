@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="docs/assets/lean-silicon-logo.svg" alt="leanSilicon — a scalar coprocessor for leanVM-b" width="520">
+  <img src="docs/assets/lean-silicon-logo.png" alt="Project logo" width="520">
 </p>
-
-<h1 align="center">leanSilicon</h1>
 
 <p align="center">
   A physical scalar coprocessor for leanVM-b, designed around an explicit
