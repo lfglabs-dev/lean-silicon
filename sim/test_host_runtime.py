@@ -592,7 +592,100 @@ class RuntimeTests(unittest.TestCase):
                     f"retire fault echoed txn_id {echoed}, expected 1",
                 )
 
+    def test_a_non_discarding_retire_fault_binding_this_txn_is_still_refused(self):
+        # Echoing the in-flight txn_id is not enough. At RETIRE the endpoint is
+        # holding a decided transition, and 9.1 discards it only on
+        # RETIRE_MISMATCH; every one of these would leave it RESULT_PENDING, so
+        # ending the run on one strands it.
+        for status in (
+            protocol.Status.BAD_SOF,
+            protocol.Status.BAD_VERSION,
+            protocol.Status.BAD_OPCODE,
+            protocol.Status.BAD_LENGTH,
+            protocol.Status.BAD_CRC,
+            protocol.Status.BAD_FLAGS,
+            protocol.Status.BAD_PROFILE,
+            protocol.Status.BAD_STATE,
+            protocol.Status.BAD_SERVICE,
+            protocol.Status.STATE_MISMATCH,
+            protocol.Status.INDEX_RANGE,
+            protocol.Status.WRITE_CONFLICT,
+        ):
+            with self.subTest(status=status.name):
+                self._refuse_retire_fault(
+                    protocol.ResponseFrame(
+                        status, (1).to_bytes(4, "little") + bytes([1])
+                    ),
+                    f"retire answered {status.name}, which does not discard the "
+                    "staged transition under section 9.1",
+                )
+
+    def test_a_frame_only_instruction_fault_binding_this_txn_is_still_refused(self):
+        # These decided nothing about the transition: the framing faults never
+        # reached a handler, and BAD_STATE means the endpoint is holding a
+        # transaction the host does not know about.
+        for status in (
+            protocol.Status.BAD_SOF,
+            protocol.Status.BAD_VERSION,
+            protocol.Status.BAD_OPCODE,
+            protocol.Status.BAD_LENGTH,
+            protocol.Status.BAD_CRC,
+            protocol.Status.BAD_FLAGS,
+            protocol.Status.BAD_STATE,
+            protocol.Status.BAD_SERVICE,
+        ):
+            with self.subTest(status=status.name):
+                self._refuse_fault(
+                    protocol.ResponseFrame(
+                        status, (1).to_bytes(4, "little") + bytes([1])
+                    ),
+                    f"instruction answered {status.name}, a section 9.1 "
+                    "frame-level rejection that decided nothing",
+                )
+
+    def test_an_idle_guard_fault_is_still_attributed_to_the_step(self):
+        # 9.1 reaches these only after the endpoint confirmed it is IDLE, so
+        # nothing is outstanding behind them and they are genuine refusals.
+        for status in (
+            protocol.Status.BAD_PROFILE,
+            protocol.Status.STATE_MISMATCH,
+            protocol.Status.INDEX_RANGE,
+        ):
+            with self.subTest(status=status.name):
+                runtime = self._FaultingRuntime(
+                    program(set_slot(2, 1)),
+                    fault_reply=protocol.ResponseFrame(
+                        status, (1).to_bytes(4, "little") + bytes([1])
+                    ),
+                )
+                self.assertEqual(runtime.step().fault, status.name)
+                self.assertTrue(runtime.faulted)
+
+    def test_a_duplicate_retire_against_the_real_endpoint_is_refused(self):
+        # Protocol 10.1: a second RETIRE finds IDLE and is BAD_STATE, echoing the
+        # requested txn_id in a well-formed 8.6 payload. This is the unspoofed
+        # path that reaches the frame-only class with a matching transaction.
+        endpoint = protocol.Lsc1Endpoint()
+        runtime = HostRuntime(program(set_slot(2, 1)), endpoint=endpoint)
+        replayed = []
+
+        original = runtime._exchange
+
+        def replaying(frame):
+            reply = original(frame)
+            if protocol.Opcode(frame.opcode) is protocol.Opcode.RETIRE:
+                replayed.append(reply)
+                return original(frame)
+            return reply
+
+        runtime._exchange = replaying
+        with self.assertRaisesRegex(ProtocolViolation, "BAD_STATE"):
+            runtime.step()
+        self.assertEqual([reply.status for reply in replayed], [protocol.Status.RETIRED])
+        self.assertFalse(runtime.faulted)
+
     def test_a_well_formed_retire_fault_is_still_attributed_to_the_step(self):
+        # RETIRE_MISMATCH discards the transaction (9.1), so it is a real outcome.
         runtime = self._RetireSpoofingRuntime(
             program(set_slot(2, 1)),
             retire_reply=protocol.ResponseFrame(

@@ -98,12 +98,36 @@ class RunResult:
 #: Protocol section 8.6: ``u32le`` txn_id plus one non-normative detail byte.
 FAULT_PAYLOAD_BYTES = 5
 
+#: Section 9.1 frame-level rejections: the framing faults ``BAD_SOF``..
+#: ``BAD_FLAGS``, which never reach a handler, plus the two guard faults that
+#: fire *because* the endpoint holds a transaction the host did not expect.
+#: None of them decided anything, so none can be a transition's outcome.  The
+#: remaining guard faults (``BAD_PROFILE``, ``STATE_MISMATCH``, ``INDEX_RANGE``
+#: on a preamble) are checked only after the endpoint has confirmed it is
+#: ``IDLE``, so they leave nothing outstanding and are real refusals.
+FRAME_ONLY_FAULTS = frozenset({
+    protocol.Status.BAD_SOF,
+    protocol.Status.BAD_VERSION,
+    protocol.Status.BAD_OPCODE,
+    protocol.Status.BAD_LENGTH,
+    protocol.Status.BAD_CRC,
+    protocol.Status.BAD_FLAGS,
+    protocol.Status.BAD_STATE,
+    protocol.Status.BAD_SERVICE,
+})
+
+#: Section 9.1, third class: the only fault that reaches ``RETIRE`` after the
+#: endpoint folded the host's result in, and therefore the only one that
+#: discards the staged transition rather than leaving it ``RESULT_PENDING``.
+RETIRE_DISCARDING_FAULTS = frozenset({protocol.Status.RETIRE_MISMATCH})
+
 
 def check_fault_response(
     reply: "protocol.ResponseFrame",
     *,
     expected_txn_id: int,
     where: str = "instruction",
+    staged: bool = False,
 ) -> None:
     """Refuse a non-``OK`` response that cannot be this step's fault.
 
@@ -111,9 +135,16 @@ def check_fault_response(
     status carrying the section 8.6 payload and echoing the transaction in
     flight may be recorded against this step.  Anything else is a protocol
     violation, and treating it as a fault would end the run while the real
-    transaction is still staged on the endpoint.  Section 9.1 frame-level
-    rejections echo txn_id 0 for exactly that reason, so they are caught here
-    by the transaction-binding check.
+    transaction is still staged on the endpoint.
+
+    Echoing the right transaction is necessary but not sufficient.  Section 9.1
+    splits faults by what they do to an outstanding transaction, and the split
+    depends on what is in flight.  ``staged`` says the endpoint is known to hold
+    a decided transition -- true only at ``RETIRE``.  Then a fault ends the run
+    honestly only if it discarded that transition; every other fault leaves it
+    ``RESULT_PENDING`` and needs retry or recovery, which this scaffold does not
+    implement.  With nothing staged the weaker test applies: a frame-level
+    rejection decided nothing, so it cannot be the transition's outcome.
     """
     if int(reply.status) < 0x80:
         raise ProtocolViolation(
@@ -128,6 +159,18 @@ def check_fault_response(
     if echoed != expected_txn_id:
         raise ProtocolViolation(
             f"{where} fault echoed txn_id {echoed}, expected {expected_txn_id}"
+        )
+    if staged:
+        if reply.status not in RETIRE_DISCARDING_FAULTS:
+            raise ProtocolViolation(
+                f"{where} answered {reply.status.name}, which does not discard "
+                "the staged transition under section 9.1; it would be left "
+                "outstanding, so it is not this step's outcome"
+            )
+    elif reply.status in FRAME_ONLY_FAULTS:
+        raise ProtocolViolation(
+            f"{where} answered {reply.status.name}, a section 9.1 frame-level "
+            "rejection that decided nothing; it is not this step's outcome"
         )
 
 
@@ -407,7 +450,9 @@ class HostRuntime:
             )
         )
         if retire.status is not protocol.Status.RETIRED:
-            check_fault_response(retire, expected_txn_id=self.txn_id, where="retire")
+            check_fault_response(
+                retire, expected_txn_id=self.txn_id, where="retire", staged=True
+            )
             record.status = retire.status.name
             record.fault = retire.status.name
             record.lane_cycles = self.lane_cycles - before
