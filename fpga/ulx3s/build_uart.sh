@@ -56,9 +56,13 @@ for src in $SOURCES; do
 done
 
 # Record which revision these exact inputs came from, so the archive identifies
-# its own source instead of relying on a hand-maintained note.
+# its own source instead of relying on a hand-maintained note. The recipe is an
+# input as much as the RTL is: changing a yosys or nextpnr flag here changes the
+# bitstream, so a manifest that digests only $SOURCES and $LPF would still
+# report a match for an artifact HEAD cannot reproduce.
+RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST_uart.txt" \
-    $SOURCES "$LPF"
+    $SOURCES "$LPF" "$RECIPE"
 
 echo "=== SYNTH (full bridge + MinCore) ==="
 yosys -p "

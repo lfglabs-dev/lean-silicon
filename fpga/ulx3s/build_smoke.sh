@@ -46,9 +46,13 @@ fi
 cat "$STAGE/tool_versions.txt"
 
 # Record which revision these exact inputs came from, so the archive identifies
-# its own source instead of relying on a hand-maintained note.
+# its own source instead of relying on a hand-maintained note. The recipe is an
+# input as much as the RTL is: changing a yosys or nextpnr flag here changes the
+# bitstream, so a manifest that digests only the RTL and $LPF would still report
+# a match for an artifact HEAD cannot reproduce.
+RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST.txt" \
-    "${TOP}.sv" "$LPF"
+    "${TOP}.sv" "$LPF" "$RECIPE"
 
 echo "=== SYNTH ==="
 yosys -p "read_verilog -sv ${TOP}.sv; hierarchy -check -top ${TOP}; proc; check; synth_ecp5 -top ${TOP}; write_json ${TOP}.json" \

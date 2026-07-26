@@ -40,15 +40,35 @@ def _shell_var(text: str, name: str) -> str:
     return match.group(1).strip().strip('"')
 
 
+def _recorder_args(text: str) -> list[str]:
+    """The still-unexpanded arguments a build hands to the provenance recorder."""
+    match = re.search(r"source_provenance\.py\"(?:\\\n|[^\n])*", text)
+    assert match, "build script no longer invokes the provenance recorder"
+    # Past the recorder itself and the manifest it writes, every argument is an
+    # input whose digest the archive will carry.
+    return match.group(0).replace("\\\n", " ").split()[2:]
+
+
 def build_inputs(script: Path) -> set[str]:
-    """Repo-relative design inputs a build script feeds to yosys/nextpnr."""
+    """Repo-relative inputs a build script records provenance for.
+
+    Read back out of the recorder invocation rather than restated here, so a
+    build that stops recording one of its inputs fails instead of silently
+    narrowing what the archive claims to cover.
+    """
     text = script.read_text()
-    names = [_shell_var(text, "LPF")]
     sources = re.search(r'SOURCES="([^"]*)"', text, re.DOTALL)
-    if sources:
-        names += sources.group(1).replace("\\\n", " ").split()
-    else:
-        names.append(_shell_var(text, "TOP") + ".sv")
+    expansions = {
+        '"$LPF"': [_shell_var(text, "LPF")],
+        '"${TOP}.sv"': [_shell_var(text, "TOP") + ".sv"],
+        '"$RECIPE"': [script.name],
+        "$SOURCES": sources.group(1).replace("\\\n", " ").split() if sources else [],
+    }
+    names: list[str] = []
+    for arg in _recorder_args(text):
+        assert arg in expansions, f"{script.name}: unrecognised recorder argument {arg}"
+        assert expansions[arg], f"{script.name}: {arg} expands to no input"
+        names += expansions[arg]
     return {(ULX3S / n).resolve().relative_to(ROOT).as_posix() for n in names}
 
 
@@ -105,6 +125,19 @@ class BuildInputParsingTest(unittest.TestCase):
             for rel in build_inputs(script):
                 with self.subTest(source=rel):
                     self.assertTrue((ROOT / rel).is_file(), rel)
+
+    def test_each_build_records_its_own_recipe(self):
+        # Identical RTL built through an edited recipe yields a different
+        # bitstream, so a manifest blind to the recipe can report a match for an
+        # artefact no revision can reproduce.
+        for script in BUILDS.values():
+            with self.subTest(script=script.name):
+                self.assertRegex(
+                    script.read_text(),
+                    re.compile(r'^RECIPE=\$\(basename -- "\$0"\)$', re.M),
+                )
+                rel = script.resolve().relative_to(ROOT).as_posix()
+                self.assertIn(rel, build_inputs(script))
 
     def test_uart_build_pulls_in_the_asic_core(self):
         # The bridge is only evidence if it wraps the real core, not a stub.
