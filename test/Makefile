@@ -4,11 +4,22 @@ PROJECT_SOURCES = \
   ../asic_core/rtl/leanvm_b_stream_alu.sv \
   ../asic_core/rtl/lean_silicon_lsc1.sv
 
-.PHONY: sim clean
+BRIDGE_SOURCES = \
+  ../fpga/ulx3s/uart_rx.sv \
+  ../fpga/ulx3s/uart_tx.sv \
+  ../fpga/ulx3s/uart_bridge.sv
 
-sim:
+.PHONY: sim stream-alu uart-bridge clean
+
+sim: stream-alu uart-bridge
+
+stream-alu:
 	iverilog -g2012 -Wall -s tb_stream_alu -o tb_stream_alu.vvp $(PROJECT_SOURCES) tb_stream_alu.sv
 	vvp tb_stream_alu.vvp
 
+uart-bridge:
+	iverilog -g2012 -Wall -s tb_uart_bridge -o tb_uart_bridge.vvp $(PROJECT_SOURCES) $(BRIDGE_SOURCES) tb_uart_bridge.sv
+	vvp tb_uart_bridge.vvp
+
 clean:
-	rm -f tb_stream_alu.vvp
+	rm -f tb_stream_alu.vvp tb_uart_bridge.vvp

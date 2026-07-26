@@ -20,3 +20,18 @@ formal/stream_alu_mul_pulse_cover/
 openlane/
 reports/
 build/
+
+# Scratch outputs of the ULX3S build scripts. The scripts archive the copies
+# that matter under results/.
+fpga/ulx3s/smoke_top.*
+fpga/ulx3s/ulx3s_top.*
+!fpga/ulx3s/smoke_top.sv
+!fpga/ulx3s/ulx3s_top.sv
+
+# Archived build evidence. The blanket *.log rule above would otherwise drop
+# the synthesis and route logs that make an immutable bitstream reviewable.
+!results/**/*.log
+
+# ecppack is silent on success; an empty log is not evidence.
+results/**/ecppack*.log
+results/.ulx3s-smoke-uart.publish.lock
