@@ -104,6 +104,7 @@ def derefEffect (encode : Index → Word) (mode : DerefMode)
       | none => .fault .writeConflict
 
 structure PreparedDeref where
+  control : Control
   pointerAddress : Index
   base : Index
   target : Index
@@ -118,30 +119,30 @@ def prepareDeref (control : Control) (alpha beta gamma : Int)
   let target ← checkedOffset base beta
   let localAddress ← checkedOffset control.fp gamma
   let nextPc ← checkedOffset control.pc 1
-  some { pointerAddress, base, target, localAddress, nextPc }
+  some { control, pointerAddress, base, target, localAddress, nextPc }
 
 /--
 Accept a host-resolved pointer only after re-encoding it, then apply the pure
 DEREF effect.  The primitive owns neither a resolver nor dense memory.
 -/
 def executeDeref (encode : Index → Word) (mode : DerefMode)
-    (control : Control) (memory : Mem) (prepared : PreparedDeref) : DerefResult :=
+    (memory : Mem) (prepared : PreparedDeref) : DerefResult :=
   let pointer := memory prepared.pointerAddress
   if !pointer.written || pointer.value ≠ encode prepared.base then
     .fault .unresolvedPointer
   else
-    derefEffect encode mode control memory prepared.target prepared.localAddress
-      prepared.nextPc
+    derefEffect encode mode prepared.control memory prepared.target
+      prepared.localAddress prepared.nextPc
 
 @[simp] theorem prepareDeref_negative :
     prepareDeref { pc := 4, fp := 0 } 0 (-1) 0 (some 0) = none := by
   decide
 
 theorem executeDeref_deterministic
-    (encode : Index → Word) (mode : DerefMode) (control : Control) (memory : Mem)
+    (encode : Index → Word) (mode : DerefMode) (memory : Mem)
     (prepared : PreparedDeref) (r₁ r₂ : DerefResult)
-    (h₁ : executeDeref encode mode control memory prepared = r₁)
-    (h₂ : executeDeref encode mode control memory prepared = r₂) :
+    (h₁ : executeDeref encode mode memory prepared = r₁)
+    (h₂ : executeDeref encode mode memory prepared = r₂) :
     r₁ = r₂ := by
   rw [← h₁, ← h₂]
 
@@ -168,10 +169,10 @@ theorem writeOnce_success_frame {memory memory' : Mem} {target query : Index}
   · contradiction
 
 theorem executeDeref_rejects_unwritten_pointer
-    (encode : Index → Word) (mode : DerefMode) (control : Control)
-    (memory : Mem) (prepared : PreparedDeref)
+    (encode : Index → Word) (mode : DerefMode) (memory : Mem)
+    (prepared : PreparedDeref)
     (h : (memory prepared.pointerAddress).written = false) :
-    executeDeref encode mode control memory prepared =
+    executeDeref encode mode memory prepared =
       .fault .unresolvedPointer := by
   simp [executeDeref, h]
 
@@ -233,9 +234,9 @@ theorem derefEffect_success_frame {encode : Index → Word} {mode : DerefMode}
       · contradiction
 
 theorem executeDeref_success_frame {encode : Index → Word} {mode : DerefMode}
-    {control control' : Control} {memory memory' : Mem}
+    {control' : Control} {memory memory' : Mem}
     {prepared : PreparedDeref} {query : Index}
-    (h : executeDeref encode mode control memory prepared =
+    (h : executeDeref encode mode memory prepared =
       .ok control' memory')
     (ht : query ≠ prepared.target) (hl : query ≠ prepared.localAddress) :
     memory' query = memory query := by
