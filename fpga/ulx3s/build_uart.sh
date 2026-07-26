@@ -112,6 +112,7 @@ python3 "$SUPPORT" check "$STAGE" SHA256SUMS_bridge.txt
 
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr_uart.log" | tail -5 > "$STAGE/timing_uart.txt" || true
 
+python3 "$ROOT/tools/source_provenance.py" --check "$STAGE/SOURCE_MANIFEST_uart.txt"
 python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 cat "$OUTDIR/timing_uart.txt"
 

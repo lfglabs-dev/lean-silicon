@@ -77,6 +77,9 @@ grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 \
 python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS \
     "$BIT_NAME" "$CONFIG_NAME" "$SVF_NAME"
 python3 "$SUPPORT" check "$STAGE" SHA256SUMS
+# The manifest was captured before synthesis. Refuse to publish if any tracked
+# recipe, source or constraint changed while the tools were consuming it.
+python3 "$ROOT/tools/source_provenance.py" --check "$STAGE/SOURCE_MANIFEST.txt"
 python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 
 cat "$OUTDIR/timing.txt"

@@ -99,6 +99,10 @@ grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 > "$STAGE/timing.tx
 # The stage is a complete archive snapshot. Exchange the whole directory in
 # one same-filesystem operation so failure or interruption cannot expose a
 # mixture of old artifacts and new checksums.
+# Revalidate after every tool has consumed the working-tree paths. If an input
+# changed during synthesis or routing, the pre-build manifest no longer
+# describes the produced artifact and publication must stop.
+python3 "$ROOT/tools/source_provenance.py" --check "$STAGE/SOURCE_MANIFEST.txt"
 python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 cat "$OUTDIR/timing.txt"
 

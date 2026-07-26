@@ -261,6 +261,47 @@ class RecorderMatchFlagTest(unittest.TestCase):
                     self.assertRegex(fields["revision"], r"^[0-9a-f]{40}$")
 
 
+class PrePublishRevalidationTest(unittest.TestCase):
+    def _tree(self) -> tuple[Path, Path, Path]:
+        root = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "tools").mkdir()
+        shutil.copy(RECORDER, root / "tools")
+        source = root / "input.sv"
+        source.write_text("module input_file; endmodule\n")
+        digest = sha256(source.read_bytes()).hexdigest()
+        manifest = root / "manifest.txt"
+        manifest.write_text(
+            "=== SOURCE PROVENANCE ===\n"
+            f"{digest}  input.sv\n"
+        )
+        return root, source, manifest
+
+    def _check(self, root: Path, manifest: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                "python3",
+                str(root / "tools" / "source_provenance.py"),
+                "--check",
+                str(manifest),
+            ],
+            cwd=root,
+            text=True,
+            capture_output=True,
+        )
+
+    def test_unchanged_input_is_accepted(self):
+        root, _source, manifest = self._tree()
+        self.assertEqual(self._check(root, manifest).returncode, 0)
+
+    def test_input_changed_after_manifest_is_rejected(self):
+        root, source, manifest = self._tree()
+        source.write_text("module changed_during_build; endmodule\n")
+        result = self._check(root, manifest)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CHANGED DURING BUILD", result.stderr)
+
+
 class SquashSafeProvenanceTest(unittest.TestCase):
     """Evidence remains verifiable when a squash discards its source commit."""
 
