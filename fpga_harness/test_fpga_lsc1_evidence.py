@@ -12,6 +12,7 @@ from fpga_harness import ulx3s_uart
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "results" / "fpga-lsc1-20260726"
+ACTIVE_EVIDENCE = ROOT / "results" / "fpga-pr16-pr19-20260726"
 README = EVIDENCE / "README.md"
 EXCHANGES = EVIDENCE / "exchanges.jsonl"
 PHYSICAL_DIGEST = "87b204ec01e0ff495b102f0ea6f934033f47c8c8b70f858b67f8c5a908cf5795"
@@ -137,6 +138,57 @@ class ArchiveQualificationTest(unittest.TestCase):
 
     def test_physical_bitstream_is_absent(self) -> None:
         self.assertFalse(any(EVIDENCE.glob("*.bit")))
+
+
+class MaintainedBitstreamRunTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.run = json.loads((ACTIVE_EVIDENCE / "program-run.json").read_text())
+
+    def test_program_record_is_authenticated(self) -> None:
+        line = (ACTIVE_EVIDENCE / "EVIDENCE_SHA256SUMS").read_text().strip()
+        expected, name = line.split("  ", 1)
+        self.assertEqual(name, "program-run.json")
+        self.assertEqual(digest((ACTIVE_EVIDENCE / name).read_bytes()), expected)
+
+    def test_maintained_driver_completed_the_exact_supported_prefix(self) -> None:
+        self.assertEqual(self.run["repo_head"],
+                         "9d5741961a3851c584fc2882ae7eccd41a1ec404")
+        self.assertIs(self.run["repo_dirty"], True)
+        self.assertEqual((self.run["terminal"], self.run["pc"]),
+                         ("unsupported", 12))
+        self.assertIn("Jump", self.run["reason"])
+        self.assertEqual(len(self.run["steps"]), 12)
+        self.assertEqual([step["kind"] for step in self.run["steps"]], [
+            "Set", "Set", "Xor", "Set", "Xor", "Set",
+            "Mul", "Set", "Xor", "Set", "Set", "Set",
+        ])
+        self.assertTrue(all(step["request_length"] in (18, 34)
+                            for step in self.run["steps"]))
+        self.assertEqual(self.run["comparison"], {
+            "compared_memory_addresses": list(range(12)),
+            "hardware_prefix_steps": 12,
+            "mismatches": [],
+            "missing_upstream_addresses": [],
+            "result": "PREFIX_MATCH",
+            "upstream_cycles": 13,
+        })
+
+    def test_documented_tested_hashes_match_the_archived_binaries(self) -> None:
+        archive = ROOT / "results" / "ulx3s-smoke-uart-20260725"
+        document = (ROOT / "docs" / "ULX3S_SMOKE_AND_UART.md").read_text()
+        for name, manifest in (
+            ("ulx3s_smoke.bit", "SHA256SUMS"),
+            ("ulx3s_bridge.bit", "SHA256SUMS_bridge.txt"),
+        ):
+            expected = (archive / manifest).read_text().split()[0]
+            self.assertEqual(digest((archive / name).read_bytes()), expected)
+            self.assertIn(expected, document)
+        revisions = {
+            (archive / name).read_text().splitlines()[1].split(": ", 1)[1]
+            for name in ("SOURCE_MANIFEST.txt", "SOURCE_MANIFEST_uart.txt")
+        }
+        self.assertEqual(revisions, {"9d5741961a3851c584fc2882ae7eccd41a1ec404"})
+        self.assertIn(next(iter(revisions)), document)
 
 
 if __name__ == "__main__":

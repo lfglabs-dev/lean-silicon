@@ -4,7 +4,7 @@
  |  Copyright (C) 2012 - 2026  Claire Xenia Wolf <claire@yosyshq.com>         |
  |  Distributed under an ISC-like license, type "license" to see terms        |
  \----------------------------------------------------------------------------/
- Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+ Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
 
 -- Running command `
 read_verilog -sv ulx3s_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv          ../../asic_core/rtl/lean_silicon_lsc1.sv          ../../asic_core/rtl/leanvm_b_stream_alu.sv          ../../asic_core/rtl/gf128_mul_bitstream.sv          ../../asic_core/rtl/gf2n_mul_bitstream.sv;
@@ -375,8 +375,8 @@ Found and reported 0 problems.
 
 12. Executing SYNTH_LATTICE pass.
 
-12.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_sim_ecp5.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_sim_ecp5.v' to AST representation.
+12.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_sim_ecp5.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_sim_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\LUT4'.
 Generating RTLIL representation for module `\$__ABC9_LUT5'.
 Generating RTLIL representation for module `\$__ABC9_LUT6'.
@@ -428,76 +428,76 @@ Generating RTLIL representation for module `\ILVDS'.
 Generating RTLIL representation for module `\OLVDS'.
 Generating RTLIL representation for module `\CCU2C'.
 Generating RTLIL representation for module `\DP16KD'.
-Replacing existing blackbox module `\FD1P3AX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:2.1-2.261.
+Replacing existing blackbox module `\FD1P3AX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:2.1-2.261.
 Generating RTLIL representation for module `\FD1P3AX'.
-Replacing existing blackbox module `\FD1P3AY' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:3.1-3.261.
+Replacing existing blackbox module `\FD1P3AY' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:3.1-3.261.
 Generating RTLIL representation for module `\FD1P3AY'.
-Replacing existing blackbox module `\FD1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:4.1-4.261.
+Replacing existing blackbox module `\FD1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:4.1-4.261.
 Generating RTLIL representation for module `\FD1P3BX'.
-Replacing existing blackbox module `\FD1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:5.1-5.261.
+Replacing existing blackbox module `\FD1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:5.1-5.261.
 Generating RTLIL representation for module `\FD1P3DX'.
-Replacing existing blackbox module `\FD1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:6.1-6.261.
+Replacing existing blackbox module `\FD1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:6.1-6.261.
 Generating RTLIL representation for module `\FD1P3IX'.
-Replacing existing blackbox module `\FD1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:7.1-7.261.
+Replacing existing blackbox module `\FD1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:7.1-7.261.
 Generating RTLIL representation for module `\FD1P3JX'.
-Replacing existing blackbox module `\FD1S3AX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:8.1-8.261.
+Replacing existing blackbox module `\FD1S3AX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:8.1-8.261.
 Generating RTLIL representation for module `\FD1S3AX'.
-Replacing existing blackbox module `\FD1S3AY' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:9.1-9.261.
+Replacing existing blackbox module `\FD1S3AY' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:9.1-9.261.
 Generating RTLIL representation for module `\FD1S3AY'.
-Replacing existing blackbox module `\FD1S3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:10.1-10.261.
+Replacing existing blackbox module `\FD1S3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:10.1-10.261.
 Generating RTLIL representation for module `\FD1S3BX'.
-Replacing existing blackbox module `\FD1S3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:11.1-11.261.
+Replacing existing blackbox module `\FD1S3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:11.1-11.261.
 Generating RTLIL representation for module `\FD1S3DX'.
-Replacing existing blackbox module `\FD1S3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:12.1-12.261.
+Replacing existing blackbox module `\FD1S3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:12.1-12.261.
 Generating RTLIL representation for module `\FD1S3IX'.
-Replacing existing blackbox module `\FD1S3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:13.1-13.261.
+Replacing existing blackbox module `\FD1S3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:13.1-13.261.
 Generating RTLIL representation for module `\FD1S3JX'.
-Replacing existing blackbox module `\IFS1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:26.1-26.301.
+Replacing existing blackbox module `\IFS1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:26.1-26.301.
 Generating RTLIL representation for module `\IFS1P3BX'.
-Replacing existing blackbox module `\IFS1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:27.1-27.301.
+Replacing existing blackbox module `\IFS1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:27.1-27.301.
 Generating RTLIL representation for module `\IFS1P3DX'.
-Replacing existing blackbox module `\IFS1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:28.1-28.301.
+Replacing existing blackbox module `\IFS1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:28.1-28.301.
 Generating RTLIL representation for module `\IFS1P3IX'.
-Replacing existing blackbox module `\IFS1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:29.1-29.301.
+Replacing existing blackbox module `\IFS1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:29.1-29.301.
 Generating RTLIL representation for module `\IFS1P3JX'.
-Replacing existing blackbox module `\OFS1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:31.1-31.302.
+Replacing existing blackbox module `\OFS1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:31.1-31.302.
 Generating RTLIL representation for module `\OFS1P3BX'.
-Replacing existing blackbox module `\OFS1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:32.1-32.302.
+Replacing existing blackbox module `\OFS1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:32.1-32.302.
 Generating RTLIL representation for module `\OFS1P3DX'.
-Replacing existing blackbox module `\OFS1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:33.1-33.302.
+Replacing existing blackbox module `\OFS1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:33.1-33.302.
 Generating RTLIL representation for module `\OFS1P3IX'.
-Replacing existing blackbox module `\OFS1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:34.1-34.302.
+Replacing existing blackbox module `\OFS1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:34.1-34.302.
 Generating RTLIL representation for module `\OFS1P3JX'.
-Replacing existing blackbox module `\IB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:2.1-2.157.
+Replacing existing blackbox module `\IB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:2.1-2.157.
 Generating RTLIL representation for module `\IB'.
-Replacing existing blackbox module `\IBPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:3.1-3.157.
+Replacing existing blackbox module `\IBPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:3.1-3.157.
 Generating RTLIL representation for module `\IBPU'.
-Replacing existing blackbox module `\IBPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:4.1-4.157.
+Replacing existing blackbox module `\IBPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:4.1-4.157.
 Generating RTLIL representation for module `\IBPD'.
-Replacing existing blackbox module `\OB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:5.1-5.157.
+Replacing existing blackbox module `\OB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:5.1-5.157.
 Generating RTLIL representation for module `\OB'.
-Replacing existing blackbox module `\OBZ' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:6.1-6.164.
+Replacing existing blackbox module `\OBZ' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:6.1-6.164.
 Generating RTLIL representation for module `\OBZ'.
-Replacing existing blackbox module `\OBZPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:7.1-7.164.
+Replacing existing blackbox module `\OBZPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:7.1-7.164.
 Generating RTLIL representation for module `\OBZPU'.
-Replacing existing blackbox module `\OBZPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:8.1-8.164.
+Replacing existing blackbox module `\OBZPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:8.1-8.164.
 Generating RTLIL representation for module `\OBZPD'.
-Replacing existing blackbox module `\OBCO' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:9.1-9.90.
+Replacing existing blackbox module `\OBCO' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:9.1-9.90.
 Generating RTLIL representation for module `\OBCO'.
-Replacing existing blackbox module `\BB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:10.1-10.179.
+Replacing existing blackbox module `\BB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:10.1-10.179.
 Generating RTLIL representation for module `\BB'.
-Replacing existing blackbox module `\BBPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:11.1-11.179.
+Replacing existing blackbox module `\BBPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:11.1-11.179.
 Generating RTLIL representation for module `\BBPU'.
-Replacing existing blackbox module `\BBPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:12.1-12.179.
+Replacing existing blackbox module `\BBPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:12.1-12.179.
 Generating RTLIL representation for module `\BBPD'.
-Replacing existing blackbox module `\ILVDS' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:13.1-13.139.
+Replacing existing blackbox module `\ILVDS' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:13.1-13.139.
 Generating RTLIL representation for module `\ILVDS'.
-Replacing existing blackbox module `\OLVDS' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:14.1-14.146.
+Replacing existing blackbox module `\OLVDS' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:14.1-14.146.
 Generating RTLIL representation for module `\OLVDS'.
 Successfully finished Verilog frontend.
 
-12.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_bb_ecp5.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_bb_ecp5.v' to AST representation.
+12.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_bb_ecp5.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_bb_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\GSR'.
 Generating RTLIL representation for module `\PUR'.
 Generating RTLIL representation for module `\SGSR'.
@@ -1223,8 +1223,8 @@ Removed 0 unused cells and 3 unused wires.
 
 12.19. Executing TECHMAP pass (map to technology primitives).
 
-12.19.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/cmp2lut.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/cmp2lut.v' to AST representation.
+12.19.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/cmp2lut.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/cmp2lut.v' to AST representation.
 Generating RTLIL representation for module `\_90_lut_cmp_'.
 Successfully finished Verilog frontend.
 
@@ -1243,8 +1243,8 @@ Removed 0 unused cells and 3 unused wires.
 
 12.22. Executing TECHMAP pass (map to technology primitives).
 
-12.22.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/mul2dsp.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/mul2dsp.v' to AST representation.
+12.22.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/mul2dsp.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/mul2dsp.v' to AST representation.
 Generating RTLIL representation for module `\_80_mul'.
 Generating RTLIL representation for module `\_90_soft_mul'.
 Successfully finished Verilog frontend.
@@ -1255,8 +1255,8 @@ No more expansions possible.
 
 12.23. Executing TECHMAP pass (map to technology primitives).
 
-12.23.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/dsp_map_18x18.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/dsp_map_18x18.v' to AST representation.
+12.23.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/dsp_map_18x18.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/dsp_map_18x18.v' to AST representation.
 Generating RTLIL representation for module `$__MUL18X18'.
 Successfully finished Verilog frontend.
 
@@ -1365,13 +1365,13 @@ Finding unused cells or wires in module \ulx3s_top..
 
 12.29. Executing TECHMAP pass (map to technology primitives).
 
-12.29.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/lutrams_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/lutrams_map_trellis.v' to AST representation.
+12.29.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/lutrams_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/lutrams_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$__TRELLIS_DPR16X4_'.
 Successfully finished Verilog frontend.
 
-12.29.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/brams_map_16kd.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/brams_map_16kd.v' to AST representation.
+12.29.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/brams_map_16kd.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/brams_map_16kd.v' to AST representation.
 Generating RTLIL representation for module `$__DP16KD_'.
 Generating RTLIL representation for module `$__PDPW16KD_'.
 Successfully finished Verilog frontend.
@@ -1516,8 +1516,8 @@ Optimizing module ulx3s_top.
 
 12.33. Executing TECHMAP pass (map to technology primitives).
 
-12.33.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+12.33.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -1545,8 +1545,8 @@ Generating RTLIL representation for module `$connect'.
 Generating RTLIL representation for module `$input_port'.
 Successfully finished Verilog frontend.
 
-12.33.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v' to AST representation.
+12.33.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/arith_map_ccu2c.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/arith_map_ccu2c.v' to AST representation.
 Generating RTLIL representation for module `\_80_ccu2c_alu'.
 Successfully finished Verilog frontend.
 
@@ -1695,8 +1695,8 @@ Removed a total of 84 cells.
 
 12.38. Executing TECHMAP pass (map to technology primitives).
 
-12.38.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+12.38.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -1799,8 +1799,8 @@ Found and reported 0 problems.
 
 12.45. Executing TECHMAP pass (map to technology primitives).
 
-12.45.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/latches_map.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/latches_map.v' to AST representation.
+12.45.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/latches_map.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/latches_map.v' to AST representation.
 Generating RTLIL representation for module `$_DLATCH_N_'.
 Generating RTLIL representation for module `$_DLATCH_P_'.
 Successfully finished Verilog frontend.
@@ -1823,8 +1823,8 @@ Found 0 SCCs.
 
 12.46.5. Executing TECHMAP pass (map to technology primitives).
 
-12.46.5.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+12.46.5.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -1882,16 +1882,16 @@ Removed a total of 0 cells.
 
 12.46.7. Executing TECHMAP pass (map to technology primitives).
 
-12.46.7.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_map.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_map.v' to AST representation.
+12.46.7.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_map.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_map.v' to AST representation.
 Successfully finished Verilog frontend.
 
 12.46.7.2. Continuing TECHMAP pass.
 No more expansions possible.
 <suppressed ~2 debug messages>
 
-12.46.8. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_model.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_model.v' to AST representation.
+12.46.8. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_model.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_model.v' to AST representation.
 Generating RTLIL representation for module `$__ABC9_DELAY'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Generating RTLIL representation for module `$__DFF_N__$abc9_flop'.
@@ -1908,8 +1908,8 @@ Successfully finished Verilog frontend.
 
 12.46.12. Executing TECHMAP pass (map to technology primitives).
 
-12.46.12.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+12.46.12.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -2066,33 +2066,33 @@ ABC: + &sweep
 ABC: + &dc2 
 ABC: + &dch -f -r 
 ABC: + &ps 
-ABC: <abc-temp-dir>/input : i/o =    404/    422  and =    2741  lev =   12 (2.05)  mem = 0.05 MB  ch =  356  box = 48  bb = 0
-ABC: cst =       0  cls =    343  lit =     356  unused =    2590  proof =     0
+ABC: <abc-temp-dir>/input : i/o =    404/    422  and =    2737  lev =   12 (2.05)  mem = 0.05 MB  ch =  358  box = 48  bb = 0
+ABC: cst =       0  cls =    343  lit =     358  unused =    2584  proof =     0
 ABC: + &if -W 300 -v 
 ABC: K = 7. Memory (bytes): Truth =    0. Cut =   76. Obj =  156. Set =  780. CutMin = no
-ABC: Node =    2741.  Ch =   343.  Total mem =    0.68 MB. Peak cut mem =    0.03 MB.
-ABC: P:  Del = 2605.00.  Ar =    2031.0.  Edge =     2863.  Cut =    31048.  T =     0.01 sec
-ABC: P:  Del = 2605.00.  Ar =    2046.0.  Edge =     2875.  Cut =    31019.  T =     0.01 sec
-ABC: P:  Del = 2605.00.  Ar =     694.0.  Edge =     2006.  Cut =    41222.  T =     0.01 sec
-ABC: F:  Del = 2605.00.  Ar =     612.0.  Edge =     1977.  Cut =    40210.  T =     0.01 sec
-ABC: A:  Del = 2605.00.  Ar =     612.0.  Edge =     1931.  Cut =    39578.  T =     0.01 sec
-ABC: A:  Del = 2605.00.  Ar =     611.0.  Edge =     1928.  Cut =    39794.  T =     0.01 sec
-ABC: Total time =     0.05 sec
+ABC: Node =    2737.  Ch =   343.  Total mem =    0.68 MB. Peak cut mem =    0.03 MB.
+ABC: P:  Del = 2605.00.  Ar =    2032.0.  Edge =     2866.  Cut =    30933.  T =     0.01 sec
+ABC: P:  Del = 2605.00.  Ar =    2031.0.  Edge =     2861.  Cut =    30919.  T =     0.00 sec
+ABC: P:  Del = 2605.00.  Ar =     686.0.  Edge =     1998.  Cut =    41218.  T =     0.01 sec
+ABC: F:  Del = 2605.00.  Ar =     609.0.  Edge =     1977.  Cut =    40063.  T =     0.00 sec
+ABC: A:  Del = 2605.00.  Ar =     608.0.  Edge =     1939.  Cut =    39477.  T =     0.01 sec
+ABC: A:  Del = 2605.00.  Ar =     607.0.  Edge =     1938.  Cut =    39789.  T =     0.01 sec
+ABC: Total time =     0.03 sec
 ABC: + &write -n <abc-temp-dir>/output.aig 
 ABC: + &mfs 
 ABC: + &ps -l 
-ABC: <abc-temp-dir>/input : i/o =    404/    422  and =    1937  lev =   12 (2.42)  mem = 0.04 MB  box = 34  bb = 0
-ABC: Mapping (K=6)  :  lut =    577  edge =    1918  lev =    5 (1.23)  levB =   12  mem = 0.02 MB
-ABC: LUT = 577 : 2=64 11.1 %  3=291 50.4 %  4=194 33.6 %  5=27 4.7 %  6=1 0.2 %  Ave = 3.32
+ABC: <abc-temp-dir>/input : i/o =    404/    422  and =    1943  lev =   12 (2.43)  mem = 0.04 MB  box = 34  bb = 0
+ABC: Mapping (K=5)  :  lut =    577  edge =    1925  lev =    5 (1.23)  levB =   12  mem = 0.02 MB
+ABC: LUT = 577 : 2=62 10.7 %  3=284 49.2 %  4=206 35.7 %  5=25 4.3 %  Ave = 3.34
 ABC: + &write -n <abc-temp-dir>/output.aig 
 ABC: + &verify 
-ABC: Networks are equivalent.  Time =     0.06 sec
+ABC: Networks are equivalent.  Time =     0.03 sec
 ABC: + time 
 ABC: elapse: 0.20 seconds, total: 0.20 seconds
 
 12.46.15.6. Executing AIGER frontend.
 <suppressed ~10 debug messages>
-Removed 2990 unused cells and 4198 unused wires.
+Removed 2994 unused cells and 4202 unused wires.
 
 12.46.15.7. Executing ABC_OPS_REINTEGRATE pass (reintegrate ABC mapped design into module).
 ABC RESULTS:              $lut cells:      582
@@ -2104,8 +2104,8 @@ Removing temp directory.
 
 12.46.16. Executing TECHMAP pass (map to technology primitives).
 
-12.46.16.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_unmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_unmap.v' to AST representation.
+12.46.16.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v' to AST representation.
 Generating RTLIL representation for module `$__DFF_x__$abc9_flop'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Successfully finished Verilog frontend.
@@ -2118,8 +2118,8 @@ Removed 160 unused cells and 9280 unused wires.
 
 12.47. Executing TECHMAP pass (map to technology primitives).
 
-12.47.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+12.47.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -2193,142 +2193,137 @@ Generating RTLIL representation for module `$lut'.
 Successfully finished Verilog frontend.
 
 12.47.2. Continuing TECHMAP pass.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00010011 for cells of type $lut.
-Using template $paramod$14af40d00c71699100007e8256a2c6a11b26feea$lut for cells of type $lut.
 Using template $paramod$f8f63b209b7230e81958663ff24fef1613156af7$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10001111 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00010011 for cells of type $lut.
+Using template $paramod$f4f5fb4ce8d1ecc0c1b88e4df7b6b556b55a99c1$lut for cells of type $lut.
 Using template $paramod$155e50cd807a0506e3b587eb402ba3912f883551$lut for cells of type $lut.
 Using template $paramod$873c285bdccf0ac2b60d2304ea5cd14bf211d2a6$lut for cells of type $lut.
 Using template $paramod$15e09ab8f7df8d225706de985558fe8eca7cc41f$lut for cells of type $lut.
 Using template $paramod$bf9d12be9e757c28b1374b63e168615e76b4b315$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11111000 for cells of type $lut.
-Using template $paramod$f4f5fb4ce8d1ecc0c1b88e4df7b6b556b55a99c1$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1011 for cells of type $lut.
 Using template $paramod$658b9ed803f0d3d335616d3858b53e0a2522f1e8$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00010000 for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'01000000 for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000001 for cells of type $lut.
 Using template $paramod$94ac66a11090dca84889e55fcf03297912a5b7ec$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000100 for cells of type $lut.
 Using template $paramod$571404c0889eaf57f492cb5e37f8acb5df5852f9$lut for cells of type $lut.
-Using template $paramod$d9922e15eb5da1acc26e937540cc16b16c2ad42c$lut for cells of type $lut.
-Using template $paramod$64027d2d1e06b389ce9366da7d07d8faebecbcce$lut for cells of type $lut.
+Using template $paramod$6d6aab6ca80aca5ae70889822a914b9498798ab4$lut for cells of type $lut.
+Using template $paramod$7bc39f5e7dd88f163b105f328d9a139650c773f2$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0100 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000001 for cells of type $lut.
 Using template $paramod$15efa44280f2a77bf023b68f95d9df5681d9dd99$lut for cells of type $lut.
 Using template $paramod$a238bb199d4b53d4c976c9e68dafcfe86b19f40f$lut for cells of type $lut.
 Using template $paramod$21972aba492c5b553603646857b0e8e9aca32466$lut for cells of type $lut.
+Using template $paramod$14af40d00c71699100007e8256a2c6a11b26feea$lut for cells of type $lut.
+Using template $paramod$38621c4d710b101de242bc8b9808c74c5e2b0fe5$lut for cells of type $lut.
 Using template $paramod$6d6beead1425af15cf78b27fd9b11b41b5d4bce8$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10000000 for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00100000 for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1000 for cells of type $lut.
+Using template $paramod$47a8214374025465e226fa66bee690ff33268a25$lut for cells of type $lut.
+Using template $paramod$66658cbed86a8310f9b7ba1190d35eff90ee749b$lut for cells of type $lut.
+Using template $paramod$bb4fff1cc3b827238aa40993cafede1c5beecbe3$lut for cells of type $lut.
 Using template $paramod$9f6bc32305fc769fa11e4327bee073e3fbe84018$lut for cells of type $lut.
 Using template $paramod$66e741791413519a466d4f44240bc83d3a191818$lut for cells of type $lut.
-Using template $paramod$38621c4d710b101de242bc8b9808c74c5e2b0fe5$lut for cells of type $lut.
-Using template $paramod$2b2b3565ec13859d2b24f2fa297fa46249270140$lut for cells of type $lut.
 Using template $paramod$6e238df02989b317f10820a22773676e71120644$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0010 for cells of type $lut.
 Using template $paramod$5dc745bb48e2cf535179547ba13f0fe5364d6d54$lut for cells of type $lut.
-Using template $paramod$47a8214374025465e226fa66bee690ff33268a25$lut for cells of type $lut.
-Using template $paramod$a5516fc31d1e552de2435200bb732b4d4ad63a9c$lut for cells of type $lut.
-Using template $paramod$351521e8b01efeb144a39a20c4d973eb0b1643fa$lut for cells of type $lut.
-Using template $paramod$d93e317e4305845c36a4846fab4f21562ddc07f3$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000010 for cells of type $lut.
-Using template $paramod$d53578aacfd93124244778d88be0e90eb09c1b1b$lut for cells of type $lut.
-Using template $paramod$71fe64ec84cd988131a5739aee02b6b2073a0ff6$lut for cells of type $lut.
-Using template $paramod$8adf7fbd410d2cc654c288d5be5f7508ee8809b0$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11101010 for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1110 for cells of type $lut.
-Using template $paramod$7c1511221ba35584fcf18be7e00c51b6a1c87a6f$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1101 for cells of type $lut.
+Using template $paramod$608bfa4cadde49bc6aabb8258287149eef9120b5$lut for cells of type $lut.
 Using template $paramod$964dd3bb74caaeb47247bf4769459daf8ef427dd$lut for cells of type $lut.
-Using template $paramod$a15fd389a2f54cb7b94707b25934d226e68d9e2e$lut for cells of type $lut.
+Using template $paramod$a5516fc31d1e552de2435200bb732b4d4ad63a9c$lut for cells of type $lut.
+Using template $paramod$7c1511221ba35584fcf18be7e00c51b6a1c87a6f$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1110 for cells of type $lut.
 Using template $paramod$5625c0c6def530beb96c16e17997d6d42e5e6d89$lut for cells of type $lut.
-Using template $paramod$754105cb45ebc31318314081e9c06ede0aae4ccd$lut for cells of type $lut.
-Using template $paramod$403c6d95df5fccd9225dab184f38aed47316d5b4$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11111110 for cells of type $lut.
-Using template $paramod$ffc2ea81a65101fbef8a332deddf112494d27163$lut for cells of type $lut.
-Using template $paramod$b16305c55e8688bbbd58bd36edbb9b6878120874$lut for cells of type $lut.
-Using template $paramod$cda63929d33f71c0bd57b87fcb025f6a72d7ac23$lut for cells of type $lut.
-Using template $paramod$2645ed3928f2726e8ccb403cb23252de43b617d7$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1101 for cells of type $lut.
+Using template $paramod$b51fee016110db8338dd45ff659d0ba2666c78b1$lut for cells of type $lut.
+Using template $paramod$d93e317e4305845c36a4846fab4f21562ddc07f3$lut for cells of type $lut.
+Using template $paramod$097592bb16245531f0716c5ddb18d7090f9c7d9d$lut for cells of type $lut.
+Using template $paramod$1c2286bef9a6702a426ede0fc9afc3ceab10d154$lut for cells of type $lut.
+Using template $paramod$a15fd389a2f54cb7b94707b25934d226e68d9e2e$lut for cells of type $lut.
+Using template $paramod$23da582b86241546eace0c8bedadb42614eea4c1$lut for cells of type $lut.
+Using template $paramod$d0f3267a16a5a48394c79b90424582d1374af9b0$lut for cells of type $lut.
+Using template $paramod$dbbe0ea5aadf61e5da6ebbf1f47442d5facdca4e$lut for cells of type $lut.
+Using template $paramod$11d98a734fddb972e4bcf061987d6c0007a7bbfa$lut for cells of type $lut.
+Using template $paramod$70f68cc10fbeada9b6fa90c3bb75475e348ca467$lut for cells of type $lut.
 Using template $paramod$608f40069c27841a5b3bdf03643a34bdc8974072$lut for cells of type $lut.
 Using template $paramod$e76f31d8d51881375bd5cd322c52ccdc4b6e3c26$lut for cells of type $lut.
+Using template $paramod$cda63929d33f71c0bd57b87fcb025f6a72d7ac23$lut for cells of type $lut.
+Using template $paramod$2645ed3928f2726e8ccb403cb23252de43b617d7$lut for cells of type $lut.
 Using template $paramod$91cf3b8946a6c260321b0156c1a86ce6a2bf132f$lut for cells of type $lut.
-Using template $paramod$851b6023d00a4d42162085bc4dc5b63e5c0ee69e$lut for cells of type $lut.
-Using template $paramod$53ce561f80f32d4298a3beadc88b6c5c78293221$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'01011101 for cells of type $lut.
-Using template $paramod$02d41f9614523902b4f492e8631d36659becf604$lut for cells of type $lut.
+Using template $paramod$c50687e63b485d7f78ea9fec22057e56837da09d$lut for cells of type $lut.
+Using template $paramod$53ce561f80f32d4298a3beadc88b6c5c78293221$lut for cells of type $lut.
 Using template $paramod$ca57666f1236a8144091e90ff71c30858835882a$lut for cells of type $lut.
+Using template $paramod$02d41f9614523902b4f492e8631d36659becf604$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000010 for cells of type $lut.
 Using template $paramod$2008f2139fb7fa7c754eda34795a806cfb641f3e$lut for cells of type $lut.
 Using template $paramod$8c24dc0cdd336b7fb88bbf7eed45cec5cbae862b$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10101100 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11001010 for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'01001000 for cells of type $lut.
 Using template $paramod$d8021370f0670d331038a0473505efae4dff2706$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11001010 for cells of type $lut.
-Using template $paramod$b9d8b7e91a2c68da033af948ea0bd8bdebbaf6b2$lut for cells of type $lut.
-Using template $paramod$c5479cb3b02237832e868d4808b3a7f1be08f618$lut for cells of type $lut.
+Using template $paramod$7c62394fc9dcd57450f98f8754db0e3c7b377a8c$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000110 for cells of type $lut.
-Using template $paramod$96f8aefa188f7bcda3f513a04036972753547a5b$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11100010 for cells of type $lut.
-Using template $paramod$2af7fd5c408581c2b6e80048f54948ce05a232f8$lut for cells of type $lut.
-Using template $paramod$0c43803af5817ed91a49f985af8970f445069029$lut for cells of type $lut.
+Using template $paramod$c5479cb3b02237832e868d4808b3a7f1be08f618$lut for cells of type $lut.
+Using template $paramod$194bfb074c461fdab310dba0d79b3b8142979c7b$lut for cells of type $lut.
 Using template $paramod$e1621a1af3641ef0ee3e4f5fe9a1fbb652e8ac6e$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0001 for cells of type $lut.
-Using template $paramod$8a77a4b825e7cd0e2a0cbe1bb8ec99794d7f5906$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10110000 for cells of type $lut.
-Using template $paramod$2e7b4eda5c0f8346612da7e971c73bc842301f6b$lut for cells of type $lut.
-Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00100011 for cells of type $lut.
+Using template $paramod$96f8aefa188f7bcda3f513a04036972753547a5b$lut for cells of type $lut.
 Using template $paramod$8fd8efe0a495790cc9ddc97266933ea8a8cd7b45$lut for cells of type $lut.
+Using template $paramod$0c43803af5817ed91a49f985af8970f445069029$lut for cells of type $lut.
+Using template $paramod$71d951b20e73043168c1656217d126e617052faa$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0001 for cells of type $lut.
 Using template $paramod$8cd5a5f75f43fffe243164dff2e5d4f1454af19a$lut for cells of type $lut.
+Using template $paramod$5495fc76380e004dfb115d75b530c2f9b185c4dd$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00001110 for cells of type $lut.
+Using template $paramod$ab8bb87959c5d7cfa27886cee1355b38e054a61a$lut for cells of type $lut.
+Using template $paramod$eba7de026ff587370e320127e266317dae097a89$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000111 for cells of type $lut.
-Using template $paramod$08d95cc23c2f249ee5ff7158ea0a000360998a0d$lut for cells of type $lut.
-Using template $paramod$5e76a98d96bc61d9446abbaea2ece5208145db09$lut for cells of type $lut.
+Using template $paramod$101238f3d8d49ab12a9b49a2f01cd503b26e9c61$lut for cells of type $lut.
+Using template $paramod$c5b694ec89d7629b942ccf6a9be1d39e24f8edec$lut for cells of type $lut.
+Using template $paramod$b9d8b7e91a2c68da033af948ea0bd8bdebbaf6b2$lut for cells of type $lut.
+Using template $paramod$6741465cb9f30e5849b44ceb0528826c7bbf224c$lut for cells of type $lut.
 Using template $paramod$af08867fe0bde4918ae8f1ec2010b6efc74a2fdc$lut for cells of type $lut.
-Using template $paramod$4d19cda404fc60d6ab61dd511e4f73b50816875f$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00100011 for cells of type $lut.
 Using template $paramod$a77e80a763c6836e9c116105bd24c131be91f155$lut for cells of type $lut.
 Using template $paramod$lut\WIDTH=32'00000000000000000000000000000001\LUT=2'01 for cells of type $lut.
 No more expansions possible.
-<suppressed ~1864 debug messages>
+<suppressed ~1890 debug messages>
 
 12.48. Executing OPT_LUT_INS pass (discard unused LUT inputs).
 Optimizing LUTs in ulx3s_top.
-  Optimizing lut $abc$22179$lut$aiger$o313.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut2 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$586.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $abc$22179$lut$aiger22178$907.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22191.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 3)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22194.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger$o311.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22192.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
+  Optimizing lut $abc$22179$lut$aiger22178$605.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
+  Optimizing lut $abc$22179$lut$aiger22178$870.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $abc$22179$lut$aiger22178$916.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22189.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 3)
   Optimizing lut $abc$22179$lut$aiger22178$770.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger$o389.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$586.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 3)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22211.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger$o313.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger$o313.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$646.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22214.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 2)
-  Optimizing lut $abc$22179$lut$aiger22178$1058.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $abc$22179$lut$aiger22178$992.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $abc$22179$lut$aiger22178$955.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$691.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22206.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $abc$22179$lut$aiger22178$737.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
-  Optimizing lut $abc$22179$lut$aiger22178$741.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$992.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
-  Optimizing lut $abc$22179$lut$aiger$o352.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 1)
-  Optimizing lut $abc$22179$lut$aiger$o422.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
-  Optimizing lut $abc$22179$lut$aiger$o366.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22197.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22332.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$833.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $abc$22179$lut$aiger22178$1058.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22335.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22337.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22336.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
-  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22341.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
-Removed 0 unused cells and 1200 unused wires.
+  Optimizing lut $abc$22179$lut$aiger22178$987.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22212.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22210.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
+  Optimizing lut $abc$22179$lut$aiger$o393.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
+  Optimizing lut $abc$22179$lut$aiger22178$621.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $abc$22179$lut$aiger$o324.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22208.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 3)
+  Optimizing lut $abc$22179$lut$aiger22178$979.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
+  Optimizing lut $abc$22179$lut$aiger22178$987.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
+  Optimizing lut $abc$22179$lut$aiger22178$738.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
+  Optimizing lut $abc$22179$lut$aiger$o417.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
+  Optimizing lut $abc$22179$lut$aiger$o353.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 1)
+  Optimizing lut $abc$22179$lut$aiger$o357.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 1)
+  Optimizing lut $abc$22179$lut$aiger22178$1042.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 3)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22337.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22334.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22193.genblk1.genblk1.genblk1.genblk1.genblk1.lut1 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22336.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $auto$abc_ops_reintegrate.cc:611:reintegrate$22340.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 0)
+  Optimizing lut $abc$22179$lut$aiger$o306.genblk1.genblk1.genblk1.genblk1.genblk1.lut0 (4 -> 2)
+Removed 0 unused cells and 1203 unused wires.
 
 12.49. Executing AUTONAME pass.
-Renamed 1432 objects in module ulx3s_top.
-<suppressed ~1432 debug messages>
+Renamed 1409 objects in module ulx3s_top.
+<suppressed ~1409 debug messages>
 
 12.50. Executing HIERARCHY pass (managing design hierarchy).
 Attribute `top' found on module `ulx3s_top'. Setting top module to ulx3s_top.
@@ -2346,19 +2341,18 @@ Removed 0 unused modules.
 
         +----------Local Count, excluding submodules.
         | 
-      437 wires
-     1775 wire bits
-      437 public wires
-     1775 public wire bits
+      424 wires
+     1758 wire bits
+      424 public wires
+     1758 public wire bits
         4 ports
         4 port bits
         7 cells
         7   $scopeinfo
-     1079 submodules
+     1069 submodules
        34   CCU2C
-        1   L6MUX21
-      613   LUT4
-       29   PFUMX
+      608   LUT4
+       25   PFUMX
       402   TRELLIS_FF
 
 === design hierarchy ===
@@ -2369,10 +2363,10 @@ Removed 0 unused modules.
 
         +----------Count including submodules.
         | 
-      437 wires
-     1775 wire bits
-      437 public wires
-     1775 public wire bits
+      424 wires
+     1758 wire bits
+      424 public wires
+     1758 public wire bits
         4 ports
         4 port bits
         - memories
@@ -2380,11 +2374,10 @@ Removed 0 unused modules.
         - processes
         7 cells
         7   $scopeinfo
-     1079 submodules
+     1069 submodules
        34   CCU2C
-        1   L6MUX21
-      613   LUT4
-       29   PFUMX
+      608   LUT4
+       25   PFUMX
       402   TRELLIS_FF
 
 12.52. Executing CHECK pass (checking for obvious problems).
@@ -2393,6 +2386,6 @@ Found and reported 0 problems.
 
 13. Executing JSON backend.
 
-End of script. Logfile hash: 1ee89bff53, time: 1.76s, user: 1.37s, system: 0.18s, MEM: 61.00 MB peak
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
-Time spent: 21% 28x read_verilog (0 sec), 13% 1x abc9_exe (0 sec), ...
+End of script. Logfile hash: d76b4e8d91, time: 1.00s, user: 0.68s, system: 0.04s, MEM: 73.31 MB peak
+Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
+Time spent: 27% 28x read_verilog (0 sec), 21% 1x abc9_exe (0 sec), ...

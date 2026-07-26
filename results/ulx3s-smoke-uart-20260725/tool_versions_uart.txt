@@ -1,5 +1,5 @@
 === TOOL VERSIONS (UART) ===
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
 "nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.10-100-gfb95bb8e)
 Project Trellis ecppack Version 1.4-79-g56bb170
-date: 2026-07-26T07:15:45Z
+date: 2026-07-26T07:26:45Z

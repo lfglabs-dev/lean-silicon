@@ -28,10 +28,10 @@ driver, structural checks and regression tests around that implementation.
 ## Status
 
 PR #16 provides reproducibly built smoke and MinCore UART bitstreams plus RTL
-simulation, but did not program a physical board. Separately, PR #19 preserves
-a physical run of an older candidate bitstream. That historical observation
-does not validate the maintained PR #16 binary, and `board_detect.py` continues
-to distinguish visibility from data-path validation.
+simulation. PR #19 now preserves both the older candidate run and a bounded
+physical follow-up of the maintained 1 Mbaud path on one ULX3S-85F.
+`board_detect.py` still distinguishes visibility from validation: only the
+explicit recorded transactions establish the latter.
 
 ```sh
 make fpga-boundary   # structural boundary check (gating)
@@ -49,6 +49,6 @@ make fpga-run-program FPGA_PORT=/dev/cu.usbserial-D01623
 The runner checks STATUS first, preserves write-once VM memory on the Mac,
 checks every FPGA result against the host oracle before committing it, and
 stops before sending an unsupported instruction. The archived 12-operation
-`PREFIX_MATCH` was produced by the older candidate transport; the refactored
-active path is tested against the maintained driver and simulated bridge but
-has not been exercised on the maintained bitstream in hardware.
+`PREFIX_MATCH` was reproduced on the maintained 1 Mbaud bitstream: 12 physical
+SET/XOR/MUL transitions matched the upstream memory before the runner stopped
+at the first unsupported JUMP.

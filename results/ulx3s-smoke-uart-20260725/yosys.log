@@ -4,7 +4,7 @@
  |  Copyright (C) 2012 - 2026  Claire Xenia Wolf <claire@yosyshq.com>         |
  |  Distributed under an ISC-like license, type "license" to see terms        |
  \----------------------------------------------------------------------------/
- Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+ Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
 
 -- Running command `read_verilog -sv smoke_top.sv; hierarchy -check -top smoke_top; proc; check; synth_ecp5 -top smoke_top; write_json smoke_top.json' --
 
@@ -65,8 +65,8 @@ Found and reported 0 problems.
 
 5. Executing SYNTH_LATTICE pass.
 
-5.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_sim_ecp5.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_sim_ecp5.v' to AST representation.
+5.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_sim_ecp5.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_sim_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\LUT4'.
 Generating RTLIL representation for module `\$__ABC9_LUT5'.
 Generating RTLIL representation for module `\$__ABC9_LUT6'.
@@ -118,76 +118,76 @@ Generating RTLIL representation for module `\ILVDS'.
 Generating RTLIL representation for module `\OLVDS'.
 Generating RTLIL representation for module `\CCU2C'.
 Generating RTLIL representation for module `\DP16KD'.
-Replacing existing blackbox module `\FD1P3AX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:2.1-2.261.
+Replacing existing blackbox module `\FD1P3AX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:2.1-2.261.
 Generating RTLIL representation for module `\FD1P3AX'.
-Replacing existing blackbox module `\FD1P3AY' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:3.1-3.261.
+Replacing existing blackbox module `\FD1P3AY' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:3.1-3.261.
 Generating RTLIL representation for module `\FD1P3AY'.
-Replacing existing blackbox module `\FD1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:4.1-4.261.
+Replacing existing blackbox module `\FD1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:4.1-4.261.
 Generating RTLIL representation for module `\FD1P3BX'.
-Replacing existing blackbox module `\FD1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:5.1-5.261.
+Replacing existing blackbox module `\FD1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:5.1-5.261.
 Generating RTLIL representation for module `\FD1P3DX'.
-Replacing existing blackbox module `\FD1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:6.1-6.261.
+Replacing existing blackbox module `\FD1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:6.1-6.261.
 Generating RTLIL representation for module `\FD1P3IX'.
-Replacing existing blackbox module `\FD1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:7.1-7.261.
+Replacing existing blackbox module `\FD1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:7.1-7.261.
 Generating RTLIL representation for module `\FD1P3JX'.
-Replacing existing blackbox module `\FD1S3AX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:8.1-8.261.
+Replacing existing blackbox module `\FD1S3AX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:8.1-8.261.
 Generating RTLIL representation for module `\FD1S3AX'.
-Replacing existing blackbox module `\FD1S3AY' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:9.1-9.261.
+Replacing existing blackbox module `\FD1S3AY' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:9.1-9.261.
 Generating RTLIL representation for module `\FD1S3AY'.
-Replacing existing blackbox module `\FD1S3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:10.1-10.261.
+Replacing existing blackbox module `\FD1S3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:10.1-10.261.
 Generating RTLIL representation for module `\FD1S3BX'.
-Replacing existing blackbox module `\FD1S3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:11.1-11.261.
+Replacing existing blackbox module `\FD1S3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:11.1-11.261.
 Generating RTLIL representation for module `\FD1S3DX'.
-Replacing existing blackbox module `\FD1S3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:12.1-12.261.
+Replacing existing blackbox module `\FD1S3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:12.1-12.261.
 Generating RTLIL representation for module `\FD1S3IX'.
-Replacing existing blackbox module `\FD1S3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:13.1-13.261.
+Replacing existing blackbox module `\FD1S3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:13.1-13.261.
 Generating RTLIL representation for module `\FD1S3JX'.
-Replacing existing blackbox module `\IFS1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:26.1-26.301.
+Replacing existing blackbox module `\IFS1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:26.1-26.301.
 Generating RTLIL representation for module `\IFS1P3BX'.
-Replacing existing blackbox module `\IFS1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:27.1-27.301.
+Replacing existing blackbox module `\IFS1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:27.1-27.301.
 Generating RTLIL representation for module `\IFS1P3DX'.
-Replacing existing blackbox module `\IFS1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:28.1-28.301.
+Replacing existing blackbox module `\IFS1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:28.1-28.301.
 Generating RTLIL representation for module `\IFS1P3IX'.
-Replacing existing blackbox module `\IFS1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:29.1-29.301.
+Replacing existing blackbox module `\IFS1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:29.1-29.301.
 Generating RTLIL representation for module `\IFS1P3JX'.
-Replacing existing blackbox module `\OFS1P3BX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:31.1-31.302.
+Replacing existing blackbox module `\OFS1P3BX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:31.1-31.302.
 Generating RTLIL representation for module `\OFS1P3BX'.
-Replacing existing blackbox module `\OFS1P3DX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:32.1-32.302.
+Replacing existing blackbox module `\OFS1P3DX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:32.1-32.302.
 Generating RTLIL representation for module `\OFS1P3DX'.
-Replacing existing blackbox module `\OFS1P3IX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:33.1-33.302.
+Replacing existing blackbox module `\OFS1P3IX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:33.1-33.302.
 Generating RTLIL representation for module `\OFS1P3IX'.
-Replacing existing blackbox module `\OFS1P3JX' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_ff.vh:34.1-34.302.
+Replacing existing blackbox module `\OFS1P3JX' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_ff.vh:34.1-34.302.
 Generating RTLIL representation for module `\OFS1P3JX'.
-Replacing existing blackbox module `\IB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:2.1-2.157.
+Replacing existing blackbox module `\IB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:2.1-2.157.
 Generating RTLIL representation for module `\IB'.
-Replacing existing blackbox module `\IBPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:3.1-3.157.
+Replacing existing blackbox module `\IBPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:3.1-3.157.
 Generating RTLIL representation for module `\IBPU'.
-Replacing existing blackbox module `\IBPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:4.1-4.157.
+Replacing existing blackbox module `\IBPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:4.1-4.157.
 Generating RTLIL representation for module `\IBPD'.
-Replacing existing blackbox module `\OB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:5.1-5.157.
+Replacing existing blackbox module `\OB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:5.1-5.157.
 Generating RTLIL representation for module `\OB'.
-Replacing existing blackbox module `\OBZ' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:6.1-6.164.
+Replacing existing blackbox module `\OBZ' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:6.1-6.164.
 Generating RTLIL representation for module `\OBZ'.
-Replacing existing blackbox module `\OBZPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:7.1-7.164.
+Replacing existing blackbox module `\OBZPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:7.1-7.164.
 Generating RTLIL representation for module `\OBZPU'.
-Replacing existing blackbox module `\OBZPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:8.1-8.164.
+Replacing existing blackbox module `\OBZPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:8.1-8.164.
 Generating RTLIL representation for module `\OBZPD'.
-Replacing existing blackbox module `\OBCO' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:9.1-9.90.
+Replacing existing blackbox module `\OBCO' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:9.1-9.90.
 Generating RTLIL representation for module `\OBCO'.
-Replacing existing blackbox module `\BB' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:10.1-10.179.
+Replacing existing blackbox module `\BB' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:10.1-10.179.
 Generating RTLIL representation for module `\BB'.
-Replacing existing blackbox module `\BBPU' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:11.1-11.179.
+Replacing existing blackbox module `\BBPU' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:11.1-11.179.
 Generating RTLIL representation for module `\BBPU'.
-Replacing existing blackbox module `\BBPD' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:12.1-12.179.
+Replacing existing blackbox module `\BBPD' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:12.1-12.179.
 Generating RTLIL representation for module `\BBPD'.
-Replacing existing blackbox module `\ILVDS' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:13.1-13.139.
+Replacing existing blackbox module `\ILVDS' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:13.1-13.139.
 Generating RTLIL representation for module `\ILVDS'.
-Replacing existing blackbox module `\OLVDS' at /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_io.vh:14.1-14.146.
+Replacing existing blackbox module `\OLVDS' at /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_io.vh:14.1-14.146.
 Generating RTLIL representation for module `\OLVDS'.
 Successfully finished Verilog frontend.
 
-5.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_bb_ecp5.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_bb_ecp5.v' to AST representation.
+5.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_bb_ecp5.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_bb_ecp5.v' to AST representation.
 Generating RTLIL representation for module `\GSR'.
 Generating RTLIL representation for module `\PUR'.
 Generating RTLIL representation for module `\SGSR'.
@@ -394,8 +394,8 @@ Finding unused cells or wires in module \smoke_top..
 
 5.19. Executing TECHMAP pass (map to technology primitives).
 
-5.19.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/cmp2lut.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/cmp2lut.v' to AST representation.
+5.19.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/cmp2lut.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/cmp2lut.v' to AST representation.
 Generating RTLIL representation for module `\_90_lut_cmp_'.
 Successfully finished Verilog frontend.
 
@@ -411,8 +411,8 @@ Finding unused cells or wires in module \smoke_top..
 
 5.22. Executing TECHMAP pass (map to technology primitives).
 
-5.22.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/mul2dsp.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/mul2dsp.v' to AST representation.
+5.22.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/mul2dsp.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/mul2dsp.v' to AST representation.
 Generating RTLIL representation for module `\_80_mul'.
 Generating RTLIL representation for module `\_90_soft_mul'.
 Successfully finished Verilog frontend.
@@ -423,8 +423,8 @@ No more expansions possible.
 
 5.23. Executing TECHMAP pass (map to technology primitives).
 
-5.23.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/dsp_map_18x18.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/dsp_map_18x18.v' to AST representation.
+5.23.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/dsp_map_18x18.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/dsp_map_18x18.v' to AST representation.
 Generating RTLIL representation for module `$__MUL18X18'.
 Successfully finished Verilog frontend.
 
@@ -510,13 +510,13 @@ Finding unused cells or wires in module \smoke_top..
 
 5.29. Executing TECHMAP pass (map to technology primitives).
 
-5.29.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/lutrams_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/lutrams_map_trellis.v' to AST representation.
+5.29.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/lutrams_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/lutrams_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$__TRELLIS_DPR16X4_'.
 Successfully finished Verilog frontend.
 
-5.29.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/brams_map_16kd.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/brams_map_16kd.v' to AST representation.
+5.29.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/brams_map_16kd.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/brams_map_16kd.v' to AST representation.
 Generating RTLIL representation for module `$__DP16KD_'.
 Generating RTLIL representation for module `$__PDPW16KD_'.
 Successfully finished Verilog frontend.
@@ -584,8 +584,8 @@ Optimizing module smoke_top.
 
 5.33. Executing TECHMAP pass (map to technology primitives).
 
-5.33.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+5.33.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -613,8 +613,8 @@ Generating RTLIL representation for module `$connect'.
 Generating RTLIL representation for module `$input_port'.
 Successfully finished Verilog frontend.
 
-5.33.2. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v' to AST representation.
+5.33.2. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/arith_map_ccu2c.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/arith_map_ccu2c.v' to AST representation.
 Generating RTLIL representation for module `\_80_ccu2c_alu'.
 Successfully finished Verilog frontend.
 
@@ -667,8 +667,8 @@ Removed a total of 0 cells.
 
 5.38. Executing TECHMAP pass (map to technology primitives).
 
-5.38.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+5.38.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -766,8 +766,8 @@ Found and reported 0 problems.
 
 5.45. Executing TECHMAP pass (map to technology primitives).
 
-5.45.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/latches_map.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/latches_map.v' to AST representation.
+5.45.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/latches_map.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/latches_map.v' to AST representation.
 Generating RTLIL representation for module `$_DLATCH_N_'.
 Generating RTLIL representation for module `$_DLATCH_P_'.
 Successfully finished Verilog frontend.
@@ -790,8 +790,8 @@ Found 0 SCCs.
 
 5.46.5. Executing TECHMAP pass (map to technology primitives).
 
-5.46.5.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+5.46.5.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -849,16 +849,16 @@ Removed a total of 0 cells.
 
 5.46.7. Executing TECHMAP pass (map to technology primitives).
 
-5.46.7.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_map.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_map.v' to AST representation.
+5.46.7.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_map.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_map.v' to AST representation.
 Successfully finished Verilog frontend.
 
 5.46.7.2. Continuing TECHMAP pass.
 No more expansions possible.
 <suppressed ~2 debug messages>
 
-5.46.8. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_model.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_model.v' to AST representation.
+5.46.8. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_model.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_model.v' to AST representation.
 Generating RTLIL representation for module `$__ABC9_DELAY'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Generating RTLIL representation for module `$__DFF_N__$abc9_flop'.
@@ -875,8 +875,8 @@ Successfully finished Verilog frontend.
 
 5.46.12. Executing TECHMAP pass (map to technology primitives).
 
-5.46.12.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/techmap.v' to AST representation.
+5.46.12.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
 Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
 Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
 Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
@@ -1048,9 +1048,9 @@ ABC: Mapping (K=0)  :  lut =      0  edge =       0  lev =    0 (0.00)  levB =  
 ABC: LUT = 0 : Ave = 0.00
 ABC: + &write -n <abc-temp-dir>/output.aig 
 ABC: + &verify 
-ABC: Networks are equivalent.  Time =     0.01 sec
+ABC: Networks are equivalent.  Time =     0.00 sec
 ABC: + time 
-ABC: elapse: 0.01 seconds, total: 0.01 seconds
+ABC: elapse: 0.02 seconds, total: 0.02 seconds
 
 5.46.15.6. Executing AIGER frontend.
 <suppressed ~10 debug messages>
@@ -1066,8 +1066,8 @@ Removing temp directory.
 
 5.46.16. Executing TECHMAP pass (map to technology primitives).
 
-5.46.16.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_unmap.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/abc9_unmap.v' to AST representation.
+5.46.16.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v' to AST representation.
 Generating RTLIL representation for module `$__DFF_x__$abc9_flop'.
 Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
 Successfully finished Verilog frontend.
@@ -1080,8 +1080,8 @@ Removed 0 unused cells and 215 unused wires.
 
 5.47. Executing TECHMAP pass (map to technology primitives).
 
-5.47.1. Executing Verilog-2005 frontend: /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v
-Parsing Verilog input from `/tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
+5.47.1. Executing Verilog-2005 frontend: /private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v
+Parsing Verilog input from `/private/tmp/lean-silicon-oss-cad/oss-cad-suite/libexec/../share/yosys/lattice/cells_map_trellis.v' to AST representation.
 Generating RTLIL representation for module `$_DFF_N_'.
 Generating RTLIL representation for module `$_DFF_P_'.
 Generating RTLIL representation for module `$_DFFE_NN_'.
@@ -1223,6 +1223,6 @@ Found and reported 0 problems.
 
 6. Executing JSON backend.
 
-End of script. Logfile hash: 9b6cd9e200, time: 0.64s, user: 0.46s, system: 0.14s, MEM: 31.62 MB peak
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
-Time spent: 57% 21x read_verilog (0 sec), 12% 1x synth_lattice (0 sec), ...
+End of script. Logfile hash: e1fba353bb, time: 0.36s, user: 0.26s, system: 0.02s, MEM: 32.58 MB peak
+Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
+Time spent: 73% 21x read_verilog (0 sec), 10% 1x abc9_exe (0 sec), ...
