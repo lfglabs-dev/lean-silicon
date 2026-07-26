@@ -158,6 +158,51 @@ class DrainTest(unittest.TestCase):
         self.assertLess(time.monotonic() - start, 1.0)
 
 
+class FlushDeadlineTest(unittest.TestCase):
+    """A stalled output drain must not outlive the transaction timeout."""
+
+    def test_stalled_flush_is_abandoned_at_the_transaction_deadline(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class StalledFlush:
+            def write(self, data: bytes) -> int:
+                return len(data)
+
+            def flush(self) -> None:
+                release.wait(30)
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "flush timeout"):
+            ulx3s_uart.send_bytes(StalledFlush(), b"\\x7e", timeout=0.05)
+        self.assertLess(
+            time.monotonic() - start,
+            1.0,
+            "a blocked Serial.flush() outlived the transaction deadline",
+        )
+
+    def test_flush_receives_only_time_left_after_writes(self):
+        class Port:
+            def write(self, data: bytes) -> int:
+                return len(data)
+
+            def flush(self) -> None:
+                pass
+
+        # Model 60 ms of writes before the drain. A direct ``ser.flush()``
+        # (or a fresh 80 ms worker budget) would bypass this assertion.
+        port = Port()
+        original = ulx3s_uart._call_within
+        with mock.patch.object(
+            ulx3s_uart.time, "monotonic", side_effect=[10.0, 10.06]
+        ), mock.patch.object(
+            ulx3s_uart, "_call_within", wraps=original
+        ) as bounded:
+            ulx3s_uart.send_bytes(port, b"\x01\x02", timeout=0.08)
+        self.assertEqual(bounded.call_args.args[0], port.flush)
+        self.assertAlmostEqual(bounded.call_args.args[1], 0.02, places=9)
+
+
 class MulExitStatusTest(unittest.TestCase):
     def test_correct_product_succeeds(self):
         self.assertEqual(run_mul(MUL_EXPECTED), 0)
@@ -557,6 +602,10 @@ class DocumentedUsageTest(unittest.TestCase):
         parser = ulx3s_uart.build_parser()
         choices = next(a.choices for a in parser._actions if a.dest == "tx")
         self.assertEqual(set(choices), set(ulx3s_uart.PAYLOAD_BYTES))
+
+    def test_documented_runtime_dependency_is_pinned(self):
+        requirements = (Path(__file__).resolve().parent.parent / "requirements.txt").read_text()
+        self.assertRegex(requirements, r"(?m)^pyserial==3\.5$")
 
 
 if __name__ == "__main__":

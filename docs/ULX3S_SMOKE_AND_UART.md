@@ -140,6 +140,7 @@ ASIC takes ABORT on `uio_in[6]`, a pin, and has no in-band abort byte.
 
 Example (never run on hardware without review):
 ```sh
+python3 -m pip install -r requirements.txt
 python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx status
 python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 00000000000000000000000000000000
 ```
