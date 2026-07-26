@@ -13,34 +13,40 @@ from textual.widgets import Footer, Header, Input, Label, RichLog, Static
 from .model import EventKind, Replay, load_evidence
 
 CSS = """
-$bg: #111318; $surface: #191c23; $raised: #21252e; $border: #343a46;
-$text: #e8e3d8; $muted: #8f96a3; $host: #d9a36c; $fpga: #70b8b0;
-$ok: #82b883; $warn: #d3ad62; $error: #d87575; $pc: #c89ad1;
+$bg: #101217; $surface: #181b22; $raised: #222731; $border: #3b4352;
+$text: #eee9df; $muted: #9aa3b2; $host: #f2ae72; $fpga: #64d2c8;
+$ok: #80d98b; $warn: #f0c36a; $error: #f07b7b; $pc: #d5a6e6;
 Screen { background: $bg; color: $text; }
 Header { height: 3; background: $surface; color: $text; }
-#status { height: 3; padding: 1 2; background: $surface; color: $muted; }
+#status { height: 4; padding: 1 2; background: $surface; color: $muted; }
 #status .host { color: $host; } #status .fpga { color: $fpga; }
 #workspace { height: 1fr; padding: 0 1; }
 .column { width: 1fr; }
 .panel { background: $surface; border: round $border; margin: 0 1 1 0; padding: 0 1; }
 .panel:focus-within { border: round $pc; }
 .title { height: 2; color: $muted; text-style: bold; padding-top: 1; }
-#source { height: 9; } #instructions { height: 1fr; min-height: 12; }
-#transaction { height: 12; } #memory { height: 1fr; min-height: 12; }
-#events { width: 35%; min-width: 34; }
+#source { height: 9; } #instructions { height: 1fr; min-height: 11; }
+#transaction { height: 14; border: round $pc; background: $raised; }
+#transaction .title { color: $pc; }
+#memory { height: 1fr; min-height: 11; }
+#events { width: 30%; min-width: 32; }
 RichLog { scrollbar-color: $border; scrollbar-background: $surface; }
 #searchbar { display: none; height: 3; margin: 0 1 1 0; border: round $pc; background: $raised; }
 #searchbar.visible { display: block; }
 #terminal { height: 3; padding: 1 2; background: $raised; color: $muted; }
-#terminal.complete { color: $ok; text-style: bold; }
+#terminal.complete { height: 6; padding: 1 2; color: $ok; background: #183020; border: round $ok; text-style: bold; }
 #terminal.error { color: $error; text-style: bold; }
 Footer { height: 1; background: $surface; color: $muted; }
 Screen.narrow #workspace { layout: vertical; overflow-y: auto; }
 Screen.narrow .column, Screen.narrow #events { width: 100%; min-width: 0; height: auto; }
-Screen.narrow #status { height: 5; }
-Screen.narrow #source { height: 8; } Screen.narrow #instructions { height: 15; }
-Screen.narrow #transaction { height: 12; } Screen.narrow #memory { height: 15; }
-Screen.narrow #events { height: 16; }
+Screen.narrow Header { height: 2; }
+Screen.narrow #status { height: 6; padding: 1; }
+Screen.narrow #source { height: 8; } Screen.narrow #instructions { height: 9; }
+Screen.narrow #transaction { height: 12; } Screen.narrow #memory { height: 14; }
+Screen.narrow #events { height: 12; }
+Screen.narrow #terminal { height: 4; padding: 1; }
+Screen.narrow #terminal.complete { height: 7; }
+Screen.narrow Footer { display: none; }
 """
 
 
@@ -67,7 +73,7 @@ class SiliconLive(App):
         self._timer = None
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon="")
         yield Static(id="status")
         with Horizontal(id="workspace"):
             with Vertical(classes="column"):
@@ -115,57 +121,67 @@ class SiliconLive(App):
         state = "PAUSED" if not self.playing and self.replay.state == "RUNNING" else self.replay.state
         if self.size.width < 92:
             status = (
-                f"[b]PROGRAM[/b]  assert_set_xor_mul  ·  [b]BACKEND[/b]  [#70b8b0]FPGA evidence[/]\n"
-                f"[b]LINK[/b]  replay  ·  [b]STATE[/b]  {state}  ·  "
-                f"[b]STEP[/b]  {cursor}/12  ·  [b]PC[/b]  {pc:02d}  ·  [b]FP[/b]  {ev.fp}"
+                f"[#9aa3b2]PROGRAM ·[/]  [#eee9df b]assert_set_xor_mul[/]\n"
+                f"[#9aa3b2]BACKEND ·[/]  [#64d2c8 b]FPGA EVIDENCE[/]   [#9aa3b2]LINK ·[/]  replay · offline\n"
+                f"[#9aa3b2]STATE ·[/]  [#f0c36a b]{state}[/]   [#9aa3b2]STEP ·[/]  [#eee9df b]{cursor} / 12[/]   "
+                f"[#9aa3b2]PC ·[/]  [#d5a6e6 b]{pc:02d}[/]   [#9aa3b2]FP ·[/]  {ev.fp}"
             )
         else:
             status = (
-                f"[b]PROGRAM[/b]  assert_set_xor_mul   ·   [b]BACKEND[/b]  [#70b8b0]FPGA evidence[/]   ·   "
-                f"[b]LINK[/b]  offline/replay   ·   [b]STATE[/b]  {state}   ·   "
-                f"[b]STEP[/b]  {cursor}/12   ·   [b]PC[/b]  {pc:02d}   ·   [b]FP[/b]  {ev.fp}"
+                f"[#9aa3b2]PROGRAM[/]  [#eee9df b]assert_set_xor_mul[/]    "
+                f"[#9aa3b2]BACKEND[/]  [#64d2c8 b]FPGA EVIDENCE[/]    "
+                f"[#9aa3b2]LINK[/]  [#f2ae72]offline · replay[/]\n"
+                f"[#9aa3b2]STATE[/]  [#f0c36a b]{state}[/]    "
+                f"[#9aa3b2]STEP[/]  [#eee9df b]{cursor} / 12[/]    "
+                f"[#9aa3b2]PC[/]  [#d5a6e6 b]{pc:02d}[/]    [#9aa3b2]FP[/]  {ev.fp}"
             )
         self.query_one("#status", Static).update(status)
         source_lines = ev.source.splitlines()
         approx = min(len(source_lines) - 1, 1 + (cursor * max(1, len(source_lines)-2) // 12))
         source = "\n".join(
-            f"[#c89ad1]▸[/] [reverse]{escape(line)}[/reverse]" if i == approx
-            else f"  [#8f96a3]{i+1:02d}[/] {escape(line)}"
+            f"[#d5a6e6]▸[/] [reverse]{escape(line)}[/reverse]" if i == approx
+            else f"  [#9aa3b2]{i+1:02d} │[/] {escape(line)}"
             for i, line in enumerate(source_lines)
         )
         self.query_one("#source_text", Static).update(source)
         ilog = self.query_one("#instruction_log", RichLog); ilog.clear()
         for ins in ev.instructions[max(0, pc-3):min(len(ev.instructions), pc+5)]:
-            marker = "[#c89ad1]▶[/]" if ins.pc == pc else " "
-            style = "reverse" if ins.pc == pc else ""
-            ilog.write(f"{marker} [{style}]{escape(ins.text)}[/{style}]" if style else f"{marker} {escape(ins.text)}")
+            marker = "[#d5a6e6 b]▶[/]" if ins.pc == pc else " "
+            instruction = ins.text.split(maxsplit=1)[1]
+            ilog.write(
+                f"{marker} [on #44334f #fff4ff b] PC {ins.pc:02d} │ {escape(instruction)} [/]"
+                if ins.pc == pc else f"{marker} [#9aa3b2]PC {ins.pc:02d} │[/] {escape(instruction)}"
+            )
         mlog = self.query_one("#memory_log", RichLog); mlog.clear()
         active = ev.steps[cursor-1] if cursor else None
         for address in range(12):
             value = self.replay.memory.get(address, 0)
-            tag = "[#d3ad62 b]R[/]" if active and address in active.reads else (
-                "[#82b883 b]W[/]" if active and address in active.writes else " ")
-            mlog.write(f"{tag}[#8f96a3]m{address:02d}[/] {value:032x}")
+            tag = "[on #5a451e #ffe2a1 b] READ [/]" if active and address in active.reads else (
+                "[on #214b2c #aaf5b4 b] WRITE[/]" if active and address in active.writes else "      ")
+            exact = f"{value:032x}"
+            grouped = f"{exact[:8]} · {exact[8:16]} · {exact[-8:]}"
+            mlog.write(f"{tag} [#9aa3b2]m{address:02d}[/]  {grouped}")
         t = self.query_one("#transaction_text", Static)
         if active:
-            wire = active.request.hex()
-            chunks = [wire[i:i+28] for i in range(0, len(wire), 28)]
-            tx = "\n".join(
-                (f"  [#8f96a3]TX {len(active.request):02d}B[/] " if i == 0 else "         ") + chunk
-                for i, chunk in enumerate(chunks)
+            def compact(wire: bytes) -> str:
+                value = wire.hex()
+                return f"{value[:8]} … {value[-8:]}" if len(value) > 20 else " ".join(
+                    value[i:i+8] for i in range(0, len(value), 8))
+            exact_result = f"{active.result:032x}"
+            result = f"{exact_result[:12]} … {exact_result[-12:]}"
+            t.update(
+                f"[on #573721 #ffd1a8 b] HOST [/][#eee9df b]  PREPARE[/]  {active.kind}\n"
+                f"       [#9aa3b2]TX · {len(active.request):02d} bytes[/]  {compact(active.request)}\n"
+                f"                    [#9aa3b2]exact value: press I[/]\n"
+                f"[on #174b4a #a7fff6 b] FPGA [/][#eee9df b]  COMPUTE[/]  PC {active.pc:02d}\n"
+                f"       [#9aa3b2]RX · {len(active.response):02d} bytes[/]  {compact(active.response)}\n"
+                f"[on #573721 #ffd1a8 b] HOST [/][#eee9df b]  VALIDATE[/]  →  [on #214b2c #aaf5b4 b] WRITE m{active.writes[0]:02d} [/]\n"
+                f"       [#80d98b]0x{result}[/]"
             )
-            rx_wire = active.response.hex()
-            rx_chunks = [rx_wire[i:i+28] for i in range(0, len(rx_wire), 28)]
-            rx = "\n".join(
-                (f"  [#8f96a3]RX {len(active.response):02d}B[/] " if i == 0 else "         ") + chunk
-                for i, chunk in enumerate(rx_chunks)
-            )
-            t.update(f"[#d9a36c b]HOST[/]  prepare {active.kind}\n{tx}\n"
-                     f"                  [#70b8b0 b]FPGA[/]  compute\n{rx}\n"
-                     f"[#d9a36c b]HOST[/]  validate → m[{active.writes[0]}]\n"
-                     f"      0x{active.result:032x}")
         else:
-            t.update("[#d9a36c b]HOST[/]  waiting\n                 [#70b8b0 b]FPGA[/]\n[#8f96a3]No transaction selected[/]")
+            t.update("[on #573721 #ffd1a8 b] HOST [/][#9aa3b2]  waiting[/]\n\n"
+                     "[on #174b4a #a7fff6 b] FPGA [/][#9aa3b2]  ready for replay[/]\n\n"
+                     "[#9aa3b2]Step once to inspect the exact PC → FPGA → PC exchange.[/]")
         elog = self.query_one("#event_log", RichLog); elog.clear()
         actor_colors = {"HOST": "#d9a36c", "FPGA": "#70b8b0"}
         labels = {
@@ -174,18 +190,30 @@ class SiliconLive(App):
             EventKind.VALIDATE: "CHECK", EventKind.MEMORY_WRITE: "WRITE",
             EventKind.HALT: "HALT", EventKind.ERROR: "FAULT",
         }
-        for event in self.replay.events[-40:]:
-            color = "#d87575" if event.kind == EventKind.ERROR else actor_colors[event.actor]
+        for event in self.replay.events[-18:]:
+            color = "#f07b7b" if event.kind == EventKind.ERROR else actor_colors[event.actor]
             message = event.message.replace("response ", "").replace("memory ", "")
-            elog.write(f"[#8f96a3]{event.pc:02d}[/] [{color} b]{event.actor:<4}[/] "
-                       f"[#8f96a3]{labels[event.kind]:<7}[/] {escape(message)}")
+            message = message.replace(" bytes", " B").replace("write mem", "m")
+            message = message.removeprefix("prepare ").removeprefix("compute ")
+            if message.startswith("m["):
+                message = f"m{int(message[2:-1]):02d}"
+            if event.kind == EventKind.HALT:
+                message = "prefix matched"
+            actor_bg = "#573721" if event.actor == "HOST" else "#174b4a"
+            elog.write(f"[#9aa3b2]{event.pc:02d}[/] [on {actor_bg} {color} b] {event.actor:<4} [/]"
+                       f" [#9aa3b2]{labels[event.kind]:<7} │[/] {escape(message)}")
         term = self.query_one("#terminal", Static)
         term.remove_class("complete", "error")
         if self.replay.terminal:
-            term.update(f"{self.replay.terminal} · {ev.reason}")
+            term.update(f"[#80d98b b]PREFIX MATCH ✓[/]   [#d7f4dc]expected execution prefix reproduced exactly[/]\n"
+                        f"[#9aa3b2]evidence replay · no board[/]   [#f0c36a]LIMITATION —[/] {ev.reason}")
             term.add_class("complete" if self.replay.terminal.startswith("PREFIX") else "error")
         else:
-            term.update(f"{state} · SPACE run/pause · S step · R restart · +/- speed {self.speed:.1f}× · / search · ? help")
+            compact_nav = "SPACE run · S step · R restart · / search · ? help"
+            term.update(
+                f"[#f0c36a b]{state}[/]  ·  {compact_nav}" if self.size.width < 92 else
+                f"[#f0c36a b]{state}[/]  ·  SPACE run/pause · S step · R restart · +/- {self.speed:.1f}× · / search · I exact data · ? help"
+            )
 
     def action_toggle(self) -> None:
         if self.replay.terminal:

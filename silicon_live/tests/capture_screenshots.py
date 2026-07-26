@@ -1,7 +1,13 @@
 """Generate deterministic, committed visual-QA artifacts with real Textual pilots."""
 from __future__ import annotations
 import asyncio
+import os
 from pathlib import Path
+import subprocess
+
+os.environ.pop("NO_COLOR", None)
+os.environ["TERM"] = "xterm-256color"
+os.environ["COLORTERM"] = "truecolor"
 
 from silicon_live.app import SiliconLive
 
@@ -14,7 +20,11 @@ async def capture(name: str, size: tuple[int, int], steps: int) -> None:
         for _ in range(steps):
             app.action_step()
         await pilot.pause()
-        app.save_screenshot(filename=f"{name}.svg", path=str(OUT))
+        svg = Path(app.save_screenshot(filename=f"{name}.svg", path=str(OUT)))
+        subprocess.run(
+            ["rsvg-convert", str(svg), "-o", str(svg.with_suffix(".png"))],
+            check=True,
+        )
 
 
 async def main() -> None:
