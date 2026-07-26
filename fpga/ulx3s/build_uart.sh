@@ -15,6 +15,8 @@ TOP=ulx3s_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
+STAGE=$(mktemp -d "$OUTDIR/.uart-build.XXXXXX")
+trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 
 # Name the artifact is archived and checksummed under; must match the file
 # committed under results/.
@@ -32,8 +34,8 @@ fi
     nextpnr-ecp5 --version
     ecppack --version
     echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-} > "$OUTDIR/tool_versions_uart.txt" 2>&1
-cat "$OUTDIR/tool_versions_uart.txt"
+} > "$STAGE/tool_versions_uart.txt" 2>&1
+cat "$STAGE/tool_versions_uart.txt"
 
 # Collect sources: bridge + uart + exact ASIC top + MinCore + multiplier.
 # Relative to this directory, which the cd above guarantees, so the paths that
@@ -56,36 +58,42 @@ hierarchy -check -top ${TOP};
 proc; check;
 synth_ecp5 -top ${TOP};
 write_json ${TOP}.json
-" > "$OUTDIR/yosys_uart.log" 2>&1 || {
+" > "$STAGE/yosys_uart.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/yosys_uart.log"
+    cat "$STAGE/yosys_uart.log"
     exit "$status"
 }
-cat "$OUTDIR/yosys_uart.log"
+cat "$STAGE/yosys_uart.log"
 
 echo "=== PLACE+ROUTE (25 MHz, no --timing-allow-fail) ==="
 nextpnr-ecp5 --85k --package CABGA381 --json ${TOP}.json --lpf ${LPF} --textcfg ${TOP}.config \
-    > "$OUTDIR/nextpnr_uart.log" 2>&1 || {
+    > "$STAGE/nextpnr_uart.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/nextpnr_uart.log"
+    cat "$STAGE/nextpnr_uart.log"
     exit "$status"
 }
-cat "$OUTDIR/nextpnr_uart.log"
+cat "$STAGE/nextpnr_uart.log"
 
 echo "=== PACK ==="
-ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit > "$OUTDIR/ecppack_uart.log" 2>&1 || {
+ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit > "$STAGE/ecppack_uart.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/ecppack_uart.log"
+    cat "$STAGE/ecppack_uart.log"
     exit "$status"
 }
-cat "$OUTDIR/ecppack_uart.log"
+cat "$STAGE/ecppack_uart.log"
 
-cp "${TOP}.bit" "$OUTDIR/$BIT_NAME"
+cp "${TOP}.bit" "$STAGE/$BIT_NAME"
 
-( cd "$OUTDIR" && sha256sum "$BIT_NAME" > SHA256SUMS_bridge.txt )
-( cd "$OUTDIR" && sha256sum -c SHA256SUMS_bridge.txt )
+( cd "$STAGE" && sha256sum "$BIT_NAME" > SHA256SUMS_bridge.txt )
+( cd "$STAGE" && sha256sum -c SHA256SUMS_bridge.txt )
 
-grep -E 'Max frequency|Slack' "$OUTDIR/nextpnr_uart.log" | tail -5 | tee "$OUTDIR/timing_uart.txt" || true
+grep -E 'Max frequency|Slack' "$STAGE/nextpnr_uart.log" | tail -5 > "$STAGE/timing_uart.txt" || true
+
+for artifact in tool_versions_uart.txt yosys_uart.log nextpnr_uart.log \
+                ecppack_uart.log "$BIT_NAME" SHA256SUMS_bridge.txt timing_uart.txt; do
+    mv "$STAGE/$artifact" "$OUTDIR/$artifact"
+done
+cat "$OUTDIR/timing_uart.txt"
 
 echo "=== UART BUILD COMPLETE ==="
 ls -l "$OUTDIR/$BIT_NAME"

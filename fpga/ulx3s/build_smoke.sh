@@ -14,6 +14,8 @@ TOP=smoke_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
+STAGE=$(mktemp -d "$OUTDIR/.smoke-build.XXXXXX")
+trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 
 # Names the artifacts are archived and checksummed under. They must match the
 # files committed under results/, otherwise `sha256sum -c` names a file that
@@ -34,46 +36,54 @@ fi
     nextpnr-ecp5 --version
     ecppack --version
     echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-} > "$OUTDIR/tool_versions.txt" 2>&1
-cat "$OUTDIR/tool_versions.txt"
+} > "$STAGE/tool_versions.txt" 2>&1
+cat "$STAGE/tool_versions.txt"
 
 echo "=== SYNTH ==="
 yosys -p "read_verilog -sv ${TOP}.sv; hierarchy -check -top ${TOP}; proc; check; synth_ecp5 -top ${TOP}; write_json ${TOP}.json" \
-    > "$OUTDIR/yosys.log" 2>&1 || {
+    > "$STAGE/yosys.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/yosys.log"
+    cat "$STAGE/yosys.log"
     exit "$status"
 }
-cat "$OUTDIR/yosys.log"
+cat "$STAGE/yosys.log"
 
 echo "=== PLACE+ROUTE (25 MHz, no --timing-allow-fail) ==="
 nextpnr-ecp5 --85k --package CABGA381 --json ${TOP}.json --lpf ${LPF} --textcfg ${TOP}.config \
-    > "$OUTDIR/nextpnr.log" 2>&1 || {
+    > "$STAGE/nextpnr.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/nextpnr.log"
+    cat "$STAGE/nextpnr.log"
     exit "$status"
 }
-cat "$OUTDIR/nextpnr.log"
+cat "$STAGE/nextpnr.log"
 
 echo "=== PACK ==="
-ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit > "$OUTDIR/ecppack.log" 2>&1 || {
+ecppack --svf ${TOP}.svf ${TOP}.config ${TOP}.bit > "$STAGE/ecppack.log" 2>&1 || {
     status=$?
-    cat "$OUTDIR/ecppack.log"
+    cat "$STAGE/ecppack.log"
     exit "$status"
 }
-cat "$OUTDIR/ecppack.log"
+cat "$STAGE/ecppack.log"
 
-cp "${TOP}.bit"    "$OUTDIR/$BIT_NAME"
-cp "${TOP}.config" "$OUTDIR/$CFG_NAME"
-cp "${TOP}.svf"    "$OUTDIR/$SVF_NAME"
+cp "${TOP}.bit"    "$STAGE/$BIT_NAME"
+cp "${TOP}.config" "$STAGE/$CFG_NAME"
+cp "${TOP}.svf"    "$STAGE/$SVF_NAME"
 
 # Digest the archived copies from inside OUTDIR so the manifest holds bare
 # file names that resolve when checked from that directory.
-( cd "$OUTDIR" && sha256sum "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" > SHA256SUMS )
-( cd "$OUTDIR" && sha256sum -c SHA256SUMS )
+( cd "$STAGE" && sha256sum "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" > SHA256SUMS )
+( cd "$STAGE" && sha256sum -c SHA256SUMS )
 
 # Capture timing line for report
-grep -E 'Max frequency|Slack' "$OUTDIR/nextpnr.log" | tail -5 | tee "$OUTDIR/timing.txt" || true
+grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 > "$STAGE/timing.txt" || true
+
+# Do not disturb the last known-good archive until every required build,
+# checksum, and evidence step above has completed successfully.
+for artifact in tool_versions.txt yosys.log nextpnr.log ecppack.log \
+                "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" SHA256SUMS timing.txt; do
+    mv "$STAGE/$artifact" "$OUTDIR/$artifact"
+done
+cat "$OUTDIR/timing.txt"
 
 echo "=== BUILD COMPLETE ==="
 ls -l "$OUTDIR/$BIT_NAME"
