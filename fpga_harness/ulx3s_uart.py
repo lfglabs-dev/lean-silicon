@@ -19,6 +19,7 @@ Usage (explicit path). --tx takes the command name, not the opcode byte:
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 import threading
 import time
@@ -50,6 +51,19 @@ from sim.model import (  # noqa: E402
 
 BAUD = 1_000_000
 TIMEOUT_S = 2.0
+
+
+def _validate_timeout(timeout: float, name: str = "timeout") -> None:
+    """Reject non-finite and non-positive timeouts before any deadline arithmetic.
+
+    math.inf and float('nan') produce no finite bound and can raise OverflowError
+    when assigned to pyserial timeouts or passed to worker.join(). Negative or
+    zero values produce an already-expired deadline.
+    """
+    if not math.isfinite(timeout):
+        raise ValueError(f"{name} must be a finite number of seconds, got {timeout!r}")
+    if timeout <= 0:
+        raise ValueError(f"{name} must be positive, got {timeout!r}")
 
 
 def _call_within(call, remaining: float, timeout_message: str):
@@ -100,6 +114,7 @@ def _in_waiting_within(ser: serial.Serial, remaining: float) -> int:
 
 def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial.Serial:
     """Open with explicit path. Caller owns lifetime."""
+    _validate_timeout(timeout, "timeout")
     if serial is None:
         raise RuntimeError("pyserial is required to reach a board; pip install -r requirements.txt")
     ser = serial.Serial(
@@ -127,12 +142,13 @@ def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial
 
 def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> bytes:
     """Drain up to N stale bytes; used between transactions and after reset."""
+    _validate_timeout(settle, "settle")
     out = bytearray()
-    deadline = time.time() + settle
+    deadline = time.monotonic() + settle
     restore = getattr(ser, "timeout", None)
     try:
         while len(out) < max_bytes:
-            remaining = deadline - time.time()
+            remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
             waiting = _in_waiting_within(ser, remaining)
@@ -165,6 +181,7 @@ def send_bytes(
     time left, is additionally bounded by a worker for implementations that
     ignore ``write_timeout``, and advances only by bytes actually accepted.
     """
+    _validate_timeout(timeout, "timeout")
     deadline = time.monotonic() + timeout
     restore_write_timeout = getattr(ser, "write_timeout", None)
     offset = 0
@@ -217,12 +234,13 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
     buys the read after it a whole fresh timeout: a 2 s budget takes nearly 4 s,
     and a dribbling link stretches it further still.
     """
+    _validate_timeout(timeout, "timeout")
     buf = bytearray()
-    deadline = time.time() + timeout
+    deadline = time.monotonic() + timeout
     restore = getattr(ser, "timeout", None)
     try:
         while len(buf) < n:
-            remaining = deadline - time.time()
+            remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
             ser.timeout = remaining
@@ -230,7 +248,7 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
             if chunk:
                 buf.extend(chunk)
             else:
-                time.sleep(max(0.0, min(0.0005, deadline - time.time())))
+                time.sleep(max(0.0, min(0.0005, deadline - time.monotonic())))
     finally:
         if restore is not None:
             ser.timeout = restore
@@ -385,6 +403,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = build_parser().parse_args(argv)
+
+    try:
+        _validate_timeout(args.timeout, "timeout")
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
 
     port_path = args.port
     try:

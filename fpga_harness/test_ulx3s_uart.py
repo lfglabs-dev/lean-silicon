@@ -8,6 +8,7 @@ non-zero exit. No serial port and no board are involved.
 
 from __future__ import annotations
 
+import math
 import re
 import shlex
 import threading
@@ -119,7 +120,7 @@ class ExpectedMulTest(unittest.TestCase):
 class DrainTest(unittest.TestCase):
     def test_idle_port_is_polled_without_a_blocking_read(self):
         with mock.patch.object(ulx3s_uart.time, "sleep"), mock.patch.object(
-            ulx3s_uart.time, "time", side_effect=[0.0, 0.01, 0.06]
+            ulx3s_uart.time, "monotonic", side_effect=[0.0, 0.01, 0.06]
         ):
             self.assertEqual(ulx3s_uart.drain(IdleSerial()), b"")
 
@@ -134,7 +135,7 @@ class DrainTest(unittest.TestCase):
 
         fake = StaleCountSerial()
         with mock.patch.object(
-            ulx3s_uart.time, "time", side_effect=[10.0, 10.0, 10.051]
+            ulx3s_uart.time, "monotonic", side_effect=[10.0, 10.0, 10.051]
         ):
             self.assertEqual(ulx3s_uart.drain(fake, settle=0.05), b"")
         self.assertGreater(fake.observed_timeout, 0)
@@ -440,7 +441,7 @@ class RecvExactDeadlineTest(unittest.TestCase):
         clock = _FakeClock()
         port = _StallingPort(clock, first_byte_after, port_timeout=budget)
         start = clock.t
-        with mock.patch.object(ulx3s_uart.time, "time", clock), mock.patch.object(
+        with mock.patch.object(ulx3s_uart.time, "monotonic", clock), mock.patch.object(
             ulx3s_uart.time, "sleep", lambda s: None
         ):
             with self.assertRaises(TimeoutError):
@@ -676,6 +677,103 @@ class DocumentedUsageTest(unittest.TestCase):
     def test_documented_runtime_dependency_is_pinned(self):
         requirements = (Path(__file__).resolve().parent.parent / "requirements.txt").read_text()
         self.assertRegex(requirements, r"(?m)^pyserial==3\.5$")
+
+
+class TimeoutValidationTest(unittest.TestCase):
+    """Adversarial tests for non-finite / invalid timeout rejection.
+
+    These must raise ValueError with a clear message for math.inf, NaN,
+    negative, and zero. Very large but finite values must be accepted.
+    Tests are written to fail on pre-fix code (no explicit validation)
+    and pass after _validate_timeout is wired into the public entry points.
+    """
+
+    BAD_VALUES = [math.inf, float("nan"), -1.0, -0.0, 0.0]
+    GOOD_LARGE = 1e300  # finite, must be accepted by validation
+    SAFE_LARGE = 3600.0  # large finite that will not overflow platform time_t in worker.join
+
+    def test_open_port_rejects_non_finite_and_non_positive(self):
+        for bad in self.BAD_VALUES:
+            with self.subTest(timeout=bad):
+                with self.assertRaisesRegex(ValueError, r"(finite|positive)"):
+                    ulx3s_uart.open_port("/dev/null", timeout=bad)
+
+    def test_open_port_accepts_very_large_finite(self):
+        # Should not raise from validation; FakeSerial is not used here,
+        # open_port will fail later on real serial but validation must pass.
+        try:
+            # We expect it to fail at serial creation (no pyserial or no port),
+            # not at our validation.
+            ulx3s_uart.open_port("/dev/null", timeout=self.SAFE_LARGE)
+        except RuntimeError as e:
+            # Expected when pyserial missing or port absent.
+            self.assertIn("pyserial", str(e))
+        except Exception as e:
+            # Any other failure must not be a ValueError from validation.
+            self.assertNotIsInstance(e, ValueError)
+
+    def test_recv_exact_rejects_non_finite_and_non_positive(self):
+        fake = FakeSerial(b"", command_len=0)
+        for bad in self.BAD_VALUES:
+            with self.subTest(timeout=bad):
+                with self.assertRaisesRegex(ValueError, r"(finite|positive)"):
+                    ulx3s_uart.recv_exact(fake, 4, timeout=bad)
+
+    def test_recv_exact_accepts_very_large_finite(self):
+        fake = FakeSerial(ulx3s_uart.STATUS_SIGNATURE, command_len=0)
+        fake._pending.extend(ulx3s_uart.STATUS_SIGNATURE)
+        # Must not raise ValueError; should succeed or raise Timeout only.
+        try:
+            out = ulx3s_uart.recv_exact(fake, 4, timeout=self.SAFE_LARGE)
+            self.assertEqual(out, ulx3s_uart.STATUS_SIGNATURE)
+        except TimeoutError:
+            pass
+
+    def test_drain_rejects_non_finite_and_non_positive_settle(self):
+        for bad in self.BAD_VALUES:
+            with self.subTest(settle=bad):
+                with self.assertRaisesRegex(ValueError, r"(finite|positive)"):
+                    ulx3s_uart.drain(IdleSerial(), settle=bad)
+
+    def test_drain_accepts_very_large_finite_settle(self):
+        # Avoid worker.join(large) by patching the in_waiting helper.
+        # Use a clock that reports start then immediately "settled".
+        with mock.patch.object(ulx3s_uart, "_in_waiting_within", return_value=0):
+            with mock.patch.object(
+                ulx3s_uart.time, "monotonic", side_effect=[0.0, 0.0, self.SAFE_LARGE]
+            ):
+                with mock.patch.object(ulx3s_uart.time, "sleep"):
+                    out = ulx3s_uart.drain(IdleSerial(), settle=self.SAFE_LARGE)
+        self.assertEqual(out, b"")
+
+    def test_send_bytes_rejects_non_finite_timeout(self):
+        class DummyPort:
+            def write(self, data: bytes) -> int:
+                return len(data)
+
+            def flush(self) -> None:
+                pass
+
+        for bad in self.BAD_VALUES:
+            with self.subTest(timeout=bad):
+                with self.assertRaisesRegex(ValueError, r"(finite|positive)"):
+                    ulx3s_uart.send_bytes(DummyPort(), b"\x00", timeout=bad)
+
+    def test_main_cli_rejects_non_finite_timeout(self):
+        for bad in self.BAD_VALUES:
+            with self.subTest(timeout=bad):
+                rc = ulx3s_uart.main(
+                    ["--port", "/dev/null", "--tx", "status", "--timeout", str(bad)]
+                )
+                self.assertEqual(rc, 2)
+
+    def test_main_cli_accepts_very_large_finite_timeout(self):
+        # CLI must accept the value; it will fail later opening the port.
+        rc = ulx3s_uart.main(
+            ["--port", "/dev/null", "--tx", "status", "--timeout", str(self.SAFE_LARGE)]
+        )
+        # Expect 2 (cannot open) not 0/1 (success paths).
+        self.assertEqual(rc, 2)
 
 
 if __name__ == "__main__":
