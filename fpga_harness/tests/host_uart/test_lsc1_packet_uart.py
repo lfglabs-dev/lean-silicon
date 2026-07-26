@@ -8,8 +8,8 @@ from fpga_harness.host.lsc1_packet_uart import (
     PacketTransportError,
     _instruction_frame,
     _validate_capabilities,
+    protocol,
 )
-from host.protocol import protocol
 
 
 class FakeTransport:

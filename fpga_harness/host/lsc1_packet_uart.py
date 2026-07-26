@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import importlib
+import importlib.util
 import json
 import sys
 import time
@@ -10,16 +12,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-# unittest discovery under fpga_harness/ otherwise resolves ``host`` to the
-# sibling diagnostic package instead of the repository's canonical host model.
+# unittest discovery under fpga_harness/ already owns the top-level name
+# ``host`` for the diagnostic package.  Load the repository runtime under a
+# private package name so import order cannot silently select the wrong one.
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-if not sys.path or sys.path[0] != str(REPOSITORY_ROOT):
-    sys.path.insert(0, str(REPOSITORY_ROOT))
+_HOST_PACKAGE = "_lean_silicon_canonical_host"
+if _HOST_PACKAGE not in sys.modules:
+    specification = importlib.util.spec_from_file_location(
+        _HOST_PACKAGE,
+        REPOSITORY_ROOT / "host" / "__init__.py",
+        submodule_search_locations=[str(REPOSITORY_ROOT / "host")],
+    )
+    if specification is None or specification.loader is None:
+        raise ImportError("could not locate the canonical LSC-1 host package")
+    package = importlib.util.module_from_spec(specification)
+    sys.modules[_HOST_PACKAGE] = package
+    specification.loader.exec_module(package)
 
-from host.errors import HostError
-from host.lean_compiler_adapter import load as load_program
-from host.protocol import protocol
-from host.runtime import HostRuntime, decode_result_payload
+HostError = importlib.import_module(f"{_HOST_PACKAGE}.errors").HostError
+load_program = importlib.import_module(f"{_HOST_PACKAGE}.lean_compiler_adapter").load
+protocol = importlib.import_module(f"{_HOST_PACKAGE}.protocol").protocol
+_runtime = importlib.import_module(f"{_HOST_PACKAGE}.runtime")
+HostRuntime = _runtime.HostRuntime
+decode_result_payload = _runtime.decode_result_payload
 
 
 class PacketTransportError(RuntimeError):
