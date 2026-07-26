@@ -19,7 +19,9 @@ Usage (explicit path). --tx takes the command name, not the opcode byte:
 from __future__ import annotations
 
 import argparse
+import math
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -51,10 +53,70 @@ BAUD = 1_000_000
 TIMEOUT_S = 2.0
 
 
+def _validate_timeout(timeout: float, name: str = "timeout") -> None:
+    """Reject non-finite and non-positive timeouts before any deadline arithmetic.
+
+    math.inf and float('nan') produce no finite bound and can raise OverflowError
+    when assigned to pyserial timeouts or passed to worker.join(). Negative or
+    zero values produce an already-expired deadline.
+    """
+    if not math.isfinite(timeout):
+        raise ValueError(f"{name} must be a finite number of seconds, got {timeout!r}")
+    if timeout <= 0:
+        raise ValueError(f"{name} must be positive, got {timeout!r}")
+
+
+def _call_within(call, remaining: float, timeout_message: str):
+    """Run one uninterruptible serial operation within the remaining deadline.
+
+    pyserial exposes a few synchronous operations (notably ``flush``) that do
+    not accept a timeout.  The MinCore transport handles those with a daemon
+    worker: when a backend wedges, the transaction fails on its deadline rather
+    than waiting forever.  The worker cannot safely be killed, so callers must
+    abandon this serial object after a timeout (the CLI closes it in ``finally``)
+    and must never issue a later transaction through it.
+    """
+    if remaining <= 0:
+        raise TimeoutError(timeout_message)
+    outcome: list[object] = []
+    failures: list[BaseException] = []
+
+    def run() -> None:
+        try:
+            outcome.append(call())
+        except BaseException as error:
+            failures.append(error)
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(remaining)
+    if worker.is_alive():
+        raise TimeoutError(timeout_message)
+    if failures:
+        raise failures[0]
+    return outcome[0]
+
+
+def _in_waiting_within(ser: serial.Serial, remaining: float) -> int:
+    """Return ``in_waiting`` without letting its backend query outlive deadline.
+
+    pyserial exposes this as a property, but a disconnecting/stalled backend can
+    still block while evaluating it.  Run the query on a daemon worker, just as
+    the host MinCore transport bounds backend calls, so a stale-byte drain never
+    spends longer than its settling budget merely asking whether bytes exist.
+    """
+    return max(0, int(_call_within(
+        lambda: ser.in_waiting,
+        remaining,
+        "stale-input drain deadline expired while querying in_waiting",
+    )))
+
+
 def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial.Serial:
     """Open with explicit path. Caller owns lifetime."""
+    _validate_timeout(timeout, "timeout")
     if serial is None:
-        raise RuntimeError("pyserial is required to reach a board; pip install pyserial")
+        raise RuntimeError("pyserial is required to reach a board; pip install -r requirements.txt")
     ser = serial.Serial(
         port=path,
         baudrate=baud,
@@ -80,15 +142,16 @@ def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial
 
 def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> bytes:
     """Drain up to N stale bytes; used between transactions and after reset."""
+    _validate_timeout(settle, "settle")
     out = bytearray()
-    deadline = time.time() + settle
+    deadline = time.monotonic() + settle
     restore = getattr(ser, "timeout", None)
     try:
         while len(out) < max_bytes:
-            remaining = deadline - time.time()
+            remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            waiting = ser.in_waiting
+            waiting = _in_waiting_within(ser, remaining)
             if not waiting:
                 time.sleep(min(0.001, remaining))
                 continue
@@ -104,12 +167,62 @@ def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> byt
     return bytes(out)
 
 
-def send_bytes(ser: serial.Serial, data: bytes, inter_byte_delay: float = 0.0) -> None:
-    for b in data:
-        ser.write(bytes([b]))
-        if inter_byte_delay > 0:
-            time.sleep(inter_byte_delay)
-    ser.flush()
+def send_bytes(
+    ser: serial.Serial,
+    data: bytes,
+    inter_byte_delay: float = 0.0,
+    timeout: float = TIMEOUT_S,
+) -> None:
+    """Write a request and bound every write and drain by one deadline.
+
+    ``Serial.write`` may block up to ``write_timeout`` and is permitted to
+    return a short count.  Neither is a reason to grant a fresh full timeout:
+    one request has one budget.  Each backend call therefore receives only the
+    time left, is additionally bounded by a worker for implementations that
+    ignore ``write_timeout``, and advances only by bytes actually accepted.
+    """
+    _validate_timeout(timeout, "timeout")
+    deadline = time.monotonic() + timeout
+    restore_write_timeout = getattr(ser, "write_timeout", None)
+    offset = 0
+    try:
+        while offset < len(data):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("write timeout before the request was sent")
+            if hasattr(ser, "write_timeout"):
+                ser.write_timeout = remaining
+            chunk = data[offset : offset + 1] if inter_byte_delay > 0 else data[offset:]
+            written = _call_within(
+                lambda: ser.write(chunk),
+                remaining,
+                "write timeout before the request was sent",
+            )
+            if (
+                not isinstance(written, int)
+                or written < 0
+                or written > len(chunk)
+            ):
+                raise OSError(f"serial write returned invalid byte count {written!r}")
+            if written == 0:
+                # A nonblocking backend can make no progress; avoid a hot spin
+                # while still charging this pause to the same transaction.
+                time.sleep(min(0.0005, max(0.0, deadline - time.monotonic())))
+                continue
+            offset += written
+            if inter_byte_delay > 0 and offset < len(data):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("write timeout before the request was sent")
+                time.sleep(min(inter_byte_delay, remaining))
+        _call_within(
+            ser.flush,
+            deadline - time.monotonic(),
+            "flush timeout before the request drained",
+        )
+    finally:
+        if restore_write_timeout is not None:
+            ser.write_timeout = restore_write_timeout
 
 
 def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
@@ -121,12 +234,13 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
     buys the read after it a whole fresh timeout: a 2 s budget takes nearly 4 s,
     and a dribbling link stretches it further still.
     """
+    _validate_timeout(timeout, "timeout")
     buf = bytearray()
-    deadline = time.time() + timeout
+    deadline = time.monotonic() + timeout
     restore = getattr(ser, "timeout", None)
     try:
         while len(buf) < n:
-            remaining = deadline - time.time()
+            remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
             ser.timeout = remaining
@@ -134,7 +248,7 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
             if chunk:
                 buf.extend(chunk)
             else:
-                time.sleep(max(0.0, min(0.0005, deadline - time.time())))
+                time.sleep(max(0.0, min(0.0005, deadline - time.monotonic())))
     finally:
         if restore is not None:
             ser.timeout = restore
@@ -202,10 +316,10 @@ def expected_mul(a: bytes, b: bytes) -> bytes:
     return int_to_le_bytes(poly, 16)
 
 
-def resync(ser: serial.Serial) -> None:
+def resync(ser: serial.Serial, timeout: float = TIMEOUT_S) -> None:
     """Abort any partial prior command before beginning a new transaction."""
     drain(ser)
-    send_bytes(ser, bytes([ABORT]))
+    send_bytes(ser, bytes([ABORT]), timeout=timeout)
 
 
 def reject_abort_byte(label: str, data: bytes) -> None:
@@ -229,8 +343,8 @@ def reject_abort_byte(label: str, data: bytes) -> None:
 def tx_set(ser: serial.Serial, value: bytes, timeout: float = TIMEOUT_S) -> bytes:
     assert len(value) == 16
     reject_abort_byte("SET128 value", value)
-    resync(ser)
-    send_bytes(ser, bytes([SET128]) + value)
+    resync(ser, timeout=timeout)
+    send_bytes(ser, bytes([SET128]) + value, timeout=timeout)
     echo = recv_response(ser, 16, timeout=timeout)
     return echo
 
@@ -241,11 +355,11 @@ def tx_xor(
     assert len(a) == 16 and len(b) == 16
     reject_abort_byte("XOR128 operand A", a)
     reject_abort_byte("XOR128 operand B", b)
-    resync(ser)
+    resync(ser, timeout=timeout)
     pkt = bytes([XOR128])
     for i in range(16):
         pkt += bytes([a[i], b[i]])
-    send_bytes(ser, pkt)
+    send_bytes(ser, pkt, timeout=timeout)
     res = recv_response(ser, 16, timeout=timeout)
     return res
 
@@ -256,20 +370,20 @@ def tx_mul(
     assert len(a) == 16 and len(b) == 16
     reject_abort_byte("MUL128 operand A", a)
     reject_abort_byte("MUL128 operand B", b)
-    resync(ser)
-    send_bytes(ser, bytes([MUL128]) + a + b)
+    resync(ser, timeout=timeout)
+    send_bytes(ser, bytes([MUL128]) + a + b, timeout=timeout)
     res = recv_response(ser, 16, timeout=timeout)
     return res
 
 
-def tx_clear(ser: serial.Serial) -> None:
-    resync(ser)
-    send_bytes(ser, bytes([CLEAR]))
+def tx_clear(ser: serial.Serial, timeout: float = TIMEOUT_S) -> None:
+    resync(ser, timeout=timeout)
+    send_bytes(ser, bytes([CLEAR]), timeout=timeout)
 
 
 def tx_status(ser: serial.Serial, timeout: float = TIMEOUT_S) -> bytes:
-    resync(ser)
-    send_bytes(ser, bytes([STATUS]))
+    resync(ser, timeout=timeout)
+    send_bytes(ser, bytes([STATUS]), timeout=timeout)
     return recv_response(ser, 4, timeout=timeout)
 
 
@@ -290,6 +404,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list[str]] = None) -> int:
     args = build_parser().parse_args(argv)
 
+    try:
+        _validate_timeout(args.timeout, "timeout")
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
+
     port_path = args.port
     try:
         ser = open_port(port_path, timeout=args.timeout)
@@ -303,7 +423,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(f"drained {len(stale)} stale bytes at open", file=sys.stderr)
 
         if args.tx == "clear":
-            tx_clear(ser)
+            tx_clear(ser, timeout=args.timeout)
             print("CLEAR sent")
             return 0
 

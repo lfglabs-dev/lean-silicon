@@ -1,9 +1,21 @@
 # Harness build and check plan
 
-An ordered plan from what runs today to what would constitute real hardware
-evidence. Stages 0–1 are executable now and are wired into `make check`.
-Stages 2 onward are **not** implemented and are deliberately not faked; each
-lists its entry condition so it cannot be skipped.
+## Current status
+
+The repository now contains source-built, archived ULX3S smoke and UART
+bitstreams, their 25 MHz timing/provenance evidence, an LPF, build recipes, and
+a host UART byte driver; see [the ULX3S evidence record](../docs/ULX3S_SMOKE_AND_UART.md).
+None of those artifacts is hardware validation: this repository records no
+board programming or captured board byte exchange, so the data path remains
+**unvalidated**.
+
+## Historical planning snapshot (pre-deliverable)
+
+The ordered stage descriptions below are retained as the pre-deliverable
+milestone plan. Their current-tense statements about absent bitstreams,
+constraints, synthesis, and host drivers describe that historical snapshot,
+not the current repository. They remain useful for the distinction between
+source-built evidence and the real-hardware evidence still required.
 
 The milestone this serves is `ulx3s_pin_harness` in `planning/milestones.yaml`,
 which depends on `host_packet_runtime`. That dependency is the reason this lane
@@ -50,10 +62,12 @@ three are *visibility*, only the fourth is *behaviour*.
 | `datapath` | did host bytes actually cross the 8-bit ready/valid pins and produce the expected responses? | — this is the only level that would be evidence |
 
 `datapath` can never be satisfied by this script. It reports `not-validated`
-unconditionally and names its four missing prerequisites, because the repository
-contains no harness bitstream, no `.lpf`, no host byte driver, and no captured
-byte log. `--require datapath` therefore always exits non-zero. A test asserts
-this holds even when the toolchain, USB, and JTAG levels are all fully
+unconditionally because it cannot establish the remaining hardware evidence:
+no board has been programmed from this repository and no captured board
+request/response byte log exists. The source-built bitstreams, LPF, build
+recipes, and host UART driver are archived deliverables, not substitutes for
+that evidence. `--require datapath` therefore always exits non-zero. A test
+asserts this holds even when the toolchain, USB, and JTAG levels are all fully
 satisfied, which is exactly the confusion this lane exists to prevent.
 
 Raising `datapath` requires committing real hardware logs and the code that

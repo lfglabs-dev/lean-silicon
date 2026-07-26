@@ -1,12 +1,18 @@
-# ULX3S/ECP5 harness inventory
+# ULX3S/ECP5 harness inventory — historical snapshot
 
-Inventory of what the repository actually contains for a ULX3S/ECP5 harness,
-taken from the tree at the commit this document was added on.  Everything below
-is either a file path that exists, a literal read out of a source file, or an
-explicitly labelled unknown.  No item here is hardware evidence: no bitstream
-has been built and no board has been driven.  See [BUILD_PLAN](BUILD_PLAN.md)
-for what would have to happen first, and [BOUNDARY](BOUNDARY.md) for the pin
-rule the harness may not break.
+This is the pre-deliverable inventory, retained to record the original gap
+analysis. Its statements that bitstreams, constraints, build recipes, and the
+UART bridge do not exist describe the tree when this document was added; they
+are **not** current repository status. The current tree has source-built,
+archived smoke/UART deliverables under `fpga/ulx3s/` and
+`results/ulx3s-smoke-uart-20260725/`; see
+[ULX3S_SMOKE_AND_UART.md](../docs/ULX3S_SMOKE_AND_UART.md).
+
+Those deliverables are not hardware evidence. No board has been programmed or
+validated from this repository, and no captured board byte-exchange log exists.
+The data path is therefore **unvalidated**. See [BUILD_PLAN](BUILD_PLAN.md) for
+the current status and [BOUNDARY](BOUNDARY.md) for the pin rule the harness may
+not break.
 
 ## 1. Files that exist today
 
