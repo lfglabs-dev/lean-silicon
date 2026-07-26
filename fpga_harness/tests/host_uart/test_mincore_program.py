@@ -1,6 +1,8 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) in sys.path:
@@ -8,8 +10,9 @@ if str(ROOT) in sys.path:
 sys.path.insert(0, str(ROOT))
 
 from fpga_harness.host.mincore_program import (HardwareMismatch, MinCoreProgramRunner,
-    compare_upstream_prefix)
-from fpga_harness.host.mincore_uart import encode_request
+    compare_upstream_prefix, main)
+from fpga_harness import ulx3s_uart
+from fpga_harness.ulx3s_uart import encode_request
 from host import lean_compiler_adapter as adapter
 from host.errors import WriteOnceViolation
 from host.memory import HostMemory
@@ -104,6 +107,37 @@ class MinCoreProgramTests(unittest.TestCase):
         self.assertIn("unwritten", run.reason)
         self.assertEqual(driver.operations, [])
         self.assertEqual(runner.memory.cells, {0: 1, 1: 0})
+
+    def test_active_serial_driver_uses_pr16_resynchronization_and_xor_framing(self):
+        a, b = bytes(range(16)), bytes(range(16, 32))
+        expected = bytes(left ^ right for left, right in zip(a, b))
+        driver = ulx3s_uart.MinCoreSerialDriver(object(), timeout=0.25)
+        with patch.object(ulx3s_uart, "tx_xor", return_value=expected) as transact:
+            request, response = driver.exchange("xor", a=a, b=b)
+        interleaved = bytes(byte for pair in zip(a, b) for byte in pair)
+        self.assertEqual(request, b"\x7f\x01" + interleaved)
+        self.assertEqual(response, expected)
+        transact.assert_called_once_with(driver.ser, a, b, timeout=0.25)
+
+    def test_active_serial_driver_rejects_abort_byte_before_io(self):
+        driver = ulx3s_uart.MinCoreSerialDriver(object())
+        with patch.object(ulx3s_uart, "tx_set") as transact:
+            with self.assertRaisesRegex(ValueError, "abort byte"):
+                driver.exchange("set", value=b"\x7f" + bytes(15))
+        transact.assert_not_called()
+
+    def test_existing_evidence_is_never_truncated_or_followed_by_io(self):
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "run.json"
+            evidence.write_text("preserve me")
+            with patch.object(ulx3s_uart, "open_port") as open_port:
+                result = main([
+                    "--execute", "--port", "/not-opened", "--artifact",
+                    str(ARTIFACT), "--evidence", str(evidence),
+                ])
+            self.assertEqual(result, 2)
+            self.assertEqual(evidence.read_text(), "preserve me")
+            open_port.assert_not_called()
 
 
 if __name__ == "__main__":

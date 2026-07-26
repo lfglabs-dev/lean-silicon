@@ -14,6 +14,7 @@ import hashlib
 import json
 import math
 import pathlib
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from typing import Protocol, Sequence
@@ -33,10 +34,7 @@ if host_alias is not None:
     if alias_file.parent == ROOT / "fpga_harness" / "host":
         del sys.modules["host"]
 
-if __package__ in (None, ""):
-    from fpga_harness.host import mincore_uart
-else:
-    from . import mincore_uart
+from fpga_harness import ulx3s_uart
 
 from host import lean_compiler_adapter
 from host.errors import HostError, UnsupportedCapability
@@ -45,6 +43,37 @@ from host.protocol import protocol
 
 SCHEMA = "leansilicon.mincore-program-run/1"
 MASK = (1 << 128) - 1
+
+
+def repo_provenance(evidence: pathlib.Path | None = None) -> tuple[str, bool | None]:
+    """Record HEAD/dirty state without counting a new evidence destination."""
+    command = ["git", "status", "--porcelain=v1", "--untracked-files=all"]
+    try:
+        head = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+        if evidence is not None:
+            try:
+                relative = evidence.resolve().relative_to(ROOT).as_posix()
+            except (OSError, ValueError):
+                relative = ""
+            if relative and not subprocess.check_output(
+                ["git", "ls-files", "--", relative], cwd=ROOT, text=True
+            ).strip():
+                command += ["--", ".", f":(exclude,literal,top){relative}"]
+        status = subprocess.check_output(command, cwd=ROOT, text=True)
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown", None
+    return head, bool(status.strip())
+
+
+def close_quietly(resource: object) -> None:
+    close = getattr(resource, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            pass
 
 
 class ArithmeticDriver(Protocol):
@@ -132,9 +161,9 @@ class MinCoreProgramRunner:
 
     def check_status(self) -> None:
         _request, response = self.driver.exchange("status")
-        if response != mincore_uart.STATUS_BYTES:
+        if response != ulx3s_uart.STATUS_SIGNATURE:
             raise HardwareMismatch(
-                f"STATUS returned {response.hex()}, expected {mincore_uart.STATUS_BYTES.hex()}"
+                f"STATUS returned {response.hex()}, expected {ulx3s_uart.STATUS_SIGNATURE.hex()}"
             )
 
     def step(self) -> SeedStep:
@@ -296,7 +325,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=ROOT / "host" / "fixtures" / "assert_set_xor_mul.program.json",
     )
     parser.add_argument("--port", required=True)
-    parser.add_argument("--baud", type=mincore_uart._baud_arg, default=115200)
+    parser.add_argument("--baud", type=int, default=ulx3s_uart.BAUD)
     parser.add_argument("--timeout", type=_positive, default=3.0)
     parser.add_argument("--max-steps", type=int, default=1024)
     parser.add_argument("--execute", action="store_true", help="required physical-execution guard")
@@ -306,17 +335,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("physical program execution requires --execute")
     if args.max_steps <= 0:
         parser.error("--max-steps must be positive")
+    if not 1 <= args.baud <= 4_000_000:
+        parser.error("--baud must be an integer from 1 through 4000000")
 
     evidence_stream = None
     transport = None
     try:
         artifact = args.artifact.resolve()
         program = lean_compiler_adapter.load(artifact)
-        provenance = mincore_uart.repo_provenance(args.evidence)
+        provenance = repo_provenance(args.evidence)
         if args.evidence:
-            evidence_stream = args.evidence.open("w")
-        transport = mincore_uart._physical_transport(args.port, args.baud, args.timeout)
-        runner = MinCoreProgramRunner(program, mincore_uart.MinCoreDriver(transport, args.timeout))
+            # Physical evidence is append-only in spirit. Refuse to truncate a
+            # prior run, especially one already archived and checksummed.
+            evidence_stream = args.evidence.open("x")
+        transport = ulx3s_uart.open_port(args.port, baud=args.baud, timeout=args.timeout)
+        runner = MinCoreProgramRunner(
+            program, ulx3s_uart.MinCoreSerialDriver(transport, args.timeout)
+        )
         run = runner.run(max_steps=args.max_steps)
         document = run_document(artifact, program, runner, run, provenance=provenance)
         rendered = json.dumps(document, indent=2, sort_keys=True)
@@ -326,12 +361,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(rendered)
         comparison = document["comparison"]
         return 0 if comparison is None or comparison["result"] != "MISMATCH" else 1
-    except (HostError, mincore_uart.MinCoreError, OSError, ValueError) as error:
+    except (HostError, OSError, RuntimeError, ValueError, TimeoutError) + ulx3s_uart.COMMUNICATION_ERRORS as error:
         print(f"mincore-program: {error}", file=sys.stderr)
         return 2
     finally:
-        mincore_uart._close_quietly(transport)
-        mincore_uart._close_quietly(evidence_stream)
+        close_quietly(transport)
+        close_quietly(evidence_stream)
 
 
 if __name__ == "__main__":

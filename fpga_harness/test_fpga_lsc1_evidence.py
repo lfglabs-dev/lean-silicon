@@ -7,6 +7,8 @@ import json
 import unittest
 from pathlib import Path
 
+from fpga_harness import ulx3s_uart
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "results" / "fpga-lsc1-20260726"
@@ -16,10 +18,32 @@ PHYSICAL_DIGEST = "87b204ec01e0ff495b102f0ea6f934033f47c8c8b70f858b67f8c5a908cf5
 REPLAY_DIGEST = "827d6f1e3e429a85035005fdff52057fcba14d96f6b757c9b4240e446ff966fb"
 
 ORACLE = {
-    "status": bytes.fromhex("01010f08"),
+    "status": ulx3s_uart.STATUS_SIGNATURE,
     "set": bytes(range(16)),
     "xor": bytes([0xF0] * 16),
-    "mul": bytes.fromhex("c043248e79cfa802850661cb3c8aed47"),
+    "mul": ulx3s_uart.expected_mul(
+        bytes.fromhex("00112233445566778899aabbccddeeff"),
+        bytes.fromhex("ffeeddccbbaa99887766554433221100"),
+    ),
+}
+
+REQUESTS = {
+    "status": ulx3s_uart.encode_request("status", include_resync=False),
+    "set": ulx3s_uart.encode_request(
+        "set", value=bytes(range(16)), include_resync=False
+    ),
+    "xor": ulx3s_uart.encode_request(
+        "xor",
+        a=bytes(range(16)),
+        b=bytes(range(0xF0, 0x100)),
+        include_resync=False,
+    ),
+    "mul": ulx3s_uart.encode_request(
+        "mul",
+        a=bytes.fromhex("00112233445566778899aabbccddeeff"),
+        b=bytes.fromhex("ffeeddccbbaa99887766554433221100"),
+        include_resync=False,
+    ),
 }
 
 
@@ -46,6 +70,8 @@ class ExchangeEvidenceTest(unittest.TestCase):
                 raw = bytes.fromhex(record[f"{field}_hex"])
                 self.assertEqual(len(raw), record[f"{field}_length"])
                 self.assertEqual(digest(raw), record[f"{field}_sha256"])
+            self.assertEqual(bytes.fromhex(record["request_hex"]),
+                             REQUESTS[record["operation"]])
             expected = ORACLE[record["operation"]]
             self.assertEqual(bytes.fromhex(record["response_hex"]), expected)
             if record["expected_hex"] is not None:
@@ -72,7 +98,7 @@ class ArchiveQualificationTest(unittest.TestCase):
         self.assertEqual(
             set(entries),
             {"candidate-harness.patch", "exchanges.jsonl",
-             "openfpgaloader-sram.txt"},
+             "openfpgaloader-sram.txt", "program-run.json"},
         )
         for name, expected in entries.items():
             self.assertEqual(digest((EVIDENCE / name).read_bytes()), expected)

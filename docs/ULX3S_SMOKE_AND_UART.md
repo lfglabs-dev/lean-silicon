@@ -128,6 +128,33 @@ ASIC boundary is not widened out to pins.
 - Stale-byte drain on open and between transactions.
 - Timeout and clear/status support.
 
+### Restricted compiled-program runner (PR #19)
+
+`fpga_harness/host/mincore_program.py` reuses this maintained 1 Mbaud driver
+instead of the older 115200-baud diagnostic transport. It loads the frozen
+leanVM-b compiler artifact, owns bytecode, `pc`, `fp` and write-once memory on
+the host, and delegates each supported `Set`, `Xor` and `Mul` result through
+`MinCoreSerialDriver`. Consequently every active transaction inherits this
+bridge's `0x7f` resynchronization, payload restriction and response checks.
+
+Each returned arithmetic value is independently checked by the host runtime
+before its destination cell is committed. A conflict, missing operand,
+transport error or incorrect result changes no destination cell. The runner
+stops before `Deref`, `Jump` or `Blake3`; it is not a v1 packet executor and
+does not claim full VM execution.
+
+```sh
+make fpga-run-program FPGA_PORT=/dev/cu.usbserial-D01623
+```
+
+The historical `program-run.json` under `results/fpga-lsc1-20260726/` was
+captured against the older candidate bitstream and remains immutable evidence
+for that transport. It proves a 12-operation arithmetic prefix on that
+candidate, not a physical run of the maintained PR #16 bitstream. The active
+runner's maintained-driver integration is covered by deterministic tests and
+the UART bridge simulation; programming this bitstream still requires the
+review gate below.
+
 ### Known transport limitation: `0x7f` is not carried transparently
 
 `uart_bridge.sv` raises its abort pulse on **any** received `0x7f`, not only on
