@@ -255,6 +255,27 @@ def _instruction_frame(args: argparse.Namespace) -> tuple[protocol.RequestFrame,
     ), expected
 
 
+def _validate_instruction_result(decoded: dict, args: argparse.Namespace, expected: int) -> None:
+    binary = args.operation in ("xor", "mul")
+    expected_write_address = args.fp + (2 if binary else 0)
+    expected_accesses = (
+        [args.fp, args.fp + 1, args.fp + 2] if binary else [args.fp]
+    )
+    if (
+        decoded["next_pc"] != args.pc + 1
+        or decoded["next_fp"] != args.fp
+        or decoded["writes"] != [{
+            "address": expected_write_address,
+            "value": expected,
+        }]
+        or decoded["deferred"]
+        or decoded["accesses"] != expected_accesses
+    ):
+        raise PacketTransportError(
+            "result transition does not match the independent host oracle"
+        )
+
+
 def _run(args: argparse.Namespace) -> dict:
     transport = _physical_transport(args.port, args.baud, args.timeout)
     try:
@@ -296,9 +317,7 @@ def _run(args: argparse.Namespace) -> dict:
             if reply.status is not protocol.Status.OK:
                 raise PacketTransportError(f"instruction returned {reply.status.name}")
             decoded = decode_result_payload(reply.payload, expected_txn_id=args.txn_id)
-            writes = decoded["writes"]
-            if len(writes) != 1 or writes[0]["value"] != expected:
-                raise PacketTransportError("result write does not match the independent host oracle")
+            _validate_instruction_result(decoded, args, expected)
             retired = driver.exchange(protocol.build_retire(
                 txn_id=args.txn_id, result_crc=protocol.crc32(reply.payload)
             ))

@@ -10,6 +10,7 @@ from fpga_harness.host.lsc1_packet_uart import (
     PacketSerialDriver,
     PacketTransportError,
     _instruction_frame,
+    _validate_instruction_result,
     _validate_capabilities,
     protocol,
 )
@@ -115,6 +116,27 @@ class PacketSerialDriverTests(unittest.TestCase):
             frame, result = _instruction_frame(args)
             self.assertEqual(result, expected)
             self.assertEqual(frame.payload[:4], (9).to_bytes(4, "little"))
+
+    def test_result_validation_binds_the_complete_scalar_transition(self) -> None:
+        args = argparse.Namespace(operation="xor", txn_id=9, pc=7, fp=11)
+        expected = 3 ^ 5
+        valid = {
+            "next_pc": 8,
+            "next_fp": 11,
+            "writes": [{"address": 13, "value": expected}],
+            "deferred": [],
+            "accesses": [11, 12, 13],
+        }
+        _validate_instruction_result(valid, args, expected)
+        for field, bad_value in (
+            ("next_pc", 9),
+            ("next_fp", 12),
+            ("writes", [{"address": 12, "value": expected}]),
+            ("deferred", [{"target": 11, "local": 12}]),
+            ("accesses", [11, 12]),
+        ):
+            with self.subTest(field=field), self.assertRaises(PacketTransportError):
+                _validate_instruction_result(valid | {field: bad_value}, args, expected)
 
 
 if __name__ == "__main__":
