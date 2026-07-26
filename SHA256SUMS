@@ -38,6 +38,7 @@ b81b89574ed84c67b64ae7b56001bf9d03b9d66be2bed7977d8adc715481eafb  ./docs/PROTOCO
 9c2582c40fbd9a4e2b163abed784f5a6c82b2cb3136c37a4123a0ba6584f6136  ./docs/TAPEOUT.md
 a08743f1a3cf4af68683cdaac5b00ca624ac875dbeef9f78614bda7297579df8  ./docs/USE_CASES.md
 20aa56b3f69c28c9639e9bd16b8239f0ef511d8fded9340185814b3257e25f01  ./docs/VALIDATION.md
+8e0cb9416e8a34d916be200dcb79d7bdc45e43c9744358c2b50f49c3745eacf7  ./docs/assets/lean-silicon-logo.svg
 c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semantics/reference/README.md
 3e896ee33e3804876f6e169c872746146c1b3d773811683616986a4148b9f785  ./docs/semantics/reference/oracle.py
 c49a013eb503060394007d07395e625024d7c1ff0e9b177bc71e691e1a4efec8  ./docs/semantics/reference/vectors.json
