@@ -55,6 +55,11 @@ for src in $SOURCES; do
     [ -f "$src" ] || { echo "missing source: $src" >&2; exit 1; }
 done
 
+# Record which revision these exact inputs came from, so the archive identifies
+# its own source instead of relying on a hand-maintained note.
+python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST_uart.txt" \
+    $SOURCES "$LPF"
+
 echo "=== SYNTH (full bridge + MinCore) ==="
 yosys -p "
 read_verilog -sv $SOURCES;

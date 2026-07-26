@@ -78,10 +78,10 @@ def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial
     return ser
 
 
-def drain(ser: serial.Serial, max_bytes: int = 256) -> bytes:
+def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> bytes:
     """Drain up to N stale bytes; used between transactions and after reset."""
     out = bytearray()
-    deadline = time.time() + 0.05
+    deadline = time.time() + settle
     while len(out) < max_bytes and time.time() < deadline:
         waiting = ser.in_waiting
         if not waiting:
@@ -128,6 +128,30 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
     if len(buf) != n:
         raise TimeoutError(f"expected {n} bytes, got {len(buf)}")
     return bytes(buf)
+
+
+# A byte at 1 Mbaud is 10 bit times, ~10 us. Waiting three orders of magnitude
+# longer means a straggler already on the wire is observed rather than raced.
+SETTLE_S = 0.01
+
+
+def recv_response(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
+    """Read exactly n bytes, then require the link to fall silent.
+
+    recv_exact returns the instant the nth byte lands, so a duplicated or
+    spurious trailing byte stays queued and the caller only ever compares the
+    prefix. A reply that is wrong but happens to start with the right n bytes
+    would then be reported as a match and exit 0, which is precisely the
+    outcome a hardware experiment must never produce.
+    """
+    resp = recv_exact(ser, n, timeout=timeout)
+    surplus = drain(ser, settle=SETTLE_S)
+    if surplus:
+        raise ValueError(
+            f"link sent {len(surplus)} surplus byte(s) after the expected "
+            f"{n}-byte response: {surplus.hex()}"
+        )
+    return resp
 
 
 # MinCore constants for independent oracle
@@ -194,7 +218,7 @@ def tx_set(ser: serial.Serial, value: bytes, timeout: float = TIMEOUT_S) -> byte
     reject_abort_byte("SET128 value", value)
     resync(ser)
     send_bytes(ser, bytes([SET128]) + value)
-    echo = recv_exact(ser, 16, timeout=timeout)
+    echo = recv_response(ser, 16, timeout=timeout)
     return echo
 
 
@@ -209,7 +233,7 @@ def tx_xor(
     for i in range(16):
         pkt += bytes([a[i], b[i]])
     send_bytes(ser, pkt)
-    res = recv_exact(ser, 16, timeout=timeout)
+    res = recv_response(ser, 16, timeout=timeout)
     return res
 
 
@@ -221,7 +245,7 @@ def tx_mul(
     reject_abort_byte("MUL128 operand B", b)
     resync(ser)
     send_bytes(ser, bytes([MUL128]) + a + b)
-    res = recv_exact(ser, 16, timeout=timeout)
+    res = recv_response(ser, 16, timeout=timeout)
     return res
 
 
@@ -233,7 +257,7 @@ def tx_clear(ser: serial.Serial) -> None:
 def tx_status(ser: serial.Serial, timeout: float = TIMEOUT_S) -> bytes:
     resync(ser)
     send_bytes(ser, bytes([STATUS]))
-    return recv_exact(ser, 4, timeout=timeout)
+    return recv_response(ser, 4, timeout=timeout)
 
 
 # Payload width each command consumes, in bytes. Single source of truth for the

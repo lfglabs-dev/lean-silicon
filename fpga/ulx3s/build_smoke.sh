@@ -45,6 +45,11 @@ fi
 } > "$STAGE/tool_versions.txt" 2>&1
 cat "$STAGE/tool_versions.txt"
 
+# Record which revision these exact inputs came from, so the archive identifies
+# its own source instead of relying on a hand-maintained note.
+python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST.txt" \
+    "${TOP}.sv" "$LPF"
+
 echo "=== SYNTH ==="
 yosys -p "read_verilog -sv ${TOP}.sv; hierarchy -check -top ${TOP}; proc; check; synth_ecp5 -top ${TOP}; write_json ${TOP}.json" \
     > "$STAGE/yosys.log" 2>&1 || {

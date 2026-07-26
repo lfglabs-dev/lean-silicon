@@ -3,7 +3,17 @@
 **Status**: Reviewable artefacts only. Never merged. Never programmed to hardware.
 
 ## Worktree and provenance
-- Detached at exact `origin/main` 03926bbbbdc907d74214e4004985d36055d93a76
+- Branch base: `03926bbbbdc907d74214e4004985d36055d93a76` (`origin/main`). This is
+  the pre-feature revision the branch was cut from. It contains none of the
+  `fpga/ulx3s` design or build files, so it cannot build or identify the
+  artefacts and must not be read as their source.
+- Artefact source revision: `aa6b41b` (clean tree, no uncommitted changes).
+  Rebuilding from a fresh checkout at that revision with the pinned toolchain
+  below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
+  `smoke.svf` byte for byte, at the same reported Fmax.
+- Design sources unchanged since `01e7046`: no commit after it touches the RTL or
+  the LPF, so every revision from `01e7046` onward emits these same bytes. The
+  later commits on this branch move host tooling, tests and evidence only.
 - Branch: `fpga/ulx3s-smoke-uart-mincore`
 - Ownership: PR #13 owns host runtime files; PR #15 owns `board_detect/tests/global` and SHA256SUMS. Those paths untouched.
 
@@ -176,7 +186,7 @@ Power-cycle recovery: remove power or press reset; SRAM contents are lost.
 - Not a CPU/ISA validation.
 - Not a datapath validation on silicon.
 - Not a claim that bytes crossed a physical ULX3S.
-- The artefacts prove: reproducible OSS flow from exact source at 03926bb, exact `lean_silicon_lsc1` pin contract instantiated, post-route timing closed against an explicit 25 MHz constraint, and clean tests.
+- The artefacts prove: reproducible OSS flow from the exact source recorded under "Worktree and provenance" above, exact `lean_silicon_lsc1` pin contract instantiated, post-route timing closed against an explicit 25 MHz constraint, and clean tests.
 
 ## Supported transaction sequence (MinCore protocol)
 - SET128 (0x03): 1+16 bytes in → 16 bytes echo

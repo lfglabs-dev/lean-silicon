@@ -158,7 +158,7 @@ class MulExitStatusTest(unittest.TestCase):
     def test_cli_timeout_reaches_the_response_deadline(self):
         fake = FakeSerial(MUL_EXPECTED, command_len=1 + 1 + 32)
         with mock.patch.object(ulx3s_uart, "open_port", return_value=fake), mock.patch.object(
-            ulx3s_uart, "recv_exact", return_value=MUL_EXPECTED
+            ulx3s_uart, "recv_response", return_value=MUL_EXPECTED
         ) as recv:
             rc = ulx3s_uart.main(
                 [
@@ -384,6 +384,76 @@ class AbortByteInPayloadTest(unittest.TestCase):
             rc = ulx3s_uart.main(["--port", "/dev/null", "--tx", "mul", "--payload", payload])
         self.assertEqual(rc, 2)
         self.assertEqual(fake.written, b"", "no bytes may reach the link")
+
+
+class SurplusResponseByteTest(unittest.TestCase):
+    """A reply that merely *starts* correctly is not a correct reply.
+
+    `recv_exact` returns the instant the nth byte lands, so a duplicated or
+    spurious trailing byte used to stay queued while the driver compared only
+    the prefix and exited 0 -- a bridge stuttering an extra byte read as a
+    clean pass. The link must be settled and found silent before a match is
+    reported.
+    """
+
+    def test_status_prefix_followed_by_a_surplus_byte_is_rejected(self):
+        self.assertNotEqual(run_status(ulx3s_uart.STATUS_SIGNATURE + b"\x00"), 0)
+
+    def test_duplicated_status_reply_is_rejected(self):
+        self.assertNotEqual(run_status(ulx3s_uart.STATUS_SIGNATURE * 2), 0)
+
+    def test_surplus_is_a_transport_fault_not_a_wrong_answer(self):
+        # Exit 1 means "the board answered wrong". A stuttering link is not
+        # that, and conflating them sends someone hunting a datapath bug.
+        with mock.patch("sys.stderr") as stderr:
+            self.assertEqual(run_status(ulx3s_uart.STATUS_SIGNATURE + b"\x00"), 2)
+        self.assertIn("surplus", str(stderr.write.call_args_list))
+
+    def test_mul_result_followed_by_an_error_byte_is_rejected(self):
+        self.assertNotEqual(run_mul(MUL_EXPECTED + b"\xe0"), 0)
+
+    def test_mul_result_followed_by_a_surplus_byte_exits_two(self):
+        self.assertEqual(run_mul(MUL_EXPECTED + b"\x00"), 2)
+
+    def test_exact_length_replies_still_pass(self):
+        # The guard must not fire on the clean case it is wrapped around.
+        self.assertEqual(run_status(ulx3s_uart.STATUS_SIGNATURE), 0)
+        self.assertEqual(run_mul(MUL_EXPECTED), 0)
+
+    def test_surplus_bytes_are_named_in_the_message(self):
+        fake = FakeSerial(b"", command_len=0)
+        fake._pending.extend(ulx3s_uart.STATUS_SIGNATURE + b"\xab\xcd")
+        with self.assertRaises(ValueError) as ctx:
+            ulx3s_uart.recv_response(fake, 4)
+        self.assertIn("abcd", str(ctx.exception))
+
+    def test_every_command_path_uses_the_settling_reader(self):
+        # A new command that reaches for recv_exact directly would silently
+        # reopen the hole, so pin the seam rather than the four call sites.
+        source = Path(ulx3s_uart.__file__).read_text()
+        body = source.split("# MinCore constants for independent oracle")[1]
+        self.assertNotIn("recv_exact(", body, "a command bypasses recv_response")
+        self.assertIn("recv_response(", body)
+
+
+class RecvResponseTest(unittest.TestCase):
+    def test_returns_the_response_when_the_link_is_silent(self):
+        fake = FakeSerial(b"", command_len=0)
+        fake._pending.extend(ulx3s_uart.STATUS_SIGNATURE)
+        self.assertEqual(
+            ulx3s_uart.recv_response(fake, 4), ulx3s_uart.STATUS_SIGNATURE
+        )
+
+    def test_raises_when_anything_follows_the_response(self):
+        fake = FakeSerial(b"", command_len=0)
+        fake._pending.extend(ulx3s_uart.STATUS_SIGNATURE + b"\x99")
+        with self.assertRaises(ValueError):
+            ulx3s_uart.recv_response(fake, 4)
+
+    def test_settle_window_outlasts_a_byte_at_the_configured_baud(self):
+        # 10 bit times at BAUD is how long a straggler needs to land; a settle
+        # window shorter than that would race the byte it exists to catch.
+        self.assertGreater(ulx3s_uart.SETTLE_S, 10.0 / ulx3s_uart.BAUD)
 
 
 _DOC = (

@@ -1,0 +1,189 @@
+"""The evidence archive must identify the sources that actually produced it.
+
+`docs/ULX3S_SMOKE_AND_UART.md` claimed the bitstreams came from the branch's
+pre-feature base revision. That revision contains no `fpga/ulx3s` file at all,
+so the claim could not be checked and the artefacts could not be rebuilt from
+it: an evidence archive that cannot name its own source proves nothing.
+
+The build inputs are parsed out of the build scripts rather than restated here,
+so adding a source to a build without recording it fails instead of silently
+widening the gap between what was built and what was declared. No board and no
+FPGA toolchain are involved.
+"""
+
+from __future__ import annotations
+
+import re
+import subprocess
+import unittest
+from hashlib import sha256
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+ULX3S = ROOT / "fpga" / "ulx3s"
+DOC = ROOT / "docs" / "ULX3S_SMOKE_AND_UART.md"
+RESULTS = ROOT / "results" / "ulx3s-smoke-uart-20260725"
+
+BUILDS = {
+    "SOURCE_MANIFEST.txt": ULX3S / "build_smoke.sh",
+    "SOURCE_MANIFEST_uart.txt": ULX3S / "build_uart.sh",
+}
+
+
+def _shell_var(text: str, name: str) -> str:
+    match = re.search(rf"^{name}=(.+)$", text, re.MULTILINE)
+    assert match, f"{name} not found in build script"
+    return match.group(1).strip().strip('"')
+
+
+def build_inputs(script: Path) -> set[str]:
+    """Repo-relative design inputs a build script feeds to yosys/nextpnr."""
+    text = script.read_text()
+    names = [_shell_var(text, "LPF")]
+    sources = re.search(r'SOURCES="([^"]*)"', text, re.DOTALL)
+    if sources:
+        names += sources.group(1).replace("\\\n", " ").split()
+    else:
+        names.append(_shell_var(text, "TOP") + ".sv")
+    return {(ULX3S / n).resolve().relative_to(ROOT).as_posix() for n in names}
+
+
+def manifest_digests(name: str) -> dict[str, str]:
+    entries = {}
+    for line in (RESULTS / name).read_text().splitlines():
+        parts = line.split()
+        if len(parts) == 2 and re.fullmatch(r"[0-9a-f]{64}", parts[0]):
+            entries[parts[1]] = parts[0]
+    return entries
+
+
+def doc_revision(label: str) -> str:
+    match = re.search(rf"{label}[^`]*`([0-9a-f]{{7,40}})`", DOC.read_text())
+    assert match, f"docs no longer record a revision for {label!r}"
+    return match.group(1)
+
+
+def _has_revision(rev: str) -> bool:
+    """False in a shallow CI clone, where old objects are simply absent."""
+    return (
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{rev}^{{commit}}"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        == 0
+    )
+
+
+def _blob_at(rev: str, path: str) -> bytes | None:
+    result = subprocess.run(
+        ["git", "cat-file", "blob", f"{rev}:{path}"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
+class BuildInputParsingTest(unittest.TestCase):
+    """Guards every other test here from passing vacuously on an empty set."""
+
+    def test_both_builds_declare_their_sources(self):
+        for manifest, script in BUILDS.items():
+            with self.subTest(script=script.name):
+                inputs = build_inputs(script)
+                self.assertGreaterEqual(len(inputs), 2, f"{script.name}: {inputs}")
+                self.assertTrue(any(i.endswith(".lpf") for i in inputs))
+
+    def test_declared_sources_exist(self):
+        for script in BUILDS.values():
+            for rel in build_inputs(script):
+                with self.subTest(source=rel):
+                    self.assertTrue((ROOT / rel).is_file(), rel)
+
+    def test_uart_build_pulls_in_the_asic_core(self):
+        # The bridge is only evidence if it wraps the real core, not a stub.
+        inputs = build_inputs(ULX3S / "build_uart.sh")
+        self.assertIn("asic_core/rtl/lean_silicon_lsc1.sv", inputs)
+
+
+class SourceManifestTest(unittest.TestCase):
+    """Content anchor: valid without git history, so CI checks it too."""
+
+    def test_manifest_covers_exactly_the_build_inputs(self):
+        for manifest, script in BUILDS.items():
+            with self.subTest(manifest=manifest):
+                self.assertEqual(set(manifest_digests(manifest)), build_inputs(script))
+
+    def test_manifest_digests_match_the_working_tree(self):
+        for manifest in BUILDS:
+            for rel, digest in manifest_digests(manifest).items():
+                with self.subTest(source=rel):
+                    self.assertEqual(
+                        sha256((ROOT / rel).read_bytes()).hexdigest(),
+                        digest,
+                        f"{rel} changed since {manifest} was recorded; rebuild",
+                    )
+
+    def test_manifest_records_whether_inputs_matched_the_revision(self):
+        for manifest in BUILDS:
+            with self.subTest(manifest=manifest):
+                text = (RESULTS / manifest).read_text()
+                self.assertRegex(text, re.compile(r"^revision: [0-9a-f]{40}$", re.M))
+                self.assertRegex(
+                    text, re.compile(r"^inputs-match-revision: (yes|no)$", re.M)
+                )
+
+
+class DocumentedRevisionTest(unittest.TestCase):
+    """The revision the docs blame for the artefacts must be able to build them."""
+
+    def test_artefact_revision_is_not_the_branch_base(self):
+        self.assertNotEqual(
+            doc_revision("Artefact source revision"),
+            doc_revision("Branch base"),
+            "the pre-feature base cannot be the artefact source",
+        )
+
+    def test_artefact_revision_contains_every_build_input(self):
+        rev = doc_revision("Artefact source revision")
+        if not _has_revision(rev):
+            self.skipTest(f"{rev} absent (shallow clone)")
+        for script in BUILDS.values():
+            for rel in build_inputs(script):
+                with self.subTest(rev=rev, source=rel):
+                    self.assertIsNotNone(
+                        _blob_at(rev, rel),
+                        f"{rel} does not exist at {rev}, so it cannot have built the artefacts",
+                    )
+
+    def test_artefact_revision_holds_the_recorded_bytes(self):
+        rev = doc_revision("Artefact source revision")
+        if not _has_revision(rev):
+            self.skipTest(f"{rev} absent (shallow clone)")
+        for manifest in BUILDS:
+            for rel, digest in manifest_digests(manifest).items():
+                with self.subTest(rev=rev, source=rel):
+                    blob = _blob_at(rev, rel)
+                    self.assertIsNotNone(blob, rel)
+                    self.assertEqual(sha256(blob).hexdigest(), digest, rel)
+
+    def test_design_sources_are_unchanged_since_the_recorded_revision(self):
+        # The docs claim every revision from this one onward emits the same
+        # bytes. That only holds while no later commit touches a build input.
+        since = doc_revision("Design sources unchanged since")
+        if not _has_revision(since) or not _has_revision("HEAD"):
+            self.skipTest(f"{since} absent (shallow clone)")
+        inputs = sorted(set().union(*(build_inputs(s) for s in BUILDS.values())))
+        touched = subprocess.run(
+            ["git", "log", "--oneline", f"{since}..HEAD", "--", *inputs],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        ).stdout.decode().strip()
+        self.assertEqual(touched, "", f"design sources changed after {since}:\n{touched}")
+
+
+if __name__ == "__main__":
+    unittest.main()
