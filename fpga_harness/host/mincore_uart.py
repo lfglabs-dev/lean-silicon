@@ -181,6 +181,7 @@ class MinCoreDriver:
                 error.observed = bytes(drained)
                 raise
             except TransportFailure as error:
+                self._usable = False
                 error.observed = bytes(drained)
                 raise
             except Exception as error:

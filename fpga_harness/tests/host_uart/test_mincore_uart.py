@@ -299,6 +299,18 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
             driver.exchange("status")
 
+    def test_a_failed_standalone_drain_marks_the_transport_unusable(self):
+        """A direct drain failure leaves the byte stream indeterminate too."""
+        class BrokenBufferedCount(FakeSerial):
+            @property
+            def in_waiting(self): raise OSError("link lost")
+
+        driver = MinCoreDriver(BrokenBufferedCount())
+        with self.assertRaisesRegex(TransportFailure, "buffered-input query failed"):
+            driver.drain_stale()
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")
+
     def test_a_reported_byte_the_drain_cannot_read_is_never_a_finished_drain(self):
         """Zero progress is not synchronization: the drain fails instead of passing."""
         class PhantomExtra(FakeSerial):
