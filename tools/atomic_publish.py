@@ -13,19 +13,57 @@ import signal
 
 AT_FDCWD = -100
 RENAME_EXCHANGE = 2
+# Darwin calls the equivalent operation RENAME_SWAP.  It deliberately has the
+# same value as Linux's RENAME_EXCHANGE, but keeping a separately named
+# constant makes the two ABIs and their intent explicit.
+RENAME_SWAP = 2
 
 
 def _exchange(left: Path, right: Path) -> None:
+    """Atomically swap two same-parent directories.
+
+    Linux provides renameat2(RENAME_EXCHANGE); macOS provides the equivalent
+    renameatx_np(RENAME_SWAP).  A copy/delete fallback is intentionally not
+    used: it could expose a mixed archive or lose the old archive if the
+    publisher is interrupted between operations.
+    """
     libc = ctypes.CDLL(None, use_errno=True)
     renameat2 = getattr(libc, "renameat2", None)
-    if renameat2 is None:
-        raise OSError(errno.ENOSYS, "renameat2 is unavailable")
-    result = renameat2(
-        AT_FDCWD, os.fsencode(left), AT_FDCWD, os.fsencode(right), RENAME_EXCHANGE
-    )
-    if result:
+    if renameat2 is not None:
+        result = renameat2(
+            AT_FDCWD,
+            os.fsencode(left),
+            AT_FDCWD,
+            os.fsencode(right),
+            RENAME_EXCHANGE,
+        )
+        if not result:
+            return
         error = ctypes.get_errno()
         raise OSError(error, os.strerror(error))
+
+    # renameatx_np is the documented Darwin operation for atomically swapping
+    # two directory entries.  It is available on the macOS host workflow even
+    # though that platform has no Linux renameat2 symbol.
+    renameatx_np = getattr(libc, "renameatx_np", None)
+    if renameatx_np is not None:
+        result = renameatx_np(
+            AT_FDCWD,
+            os.fsencode(left),
+            AT_FDCWD,
+            os.fsencode(right),
+            RENAME_SWAP,
+        )
+        if not result:
+            return
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+
+    raise OSError(
+        errno.ENOSYS,
+        "atomic directory exchange requires renameat2 (Linux) or "
+        "renameatx_np (macOS)",
+    )
 
 
 def publish(staged: Path, destination: Path) -> None:
