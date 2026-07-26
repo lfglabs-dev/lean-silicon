@@ -7,16 +7,22 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `62e96e7` (clean tree, no uncommitted changes).
-  This commit is preserved in this branch's published ancestry (it is an
-  ancestor of reviewed head `dfd23be`), so a fresh clone of the PR head can
-  resolve and check out the revision recorded by both source manifests.
+- Artefact source revision: `62e96e76f7a9f395b0f3e8edf409bade6d282a05`
+  (clean tree, no uncommitted changes). This commit is preserved in the
+  published PR ancestry: it is an ancestor of the pre-merge PR tip
+  `135fdeaa72dc116e2541a8c0b937aa45ee2edbd7` and therefore of this branch
+  after its merge of `main`. Both source manifests record this full object ID.
+  A non-shallow clone of the PR head can resolve and check out that revision;
+  CI fetches the full history and asserts this ancestry rather than skipping
+  it.
   Rebuilding from a fresh checkout at that revision with the pinned toolchain
   below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
   `smoke.svf` byte for byte, at the same reported Fmax.
-- Design sources unchanged since `62e96e7`: no commit after it touches the RTL,
+- Design sources unchanged since `62e96e76f7a9f395b0f3e8edf409bade6d282a05`:
+  no commit after it touches the RTL,
   the LPF or the build recipes -- the whole set the manifests digest -- so every
-  revision from `62e96e7` onward emits these same bytes. The RTL and LPF alone
+  revision from `62e96e76f7a9f395b0f3e8edf409bade6d282a05` onward emits these
+  same bytes. The RTL and LPF alone
   have been unchanged since `01e7046`; `62e96e7` widened what provenance records
   and left every synthesis command untouched, so the emitted bytes did not move
   with it. The later commits on this branch carry host tooling, tests and

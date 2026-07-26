@@ -87,19 +87,6 @@ def doc_revision(label: str) -> str:
     return match.group(1)
 
 
-def _has_revision(rev: str) -> bool:
-    """False in a shallow CI clone, where old objects are simply absent."""
-    return (
-        subprocess.run(
-            ["git", "cat-file", "-e", f"{rev}^{{commit}}"],
-            cwd=ROOT,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        ).returncode
-        == 0
-    )
-
-
 def _blob_at(rev: str, path: str) -> bytes | None:
     result = subprocess.run(
         ["git", "cat-file", "blob", f"{rev}:{path}"],
@@ -259,10 +246,20 @@ class DocumentedRevisionTest(unittest.TestCase):
             "the pre-feature base cannot be the artefact source",
         )
 
+    def test_artefact_revision_is_published_ancestor_of_head(self):
+        # CI checks out full history.  Merely naming an object is not enough:
+        # readers of a fresh clone must be able to reach it from this PR head.
+        rev = doc_revision("Artefact source revision")
+        self.assertEqual(
+            subprocess.run(
+                ["git", "merge-base", "--is-ancestor", rev, "HEAD"], cwd=ROOT
+            ).returncode,
+            0,
+            f"{rev} is not reachable from HEAD",
+        )
+
     def test_artefact_revision_contains_every_build_input(self):
         rev = doc_revision("Artefact source revision")
-        if not _has_revision(rev):
-            self.skipTest(f"{rev} absent (shallow clone)")
         for script in BUILDS.values():
             for rel in build_inputs(script):
                 with self.subTest(rev=rev, source=rel):
@@ -273,8 +270,6 @@ class DocumentedRevisionTest(unittest.TestCase):
 
     def test_artefact_revision_holds_the_recorded_bytes(self):
         rev = doc_revision("Artefact source revision")
-        if not _has_revision(rev):
-            self.skipTest(f"{rev} absent (shallow clone)")
         for manifest in BUILDS:
             for rel, digest in manifest_digests(manifest).items():
                 with self.subTest(rev=rev, source=rel):
@@ -286,8 +281,6 @@ class DocumentedRevisionTest(unittest.TestCase):
         # The docs claim every revision from this one onward emits the same
         # bytes. That only holds while no later commit touches a build input.
         since = doc_revision("Design sources unchanged since")
-        if not _has_revision(since) or not _has_revision("HEAD"):
-            self.skipTest(f"{since} absent (shallow clone)")
         inputs = sorted(set().union(*(build_inputs(s) for s in BUILDS.values())))
         touched = subprocess.run(
             ["git", "log", "--oneline", f"{since}..HEAD", "--", *inputs],
