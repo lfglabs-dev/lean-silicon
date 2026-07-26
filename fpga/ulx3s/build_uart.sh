@@ -15,6 +15,9 @@ TOP=ulx3s_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
+LOCK="$ROOT/results/.ulx3s-smoke-uart.publish.lock"
+exec 9>"$LOCK"
+flock 9
 STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.uart-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 cp -a "$OUTDIR/." "$STAGE/"

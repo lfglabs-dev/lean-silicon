@@ -64,6 +64,14 @@ class AtomicPublishTests(unittest.TestCase):
             self.assertEqual((old / "artifact.bit").read_bytes(), b"old-bitstream")
             self.assertEqual((old / "SHA256SUMS").read_text(), "old-manifest\n")
 
+    def test_shared_builds_lock_before_taking_their_snapshot(self):
+        root = Path(__file__).parents[1]
+        for name in ("build_smoke.sh", "build_uart.sh"):
+            script = (root / "fpga" / "ulx3s" / name).read_text()
+            lock = script.index('flock 9')
+            snapshot = script.index('cp -a "$OUTDIR/." "$STAGE/"')
+            self.assertLess(lock, snapshot, f"{name} snapshots before locking")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,6 +14,11 @@ TOP=smoke_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
+# Both FPGA flows publish into OUTDIR. Keep the lock outside that directory so
+# its inode remains stable while OUTDIR itself is atomically exchanged.
+LOCK="$ROOT/results/.ulx3s-smoke-uart.publish.lock"
+exec 9>"$LOCK"
+flock 9
 STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.smoke-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 cp -a "$OUTDIR/." "$STAGE/"

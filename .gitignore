@@ -31,3 +31,4 @@ fpga/ulx3s/ulx3s_top.*
 
 # ecppack is silent on success; an empty log is not evidence.
 results/**/ecppack*.log
+results/.ulx3s-smoke-uart.publish.lock

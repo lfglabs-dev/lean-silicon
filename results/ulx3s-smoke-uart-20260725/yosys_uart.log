@@ -2393,6 +2393,6 @@ Found and reported 0 problems.
 
 13. Executing JSON backend.
 
-End of script. Logfile hash: 6b0a16d768, time: 1.45s, user: 1.11s, system: 0.16s, MEM: 60.79 MB peak
+End of script. Logfile hash: 6b0a16d768, time: 1.63s, user: 1.27s, system: 0.16s, MEM: 60.61 MB peak
 Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
-Time spent: 22% 28x read_verilog (0 sec), 13% 1x abc9_exe (0 sec), ...
+Time spent: 21% 28x read_verilog (0 sec), 12% 12x techmap (0 sec), ...

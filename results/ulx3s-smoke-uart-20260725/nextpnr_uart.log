@@ -62,31 +62,31 @@ Info:     at initial placer iter 1, wirelen = 142
 Info:     at initial placer iter 2, wirelen = 121
 Info:     at initial placer iter 3, wirelen = 129
 Info: Running main analytical placer, max placement attempts per cell = 154012.
-Info:     at iteration #1, type ALL: wirelen solved = 119, spread = 2521, legal = 2638; time = 0.05s
+Info:     at iteration #1, type ALL: wirelen solved = 119, spread = 2521, legal = 2638; time = 0.03s
 Info:     at iteration #2, type ALL: wirelen solved = 314, spread = 1942, legal = 2074; time = 0.02s
 Info:     at iteration #3, type ALL: wirelen solved = 543, spread = 1751, legal = 1864; time = 0.02s
-Info:     at iteration #4, type ALL: wirelen solved = 609, spread = 1800, legal = 1874; time = 0.02s
+Info:     at iteration #4, type ALL: wirelen solved = 609, spread = 1800, legal = 1874; time = 0.01s
 Info:     at iteration #5, type ALL: wirelen solved = 778, spread = 1673, legal = 1775; time = 0.02s
-Info:     at iteration #6, type ALL: wirelen solved = 811, spread = 1700, legal = 1801; time = 0.02s
-Info:     at iteration #7, type ALL: wirelen solved = 904, spread = 1637, legal = 1786; time = 0.02s
+Info:     at iteration #6, type ALL: wirelen solved = 811, spread = 1700, legal = 1801; time = 0.01s
+Info:     at iteration #7, type ALL: wirelen solved = 904, spread = 1637, legal = 1786; time = 0.01s
 Info:     at iteration #8, type ALL: wirelen solved = 895, spread = 1601, legal = 1734; time = 0.02s
-Info:     at iteration #9, type ALL: wirelen solved = 958, spread = 1746, legal = 1829; time = 0.01s
-Info:     at iteration #10, type ALL: wirelen solved = 1014, spread = 1712, legal = 1802; time = 0.01s
+Info:     at iteration #9, type ALL: wirelen solved = 958, spread = 1746, legal = 1829; time = 0.02s
+Info:     at iteration #10, type ALL: wirelen solved = 1014, spread = 1712, legal = 1802; time = 0.02s
 Info:     at iteration #11, type ALL: wirelen solved = 1025, spread = 1558, legal = 1719; time = 0.02s
 Info:     at iteration #12, type ALL: wirelen solved = 976, spread = 1526, legal = 1631; time = 0.02s
 Info:     at iteration #13, type ALL: wirelen solved = 946, spread = 1600, legal = 1730; time = 0.02s
-Info:     at iteration #14, type ALL: wirelen solved = 1017, spread = 1556, legal = 1618; time = 0.02s
+Info:     at iteration #14, type ALL: wirelen solved = 1017, spread = 1556, legal = 1618; time = 0.01s
 Info:     at iteration #15, type ALL: wirelen solved = 1103, spread = 1700, legal = 1813; time = 0.01s
 Info:     at iteration #16, type ALL: wirelen solved = 1257, spread = 1631, legal = 1769; time = 0.01s
 Info:     at iteration #17, type ALL: wirelen solved = 1227, spread = 1506, legal = 1581; time = 0.01s
-Info:     at iteration #18, type ALL: wirelen solved = 1158, spread = 1649, legal = 1770; time = 0.01s
+Info:     at iteration #18, type ALL: wirelen solved = 1158, spread = 1649, legal = 1770; time = 0.02s
 Info:     at iteration #19, type ALL: wirelen solved = 1211, spread = 1632, legal = 1728; time = 0.01s
 Info:     at iteration #20, type ALL: wirelen solved = 1214, spread = 1883, legal = 1938; time = 0.01s
 Info:     at iteration #21, type ALL: wirelen solved = 1357, spread = 1844, legal = 1939; time = 0.02s
-Info:     at iteration #22, type ALL: wirelen solved = 1367, spread = 1717, legal = 1856; time = 0.01s
-Info: HeAP Placer Time: 0.59s
-Info:   of which solving equations: 0.30s
-Info:   of which spreading cells: 0.09s
+Info:     at iteration #22, type ALL: wirelen solved = 1367, spread = 1717, legal = 1856; time = 0.02s
+Info: HeAP Placer Time: 0.49s
+Info:   of which solving equations: 0.25s
+Info:   of which spreading cells: 0.08s
 Info:   of which strict legalisation: 0.03s
 
 Info: Running simulated annealing placer for refinement.
@@ -94,7 +94,7 @@ Info:   at iteration #1: temp = 0.000000, timing cost = 144, wirelen = 1581
 Info:   at iteration #5: temp = 0.000000, timing cost = 243, wirelen = 1450
 Info:   at iteration #10: temp = 0.000000, timing cost = 240, wirelen = 1411
 Info:   at iteration #10: temp = 0.000000, timing cost = 238, wirelen = 1415 
-Info: SA placement time 0.33s
+Info: SA placement time 0.30s
 
 Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 161.47 MHz (PASS at 25.00 MHz)
 
@@ -135,10 +135,10 @@ Info:            |   (re-)routed arcs  |   delta    | remaining|       time spen
 Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
 Info:       1000 |       66        933 |   66   933 |      2166|       0.19       0.19|
 Info:       2000 |      320       1660 |  254   727 |      1450|       0.19       0.37|
-Info:       3000 |      440       2507 |  120   847 |       578|       0.12       0.49|
-Info:       3692 |      550       3069 |  110   562 |         0|       0.10       0.60|
+Info:       3000 |      440       2507 |  120   847 |       578|       0.13       0.50|
+Info:       3692 |      550       3069 |  110   562 |         0|       0.11       0.61|
 Info: Routing complete.
-Info: Router1 time 0.60s
+Info: Router1 time 0.61s
 Info: Checksum: 0x2d5048cd
 
 Info: Critical path report for clock '$glbnet$clk$TRELLIS_IO_IN' (posedge -> posedge):
