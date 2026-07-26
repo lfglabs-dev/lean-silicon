@@ -105,6 +105,21 @@ ASIC boundary is not widened out to pins.
 - Stale-byte drain on open and between transactions.
 - Timeout and clear/status support.
 
+### Known transport limitation: `0x7f` is not carried transparently
+
+`uart_bridge.sv` raises its abort pulse on **any** received `0x7f`, not only on
+one in command position, so a `0x7f` inside an operand tears the transaction
+down mid-flight. Reproduced in simulation: a SET128 whose payload byte 5 is
+`0x7f` returns 15 bytes, with `0xe0` from byte 5 onward instead of the echo.
+A 128-bit operand is arbitrary data, so an unlucky vector hits this — roughly
+6% of random SET payloads and 12% of random XOR/MUL operand pairs.
+
+Until the bridge framing distinguishes payload bytes from command bytes, the
+driver refuses such an operand and exits **2** (tooling limit) rather than 1
+(board answered wrong), so it cannot be misread as a silicon fault. This is an
+open design question on the bridge, not a property of `lean_silicon_lsc1`: the
+ASIC takes ABORT on `uio_in[6]`, a pin, and has no in-band abort byte.
+
 Example (never run on hardware without review):
 ```sh
 python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx status
@@ -113,7 +128,7 @@ python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 000000
 
 ## P2 Tests
 - Boundary: `make fpga-boundary` (and direct `python3 fpga_harness/boundary_check.py`) → OK
-- Harness unit tests: `make fpga-harness` → 123 tests OK
+- Harness unit tests: `make fpga-harness` → 134 tests OK
 - Sim: `make python` → 163 tests OK
 - Icarus benches: `make sim` builds and runs both `test/tb_stream_alu.sv` and
   `test/tb_uart_bridge.sv`. The bridge bench is wired into the target rather

@@ -151,8 +151,27 @@ def resync(ser: serial.Serial) -> None:
     send_bytes(ser, bytes([ABORT]))
 
 
+def reject_abort_byte(label: str, data: bytes) -> None:
+    """Refuse operands the bridge cannot carry intact.
+
+    fpga/ulx3s/uart_bridge.sv raises its abort pulse on *any* received 0x7f,
+    including one that lands inside an operand, so the transaction is torn down
+    mid-flight and the core answers 0xe0 for the remaining bytes. A 128-bit
+    operand is arbitrary data, so this is reachable by ordinary vectors. Failing
+    here keeps a transport limitation from being reported as a wrong product.
+    """
+    offsets = [i for i, b in enumerate(data) if b == ABORT]
+    if offsets:
+        raise ValueError(
+            f"{label} contains the abort byte 0x{ABORT:02x} at offset(s) "
+            f"{', '.join(str(i) for i in offsets)}; the UART bridge treats it as "
+            f"an abort, so this operand cannot cross the link intact"
+        )
+
+
 def tx_set(ser: serial.Serial, value: bytes, timeout: float = TIMEOUT_S) -> bytes:
     assert len(value) == 16
+    reject_abort_byte("SET128 value", value)
     resync(ser)
     send_bytes(ser, bytes([SET128]) + value)
     echo = recv_exact(ser, 16, timeout=timeout)
@@ -163,6 +182,8 @@ def tx_xor(
     ser: serial.Serial, a: bytes, b: bytes, timeout: float = TIMEOUT_S
 ) -> bytes:
     assert len(a) == 16 and len(b) == 16
+    reject_abort_byte("XOR128 operand A", a)
+    reject_abort_byte("XOR128 operand B", b)
     resync(ser)
     pkt = bytes([XOR128])
     for i in range(16):
@@ -176,6 +197,8 @@ def tx_mul(
     ser: serial.Serial, a: bytes, b: bytes, timeout: float = TIMEOUT_S
 ) -> bytes:
     assert len(a) == 16 and len(b) == 16
+    reject_abort_byte("MUL128 operand A", a)
+    reject_abort_byte("MUL128 operand B", b)
     resync(ser)
     send_bytes(ser, bytes([MUL128]) + a + b)
     res = recv_exact(ser, 16, timeout=timeout)
@@ -279,6 +302,11 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0 if ok else 1
 
         return 0
+    except ValueError as e:
+        # A payload the link cannot carry is a tooling limit, not a bad board,
+        # so it must not share exit 1 with a genuine mismatch.
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
     finally:
         try:
             ser.close()

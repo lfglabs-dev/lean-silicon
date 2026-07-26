@@ -226,6 +226,62 @@ class StatusSignatureTest(unittest.TestCase):
             run_status(ulx3s_uart.STATUS_SIGNATURE[:3])
 
 
+class AbortByteInPayloadTest(unittest.TestCase):
+    """0x7f inside an operand aborts the transaction in the bridge.
+
+    uart_bridge.sv derives its abort pulse from any received 0x7f, so an
+    operand containing that byte is torn down mid-flight and the core replies
+    0xe0. Confirmed in simulation: a SET128 whose payload byte 5 is 0x7f comes
+    back as 15 bytes with 0xe0 from byte 5 onward. Until the bridge framing
+    distinguishes payload from command, the host must refuse such an operand
+    rather than print MATCH: False and let a reader blame the silicon.
+    """
+
+    def test_set_payload_carrying_the_abort_byte_is_refused(self):
+        with self.assertRaises(ValueError) as ctx:
+            ulx3s_uart.tx_set(object(), bytes([0x7F]) + bytes(15))
+        self.assertIn("7f", str(ctx.exception))
+
+    def test_offsets_of_every_abort_byte_are_reported(self):
+        payload = bytearray(16)
+        payload[3] = ulx3s_uart.ABORT
+        payload[11] = ulx3s_uart.ABORT
+        with self.assertRaises(ValueError) as ctx:
+            ulx3s_uart.reject_abort_byte("operand", bytes(payload))
+        self.assertIn("3", str(ctx.exception))
+        self.assertIn("11", str(ctx.exception))
+
+    def test_either_mul_operand_is_checked(self):
+        clean, dirty = bytes(16), bytes([ulx3s_uart.ABORT]) + bytes(15)
+        for a, b in ((dirty, clean), (clean, dirty)):
+            with self.subTest(a=a[:1], b=b[:1]):
+                with self.assertRaises(ValueError):
+                    ulx3s_uart.tx_mul(object(), a, b)
+
+    def test_either_xor_operand_is_checked(self):
+        clean, dirty = bytes(16), bytes(15) + bytes([ulx3s_uart.ABORT])
+        for a, b in ((dirty, clean), (clean, dirty)):
+            with self.subTest(a=a[-1:], b=b[-1:]):
+                with self.assertRaises(ValueError):
+                    ulx3s_uart.tx_xor(object(), a, b)
+
+    def test_operands_without_the_abort_byte_are_untouched(self):
+        # The guard must not fire on the vectors the bench and CI already use.
+        ulx3s_uart.reject_abort_byte("a", MUL_A)
+        ulx3s_uart.reject_abort_byte("b", MUL_B)
+        ulx3s_uart.reject_abort_byte("expected", MUL_EXPECTED)
+
+    def test_cli_exits_two_not_one_for_an_uncarryable_payload(self):
+        # Exit 1 means "the board answered wrong". This is not that, and a CI
+        # log that conflates them sends someone hunting a hardware fault.
+        payload = (bytes([ulx3s_uart.ABORT]) + bytes(15) + bytes(16)).hex()
+        fake = FakeSerial(b"", command_len=99)
+        with mock.patch.object(ulx3s_uart, "open_port", return_value=fake):
+            rc = ulx3s_uart.main(["--port", "/dev/null", "--tx", "mul", "--payload", payload])
+        self.assertEqual(rc, 2)
+        self.assertEqual(fake.written, b"", "no bytes may reach the link")
+
+
 _DOC = (
     Path(__file__).resolve().parent.parent / "docs" / "ULX3S_SMOKE_AND_UART.md"
 )
