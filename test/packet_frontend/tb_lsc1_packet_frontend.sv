@@ -20,6 +20,8 @@ module tb_lsc1_packet_frontend;
     integer cycle_count = 0;
     integer i;
     reg [7:0] held_tx_byte;
+    reg [31:0] saved_result_crc;
+    integer saved_result_length;
 
     lsc1_packet_frontend dut (
         .clk(clk), .rst_n(rst_n), .abort(abort),
@@ -194,6 +196,14 @@ module tb_lsc1_packet_frontend;
         wait (response_count >= 5);
         if (response[2] !== 0) $fatal(1, "SET not accepted");
         wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
+        if ({response[8],response[7],response[6],response[5]} !== 32'h11 ||
+            {response[12],response[11],response[10],response[9]} !== 1 ||
+            {response[16],response[15],response[14],response[13]} !== 4 ||
+            response[17] !== 1 ||
+            {response[21],response[20],response[19],response[18]} !== 11 ||
+            response[38] !== 0 || response[39] !== 1 ||
+            {response[43],response[42],response[41],response[40]} !== 11)
+            $fatal(1, "SET result payload schema mismatch");
         retire_last(32'h11, 0);
         wait_response(8'h02);
         if (done_count != 1 || dut.retire_seq != 1)
@@ -213,16 +223,30 @@ module tb_lsc1_packet_frontend;
         build_set(32'h13, 1, 4);
         send_frame(1, 8'h03, 0, 51, 0);
         wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
+        saved_result_length = response[3] | (response[4] << 8);
+        saved_result_crc = 32'hffffffff;
+        for (i = 0; i < saved_result_length; i = i + 1)
+            saved_result_crc = crc_byte(saved_result_crc, response[5+i]);
+        saved_result_crc = ~saved_result_crc;
         response_count = 0;
         build_set(32'h14, 1, 4);
         send_frame(1, 8'h03, 0, 51, 0);
         wait_response(8'h87);
 
-        // Foreign RETIRE discards the staged result; duplicate is BAD_STATE.
+        // Matching txn with bad result CRC discards the staged result.
+        clear_payload(); put_u32(0, 32'h13); put_u32(4, saved_result_crc ^ 1);
+        send_frame(1, 8'h12, 0, 8, 0);
+        wait_response(8'h92);
+
+        // Restage, then prove a foreign RETIRE also discards; retry is BAD_STATE.
+        build_set(32'h15, 1, 4);
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
+        response_count = 0;
         clear_payload(); put_u32(0, 32'h99); put_u32(4, 0);
         send_frame(1, 8'h12, 0, 8, 0);
         wait_response(8'h92);
-        clear_payload(); put_u32(0, 32'h13); put_u32(4, 0);
+        clear_payload(); put_u32(0, 32'h15); put_u32(4, 0);
         send_frame(1, 8'h12, 0, 8, 0);
         wait_response(8'h87);
 
