@@ -6,7 +6,9 @@ import argparse
 import importlib
 import importlib.util
 import json
+import math
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,8 +60,8 @@ class Exchange:
 
 class PacketSerialDriver:
     def __init__(self, transport: ByteTransport, timeout: float = 2.0, baud: int = 1_000_000):
-        if timeout <= 0:
-            raise ValueError("timeout must be positive")
+        if not math.isfinite(timeout) or timeout <= 0 or timeout > threading.TIMEOUT_MAX:
+            raise ValueError("timeout must be positive, finite, and within threading.TIMEOUT_MAX")
         self.transport = transport
         self.timeout = timeout
         self.baud = baud
@@ -71,13 +73,36 @@ class PacketSerialDriver:
             raise PacketTransportError("packet response deadline expired")
         return remaining
 
+    def _bounded(self, call, deadline: float, message: str):
+        outcome: list[object] = []
+        failures: list[BaseException] = []
+
+        def run() -> None:
+            try:
+                outcome.append(call())
+            except BaseException as error:
+                failures.append(error)
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        worker.join(self._remaining(deadline))
+        if worker.is_alive():
+            raise PacketTransportError(message)
+        if failures:
+            raise PacketTransportError(message) from failures[0]
+        return outcome[0]
+
     def _read_exact(self, size: int, deadline: float) -> bytes:
         data = bytearray()
         while len(data) < size:
             remaining = self._remaining(deadline)
             if hasattr(self.transport, "timeout"):
                 self.transport.timeout = min(remaining, 0.1)
-            chunk = self.transport.read(size - len(data))
+            chunk = self._bounded(
+                lambda: self.transport.read(size - len(data)),
+                deadline,
+                "packet response deadline expired while reading",
+            )
             if chunk:
                 data.extend(chunk)
         return bytes(data)
@@ -85,22 +110,46 @@ class PacketSerialDriver:
     def _write_all(self, data: bytes, deadline: float) -> None:
         offset = 0
         while offset < len(data):
-            self._remaining(deadline)
-            count = self.transport.write(data[offset:])
+            remaining = self._remaining(deadline)
+            if hasattr(self.transport, "write_timeout"):
+                self.transport.write_timeout = remaining
+            count = self._bounded(
+                lambda: self.transport.write(data[offset:]),
+                deadline,
+                "packet request deadline expired while writing",
+            )
             if not isinstance(count, int) or count <= 0:
                 raise PacketTransportError("packet write made no progress")
             offset += count
-        self.transport.flush()
+        self._bounded(
+            self.transport.flush, deadline,
+            "packet request deadline expired while flushing",
+        )
 
-    def drain(self) -> bytes:
+    def drain(self, deadline: float | None = None) -> bytes:
+        deadline = deadline if deadline is not None else time.monotonic() + self.timeout
         drained = bytearray()
-        waiting = getattr(self.transport, "in_waiting", 0)
+        waiting = int(self._bounded(
+            lambda: getattr(self.transport, "in_waiting", 0),
+            deadline,
+            "stale-byte drain deadline expired while querying buffered input",
+        ))
         while waiting:
-            chunk = self.transport.read(waiting)
+            if hasattr(self.transport, "timeout"):
+                self.transport.timeout = self._remaining(deadline)
+            chunk = self._bounded(
+                lambda: self.transport.read(waiting),
+                deadline,
+                "stale-byte drain deadline expired while reading",
+            )
             if not chunk:
                 raise PacketTransportError("stale-byte drain made no progress")
             drained.extend(chunk)
-            waiting = getattr(self.transport, "in_waiting", 0)
+            waiting = int(self._bounded(
+                lambda: getattr(self.transport, "in_waiting", 0),
+                deadline,
+                "stale-byte drain deadline expired while querying buffered input",
+            ))
         return bytes(drained)
 
     def abort(self) -> None:
@@ -109,14 +158,14 @@ class PacketSerialDriver:
             raise PacketTransportError("transport cannot issue the out-of-band UART BREAK abort")
         send_break(duration=0.002)
         time.sleep(0.003)
-        self.drain()
+        self.drain(time.monotonic() + self.timeout)
 
     def exchange_encoded(self, request: bytes) -> protocol.ResponseFrame:
         """Exchange an already encoded frame, including adversarial test bytes."""
         if not request:
             raise ValueError("encoded request must not be empty")
-        self.drain()
         deadline = time.monotonic() + self.timeout
+        self.drain(deadline)
         started = time.monotonic_ns()
         self._write_all(request, deadline)
         header = self._read_exact(protocol.RESPONSE_HEADER_BYTES, deadline)
@@ -126,8 +175,8 @@ class PacketSerialDriver:
         response = header + self._read_exact(length + protocol.CRC_BYTES, deadline)
         decoded = protocol.decode_response(response)
         # One byte takes ten UART symbols. Let a surplus byte become visible.
-        time.sleep(12 / self.baud)
-        extra = self.drain()
+        time.sleep(min(12 / self.baud, self._remaining(deadline)))
+        extra = self.drain(deadline)
         if extra:
             raise PacketTransportError(f"surplus response bytes: {extra.hex()}")
         self.exchanges.append(Exchange(request, response, time.monotonic_ns() - started))

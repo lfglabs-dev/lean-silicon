@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import math
+import threading
+import time
 import unittest
 
 from fpga_harness.host.lsc1_packet_uart import (
@@ -46,6 +49,26 @@ class FakeTransport:
 
 
 class PacketSerialDriverTests(unittest.TestCase):
+    def test_timeout_must_be_positive_and_finite(self) -> None:
+        for timeout in (0.0, -1.0, math.inf, math.nan):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                PacketSerialDriver(FakeTransport(b""), timeout=timeout)
+
+    def test_preflight_drain_is_bounded_by_exchange_deadline(self) -> None:
+        blocker = threading.Event()
+
+        class BlockingTransport(FakeTransport):
+            @property
+            def in_waiting(self) -> int:
+                blocker.wait()
+                return 0
+
+        transport = BlockingTransport(b"")
+        started = time.monotonic()
+        with self.assertRaisesRegex(PacketTransportError, "drain deadline"):
+            PacketSerialDriver(transport, timeout=0.02).exchange_encoded(b"x")
+        self.assertLess(time.monotonic() - started, 0.2)
+
     def test_packet_rtl_capability_subset_is_explicit(self) -> None:
         payload = (
             bytes((1, 1)) + (256).to_bytes(2, "little") + bytes((16, 0))
