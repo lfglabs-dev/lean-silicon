@@ -32,7 +32,8 @@ This is the honest gap list for a board build:
 - no `nextpnr-ecp5` / `ecppack` invocation, script, or Makefile target;
 - no ULX3S board top level that instantiates the ASIC top;
 - no clock generation (`PLL`/`EHXPLLL`) or reset synchroniser;
-- no USB/UART/FTDI bridge RTL and no host-side byte-exchange driver;
+- no USB/UART/FTDI bridge RTL; the MinCore UART raw-byte diagnostic exists, but
+  no host-side LSC-1 8-bit ready/valid handshake driver;
 - no bitstream, no packed artefact, and no programming recipe;
 - no CI job that builds or loads anything for FPGA;
 - no captured hardware log of any kind.

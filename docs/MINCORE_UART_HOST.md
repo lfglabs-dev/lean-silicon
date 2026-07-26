@@ -1,0 +1,128 @@
+# MinCore UART host diagnostic contract
+
+This is a versioned diagnostic transport for the historical MinCore byte lane,
+not LSC-1 packet execution.  The host CLI is `fpga_harness/host/mincore_uart.py`.
+
+## Byte API supplied to the bridge writer
+
+The host currently supports one transparent, ordered UART byte stream at an
+agreed baud rate.  The host default is 115200 baud, configurable with `--baud`;
+this is a host setting, not a claim about FPGA RTL.  In this raw diagnostic
+mode, the bridge must preserve each MinCore byte and must not add in-band
+flow-control bytes, retries, or commands.
+
+| Operation | Host-to-bridge bytes | Bridge-to-host bytes |
+|---|---|---|
+| SET128 | `03 V0..V15` | `V0..V15` |
+| XOR128 | `01 A0 B0 ... A15 B15` | `A0^B0 .. A15^B15` |
+| MUL128 | `02 A0..A15 B0..B15` | 16 product bytes |
+| CLEAR | `7d` | none |
+| STATUS | `7e` | `01 01 0f 08` |
+
+All F128 bytes are little-endian.  The definitive source locators are
+`asic_core/rtl/leanvm_b_stream_alu.sv:8-24` (byte order, grammar and field),
+`:46-51` (command values), `:105-115` (STATUS), `:132-148` (combinational
+XOR/SET), and `docs/PROTOCOL_BYTE_CYCLE_AUDIT.md:41-78` (no framing, partial
+transaction, and recovery limits).
+
+## Required bridge decisions / ambiguity
+
+There is no UART protocol in the MinCore RTL.  It accepts ready/valid bytes,
+whereas UART is asynchronous; the bridge writer must provide buffering so it
+does not drop UART bytes while `RX_READY=0`.  In particular XOR and SET have a
+combinational input/output handshake (`leanvm_b_stream_alu.sv:136-147`).
+
+`docs/PROTOCOL_BYTE_CYCLE_AUDIT.md:75-78` requires a production bridge to add
+an envelope, integrity, timeout, and resynchronization policy.  That envelope
+is not specified in this revision and therefore cannot be silently added to
+this raw host tool: doing so needs a versioned host/bridge contract update.
+
+`ABORT` is a separate synchronous pin, not a byte command
+(`leanvm_b_stream_alu.sv:31` and `:220-225`).  A raw serial host cannot assert
+it.  The CLI therefore never invents an abort byte and reports that limitation;
+the bridge needs a separately specified abort control if recovery is required.
+`CLEAR` only clears sticky fault and emits no response (`:238-241`), while an
+unknown command emits `e0` and sets fault (`:242-245`, `:189-192`).  STATUS is
+constant and does not expose fault.  Thus a bridge that needs a reliable host
+fault indication must specify out-of-band status rather than overload raw data.
+
+The host drains bytes already buffered before each transaction, reads exactly
+the documented response length, rejects immediately buffered extras, times out
+with byte progress, and does not retry.  Querying buffered input is itself an
+I/O operation, so a device that disconnects during the check is reported as a
+transport failure rather than an uncaught error.  Request operands are checked
+before that drain runs, so a rejected request never consumes a buffered byte,
+and a drain that fails or times out is itself an indeterminate outcome: it
+leaves an unknown number of stale bytes that a later exchange would otherwise
+read back as a response.  A drain ends only where the device reports nothing
+buffered: a read that returns no byte while one is still reported made no
+progress, so it is retried under the same budget instead of being counted as a
+finished drain that would let a reported extra byte pass as none.
+`--timeout` bounds one whole exchange rather than each
+phase: the drain, write, read, and flush share a single deadline, so phases that
+each stop just inside the limit cannot sum to several multiples of it.  A
+blocking call cannot be interrupted, so every transport call — the buffered-count
+query, the drain read, each write, and each response read — runs under whatever
+the deadline leaves and is abandoned when that budget is gone; none is started
+without budget, and a transport whose own call blocks can no longer
+stretch an exchange past `--timeout`.  `CLEAR`
+has no response to prove its byte was transmitted, so the host flushes the
+transport before the port can be closed; that flush is bounded by whatever the
+earlier phases left of the budget, because the underlying `tcdrain()` accepts no
+timeout of its own.  After framing loss, timeout, or I/O failure the outcome is
+unknown; the driver refuses all later exchanges on that transport because a raw
+UART-only bridge cannot safely resynchronize a partial MinCore command.
+
+## Usage
+
+Encoding and dry-run modes never access hardware:
+
+```sh
+python3 fpga_harness/host/mincore_uart.py --operation mul --vector mul128 --encode
+python3 fpga_harness/host/mincore_uart.py --operation set --vector set128 --dry-run --evidence evidence.jsonl
+```
+
+Serial execution requires both an explicit port and `--execute`; `pyserial`
+is optional and only needed then.  This only demonstrates a host exchange with
+the selected serial endpoint: it is not physical FPGA validation and does not
+identify what is attached to that endpoint.
+
+Evidence is JSONL and deliberately omits the port name.  Raw request, response,
+and expected payloads are also omitted by default; lengths and SHA-256 digests
+are recorded instead.  `--evidence-payloads` opts into recording those
+potentially sensitive bytes.  Dry-run and encode records have
+`execution_attempted: false`, an empty response, and `pass: null`; they never
+substitute a golden expected value for an observed response.
+
+Decode-only mode does not encode or require request operands.  Decode or serial
+execution without a selected golden vector also records `pass: null`, because
+fixed-size validation alone is not a functional oracle.
+
+An exchange that fails once the port is open is recorded too, with `failure` set
+to the exception class name and `execution_attempted: true`.  Bytes that did
+arrive before the failure are kept: a rejected response (`STATUS` answering
+`01 01 00 08`) or a partial read that then timed out records the observed length
+and digest with `serial_response_observed: true`, so a failed exchange is never
+reported as a silent wire.  Extra bytes a post-response drain consumed before it
+timed out are reported with the response they followed, because those bytes are
+the evidence that framing was lost.  Stale bytes drained *before* the request are
+not, since they answer no request this exchange sent.  `pass` stays `null`, because those bytes were never
+accepted.  The device may already have changed state,
+so a run that sent bytes and then timed out must not be indistinguishable from
+one that never ran; `execution_attempted` reports that the port was opened and
+I/O began, never that a response was seen.  Only the class name is stored,
+because transport error text can embed a device name.  A record is written for
+this path only after the port opened: a run that could not open a port never
+reached the device and reports the failure on stderr alone.
+
+Each record carries `repo_head` plus `repo_dirty`, which reports whether that
+checkout had uncommitted or untracked changes (`git status --porcelain=v1
+--untracked-files=all`).  A head alone cannot distinguish evidence produced by a
+modified tree from a clean run at the same commit.  `repo_dirty: null` means the
+tree state could not be determined and must not be read as clean.  An
+*untracked* evidence file is this tool's own output rather than a source change,
+so it is excluded from that status: writing or appending a new evidence file
+inside the checkout never makes a run report itself as dirty.  A *tracked*
+evidence destination is excluded from nothing, because its edits cannot be told
+apart from source edits; otherwise naming an already-modified tracked file as
+`--evidence` would report the run as clean.
