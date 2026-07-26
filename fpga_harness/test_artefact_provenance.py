@@ -13,13 +13,17 @@ FPGA toolchain are involved.
 
 from __future__ import annotations
 
+import os
 import re
+import shutil
 import subprocess
+import tempfile
 import unittest
 from hashlib import sha256
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+RECORDER = ROOT / "tools" / "source_provenance.py"
 ULX3S = ROOT / "fpga" / "ulx3s"
 DOC = ROOT / "docs" / "ULX3S_SMOKE_AND_UART.md"
 RESULTS = ROOT / "results" / "ulx3s-smoke-uart-20260725"
@@ -134,6 +138,82 @@ class SourceManifestTest(unittest.TestCase):
                 self.assertRegex(
                     text, re.compile(r"^inputs-match-revision: (yes|no)$", re.M)
                 )
+
+
+class RecorderMatchFlagTest(unittest.TestCase):
+    """`inputs-match-revision` must never claim more than was actually compared.
+
+    Driven against throwaway trees rather than the repo, because the interesting
+    states -- no git at all, and a modified input -- cannot be staged here.
+    """
+
+    def _tree(self) -> Path:
+        root = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "tools").mkdir()
+        shutil.copy(RECORDER, root / "tools")
+        (root / "src").mkdir()
+        (root / "src" / "a.sv").write_text("module a; endmodule\n")
+        return root
+
+    def _record(self, root: Path) -> dict[str, str]:
+        env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(root.parent))
+        subprocess.run(
+            ["python3", str(root / "tools" / "source_provenance.py"), "out.txt", "a.sv"],
+            cwd=root / "src",
+            check=True,
+            stdout=subprocess.DEVNULL,
+            env=env,
+        )
+        fields = {}
+        for line in (root / "src" / "out.txt").read_text().splitlines():
+            key, _, value = line.partition(": ")
+            if value:
+                fields[key] = value
+        return fields
+
+    def _git_tree(self) -> Path:
+        root = self._tree()
+        for args in (
+            ["init", "-q"],
+            ["config", "user.email", "t@example.invalid"],
+            ["config", "user.name", "t"],
+            ["add", "-A"],
+            ["-c", "commit.gpgsign=false", "commit", "-qm", "x"],
+        ):
+            result = subprocess.run(["git", *args], cwd=root, capture_output=True)
+            if result.returncode != 0:
+                self.skipTest(f"git {args[0]} unavailable: {result.stderr!r}")
+        return root
+
+    def test_unidentified_revision_is_not_reported_as_a_match(self):
+        # The defect: with no revision, every comparison was skipped and the
+        # dirty flag stayed false, so the archive claimed its inputs matched a
+        # revision that had never been identified.
+        fields = self._record(self._tree())
+        self.assertEqual(fields["revision"], "unknown")
+        self.assertNotEqual(fields["inputs-match-revision"], "yes")
+
+    def test_committed_inputs_report_a_match(self):
+        fields = self._record(self._git_tree())
+        self.assertRegex(fields["revision"], r"^[0-9a-f]{40}$")
+        self.assertEqual(fields["inputs-match-revision"], "yes")
+
+    def test_modified_input_reports_no_match(self):
+        root = self._git_tree()
+        (root / "src" / "a.sv").write_text("module b; endmodule\n")
+        fields = self._record(root)
+        self.assertRegex(fields["revision"], r"^[0-9a-f]{40}$")
+        self.assertEqual(fields["inputs-match-revision"], "no")
+
+    def test_a_match_is_only_ever_claimed_against_a_named_revision(self):
+        # Generalises the three cases above: whatever the tree looks like, "yes"
+        # is only honest when a real revision was resolved to compare against.
+        for name, make in (("no-git", self._tree), ("git", self._git_tree)):
+            with self.subTest(tree=name):
+                fields = self._record(make())
+                if fields["inputs-match-revision"] == "yes":
+                    self.assertRegex(fields["revision"], r"^[0-9a-f]{40}$")
 
 
 class DocumentedRevisionTest(unittest.TestCase):

@@ -9,6 +9,11 @@ recorded, and the dirty flag is computed over the build inputs rather than the
 whole tree -- a build writes its own products into results/, so a whole-tree
 comparison would report "dirty" on every successful run and mean nothing.
 
+When the revision cannot be determined at all -- an exported tarball, or no git
+on PATH -- there is nothing to compare against, so the match is reported as
+"unknown" rather than "yes". Claiming the inputs agree with a revision that was
+never identified is a stronger statement than the evidence supports.
+
 Usage: source_provenance.py <output-file> <source>...
 """
 from hashlib import sha256
@@ -51,7 +56,11 @@ def main(argv: list[str]) -> int:
                 dirty = True  # not present at HEAD at all
 
     lines.append(f"revision: {revision}")
-    lines.append(f"inputs-match-revision: {'no' if dirty else 'yes'}")
+    if revision == "unknown":
+        matched = "unknown"  # nothing was compared, so "yes" would be unearned
+    else:
+        matched = "no" if dirty else "yes"
+    lines.append(f"inputs-match-revision: {matched}")
     lines.extend(digests)
     out.write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
