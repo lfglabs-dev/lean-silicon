@@ -57,9 +57,10 @@ leaves an unknown number of stale bytes that a later exchange would otherwise
 read back as a response.  `--timeout` bounds one whole exchange rather than each
 phase: the drain, write, read, and flush share a single deadline, so phases that
 each stop just inside the limit cannot sum to several multiples of it.  A
-blocking call cannot be interrupted, so each write runs under whatever the
-deadline leaves and is abandoned when that budget is gone; no write is started
-without budget, and a transport with a write timeout of its own can no longer
+blocking call cannot be interrupted, so every transport call — the buffered-count
+query, the drain read, each write, and each response read — runs under whatever
+the deadline leaves and is abandoned when that budget is gone; none is started
+without budget, and a transport whose own call blocks can no longer
 stretch an exchange past `--timeout`.  `CLEAR`
 has no response to prove its byte was transmitted, so the host flushes the
 transport before the port can be closed; that flush is bounded by whatever the

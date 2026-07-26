@@ -66,7 +66,7 @@ class MinCoreUartTests(unittest.TestCase):
     def test_partial_reads_writes_and_stale_drain(self):
         v = VECTORS["set128"]
         serial = FakeSerial(b"stale", read_limit=3, write_limit=4, responses=(v.expected,))
-        request, response = MinCoreDriver(serial, .2, Clock()).exchange("set", value=v.value)
+        request, response = MinCoreDriver(serial, .22, Clock()).exchange("set", value=v.value)
         self.assertEqual(request, encode_request("set", value=v.value)); self.assertEqual(response, v.expected)
         self.assertEqual(bytes(serial.written), request)
 
@@ -82,13 +82,13 @@ class MinCoreUartTests(unittest.TestCase):
         # past the deadline.
         serial = FakeSerial(write_limit=1)
         with self.assertRaisesRegex(TransportTimeout, r"write timeout after 2/17 request bytes"):
-            MinCoreDriver(serial, .025, Clock()).exchange("set", value=VECTORS["set128"].value)
+            MinCoreDriver(serial, .035, Clock()).exchange("set", value=VECTORS["set128"].value)
         self.assertEqual(len(serial.written), 2)  # no write is started without budget
 
         # The budget is shared, so the read phase starts with the write already charged to it.
         serial = FakeSerial(read_limit=1, responses=(STATUS_BYTES,))
         with self.assertRaisesRegex(TransportTimeout, r"read timeout after 1/4 response bytes"):
-            MinCoreDriver(serial, .035, Clock()).exchange("status")
+            MinCoreDriver(serial, .045, Clock()).exchange("status")
 
     def test_one_timeout_bounds_the_whole_exchange_not_each_phase(self):
         """Phases that each stay just inside the limit must not sum past it."""
@@ -144,6 +144,47 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
             driver.exchange("status")  # an abandoned read leaves the stream unknown
 
+    def test_a_blocking_drain_read_cannot_outlast_the_remaining_budget(self):
+        """A stale-input drain read must not get a fresh, unbounded timeout."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledDrain(FakeSerial):
+            def read(self, size=1): release.wait(30); return b"x"
+
+        driver = MinCoreDriver(StalledDrain(b"stale"), .05)  # real clock: measure wall time
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, r"stale-input drain timeout after 0 bytes"):
+            driver.exchange("status")
+        self.assertLess(time.monotonic() - start, 1)  # an unbounded drain read would wait ~30s
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")  # an abandoned drain read leaves the stream unknown
+
+    def test_a_blocking_buffered_count_query_cannot_outlast_the_remaining_budget(self):
+        """`in_waiting` is a backend query that can block on a disconnecting device."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        class StalledQuery(FakeSerial):
+            @property
+            def in_waiting(self): release.wait(30); return 0
+
+        driver = MinCoreDriver(StalledQuery(), .05)  # real clock: measure wall time
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, r"stale-input drain timeout after 0 bytes"):
+            driver.exchange("status")
+        self.assertLess(time.monotonic() - start, 1)  # an unbounded query would wait ~30s
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")  # an abandoned query leaves the stream unknown
+
+    def test_a_slow_drain_cannot_stretch_the_exchange_past_the_timeout(self):
+        """The reported case: a 300ms drain read under a 50ms budget."""
+        class SlowDrain(FakeSerial):
+            def read(self, size=1): time.sleep(.3); return b"x"
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TransportTimeout, "stale-input drain timeout"):
+            MinCoreDriver(SlowDrain(b"stale"), .05).exchange("status")
+        self.assertLess(time.monotonic() - start, .25)  # the unbounded drain returned at ~.30
+
     def test_a_drain_that_spends_the_budget_leaves_the_write_none(self):
         """The write phase inherits what the drain left, never a fresh budget."""
         release = threading.Event()
@@ -180,7 +221,7 @@ class MinCoreUartTests(unittest.TestCase):
 
     def test_framing_loss_and_abort_are_explicit(self):
         serial = FakeSerial(responses=(b"\xe0",))
-        driver = MinCoreDriver(serial, .03, Clock())
+        driver = MinCoreDriver(serial, .04, Clock())
         with self.assertRaisesRegex(TransportTimeout, r"1/16 response bytes"):
             driver.exchange("set", value=VECTORS["set128"].value)
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):

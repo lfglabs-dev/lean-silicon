@@ -137,10 +137,16 @@ class MinCoreDriver:
         self.transport, self.timeout, self.clock = transport, timeout, clock
         self._usable = True
 
-    def _buffered_count(self) -> int:
-        """Query buffered RX bytes; pyserial raises I/O errors from this property."""
+    def _buffered_count(self, budget: float, timeout_message: str) -> int:
+        """Query buffered RX bytes; pyserial raises I/O errors from this property.
+
+        The property is a backend query that can block on a stalled or
+        disconnecting device, so it is bounded like every other transport call.
+        """
         try:
-            buffered = int(getattr(self.transport, "in_waiting", 0))
+            buffered = int(self._bounded(lambda: getattr(self.transport, "in_waiting", 0), budget, timeout_message))
+        except TransportTimeout:
+            raise
         except Exception as error:
             raise TransportFailure("buffered-input query failed") from error
         return max(0, buffered)
@@ -150,18 +156,32 @@ class MinCoreDriver:
         return self.clock() + self.timeout if deadline is None else deadline
 
     def drain_stale(self, deadline: Optional[float] = None) -> bytes:
-        """Remove already-buffered RX bytes before one diagnostic exchange."""
+        """Remove already-buffered RX bytes before one diagnostic exchange.
+
+        The buffered-count query and the drain read are both backend calls that
+        can block on a stalled device, so each runs under what is left of the
+        transaction budget instead of being checked only once it returns.
+        """
         deadline, drained = self._deadline(deadline), bytearray()
-        while (buffered := self._buffered_count()) > 0:
+        while True:
+            message = f"stale-input drain timeout after {len(drained)} bytes"
+            remaining = deadline - self.clock()
+            if remaining <= 0:
+                raise TransportTimeout(message)
             try:
-                chunk = self.transport.read(min(buffered, 4096))
+                if (buffered := self._buffered_count(remaining, message)) <= 0:
+                    break
+                chunk = self._bounded(lambda: self.transport.read(min(buffered, 4096)), remaining, message)
+            except TransportTimeout:
+                self._usable = False  # an abandoned call may still consume bytes later
+                raise
+            except TransportFailure:
+                raise
             except Exception as error:
                 raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes") from error
             if not chunk:
                 break
             drained.extend(chunk)
-            if self.clock() >= deadline:
-                raise TransportTimeout(f"stale-input drain timeout after {len(drained)} bytes")
         return bytes(drained)
 
     def _bounded(self, call: Callable[[], object], budget: float, timeout_message: str) -> object:
