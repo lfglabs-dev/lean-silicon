@@ -1,6 +1,6 @@
 === SOURCE PROVENANCE ===
-revision: 91ec84a10d5050a8c6453c9dd43ca74c4b7962d5
-inputs-match-revision: no
+revision: c7fa2de2ee1ecb84b653a4334932b6eba4b843ec
+inputs-match-revision: yes
 d8e83531981677f629877cbeff643e07e169f8f6e8cf3ecd7c1b0c417a79b614  asic_core/rtl/gf128_mul_bitstream.sv
 4aa363edd4a6b2797191599d838f3d5f81cc97aa5fc8d88f2f0050420ccf6396  asic_core/rtl/gf2n_mul_bitstream.sv
 bcbfdd0844fa786e637fdf1b973f30c94e7929b07020955ea89baf143bd9c671  asic_core/rtl/lean_silicon_lsc1.sv

@@ -260,6 +260,30 @@ class DocumentedRevisionTest(unittest.TestCase):
             f"{rev} is not reachable from HEAD",
         )
 
+    def test_provenance_revision_reachable_from_squashed_commit_or_content_equivalent(self):
+        # Squash merges drop intermediate commits from ancestry of the squash commit.
+        # The recorded artefact source revision must be reachable from HEAD today,
+        # and for eventual squash safety the evidence must remain truthful:
+        # either the rev is an ancestor of HEAD, or the build-input tree at the
+        # recorded rev is identical to HEAD (so manifests describe the same sources).
+        rev = doc_revision("Artefact source revision")
+        is_ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", rev, "HEAD"], cwd=ROOT
+        ).returncode == 0
+        if is_ancestor:
+            return
+        # Fallback for squash scenario: verify tree equivalence on recorded inputs.
+        for manifest, script in BUILDS.items():
+            for rel in build_inputs(script):
+                with self.subTest(manifest=manifest, source=rel):
+                    blob_at_rev = _blob_at(rev, rel)
+                    self.assertIsNotNone(blob_at_rev, rel)
+                    self.assertEqual(
+                        sha256((ROOT / rel).read_bytes()).hexdigest(),
+                        sha256(blob_at_rev).hexdigest(),
+                        f"tree mismatch for {rel} between recorded rev and HEAD",
+                    )
+
     def test_artefact_revision_contains_every_build_input(self):
         rev = doc_revision("Artefact source revision")
         for script in BUILDS.values():
@@ -289,7 +313,7 @@ class DocumentedRevisionTest(unittest.TestCase):
         # Only netlist sources (RTL + LPF) determine the bitstream bytes;
         # recipe/support scripts may be updated for provenance without
         # changing the emitted artefacts.
-        since = doc_revision("Design sources unchanged since")
+        since = doc_revision("unchanged in netlist effect since")
         inputs = sorted(set().union(*(build_inputs(s) for s in BUILDS.values())))
         netlist_inputs = [i for i in inputs if i.endswith((".sv", ".lpf")) or i.startswith("asic_core/rtl/")]
         touched = subprocess.run(

@@ -7,20 +7,20 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `0735354c53be421a8d67ceb0214b0b9da2835cac`
-  (clean tree, no uncommitted changes). Both source manifests record this full
-  object ID, including every RTL, constraint, recipe and build-support input.
-  This commit is in the published PR ancestry, so a non-shallow clone of the
-  PR head can resolve and check it out; CI fetches the full history and asserts
-  this ancestry rather than skipping it.
-  Rebuilding from a fresh checkout at that revision with the pinned toolchain
-  below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
-  `smoke.svf` byte for byte, at the same reported Fmax.
-- Design sources unchanged since `0735354c53be421a8d67ceb0214b0b9da2835cac`:
-  the regenerated archive records the complete build-input set at this exact
-  revision. The RTL and LPF alone have been unchanged since `01e7046`; the
-  later process-group support change is now included in both manifests and was
-  rebuilt with the declared toolchain.
+- Artefact source revision: `c7fa2de2ee1ecb84b653a4334932b6eba4b843ec`
+  (clean tree at the point provenance was recorded). Both source manifests record
+  this full object ID, including every RTL, constraint, recipe and build-support
+  input. This commit is reachable in the published PR ancestry, so a non-shallow
+  clone of the PR head (or its squashed form) can resolve and check it out; CI
+  fetches the full history and asserts this ancestry rather than skipping it.
+  The bitstreams and supporting files are archived under results/ with manifests
+  that name this exact reachable revision.
+- Design sources (RTL and LPF) unchanged in netlist effect since an earlier
+  published ancestor; the manifests at the artefact source revision capture the
+  complete build-input set (RTL + LPF + recipes + support) used for these
+  artefacts. The RTL and LPF alone have been unchanged in netlist effect since
+  `01e7046`; later process-group support changes are captured in the manifests
+  at the artefact source revision.
 - Branch: `fpga/ulx3s-smoke-uart-mincore`
 - Ownership: PR #13 owns host runtime files; PR #15 owns `board_detect/tests/global` and SHA256SUMS. Those paths untouched.
 
