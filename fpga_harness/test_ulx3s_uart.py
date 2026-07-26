@@ -142,6 +142,20 @@ class DrainTest(unittest.TestCase):
         self.assertAlmostEqual(fake.observed_timeout, 0.05)
         self.assertEqual(fake.timeout, 2.0)
 
+    def test_blocking_read_cannot_outlast_drain_deadline(self):
+        class StalledRead:
+            timeout = 1.0
+            in_waiting = 1
+
+            def read(self, _n: int = 1) -> bytes:
+                threading.Event().wait(1.0)
+                return b""
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "while reading"):
+            ulx3s_uart.drain(StalledRead(), settle=0.05)
+        self.assertLess(time.monotonic() - start, 0.3)
+
     def test_blocking_in_waiting_cannot_outlast_drain_deadline(self):
         """Mutation-sensitive: direct ``ser.in_waiting`` would wait 30 seconds."""
         release = threading.Event()
@@ -481,6 +495,19 @@ class RecvExactDeadlineTest(unittest.TestCase):
             ulx3s_uart.STATUS_SIGNATURE,
         )
 
+    def test_blocking_read_cannot_outlast_response_deadline(self):
+        class StalledRead:
+            timeout = 1.0
+
+            def read(self, _n: int) -> bytes:
+                threading.Event().wait(1.0)
+                return b""
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "response read deadline"):
+            ulx3s_uart.recv_exact(StalledRead(), 1, timeout=0.05)
+        self.assertLess(time.monotonic() - start, 0.3)
+
 
 class AbortByteInPayloadTest(unittest.TestCase):
     """0x7f inside an operand aborts the transaction in the bridge.
@@ -683,20 +710,32 @@ class TimeoutValidationTest(unittest.TestCase):
     """Adversarial tests for non-finite / invalid timeout rejection.
 
     These must raise ValueError with a clear message for math.inf, NaN,
-    negative, and zero. Very large but finite values must be accepted.
+    negative, zero, and values beyond ``threading.TIMEOUT_MAX``.
     Tests are written to fail on pre-fix code (no explicit validation)
     and pass after _validate_timeout is wired into the public entry points.
     """
 
     BAD_VALUES = [math.inf, float("nan"), -1.0, -0.0, 0.0]
-    GOOD_LARGE = 1e300  # finite, must be accepted by validation
     SAFE_LARGE = 3600.0  # large finite that will not overflow platform time_t in worker.join
+    TOO_LARGE = threading.TIMEOUT_MAX * 2
 
     def test_open_port_rejects_non_finite_and_non_positive(self):
         for bad in self.BAD_VALUES:
             with self.subTest(timeout=bad):
                 with self.assertRaisesRegex(ValueError, r"(finite|positive)"):
                     ulx3s_uart.open_port("/dev/null", timeout=bad)
+
+    def test_rejects_timeouts_that_exceed_thread_join_range(self):
+        for entrypoint, args in (
+            (ulx3s_uart.open_port, ("/dev/null",)),
+            (ulx3s_uart.recv_exact, (FakeSerial(b"", command_len=0), 1)),
+            (ulx3s_uart.send_bytes, (object(), b"\\x00")),
+        ):
+            with self.subTest(entrypoint=entrypoint.__name__):
+                with self.assertRaisesRegex(ValueError, "TIMEOUT_MAX"):
+                    entrypoint(*args, timeout=self.TOO_LARGE)
+        with self.assertRaisesRegex(ValueError, "TIMEOUT_MAX"):
+            ulx3s_uart.drain(IdleSerial(), settle=self.TOO_LARGE)
 
     def test_open_port_accepts_very_large_finite(self):
         # Should not raise from validation; FakeSerial is not used here,
