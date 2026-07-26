@@ -64,6 +64,11 @@ def _validate_timeout(timeout: float, name: str = "timeout") -> None:
         raise ValueError(f"{name} must be a finite number of seconds, got {timeout!r}")
     if timeout <= 0:
         raise ValueError(f"{name} must be positive, got {timeout!r}")
+    if timeout > threading.TIMEOUT_MAX:
+        raise ValueError(
+            f"{name} must not exceed threading.TIMEOUT_MAX "
+            f"({threading.TIMEOUT_MAX!r} seconds)"
+        )
 
 
 def _call_within(call, remaining: float, timeout_message: str):
@@ -160,7 +165,11 @@ def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> byt
             # that read to the drain operation's remaining settle budget.
             if hasattr(ser, "timeout"):
                 ser.timeout = remaining
-            out.extend(ser.read(min(waiting, max_bytes - len(out))))
+            out.extend(_call_within(
+                lambda: ser.read(min(waiting, max_bytes - len(out))),
+                remaining,
+                "stale-input drain deadline expired while reading",
+            ))
     finally:
         if restore is not None:
             ser.timeout = restore
@@ -244,7 +253,11 @@ def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
             if remaining <= 0:
                 break
             ser.timeout = remaining
-            chunk = ser.read(n - len(buf))
+            chunk = _call_within(
+                lambda: ser.read(n - len(buf)),
+                remaining,
+                "response read deadline expired",
+            )
             if chunk:
                 buf.extend(chunk)
             else:
