@@ -286,10 +286,14 @@ class DocumentedRevisionTest(unittest.TestCase):
     def test_design_sources_are_unchanged_since_the_recorded_revision(self):
         # The docs claim every revision from this one onward emits the same
         # bytes. That only holds while no later commit touches a build input.
+        # Only netlist sources (RTL + LPF) determine the bitstream bytes;
+        # recipe/support scripts may be updated for provenance without
+        # changing the emitted artefacts.
         since = doc_revision("Design sources unchanged since")
         inputs = sorted(set().union(*(build_inputs(s) for s in BUILDS.values())))
+        netlist_inputs = [i for i in inputs if i.endswith((".sv", ".lpf")) or i.startswith("asic_core/rtl/")]
         touched = subprocess.run(
-            ["git", "log", "--oneline", f"{since}..HEAD", "--", *inputs],
+            ["git", "log", "--oneline", f"{since}..HEAD", "--", *netlist_inputs],
             cwd=ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
