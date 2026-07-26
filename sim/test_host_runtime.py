@@ -516,6 +516,63 @@ class RuntimeTests(unittest.TestCase):
             runtime.step()
         self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
 
+    @staticmethod
+    def _deferred_result(target: int, local: int) -> bytes:
+        """A SET-shaped result carrying one deferred pair and one access to 2."""
+        return (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([0])
+            + bytes([1]) + target.to_bytes(4, "little") + local.to_bytes(4, "little")
+            + bytes([1]) + (2).to_bytes(4, "little")
+        )
+
+    def _deferred_runtime(self, target: int, local: int):
+        memory = HostMemory(cells={2: 0xCAFE})
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=self._deferred_result(target, local),
+            retire_payload=(
+                (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+                + (1).to_bytes(4, "little") + bytes(4)
+            ),
+        )
+        return memory, runtime
+
+    def test_a_deferred_target_outside_the_frame_is_refused_before_retire_is_sent(self):
+        # A deferred pair is a delayed write: resolve_deferred() closes it by
+        # copying the known side onto the unknown one. Cell 2 is known and the
+        # SET frame carried only address 2, so accepting (target=9, local=2)
+        # would mint cell 9 in host memory from a cell the endpoint was never
+        # shown alongside it.
+        memory, runtime = self._deferred_runtime(9, 2)
+        with self.assertRaisesRegex(ProtocolViolation, "target is address 9"):
+            runtime.step()
+        self.assertEqual(memory.cells, {2: 0xCAFE})
+        self.assertEqual(memory.deferred, [])
+        self.assertEqual(runtime.pc, 0)
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_a_deferred_local_outside_the_frame_is_refused_before_retire_is_sent(self):
+        # Both endpoints have to be in-frame, not just the target: the pair is
+        # symmetric, so whichever side is unknown is the one that gets written.
+        memory, runtime = self._deferred_runtime(2, 9)
+        with self.assertRaisesRegex(ProtocolViolation, "local is address 9"):
+            runtime.step()
+        self.assertEqual(memory.cells, {2: 0xCAFE})
+        self.assertEqual(memory.deferred, [])
+        self.assertEqual(runtime.pc, 0)
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_an_in_frame_deferred_pair_is_still_retired_and_recorded(self):
+        """Guards the two tests above from passing because RETIRE never happens."""
+        memory, runtime = self._deferred_runtime(2, 2)
+        record = runtime.step()
+        self.assertIn(protocol.Opcode.RETIRE, runtime.sent)
+        self.assertIsNone(record.fault)
+        self.assertEqual(record.deferred, [{"target": 2, "local": 2}])
+        self.assertEqual(runtime.pc, 1)
+
     def test_every_real_endpoint_effect_stays_inside_the_frame(self):
         # The containment rule must not reject the endpoint it is written
         # against: drive the real endpoint and assert each opcode only ever
@@ -532,6 +589,49 @@ class RuntimeTests(unittest.TestCase):
             frame = set(record.addresses)
             self.assertTrue({w["address"] for w in record.writes} <= frame)
             self.assertTrue(set(record.accesses) <= frame)
+            self.assertEqual(record.deferred, [])
+
+    def test_the_real_endpoint_defers_only_inside_the_frame(self):
+        # DEREF is not integrated in the host, so no run reaches this path and
+        # the assertion above is vacuous for deferred. The rule still has to be
+        # the one the endpoint already obeys, or it would block DEREF the day it
+        # is integrated. Drive DEREF_CELL with both sides absent -- the one case
+        # that hands the equality back -- straight at the real endpoint, and
+        # check the pair against the addresses the request itself names.
+        fp, alpha, beta, gamma, base = 4, 1, 2, 3, 8
+        endpoint = protocol.Lsc1Endpoint()
+
+        def drive(frame):
+            raw, _ = protocol.drive(endpoint, frame.encode())
+            return protocol.decode_response(raw)
+
+        profile = protocol.Profile.INTERPRETER_COMPAT
+        self.assertIs(
+            drive(protocol.build_negotiate(profile=profile)).status, protocol.Status.OK
+        )
+        reply = drive(protocol.build_deref(
+            protocol.Opcode.DEREF_CELL,
+            txn_id=1,
+            pc=0,
+            fp=fp,
+            profile=profile,
+            alpha=alpha,
+            beta=beta,
+            gamma=gamma,
+            pointer=protocol.Cell(True, protocol.field_encode(base)),
+            base=base,
+            target=protocol.ABSENT,
+            local=protocol.ABSENT,
+        ))
+        self.assertIs(reply.status, protocol.Status.OK)
+        result = decode_result_payload(reply.payload, expected_txn_id=1)
+        self.assertEqual(
+            result["deferred"], [{"target": base + beta, "local": fp + gamma}]
+        )
+        in_frame = {fp + alpha, base + beta, fp + gamma}
+        for item in result["deferred"]:
+            self.assertIn(item["target"], in_frame)
+            self.assertIn(item["local"], in_frame)
 
     def test_stale_retire_txn_id_is_protocol_violation(self):
         result_payload = (

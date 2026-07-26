@@ -449,7 +449,9 @@ class HostRuntime:
         # that was never in the request is outside the frame rather than a
         # decision about it: the host never sent that cell, so the endpoint
         # cannot have reasoned about its current value, and applying it would
-        # corrupt a memory image section 14 makes the host's own.
+        # corrupt a memory image section 14 makes the host's own.  A deferred
+        # equality is such an effect too, just a delayed one: resolving it writes
+        # whichever side is still unknown.
         in_frame = set(addresses)
         for write in writes:
             if write["address"] not in in_frame:
@@ -458,6 +460,14 @@ class HostRuntime:
                     f"{record.opcode} did not carry; frame addresses are "
                     f"{sorted(in_frame)}"
                 )
+        for item in result["deferred"]:
+            for role in ("target", "local"):
+                if item[role] not in in_frame:
+                    raise ProtocolViolation(
+                        f"result defers an equality whose {role} is address "
+                        f"{item[role]}, which {record.opcode} did not carry; "
+                        f"frame addresses are {sorted(in_frame)}"
+                    )
         for address in result["accesses"]:
             if address not in in_frame:
                 raise ProtocolViolation(
