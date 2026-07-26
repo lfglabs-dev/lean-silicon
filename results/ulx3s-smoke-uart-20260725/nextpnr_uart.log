@@ -23,7 +23,7 @@ Info:     360 FFs paired with LUTs.
 Info: Generating derived timing constraints...
 Info: Promoting globals...
 Info:     promoting clock net clk$TRELLIS_IO_IN to global network
-Info: Checksum: 0x862c0599
+Info: Checksum: 0xbf8b6e04
 
 Info: Device utilisation:
 Info: 	          TRELLIS_IO:       4/    365     1%
@@ -62,20 +62,20 @@ Info:     at initial placer iter 1, wirelen = 142
 Info:     at initial placer iter 2, wirelen = 121
 Info:     at initial placer iter 3, wirelen = 129
 Info: Running main analytical placer, max placement attempts per cell = 154012.
-Info:     at iteration #1, type ALL: wirelen solved = 119, spread = 2521, legal = 2638; time = 0.04s
+Info:     at iteration #1, type ALL: wirelen solved = 119, spread = 2521, legal = 2638; time = 0.03s
 Info:     at iteration #2, type ALL: wirelen solved = 314, spread = 1942, legal = 2074; time = 0.02s
-Info:     at iteration #3, type ALL: wirelen solved = 543, spread = 1751, legal = 1864; time = 0.03s
-Info:     at iteration #4, type ALL: wirelen solved = 609, spread = 1800, legal = 1874; time = 0.02s
-Info:     at iteration #5, type ALL: wirelen solved = 778, spread = 1673, legal = 1775; time = 0.02s
-Info:     at iteration #6, type ALL: wirelen solved = 811, spread = 1700, legal = 1801; time = 0.02s
+Info:     at iteration #3, type ALL: wirelen solved = 543, spread = 1751, legal = 1864; time = 0.02s
+Info:     at iteration #4, type ALL: wirelen solved = 609, spread = 1800, legal = 1874; time = 0.01s
+Info:     at iteration #5, type ALL: wirelen solved = 778, spread = 1673, legal = 1775; time = 0.01s
+Info:     at iteration #6, type ALL: wirelen solved = 811, spread = 1700, legal = 1801; time = 0.01s
 Info:     at iteration #7, type ALL: wirelen solved = 904, spread = 1637, legal = 1786; time = 0.02s
 Info:     at iteration #8, type ALL: wirelen solved = 895, spread = 1601, legal = 1734; time = 0.02s
-Info:     at iteration #9, type ALL: wirelen solved = 958, spread = 1746, legal = 1829; time = 0.02s
+Info:     at iteration #9, type ALL: wirelen solved = 958, spread = 1746, legal = 1829; time = 0.01s
 Info:     at iteration #10, type ALL: wirelen solved = 1014, spread = 1712, legal = 1802; time = 0.02s
-Info:     at iteration #11, type ALL: wirelen solved = 1025, spread = 1558, legal = 1719; time = 0.02s
-Info:     at iteration #12, type ALL: wirelen solved = 976, spread = 1526, legal = 1631; time = 0.02s
-Info:     at iteration #13, type ALL: wirelen solved = 946, spread = 1600, legal = 1730; time = 0.02s
-Info:     at iteration #14, type ALL: wirelen solved = 1017, spread = 1556, legal = 1618; time = 0.02s
+Info:     at iteration #11, type ALL: wirelen solved = 1025, spread = 1558, legal = 1719; time = 0.01s
+Info:     at iteration #12, type ALL: wirelen solved = 976, spread = 1526, legal = 1631; time = 0.01s
+Info:     at iteration #13, type ALL: wirelen solved = 946, spread = 1600, legal = 1730; time = 0.01s
+Info:     at iteration #14, type ALL: wirelen solved = 1017, spread = 1556, legal = 1618; time = 0.01s
 Info:     at iteration #15, type ALL: wirelen solved = 1103, spread = 1700, legal = 1813; time = 0.02s
 Info:     at iteration #16, type ALL: wirelen solved = 1257, spread = 1631, legal = 1769; time = 0.02s
 Info:     at iteration #17, type ALL: wirelen solved = 1227, spread = 1506, legal = 1581; time = 0.02s
@@ -84,9 +84,9 @@ Info:     at iteration #19, type ALL: wirelen solved = 1211, spread = 1632, lega
 Info:     at iteration #20, type ALL: wirelen solved = 1214, spread = 1883, legal = 1938; time = 0.02s
 Info:     at iteration #21, type ALL: wirelen solved = 1357, spread = 1844, legal = 1939; time = 0.02s
 Info:     at iteration #22, type ALL: wirelen solved = 1367, spread = 1717, legal = 1856; time = 0.02s
-Info: HeAP Placer Time: 0.65s
-Info:   of which solving equations: 0.31s
-Info:   of which spreading cells: 0.11s
+Info: HeAP Placer Time: 0.54s
+Info:   of which solving equations: 0.26s
+Info:   of which spreading cells: 0.09s
 Info:   of which strict legalisation: 0.03s
 
 Info: Running simulated annealing placer for refinement.
@@ -124,7 +124,7 @@ Info: [ 38159,  38431) |*+
 Info: [ 38431,  38703) |******+
 Info: [ 38703,  38975) |****+
 Info: [ 38975,  39247) |****+
-Info: Checksum: 0xd99bbe89
+Info: Checksum: 0x8f3d50c4
 Info: Routing globals...
 Info:     routing clock net $glbnet$clk$TRELLIS_IO_IN using global 0
 
@@ -133,13 +133,13 @@ Info: Setting up routing queue.
 Info: Routing 2997 arcs.
 Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
 Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
-Info:       1000 |       66        933 |   66   933 |      2166|       0.24       0.24|
-Info:       2000 |      320       1660 |  254   727 |      1450|       0.24       0.48|
-Info:       3000 |      440       2507 |  120   847 |       578|       0.18       0.65|
-Info:       3692 |      550       3069 |  110   562 |         0|       0.14       0.80|
+Info:       1000 |       66        933 |   66   933 |      2166|       0.21       0.21|
+Info:       2000 |      320       1660 |  254   727 |      1450|       0.19       0.40|
+Info:       3000 |      440       2507 |  120   847 |       578|       0.13       0.53|
+Info:       3692 |      550       3069 |  110   562 |         0|       0.11       0.64|
 Info: Routing complete.
-Info: Router1 time 0.80s
-Info: Checksum: 0xa8041b90
+Info: Router1 time 0.64s
+Info: Checksum: 0x2d5048cd
 
 Info: Critical path report for clock '$glbnet$clk$TRELLIS_IO_IN' (posedge -> posedge):
 Info:       type curr  total name
@@ -147,7 +147,7 @@ Info:   clk-to-q  0.52  0.52 Source g_uart.u_bridge.urx.bit_cnt_TRELLIS_FF_Q_3.Q
 Info:    routing  1.13  1.66 Net g_uart.u_bridge.urx.bit_cnt[0] (3,40) -> (2,39)
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_CIN_CCU2C_COUT$CCU2_COMB0.A
 Info:                          Defined in:
-Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
+Info:                               /root/oss/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
 Info:      logic  0.45  2.10 Source g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_CIN_CCU2C_COUT$CCU2_COMB0.FCO
 Info:    routing  0.00  2.10 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_CIN_CCU2C_COUT$CCU2_FCI_INT (2,39) -> (2,39)
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_CIN_CCU2C_COUT$CCU2_COMB1.FCI
@@ -156,8 +156,8 @@ Info:    routing  0.00  2.10 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_L
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1$CCU2_COMB0.FCI
 Info:                          Defined in:
 Info:                               uart_rx.sv:64.31-64.40
-Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
-Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
+Info:                               /root/oss/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4
+Info:                               /root/oss/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13
 Info:      logic  0.44  2.55 Source g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1$CCU2_COMB0.F
 Info:    routing  1.12  3.67 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0 (2,39) -> (2,38)
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0$CCU2_COMB0.B
@@ -168,12 +168,12 @@ Info:      logic  0.40  4.52 Source g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LS
 Info:    routing  0.73  5.24 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_CIN_CCU2C_COUT_S1_LUT4_D_Z_LUT4_Z_2_D[2] (2,38) -> (3,39)
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z_LUT4_Z_1_D_LUT4_Z.D
 Info:                          Defined in:
-Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
+Info:                               /root/oss/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
 Info:      logic  0.24  5.48 Source g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z_LUT4_Z_1_D_LUT4_Z.F
 Info:    routing  0.63  6.11 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z_LUT4_Z_1_D[3] (3,39) -> (3,39)
 Info:                          Sink g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z_LUT4_Z_1.D
 Info:                          Defined in:
-Info:                               /tmp/oss-cad-suite.gvbsCI/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
+Info:                               /root/oss/lib/../share/yosys/lattice/cells_map_trellis.v:108.23-108.24
 Info:      logic  0.24  6.35 Source g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z_LUT4_Z_1.F
 Info:    routing  0.13  6.48 Net g_uart.u_bridge.urx.rx_valid_TRELLIS_FF_Q_LSR_LUT4_Z_D_LUT4_D_3_Z_CCU2C_S1_S0_CCU2C_B0_COUT_CCU2C_CIN_S0_LUT4_D_Z[4] (3,39) -> (3,39)
 Info:                          Sink g_uart.u_bridge.urx.shift_TRELLIS_FF_Q_4.DI
