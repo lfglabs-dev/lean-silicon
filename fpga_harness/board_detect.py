@@ -10,11 +10,10 @@ weaker question than the next:
   datapath   host bytes actually crossed the exact LSC-1 8-bit ready/valid
              pins and produced the expected response bytes
 
-Only ``datapath`` is evidence that the harness works.  This tool can never
-report it as satisfied: the repository contains no harness bitstream and no
-recorded byte-exchange log, so there is nothing to validate against.  Raising
-that level requires real hardware logs committed by a later change, not a
-different exit code here.
+Only ``datapath`` is evidence that the harness works. This discovery tool never
+reports it as satisfied because it does not ingest, authenticate, or replay
+hardware exchange records. Such records are inspected separately; USB/JTAG
+visibility must never promote itself into a behavioural result.
 
 The ``usb`` and ``jtag`` probes are host-specific: Linux has sysfs, macOS has
 the IOKit registry, and ``openFPGALoader --detect`` has to be told the ULX3S
@@ -57,15 +56,6 @@ ECP5_IDCODES: Mapping[int, str] = {
 
 BUILD_TOOLS = ("yosys", "nextpnr-ecp5", "ecppack")
 LOAD_TOOLS = ("openFPGALoader", "fujprog")
-
-# Prerequisites that do not exist in this repository. Listed so the datapath
-# verdict names what is missing instead of only refusing.
-DATAPATH_PREREQUISITES = (
-    "a synthesised ULX3S bitstream for a harness top-level",
-    "an ECP5 pin constraint file (.lpf) mapping the 8-bit interface to board pins",
-    "a host-side byte-exchange driver for the ready/valid handshake",
-    "a recorded request/response byte log captured from real hardware",
-)
 
 _IDCODE_RE = re.compile(r"0x([0-9a-fA-F]{8})")
 
@@ -503,14 +493,14 @@ def _probe_jtag(env: Environment) -> list[Finding]:
 
 
 def _probe_datapath(_env: Environment) -> list[Finding]:
-    """Always unvalidated: there is nothing in-repo to validate against."""
-    missing = "; ".join(DATAPATH_PREREQUISITES)
+    """Always unvalidated: discovery does not consume run evidence."""
     return [
         Finding(
             "datapath",
             "byte-exchange-over-8bit-pins",
             "not-validated",
-            f"no data-path evidence exists in this repository. Missing: {missing}",
+            "discovery-only probe; inspect a recorded hardware byte-exchange "
+            "run directly because USB/JTAG visibility cannot validate behaviour",
         )
     ]
 
@@ -560,7 +550,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=("none", *LEVELS),
         default="none",
         help="exit non-zero unless this level is satisfied (default: none). "
-        "'datapath' always fails until real hardware evidence exists",
+        "'datapath' always fails because this detector does not ingest run evidence",
     )
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
     args = parser.parse_args(argv)

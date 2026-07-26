@@ -79,7 +79,7 @@ class FullVisibilityTests(unittest.TestCase):
             item for item in self.report.findings if item.level == "datapath"
         )
         self.assertEqual(finding.status, "not-validated")
-        self.assertIn("no data-path evidence", finding.detail)
+        self.assertIn("discovery-only probe", finding.detail)
 
     def test_jtag_detail_names_the_recognised_part(self) -> None:
         finding = next(item for item in self.report.findings if item.level == "jtag")

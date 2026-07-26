@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-uart-sim fpga-build fpga-load-sram sim lean formal clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -58,6 +58,19 @@ fpga-harness:
 # Reporting only: absent tools or absent board must not fail a build.
 fpga-detect:
 	$(PYTHON) fpga_harness/board_detect.py
+
+fpga-uart-sim:
+	mkdir -p build
+	iverilog -g2012 -s tb_ulx3s_uart -o build/tb_ulx3s_uart \
+	  asic_core/rtl/*.sv fpga_harness/rtl/*.sv test/tb_ulx3s_uart.sv
+	vvp build/tb_ulx3s_uart
+
+fpga-build:
+	sh fpga_harness/build_ulx3s.sh
+
+# Volatile configuration only: does not write the ULX3S SPI flash.
+fpga-load-sram: fpga-build
+	openFPGALoader -b ulx3s build/ulx3s/lsc1.bit
 
 check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
 

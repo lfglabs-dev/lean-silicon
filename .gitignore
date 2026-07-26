@@ -19,3 +19,4 @@ formal/stream_alu_mul_pulse_induction/
 formal/stream_alu_mul_pulse_cover/
 openlane/
 reports/
+build/

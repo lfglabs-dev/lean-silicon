@@ -1,14 +1,16 @@
 # ULX3S/ECP5 harness inventory
 
-Inventory of what the repository actually contains for a ULX3S/ECP5 harness,
-taken from the tree at the commit this document was added on.  Everything below
-is either a file path that exists, a literal read out of a source file, or an
-explicitly labelled unknown.  No item here is hardware evidence: no bitstream
-has been built and no board has been driven.  See [BUILD_PLAN](BUILD_PLAN.md)
-for what would have to happen first, and [BOUNDARY](BOUNDARY.md) for the pin
-rule the harness may not break.
+This was the pre-implementation inventory taken when the harness lane was
+created. It is retained as gap history. Those gaps were closed for the MinCore
+seed on 2026-07-26 by `ulx3s_lsc1_top.sv`, `uart_rx.sv`, `uart_tx.sv`,
+`ulx3s_v308.lpf`, `build_ulx3s.sh`, and the physical evidence under
+`results/fpga-lsc1-20260726/`. See [README](README.md) for current usage and
+[BUILD_PLAN](BUILD_PLAN.md) for the remaining second-board/v1 gates.
 
-## 1. Files that exist today
+Everything from §1 onward describes the original snapshot, not the current
+tree.
+
+## 1. Files that existed at snapshot time
 
 | Path | Lines | What it actually is |
 |---|---|---|
@@ -23,10 +25,10 @@ ports (`asic_ui_in`, `asic_uo_out`, `asic_uio_drive`, `asic_uio_sample`,
 implement a handshake, and does not contain a state element.  It is a
 placeholder that pins down widths and direction intent, nothing more.
 
-## 2. Files that do not exist
+## 2. Original gaps (closed for the seed-0 path unless noted)
 
-Each of these is genuinely absent, not located elsewhere under another name.
-This is the honest gap list for a board build:
+Each of these was genuinely absent at snapshot time, not located elsewhere
+under another name. This was the original gap list for a board build:
 
 - no ECP5 constraint file (`.lpf`) anywhere in the tree;
 - no `nextpnr-ecp5` / `ecppack` invocation, script, or Makefile target;
@@ -38,7 +40,7 @@ This is the honest gap list for a board build:
 - no CI job that builds or loads anything for FPGA;
 - no captured hardware log of any kind.
 
-## 3. Toolchain
+## 3. Toolchain at snapshot time
 
 The repository already installs an ECP5-capable toolchain in CI, for a
 different purpose. `.github/workflows/ci.yml` job `formal-and-lint` uses
@@ -107,7 +109,7 @@ synchronise or debounce it.  **Unknown:** which ULX3S source drives reset (butto
 versus power-on versus host-commanded), and the release sequencing between the
 ASIC reset and the host link.  `ena` exists on the ASIC top and is unused there.
 
-## 5. Explicit unknowns
+## 5. Original unknowns
 
 Recorded so they are not silently resolved by assumption later:
 
@@ -126,7 +128,7 @@ Recorded so they are not silently resolved by assumption later:
 7. `lean_silicon_lsc1` is protocol seed-0, not packet v1, so any harness built
    now would exercise the historical fixed command stream and not a v1 endpoint.
 
-## 6. Evidence level
+## 6. Original evidence level
 
 Source inspection and locally executed Python only. Nothing here is a hardware
 result, a synthesis result, or a timing result.
