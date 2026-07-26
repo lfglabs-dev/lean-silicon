@@ -11,8 +11,7 @@
 | lean_compiler integration | artifact exported from the frozen compiler; `hints`/`main_frame`/`witness`/`trace` are `pub(crate)` upstream | `tools/lean_compiler_export.py`, `docs/HOST_RUNTIME.md` section 4 |
 | Host vs frozen Rust comparison | final memory only, for the 12 cells the fixture run touched; `cycles` and every per-step field explicitly not compared | `tools/host_upstream_comparison.py`, `docs/HOST_RUNTIME.md` section 5 |
 | Full scalar semantics | not implemented | planned graph |
-| ULX3S MinCore seed harness | implemented and exercised on one ULX3S-85F v3.0.8 | `fpga_harness/`, `results/fpga-lsc1-20260726/` |
-| ULX3S v1 packet endpoint | not implemented | v1 exists only as specification/executable model |
+| ULX3S harness bitstream | not implemented | pin contract only |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
 | RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |

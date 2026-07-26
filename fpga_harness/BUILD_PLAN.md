@@ -1,15 +1,14 @@
 # Harness build and check plan
 
-An ordered plan from board-free checks to reproducible hardware evidence.
-Stages 0–4 are now implemented for the historical MinCore seed. A successful
-single-board run is recorded in `results/fpga-lsc1-20260726/`; stage 5's second
-board gate remains open. The v1 packet endpoint is a separate unimplemented RTL
-milestone.
+An ordered plan from what runs today to what would constitute real hardware
+evidence. Stages 0–1 are executable now and are wired into `make check`.
+Stages 2 onward are **not** implemented and are deliberately not faked; each
+lists its entry condition so it cannot be skipped.
 
 The milestone this serves is `ulx3s_pin_harness` in `planning/milestones.yaml`,
-which depends on `host_packet_runtime`. That dependency still prevents this
-harness from becoming a v1 packet endpoint; the completed diagnostic path
-exercises `lean_silicon_lsc1` as protocol seed-0 only.
+which depends on `host_packet_runtime`. That dependency is the reason this lane
+stops at stage 1: the harness cannot be a v1 packet endpoint before the packet
+runtime exists, and `lean_silicon_lsc1` is still protocol seed-0.
 
 ## Stage 0 — checks that run with no board and no FPGA toolchain
 
@@ -27,7 +26,7 @@ explicitly:
 
 ```sh
 python3 fpga_harness/board_detect.py --require jtag        # needs a real board
-python3 fpga_harness/board_detect.py --require datapath    # detector does not ingest run evidence
+python3 fpga_harness/board_detect.py --require datapath    # always fails, see below
 ```
 
 Reproducible board-free runs use a fixture instead of the real machine:
@@ -50,21 +49,30 @@ three are *visibility*, only the fourth is *behaviour*.
 | `jtag` | does an ECP5 TAP answer with a known IDCODE? | which design is loaded, or whether it works |
 | `datapath` | did host bytes actually cross the 8-bit ready/valid pins and produce the expected responses? | — this is the only level that would be evidence |
 
-`datapath` is not satisfied by this discovery-only script. It reports
-`not-validated` unconditionally because it does not parse, authenticate, or
-replay hardware run records. `--require datapath` therefore always exits
-non-zero even though a separate recorded run may exist. This prevents USB/JTAG
-visibility from being mistaken for behaviour; inspect the run record directly.
+`datapath` can never be satisfied by this script. It reports `not-validated`
+unconditionally and names its four missing prerequisites, because the repository
+contains no harness bitstream, no `.lpf`, no host byte driver, and no captured
+byte log. `--require datapath` therefore always exits non-zero. A test asserts
+this holds even when the toolchain, USB, and JTAG levels are all fully
+satisfied, which is exactly the confusion this lane exists to prevent.
 
-## Stage 2 — board top and constraints (implemented for ULX3S v3.x / 85F)
+Raising `datapath` requires committing real hardware logs and the code that
+produced them. It is not a code change to this script.
 
-The chosen target is ULX3S v3.x with an ECP5-85F. `ulx3s_v308.lpf` maps the
-25 MHz oscillator, onboard FT231X UART, and LEDs. `ulx3s_lsc1_top.sv`
-instantiates `lean_silicon_lsc1`; every byte crosses its exact 8-bit
-ready/valid interface internally. A 16-bit power-on counter holds the
-synchronous ASIC reset active for about 2.6 ms after configuration.
+## Stage 2 — board top and constraints (not implemented)
 
-## Stage 3 — synthesis and place/route (implemented)
+Entry condition: a decision on host transport and board revision.
+
+1. Pick the board revision and FPGA density; record it in this directory.
+2. Write the `.lpf` mapping all 24 interface signals plus clock and reset to
+   real ULX3S pins, respecting the `uio_oe` directions.
+3. Write a board top that instantiates `lean_silicon_lsc1` and connects **only**
+   the 8-bit interface, per [BOUNDARY](BOUNDARY.md).
+4. Add the reset synchroniser the placeholder RTL currently lacks.
+
+Blocking unknowns are itemised in [INVENTORY](INVENTORY.md) §5.
+
+## Stage 3 — synthesis and place/route (not implemented)
 
 Entry condition: stage 2 merged.
 
@@ -74,24 +82,22 @@ artefact from this stage is a timing report at 25 MHz, not a bitstream that
 merely built. A build that produces a bitstream while failing timing is not a
 pass.
 
-## Stage 4 — host byte driver and functional exchange (implemented for seed-0)
+## Stage 4 — host byte driver and loopback (not implemented)
 
 Entry condition: stage 3 produces a timing-clean bitstream.
 
-The transparent UART bridge converts serial bytes to the ready/valid lane and
-naturally exercises backpressure while its transmitter is busy. The UART-level
-simulation covers STATUS, SET128, XOR128, and MUL128; the physical run records
-expected versus observed bytes for the same operations. `ABORT` remains tied
-low because the raw serial contract has no abort control, and FAULT recovery is
-still limited to the seed's raw CLEAR command.
+A host driver that performs the handshake one byte per beat, plus a loopback
+that exercises `RX_READY` deassertion, `TX_VALID` stalling under `TX_READY` low,
+`ABORT`, and `FAULT`. Deliverable is a recorded byte log with expected versus
+observed bytes.
 
-## Stage 5 — two-board reproducibility (open)
+## Stage 5 — data-path validation (not implemented)
 
 Entry condition: stage 4 log reproduces on a second board.
 
-Only at this point may the harness be described as reproducibly validated
-across boards. The current record may say exactly what it proves: the named
-bitstream and four exchanges worked on one named board.
+Only at this point may anything in this repository describe the harness as
+validated, and only for the exact bitstream, board, and log committed. Until
+then, every artefact in this directory says the data path is unvalidated.
 
 ## Explicit non-goals
 

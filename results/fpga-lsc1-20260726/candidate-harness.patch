@@ -1,0 +1,433 @@
+diff --git a/Makefile b/Makefile
+index 07e16df..f4e88cf 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ PYTHON ?= python3
+ 
+-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
++.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-uart-sim fpga-build fpga-load-sram sim lean formal clean package checksums
+ 
+ HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
+ HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
+@@ -59,6 +59,19 @@ fpga-harness:
+ fpga-detect:
+ 	$(PYTHON) fpga_harness/board_detect.py
+ 
++fpga-uart-sim:
++	mkdir -p build
++	iverilog -g2012 -s tb_ulx3s_uart -o build/tb_ulx3s_uart \
++	  asic_core/rtl/*.sv fpga_harness/rtl/*.sv test/tb_ulx3s_uart.sv
++	vvp build/tb_ulx3s_uart
++
++fpga-build:
++	sh fpga_harness/build_ulx3s.sh
++
++# Volatile configuration only: does not write the ULX3S SPI flash.
++fpga-load-sram: fpga-build
++	openFPGALoader -b ulx3s build/ulx3s/lsc1.bit
++
+ check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
+ 
+ sim:
+diff --git a/fpga_harness/build_ulx3s.sh b/fpga_harness/build_ulx3s.sh
+new file mode 100755
+index 0000000..de8c234
+--- /dev/null
++++ b/fpga_harness/build_ulx3s.sh
+@@ -0,0 +1,34 @@
++#!/bin/sh
++set -eu
++
++repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
++build_dir="$repo_dir/build/ulx3s"
++mkdir -p "$build_dir"
++rm -f "$build_dir/lsc1.json" "$build_dir/lsc1.config" "$build_dir/lsc1.bit"
++
++if ! yosys -p "read_verilog -sv \
++  $repo_dir/asic_core/rtl/gf2n_mul_bitstream.sv \
++  $repo_dir/asic_core/rtl/gf128_mul_bitstream.sv \
++  $repo_dir/asic_core/rtl/leanvm_b_stream_alu.sv \
++  $repo_dir/asic_core/rtl/lean_silicon_lsc1.sv \
++  $repo_dir/fpga_harness/rtl/uart_rx.sv \
++  $repo_dir/fpga_harness/rtl/uart_tx.sv \
++  $repo_dir/fpga_harness/rtl/ulx3s_lsc1_top.sv; \
++  synth_ecp5 -top ulx3s_lsc1_top -json $build_dir/lsc1.json" \
++  >"$build_dir/yosys.log" 2>&1; then
++  cat "$build_dir/yosys.log"
++  exit 1
++fi
++cat "$build_dir/yosys.log"
++
++if ! nextpnr-ecp5 --85k --package CABGA381 --speed 6 \
++  --json "$build_dir/lsc1.json" --lpf "$repo_dir/fpga_harness/ulx3s_v308.lpf" \
++  --textcfg "$build_dir/lsc1.config" --freq 25 \
++  >"$build_dir/nextpnr.log" 2>&1; then
++  cat "$build_dir/nextpnr.log"
++  exit 1
++fi
++cat "$build_dir/nextpnr.log"
++
++ecppack --compress "$build_dir/lsc1.config" "$build_dir/lsc1.bit"
++shasum -a 256 "$build_dir/lsc1.bit" > "$build_dir/lsc1.bit.sha256"
+diff --git a/fpga_harness/rtl/uart_rx.sv b/fpga_harness/rtl/uart_rx.sv
+new file mode 100644
+index 0000000..3c44e1c
+--- /dev/null
++++ b/fpga_harness/rtl/uart_rx.sv
+@@ -0,0 +1,76 @@
++`default_nettype none
++module uart_rx #(
++    parameter integer CLKS_PER_BIT = 217
++) (
++    input  wire       clk,
++    input  wire       rst_n,
++    input  wire       serial_in,
++    output reg  [7:0] data,
++    output reg        valid,
++    input  wire       ready,
++    output reg        framing_error,
++    output reg        overflow
++);
++    localparam [1:0] IDLE = 2'd0, START = 2'd1, BITS = 2'd2, STOP = 2'd3;
++    reg sync_1, sync_2;
++    reg [1:0] state;
++    integer count;
++    reg [2:0] bit_index;
++    reg [7:0] shift;
++
++    always @(posedge clk) begin
++        sync_1 <= serial_in;
++        sync_2 <= sync_1;
++        if (!rst_n) begin
++            sync_1 <= 1'b1;
++            sync_2 <= 1'b1;
++            state <= IDLE;
++            count <= 0;
++            bit_index <= 3'b0;
++            shift <= 8'b0;
++            data <= 8'b0;
++            valid <= 1'b0;
++            framing_error <= 1'b0;
++            overflow <= 1'b0;
++        end else begin
++            if (valid && ready)
++                valid <= 1'b0;
++            case (state)
++                IDLE: if (!sync_2) begin
++                    count <= (CLKS_PER_BIT / 2) - 1;
++                    state <= START;
++                end
++                START: if (count == 0) begin
++                    if (!sync_2) begin
++                        count <= CLKS_PER_BIT - 1;
++                        bit_index <= 3'b0;
++                        state <= BITS;
++                    end else begin
++                        state <= IDLE;
++                    end
++                end else count <= count - 1;
++                BITS: if (count == 0) begin
++                    shift[bit_index] <= sync_2;
++                    count <= CLKS_PER_BIT - 1;
++                    if (bit_index == 3'd7)
++                        state <= STOP;
++                    else
++                        bit_index <= bit_index + 1'b1;
++                end else count <= count - 1;
++                STOP: if (count == 0) begin
++                    if (!sync_2)
++                        framing_error <= 1'b1;
++                    else if (!valid || ready) begin
++                        data <= shift;
++                        valid <= 1'b1;
++                    end else begin
++                        overflow <= 1'b1;
++                    end
++                    state <= IDLE;
++                end else count <= count - 1;
++                default: state <= IDLE;
++            endcase
++        end
++    end
++endmodule
++`default_nettype wire
+diff --git a/fpga_harness/rtl/uart_tx.sv b/fpga_harness/rtl/uart_tx.sv
+new file mode 100644
+index 0000000..9381081
+--- /dev/null
++++ b/fpga_harness/rtl/uart_tx.sv
+@@ -0,0 +1,48 @@
++`default_nettype none
++module uart_tx #(
++    parameter integer CLKS_PER_BIT = 217
++) (
++    input  wire       clk,
++    input  wire       rst_n,
++    input  wire [7:0] data,
++    input  wire       valid,
++    output wire       ready,
++    output reg        serial_out
++);
++    reg busy;
++    reg [9:0] frame;
++    reg [3:0] bit_index;
++    integer count;
++    assign ready = !busy;
++
++    always @(posedge clk) begin
++        if (!rst_n) begin
++            busy <= 1'b0;
++            frame <= 10'h3ff;
++            bit_index <= 4'b0;
++            count <= 0;
++            serial_out <= 1'b1;
++        end else if (!busy) begin
++            serial_out <= 1'b1;
++            if (valid) begin
++                frame <= {1'b1, data, 1'b0};
++                bit_index <= 4'b0;
++                count <= CLKS_PER_BIT - 1;
++                serial_out <= 1'b0;
++                busy <= 1'b1;
++            end
++        end else if (count == 0) begin
++            count <= CLKS_PER_BIT - 1;
++            if (bit_index == 4'd9) begin
++                busy <= 1'b0;
++                serial_out <= 1'b1;
++            end else begin
++                bit_index <= bit_index + 1'b1;
++                serial_out <= frame[bit_index + 1'b1];
++            end
++        end else begin
++            count <= count - 1;
++        end
++    end
++endmodule
++`default_nettype wire
+diff --git a/fpga_harness/rtl/ulx3s_lsc1_top.sv b/fpga_harness/rtl/ulx3s_lsc1_top.sv
+new file mode 100644
+index 0000000..74d66ee
+--- /dev/null
++++ b/fpga_harness/rtl/ulx3s_lsc1_top.sv
+@@ -0,0 +1,45 @@
++`default_nettype none
++module ulx3s_lsc1_top (
++    input  wire       clk_25mhz,
++    input  wire       ftdi_txd,
++    output wire       ftdi_rxd,
++    output wire [7:0] led
++);
++    localparam integer CLKS_PER_BIT = 217; // 25 MHz / 115200 = 217.014
++    reg [15:0] por_count = 16'b0;
++    wire rst_n = &por_count;
++    always @(posedge clk_25mhz)
++        if (!rst_n)
++            por_count <= por_count + 1'b1;
++
++    wire [7:0] host_rx_data;
++    wire host_rx_valid, host_rx_ready;
++    wire rx_framing_error, rx_overflow;
++    uart_rx #(.CLKS_PER_BIT(CLKS_PER_BIT)) host_rx (
++        .clk(clk_25mhz), .rst_n(rst_n), .serial_in(ftdi_txd),
++        .data(host_rx_data), .valid(host_rx_valid), .ready(host_rx_ready),
++        .framing_error(rx_framing_error), .overflow(rx_overflow)
++    );
++
++    wire [7:0] host_tx_data;
++    wire host_tx_valid, host_tx_ready;
++    uart_tx #(.CLKS_PER_BIT(CLKS_PER_BIT)) host_tx (
++        .clk(clk_25mhz), .rst_n(rst_n), .data(host_tx_data),
++        .valid(host_tx_valid), .ready(host_tx_ready), .serial_out(ftdi_rxd)
++    );
++
++    wire [7:0] uio_in = {1'b0, 1'b0, 2'b00, host_tx_ready, 2'b00, host_rx_valid};
++    wire [7:0] uio_out;
++    wire [7:0] uio_oe;
++    lean_silicon_lsc1 lsc1 (
++        .ui_in(host_rx_data), .uo_out(host_tx_data),
++        .uio_in(uio_in), .uio_out(uio_out), .uio_oe(uio_oe),
++        .ena(1'b1), .clk(clk_25mhz), .rst_n(rst_n)
++    );
++    assign host_rx_ready = uio_out[1];
++    assign host_tx_valid = uio_out[2];
++    assign led = {2'b00, rx_overflow, rx_framing_error,
++                  !host_tx_ready, uio_out[5], uio_out[4], rst_n};
++    wire _unused = &{uio_oe, uio_out[7:6], uio_out[3], uio_out[0], 1'b0};
++endmodule
++`default_nettype wire
+diff --git a/fpga_harness/ulx3s_v308.lpf b/fpga_harness/ulx3s_v308.lpf
+new file mode 100644
+index 0000000..9e280a6
+--- /dev/null
++++ b/fpga_harness/ulx3s_v308.lpf
+@@ -0,0 +1,30 @@
++LOCATE COMP "clk_25mhz" SITE "G2";
++IOBUF PORT "clk_25mhz" PULLMODE=NONE IO_TYPE=LVCMOS33;
++FREQUENCY PORT "clk_25mhz" 25 MHZ;
++
++# ULX3S US1 FT231X serial lane. FPGA transmits on ftdi_rxd.
++LOCATE COMP "ftdi_rxd" SITE "L4";
++LOCATE COMP "ftdi_txd" SITE "M1";
++IOBUF PORT "ftdi_rxd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "ftdi_txd" PULLMODE=UP IO_TYPE=LVCMOS33;
++
++LOCATE COMP "led[7]" SITE "H3";
++LOCATE COMP "led[6]" SITE "E1";
++LOCATE COMP "led[5]" SITE "E2";
++LOCATE COMP "led[4]" SITE "D1";
++LOCATE COMP "led[3]" SITE "D2";
++LOCATE COMP "led[2]" SITE "C1";
++LOCATE COMP "led[1]" SITE "C2";
++LOCATE COMP "led[0]" SITE "B2";
++IOBUF PORT "led[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[4]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[5]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++IOBUF PORT "led[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
++
++SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62
++          SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE
++          SLAVE_PARALLEL_PORT=DISABLE;
+diff --git a/test/tb_ulx3s_uart.sv b/test/tb_ulx3s_uart.sv
+new file mode 100644
+index 0000000..6b22c4c
+--- /dev/null
++++ b/test/tb_ulx3s_uart.sv
+@@ -0,0 +1,132 @@
++`timescale 1ns/1ps
++`default_nettype none
++module tb_ulx3s_uart;
++    localparam integer CLKS_PER_BIT = 217;
++    reg clk = 1'b0;
++    reg host_tx = 1'b1;
++    wire host_rx;
++    wire [7:0] led;
++    reg [7:0] got;
++    reg [7:0] expected;
++    integer i;
++    always #20 clk = !clk;
++
++    ulx3s_lsc1_top dut (
++        .clk_25mhz(clk), .ftdi_txd(host_tx), .ftdi_rxd(host_rx), .led(led)
++    );
++
++    task send_byte(input [7:0] value);
++        integer bit_number;
++        begin
++            host_tx = 1'b0;
++            repeat (CLKS_PER_BIT) @(posedge clk);
++            for (bit_number = 0; bit_number < 8; bit_number = bit_number + 1) begin
++                host_tx = value[bit_number];
++                repeat (CLKS_PER_BIT) @(posedge clk);
++            end
++            host_tx = 1'b1;
++            repeat (CLKS_PER_BIT) @(posedge clk);
++        end
++    endtask
++
++    task receive_byte(output [7:0] value);
++        integer bit_number;
++        begin
++            @(negedge host_rx);
++            repeat (CLKS_PER_BIT + (CLKS_PER_BIT / 2)) @(posedge clk);
++            for (bit_number = 0; bit_number < 8; bit_number = bit_number + 1) begin
++                value[bit_number] = host_rx;
++                repeat (CLKS_PER_BIT) @(posedge clk);
++            end
++            if (!host_rx) begin
++                $display("FAIL: UART stop bit low");
++                $fatal(1);
++            end
++        end
++    endtask
++
++    task check_byte(input [7:0] actual, input [7:0] wanted);
++        begin
++            if (actual !== wanted) begin
++                $display("FAIL: got %02x expected %02x", actual, wanted);
++                $fatal(1);
++            end
++        end
++    endtask
++
++    initial begin
++        wait (led[0]);
++        repeat (32) @(posedge clk);
++
++        fork
++            send_byte(8'h7e);
++            begin receive_byte(got); check_byte(got, 8'h01); end
++        join
++        receive_byte(got); check_byte(got, 8'h01);
++        receive_byte(got); check_byte(got, 8'h0f);
++        receive_byte(got); check_byte(got, 8'h08);
++
++        send_byte(8'h03);
++        for (i = 0; i < 16; i = i + 1) begin
++            expected = i[7:0];
++            fork
++                send_byte(expected);
++                begin receive_byte(got); check_byte(got, expected); end
++            join
++        end
++
++        send_byte(8'h01);
++        for (i = 0; i < 16; i = i + 1) begin
++            send_byte(i[7:0]);
++            expected = 8'hf0 + i[7:0];
++            fork
++                send_byte(expected);
++                begin receive_byte(got); check_byte(got, 8'hf0); end
++            join
++        end
++
++        send_byte(8'h02);
++        for (i = 0; i < 16; i = i + 1)
++            send_byte((i[7:0] << 4) | i[7:0]);
++        for (i = 15; i >= 0; i = i - 1) begin
++            if (i == 0) begin
++                fork
++                    send_byte(8'h00);
++                    receive_byte(got);
++                join
++            end else begin
++                send_byte((i[7:0] << 4) | i[7:0]);
++            end
++        end
++        check_byte(got, 8'hc0);
++        receive_byte(got); check_byte(got, 8'h43);
++        receive_byte(got); check_byte(got, 8'h24);
++        receive_byte(got); check_byte(got, 8'h8e);
++        receive_byte(got); check_byte(got, 8'h79);
++        receive_byte(got); check_byte(got, 8'hcf);
++        receive_byte(got); check_byte(got, 8'ha8);
++        receive_byte(got); check_byte(got, 8'h02);
++        receive_byte(got); check_byte(got, 8'h85);
++        receive_byte(got); check_byte(got, 8'h06);
++        receive_byte(got); check_byte(got, 8'h61);
++        receive_byte(got); check_byte(got, 8'hcb);
++        receive_byte(got); check_byte(got, 8'h3c);
++        receive_byte(got); check_byte(got, 8'h8a);
++        receive_byte(got); check_byte(got, 8'hed);
++        receive_byte(got); check_byte(got, 8'h47);
++
++        if (led[5:4] != 2'b00 || led[2] != 1'b0) begin
++            $display("FAIL: UART/core error LEDs set: %02x", led);
++            $fatal(1);
++        end
++        $display("PASS: ULX3S UART bridge STATUS/SET/XOR/MUL");
++        $finish;
++    end
++
++    initial begin
++        #100000000;
++        $display("FAIL: simulation timeout");
++        $fatal(1);
++    end
++endmodule
++`default_nettype wire
