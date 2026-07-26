@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 import shlex
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -138,6 +140,22 @@ class DrainTest(unittest.TestCase):
         self.assertGreater(fake.observed_timeout, 0)
         self.assertAlmostEqual(fake.observed_timeout, 0.05)
         self.assertEqual(fake.timeout, 2.0)
+
+    def test_blocking_in_waiting_cannot_outlast_drain_deadline(self):
+        """Mutation-sensitive: direct ``ser.in_waiting`` would wait 30 seconds."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class StalledQuery:
+            @property
+            def in_waiting(self) -> int:
+                release.wait(30)
+                return 0
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "in_waiting"):
+            ulx3s_uart.drain(StalledQuery(), settle=0.05)
+        self.assertLess(time.monotonic() - start, 1.0)
 
 
 class MulExitStatusTest(unittest.TestCase):

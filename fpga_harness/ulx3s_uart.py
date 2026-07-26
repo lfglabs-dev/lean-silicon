@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -49,6 +50,35 @@ from sim.model import (  # noqa: E402
 
 BAUD = 1_000_000
 TIMEOUT_S = 2.0
+
+
+def _in_waiting_within(ser: serial.Serial, remaining: float) -> int:
+    """Return ``in_waiting`` without letting its backend query outlive deadline.
+
+    pyserial exposes this as a property, but a disconnecting/stalled backend can
+    still block while evaluating it.  Run the query on a daemon worker, just as
+    the host MinCore transport bounds backend calls, so a stale-byte drain never
+    spends longer than its settling budget merely asking whether bytes exist.
+    """
+    if remaining <= 0:
+        raise TimeoutError("stale-input drain deadline expired")
+    outcome: list[int] = []
+    failures: list[BaseException] = []
+
+    def query() -> None:
+        try:
+            outcome.append(int(ser.in_waiting))
+        except BaseException as error:
+            failures.append(error)
+
+    worker = threading.Thread(target=query, daemon=True)
+    worker.start()
+    worker.join(remaining)
+    if worker.is_alive():
+        raise TimeoutError("stale-input drain deadline expired while querying in_waiting")
+    if failures:
+        raise failures[0]
+    return max(0, outcome[0])
 
 
 def open_port(path: str, baud: int = BAUD, timeout: float = TIMEOUT_S) -> serial.Serial:
@@ -88,7 +118,7 @@ def drain(ser: serial.Serial, max_bytes: int = 256, settle: float = 0.05) -> byt
             remaining = deadline - time.time()
             if remaining <= 0:
                 break
-            waiting = ser.in_waiting
+            waiting = _in_waiting_within(ser, remaining)
             if not waiting:
                 time.sleep(min(0.001, remaining))
                 continue
