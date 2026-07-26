@@ -62,6 +62,7 @@ def build_inputs(script: Path) -> set[str]:
         '"$LPF"': [_shell_var(text, "LPF")],
         '"${TOP}.sv"': [_shell_var(text, "TOP") + ".sv"],
         '"$RECIPE"': [script.name],
+        '"$SUPPORT"': [_shell_var(text, "SUPPORT")],
         "$SOURCES": sources.group(1).replace("\\\n", " ").split() if sources else [],
     }
     names: list[str] = []

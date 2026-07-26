@@ -13,12 +13,14 @@ cd "$HERE"
 TOP=smoke_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
+SUPPORT=../../tools/portable_build_support.py
 mkdir -p "$OUTDIR"
 # Both FPGA flows publish into OUTDIR. Keep the lock outside that directory so
 # its inode remains stable while OUTDIR itself is atomically exchanged.
 LOCK="$ROOT/results/.ulx3s-smoke-uart.publish.lock"
-exec 9>"$LOCK"
-flock 9
+if [ "${ULX3S_BUILD_LOCKED:-}" != 1 ]; then
+    exec python3 "$SUPPORT" lock "$LOCK" -- "$0" "$@"
+fi
 STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.smoke-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 cp -a "$OUTDIR/." "$STAGE/"
@@ -52,7 +54,7 @@ cat "$STAGE/tool_versions.txt"
 # a match for an artifact HEAD cannot reproduce.
 RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST.txt" \
-    "${TOP}.sv" "$LPF" "$RECIPE"
+    "${TOP}.sv" "$LPF" "$RECIPE" "$SUPPORT"
 
 echo "=== SYNTH ==="
 yosys -p "read_verilog -sv ${TOP}.sv; hierarchy -check -top ${TOP}; proc; check; synth_ecp5 -top ${TOP}; write_json ${TOP}.json" \
@@ -86,8 +88,9 @@ cp "${TOP}.svf"    "$STAGE/$SVF_NAME"
 
 # Digest the archived copies from inside OUTDIR so the manifest holds bare
 # file names that resolve when checked from that directory.
-( cd "$STAGE" && sha256sum "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" > SHA256SUMS )
-( cd "$STAGE" && sha256sum -c SHA256SUMS )
+python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS \
+    "$BIT_NAME" "$CFG_NAME" "$SVF_NAME"
+python3 "$SUPPORT" check "$STAGE" SHA256SUMS
 
 # Capture timing line for report
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 > "$STAGE/timing.txt" || true
@@ -101,4 +104,4 @@ cat "$OUTDIR/timing.txt"
 echo "=== BUILD COMPLETE ==="
 ls -l "$OUTDIR/$BIT_NAME"
 echo "bitstream: $OUTDIR/$BIT_NAME"
-echo "sha256: $(sha256sum "$OUTDIR/$BIT_NAME" | cut -d' ' -f1)"
+echo "sha256: $(python3 "$SUPPORT" digest "$OUTDIR/$BIT_NAME")"

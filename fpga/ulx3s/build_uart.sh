@@ -14,10 +14,12 @@ cd "$HERE"
 TOP=ulx3s_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
+SUPPORT=../../tools/portable_build_support.py
 mkdir -p "$OUTDIR"
 LOCK="$ROOT/results/.ulx3s-smoke-uart.publish.lock"
-exec 9>"$LOCK"
-flock 9
+if [ "${ULX3S_BUILD_LOCKED:-}" != 1 ]; then
+    exec python3 "$SUPPORT" lock "$LOCK" -- "$0" "$@"
+fi
 STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.uart-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 cp -a "$OUTDIR/." "$STAGE/"
@@ -62,7 +64,7 @@ done
 # report a match for an artifact HEAD cannot reproduce.
 RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST_uart.txt" \
-    $SOURCES "$LPF" "$RECIPE"
+    $SOURCES "$LPF" "$RECIPE" "$SUPPORT"
 
 echo "=== SYNTH (full bridge + MinCore) ==="
 yosys -p "
@@ -97,8 +99,8 @@ cat "$STAGE/ecppack_uart.log"
 
 cp "${TOP}.bit" "$STAGE/$BIT_NAME"
 
-( cd "$STAGE" && sha256sum "$BIT_NAME" > SHA256SUMS_bridge.txt )
-( cd "$STAGE" && sha256sum -c SHA256SUMS_bridge.txt )
+python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS_bridge.txt "$BIT_NAME"
+python3 "$SUPPORT" check "$STAGE" SHA256SUMS_bridge.txt
 
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr_uart.log" | tail -5 > "$STAGE/timing_uart.txt" || true
 
@@ -108,4 +110,4 @@ cat "$OUTDIR/timing_uart.txt"
 echo "=== UART BUILD COMPLETE ==="
 ls -l "$OUTDIR/$BIT_NAME"
 echo "bitstream: $OUTDIR/$BIT_NAME"
-echo "sha256: $(sha256sum "$OUTDIR/$BIT_NAME" | cut -d' ' -f1)"
+echo "sha256: $(python3 "$SUPPORT" digest "$OUTDIR/$BIT_NAME")"
