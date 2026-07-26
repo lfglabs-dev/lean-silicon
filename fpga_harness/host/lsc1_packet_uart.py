@@ -287,10 +287,11 @@ def _validate_retired(reply: protocol.ResponseFrame, args: argparse.Namespace) -
     if len(reply.payload) != 16:
         raise PacketTransportError("RETIRED did not return the 16-byte schema")
     retired_txn = int.from_bytes(reply.payload[0:4], "little")
+    retire_seq = int.from_bytes(reply.payload[4:8], "little")
     committed_pc = int.from_bytes(reply.payload[8:12], "little")
     committed_fp = int.from_bytes(reply.payload[12:16], "little")
-    if (retired_txn, committed_pc, committed_fp) != (
-        args.txn_id, args.pc + 1, args.fp,
+    if (retired_txn, retire_seq, committed_pc, committed_fp) != (
+        args.txn_id, 1, args.pc + 1, args.fp,
     ):
         raise PacketTransportError(
             "RETIRED acknowledgement does not match the requested scalar transition"
@@ -391,6 +392,10 @@ def _field(value: str) -> int:
     return parsed
 
 
+def _result_exit_status(operation: str, result: dict) -> int:
+    return 2 if operation == "program" and result.get("terminal") != "halted" else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", required=True)
@@ -420,7 +425,7 @@ def main(argv: list[str] | None = None) -> int:
         print(encoded)
         if args.evidence:
             args.evidence.write_text(encoded + "\n")
-        return 0
+        return _result_exit_status(args.operation, result)
     except (HostError, PacketTransportError, protocol.ProtocolFault, ValueError) as error:
         print(f"lsc1-packet-uart: {error}")
         return 2

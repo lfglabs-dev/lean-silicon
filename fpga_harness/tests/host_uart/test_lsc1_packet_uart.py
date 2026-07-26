@@ -10,6 +10,7 @@ from fpga_harness.host.lsc1_packet_uart import (
     PacketSerialDriver,
     PacketTransportError,
     _instruction_frame,
+    _result_exit_status,
     _validate_fresh_status,
     _validate_instruction_result,
     _validate_retired,
@@ -161,6 +162,7 @@ class PacketSerialDriverTests(unittest.TestCase):
         for changed in (
             payload[:-1],
             (10).to_bytes(4, "little") + payload[4:],
+            payload[:4] + (2).to_bytes(4, "little") + payload[8:],
             payload[:8] + (9).to_bytes(4, "little") + payload[12:],
             payload[:12] + (12).to_bytes(4, "little"),
         ):
@@ -179,6 +181,15 @@ class PacketSerialDriverTests(unittest.TestCase):
                 _validate_fresh_status(
                     protocol.ResponseFrame(protocol.Status.INFO, bytes(changed))
                 )
+
+    def test_program_exit_status_requires_halted_terminal(self) -> None:
+        self.assertEqual(_result_exit_status("program", {"terminal": "halted"}), 0)
+        for terminal in ("fault", "unsupported", "step_limit"):
+            with self.subTest(terminal=terminal):
+                self.assertEqual(
+                    _result_exit_status("program", {"terminal": terminal}), 2
+                )
+        self.assertEqual(_result_exit_status("status", {}), 0)
 
 
 if __name__ == "__main__":
