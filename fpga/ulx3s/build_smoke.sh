@@ -14,8 +14,9 @@ TOP=smoke_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
-STAGE=$(mktemp -d "$OUTDIR/.smoke-build.XXXXXX")
+STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.smoke-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
+cp -a "$OUTDIR/." "$STAGE/"
 
 # Names the artifacts are archived and checksummed under. They must match the
 # files committed under results/, otherwise `sha256sum -c` names a file that
@@ -77,12 +78,10 @@ cp "${TOP}.svf"    "$STAGE/$SVF_NAME"
 # Capture timing line for report
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 > "$STAGE/timing.txt" || true
 
-# Do not disturb the last known-good archive until every required build,
-# checksum, and evidence step above has completed successfully.
-for artifact in tool_versions.txt yosys.log nextpnr.log ecppack.log \
-                "$BIT_NAME" "$CFG_NAME" "$SVF_NAME" SHA256SUMS timing.txt; do
-    mv "$STAGE/$artifact" "$OUTDIR/$artifact"
-done
+# The stage is a complete archive snapshot. Exchange the whole directory in
+# one same-filesystem operation so failure or interruption cannot expose a
+# mixture of old artifacts and new checksums.
+python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 cat "$OUTDIR/timing.txt"
 
 echo "=== BUILD COMPLETE ==="

@@ -15,8 +15,9 @@ TOP=ulx3s_top
 LPF=ulx3s_v318_smoke.lpf
 OUTDIR="$ROOT/results/ulx3s-smoke-uart-20260725"
 mkdir -p "$OUTDIR"
-STAGE=$(mktemp -d "$OUTDIR/.uart-build.XXXXXX")
+STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.uart-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
+cp -a "$OUTDIR/." "$STAGE/"
 
 # Name the artifact is archived and checksummed under; must match the file
 # committed under results/.
@@ -89,10 +90,7 @@ cp "${TOP}.bit" "$STAGE/$BIT_NAME"
 
 grep -E 'Max frequency|Slack' "$STAGE/nextpnr_uart.log" | tail -5 > "$STAGE/timing_uart.txt" || true
 
-for artifact in tool_versions_uart.txt yosys_uart.log nextpnr_uart.log \
-                ecppack_uart.log "$BIT_NAME" SHA256SUMS_bridge.txt timing_uart.txt; do
-    mv "$STAGE/$artifact" "$OUTDIR/$artifact"
-done
+python3 "$ROOT/tools/atomic_publish.py" "$STAGE" "$OUTDIR"
 cat "$OUTDIR/timing_uart.txt"
 
 echo "=== UART BUILD COMPLETE ==="

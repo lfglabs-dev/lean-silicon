@@ -2072,7 +2072,7 @@ ABC: + &if -W 300 -v
 ABC: K = 7. Memory (bytes): Truth =    0. Cut =   76. Obj =  156. Set =  780. CutMin = no
 ABC: Node =    2741.  Ch =   343.  Total mem =    0.68 MB. Peak cut mem =    0.03 MB.
 ABC: P:  Del = 2605.00.  Ar =    2031.0.  Edge =     2863.  Cut =    31048.  T =     0.00 sec
-ABC: P:  Del = 2605.00.  Ar =    2046.0.  Edge =     2875.  Cut =    31019.  T =     0.00 sec
+ABC: P:  Del = 2605.00.  Ar =    2046.0.  Edge =     2875.  Cut =    31019.  T =     0.01 sec
 ABC: P:  Del = 2605.00.  Ar =     694.0.  Edge =     2006.  Cut =    41222.  T =     0.01 sec
 ABC: F:  Del = 2605.00.  Ar =     612.0.  Edge =     1977.  Cut =    40210.  T =     0.01 sec
 ABC: A:  Del = 2605.00.  Ar =     612.0.  Edge =     1931.  Cut =    39578.  T =     0.01 sec
@@ -2088,7 +2088,7 @@ ABC: + &write -n <abc-temp-dir>/output.aig
 ABC: + &verify 
 ABC: Networks are equivalent.  Time =     0.05 sec
 ABC: + time 
-ABC: elapse: 0.16 seconds, total: 0.16 seconds
+ABC: elapse: 0.17 seconds, total: 0.17 seconds
 
 12.46.15.6. Executing AIGER frontend.
 <suppressed ~10 debug messages>
@@ -2393,6 +2393,6 @@ Found and reported 0 problems.
 
 13. Executing JSON backend.
 
-End of script. Logfile hash: 499dcfd288, time: 1.41s, user: 1.10s, system: 0.14s, MEM: 60.41 MB peak
+End of script. Logfile hash: 6b0a16d768, time: 1.45s, user: 1.11s, system: 0.16s, MEM: 60.79 MB peak
 Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
 Time spent: 22% 28x read_verilog (0 sec), 13% 1x abc9_exe (0 sec), ...

@@ -71,8 +71,8 @@ Info:     at iteration #8, type TRELLIS_COMB: wirelen solved = 14, spread = 14, 
 Info:     at iteration #9, type TRELLIS_COMB: wirelen solved = 14, spread = 14, legal = 20; time = 0.00s
 Info:     at iteration #10, type TRELLIS_COMB: wirelen solved = 14, spread = 21, legal = 22; time = 0.00s
 Info:     at iteration #11, type TRELLIS_COMB: wirelen solved = 16, spread = 16, legal = 18; time = 0.00s
-Info: HeAP Placer Time: 0.10s
-Info:   of which solving equations: 0.00s
+Info: HeAP Placer Time: 0.11s
+Info:   of which solving equations: 0.01s
 Info:   of which spreading cells: 0.02s
 Info:   of which strict legalisation: 0.00s
 
