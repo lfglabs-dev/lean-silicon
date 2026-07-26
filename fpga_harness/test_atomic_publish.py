@@ -104,6 +104,8 @@ class AtomicPublishTest(unittest.TestCase):
         with mock.patch.object(atomic_publish.ctypes, "CDLL", return_value=DarwinLibc()):
             atomic_publish._exchange(self.staged, self.destination)
         self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0], atomic_publish.AT_FDCWD_DARWIN)
+        self.assertEqual(calls[0][2], atomic_publish.AT_FDCWD_DARWIN)
         self.assertEqual(calls[0][-1], atomic_publish.RENAME_SWAP)
 
     def test_no_atomic_exchange_api_fails_without_mutating_archive(self) -> None:

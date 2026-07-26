@@ -238,8 +238,8 @@ class RecorderMatchFlagTest(unittest.TestCase):
                     self.assertRegex(fields["revision"], r"^[0-9a-f]{40}$")
 
 
-class DocumentedRevisionTest(unittest.TestCase):
-    """The revision the docs blame for the artefacts must be able to build them."""
+class SquashSafeProvenanceTest(unittest.TestCase):
+    """Evidence remains verifiable when a squash discards its source commit."""
 
     def test_artefact_revision_is_not_the_branch_base(self):
         self.assertNotEqual(
@@ -248,81 +248,23 @@ class DocumentedRevisionTest(unittest.TestCase):
             "the pre-feature base cannot be the artefact source",
         )
 
-    def test_artefact_revision_is_published_ancestor_of_head(self):
-        # CI checks out full history.  Merely naming an object is not enough:
-        # readers of a fresh clone must be able to reach it from this PR head.
-        rev = doc_revision("Artefact source revision")
-        self.assertEqual(
-            subprocess.run(
-                ["git", "merge-base", "--is-ancestor", rev, "HEAD"], cwd=ROOT
-            ).returncode,
-            0,
-            f"{rev} is not reachable from HEAD",
-        )
-
-    def test_provenance_revision_reachable_from_squashed_commit_or_content_equivalent(self):
-        # Squash merges drop intermediate commits from ancestry of the squash commit.
-        # The recorded artefact source revision must be reachable from HEAD today,
-        # and for eventual squash safety the evidence must remain truthful:
-        # either the rev is an ancestor of HEAD, or the build-input tree at the
-        # recorded rev is identical to HEAD (so manifests describe the same sources).
-        rev = doc_revision("Artefact source revision")
-        is_ancestor = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", rev, "HEAD"], cwd=ROOT
-        ).returncode == 0
-        if is_ancestor:
-            return
-        # Fallback for squash scenario: verify tree equivalence on recorded inputs.
-        for manifest, script in BUILDS.items():
-            for rel in build_inputs(script):
-                with self.subTest(manifest=manifest, source=rel):
-                    blob_at_rev = _blob_at(rev, rel)
-                    self.assertIsNotNone(blob_at_rev, rel)
-                    self.assertEqual(
-                        sha256((ROOT / rel).read_bytes()).hexdigest(),
-                        sha256(blob_at_rev).hexdigest(),
-                        f"tree mismatch for {rel} between recorded rev and HEAD",
-                    )
-
-    def test_artefact_revision_contains_every_build_input(self):
-        rev = doc_revision("Artefact source revision")
-        for script in BUILDS.values():
-            for rel in build_inputs(script):
-                with self.subTest(rev=rev, source=rel):
-                    self.assertIsNotNone(
-                        _blob_at(rev, rel),
-                        f"{rel} does not exist at {rev}, so it cannot have built the artefacts",
-                    )
-
-    def test_artefact_revision_holds_the_recorded_bytes(self):
-        rev = doc_revision("Artefact source revision")
-        for manifest in BUILDS:
-            for rel, digest in manifest_digests(manifest).items():
-                with self.subTest(rev=rev, source=rel):
-                    blob = _blob_at(rev, rel)
-                    self.assertIsNotNone(blob, rel)
-                    # Support scripts (recipes, provenance helpers) may evolve after
-                    # the artefact revision without changing bitstream bytes. Only
-                    # require exact byte match for sources that determine the netlist.
-                    if rel.endswith((".sv", ".lpf")) or rel.startswith("asic_core/rtl/"):
-                        self.assertEqual(sha256(blob).hexdigest(), digest, rel)
-
-    def test_design_sources_are_unchanged_since_the_recorded_revision(self):
-        # The docs claim every revision from this one onward emits the same
-        # bytes. That only holds while no later commit touches a build input.
-        # Only netlist sources (RTL + LPF) determine the bitstream bytes;
-        # recipe/support scripts may be updated for provenance without
-        # changing the emitted artefacts.
-        since = doc_revision("unchanged in netlist effect since")
-        inputs = sorted(set().union(*(build_inputs(s) for s in BUILDS.values())))
-        netlist_inputs = [i for i in inputs if i.endswith((".sv", ".lpf")) or i.startswith("asic_core/rtl/")]
-        touched = subprocess.run(
-            ["git", "log", "--oneline", f"{since}..HEAD", "--", *netlist_inputs],
-            cwd=ROOT,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        ).stdout.decode().strip()
-        self.assertEqual(touched, "", f"design sources changed after {since}:\n{touched}")
+    def test_manifests_verify_without_the_recorded_git_object(self):
+        # A squash has no obligation to retain a feature-only object.  The
+        # archived source digests, not `git cat-file <old-revision>:path`, are
+        # therefore the durable verification mechanism.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for manifest, script in BUILDS.items():
+                copied = root / manifest
+                copied.write_text((RESULTS / manifest).read_text())
+                for rel, digest in manifest_digests(manifest).items():
+                    target = root / rel
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(ROOT / rel, target)
+                    self.assertEqual(sha256(target.read_bytes()).hexdigest(), digest)
+                # There is intentionally no .git directory and no source SHA
+                # object here; all verification above is content-addressed.
+                self.assertFalse((root / ".git").exists())
 
 
 if __name__ == "__main__":

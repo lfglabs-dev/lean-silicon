@@ -10,11 +10,12 @@
 - Artefact source revision: `c7fa2de2ee1ecb84b653a4334932b6eba4b843ec`
   (clean tree at the point provenance was recorded). Both source manifests record
   this full object ID, including every RTL, constraint, recipe and build-support
-  input. This commit is reachable in the published PR ancestry, so a non-shallow
-  clone of the PR head (or its squashed form) can resolve and check it out; CI
-  fetches the full history and asserts this ancestry rather than skipping it.
-  The bitstreams and supporting files are archived under results/ with manifests
-  that name this exact reachable revision.
+  input. The ID is historical context only: a squash may legitimately make this
+  feature-branch object unreachable. Verification is deliberately independent of
+  it: the committed source manifests content-address every input, and CI copies
+  those inputs into a tree with no `.git` directory before checking every digest.
+  The bitstreams and supporting files are archived under results/ with those
+  self-contained manifests, so the evidence remains auditable after a squash.
 - Design sources (RTL and LPF) unchanged in netlist effect since an earlier
   published ancestor; the manifests at the artefact source revision capture the
   complete build-input set (RTL + LPF + recipes + support) used for these

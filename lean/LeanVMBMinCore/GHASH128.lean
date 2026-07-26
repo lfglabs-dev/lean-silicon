@@ -12,9 +12,21 @@ namespace LeanVMBMinCore.GHASH128
 
 abbrev Word := BitVec 128
 
+set_option maxRecDepth 10000
+
 /-- leanVM-b's polynomial-basis multiplication by the generator x. -/
 def xtime (x : Word) : Word :=
   (x <<< 1) ^^^ (if x.msb then 0x87#128 else 0#128)
+
+/-- Polynomial-basis multiplication, consuming one multiplier bit per step. -/
+def mulLoop : Nat → Word → Word → Word
+  | 0, _, _ => 0#128
+  | n + 1, multiplicand, multiplier =>
+      (if multiplier.getLsbD 0 then multiplicand else 0#128) ^^^
+        mulLoop n (xtime multiplicand) (multiplier >>> 1)
+
+/-- Multiplication in the existing GF(2^128) polynomial-basis model. -/
+def mul (a b : Word) : Word := mulLoop 128 a b
 
 /-- Reduction output bit 0 is the old carry directly, not an XOR gate. -/
 theorem xtime_bit0_is_wire (x : Word) :
@@ -65,5 +77,16 @@ theorem xtime_xor_linear (a b : Word) :
   · simp [ha, hb]
     ac_rfl
   · simp [ha, hb]
+
+@[simp] theorem mulLoop_zero_left (n : Nat) (b : Word) :
+    mulLoop n 0#128 b = 0#128 := by
+  induction n generalizing b with
+  | zero => rfl
+  | succ n ih => simp [mulLoop, xtime, ih]
+
+@[simp] theorem mul_zero_left (b : Word) : mul 0#128 b = 0#128 :=
+  mulLoop_zero_left 128 b
+
+example : mul 1#128 1#128 = 1#128 := by decide
 
 end LeanVMBMinCore.GHASH128
