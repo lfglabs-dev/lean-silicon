@@ -1,0 +1,4 @@
+rustc 1.88.0 (6b00bc388 2025-06-23)
+cargo 1.88.0 (873a06493 2025-05-10)
+Python 3.12.3
+leanVM-b checkout: c308034ab78619b39a59d26f3dc60e7df5b52649

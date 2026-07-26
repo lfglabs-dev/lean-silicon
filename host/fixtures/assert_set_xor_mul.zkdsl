@@ -1,0 +1,6 @@
+def main():
+    a = 3
+    b = 5
+    assert a + b == 6
+    assert a * b == 15
+    return

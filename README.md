@@ -27,6 +27,8 @@ Frozen leanVM-b evidence remains tied to
 - `docs/LSC1_PROTOCOL.md`: versioned transport/packet contract.
 - `docs/LSC1_TRANSACTION_PROTOCOL.md`: normative transaction protocol v1,
   modelled executably by `sim/lsc1_transaction.py`.
+- `host/`: Mac-side runtime that prepares transactions and owns VM state,
+  documented in `docs/HOST_RUNTIME.md`.
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
 
