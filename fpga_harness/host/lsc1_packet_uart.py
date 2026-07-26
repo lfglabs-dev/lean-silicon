@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
+
+# unittest discovery under fpga_harness/ otherwise resolves ``host`` to the
+# sibling diagnostic package instead of the repository's canonical host model.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if not sys.path or sys.path[0] != str(REPOSITORY_ROOT):
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from host.errors import HostError
 from host.lean_compiler_adapter import load as load_program
