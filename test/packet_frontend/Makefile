@@ -1,6 +1,9 @@
 RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_packet_tx.sv \
-      ../../asic_core/rtl/lsc1_gf128_mul.sv \
+      ../../asic_core/rtl/gf2n_mul_bitstream.sv \
+      ../../asic_core/rtl/gf128_mul_bitstream.sv \
+      ../../asic_core/rtl/leanvm_b_stream_alu.sv \
+      ../../asic_core/rtl/lsc1_stream_adapter.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
 .PHONY: sim mutation clean
@@ -12,7 +15,7 @@ sim:
 mutation:
 	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  cp $(RTL) "$$d/"; \
-	  sed -i 's/ || tx_start ||/ ||/' "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak 's/ || tx_start ||/ ||/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/busy.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  if vvp "$$d/busy.vvp" >"$$d/busy.out" 2>&1; then \
@@ -20,7 +23,7 @@ mutation:
 	  fi; \
 	  grep -q "BUSY dropped while a response was queued" "$$d/busy.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
-	  sed -i 's/write_value = result_value;/write_value = 0;/' "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak 's/write_value = result_value;/write_value = 0;/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/set.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  if vvp "$$d/set.vvp" >"$$d/set.out" 2>&1; then \
@@ -28,7 +31,7 @@ mutation:
 	  fi; \
 	  grep -q "SET result write value mismatch" "$$d/set.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
-	  sed -i 's/txn_id != staged_txn_id ||/1'"'"'b0 ||/' "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak 's/txn_id != staged_txn_id ||/1'"'"'b0 ||/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/txn.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  if vvp "$$d/txn.vvp" >"$$d/txn.out" 2>&1; then \
@@ -36,7 +39,7 @@ mutation:
 	  fi; \
 	  grep -q "status got=02 expected=92" "$$d/txn.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
-	  sed -i "/end else if (abort) begin/,/end else begin/ s/result_pending <= 1'b0;/result_pending <= 1'b1;/" \
+	  sed -i.bak "/end else if (abort) begin/,/end else begin/ s/result_pending <= 1'b0;/result_pending <= 1'b1;/" \
 	    "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/abort.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
@@ -45,7 +48,7 @@ mutation:
 	  fi; \
 	  grep -q "ABORT retained or emitted a pending response" "$$d/abort.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
-	  sed -i "s/frame_opcode == OP_SET && frame_length != 51/1'b0 \\&\\& frame_opcode == OP_SET \\&\\& frame_length != 51/" \
+	  sed -i.bak "s/frame_opcode == OP_SET && frame_length != 51/1'b0 \\&\\& frame_opcode == OP_SET \\&\\& frame_length != 51/" \
 	    "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/length.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \

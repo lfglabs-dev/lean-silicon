@@ -10,7 +10,9 @@
  *
  * Pin contract preserved: every byte crosses ui_in / uo_out / uio_* exactly.
  */
-module uart_bridge (
+module uart_bridge #(
+    parameter bit PACKET_MODE = 1'b0
+) (
     input  wire clk,       // 25 MHz
     input  wire uart_rx,   // async from FTDI (M1)
     output wire uart_tx    // to FTDI (L4)
@@ -81,7 +83,10 @@ module uart_bridge (
     // abort pulse. uart_framing_err and uart_rx_valid are themselves one-cycle
     // pulses, so no extra edge detection is needed.
     wire rx_byte_ok  = uart_rx_valid && !uart_framing_err;
-    wire rx_is_abort = rx_byte_ok && (uart_rx_data == 8'h7f);
+    // Raw MinCore reserves 0x7f as an in-band diagnostic abort. Packet v1 may
+    // contain every byte value in payloads and CRCs, so its abort remains the
+    // out-of-band UART BREAK/framing-error path.
+    wire rx_is_abort = !PACKET_MODE && rx_byte_ok && (uart_rx_data == 8'h7f);
 
     always @(posedge clk) begin
         if (!rst_n) abort_q <= 1'b0;
@@ -157,17 +162,21 @@ module uart_bridge (
     assign uart_tx_data  = tx_data_q;
     assign uart_tx_valid = tx_full;
 
-    // Instantiate the exact contract top (MinCore seed, not v1 packet)
-    lean_silicon_lsc1 asic (
-        .ui_in  (ui_in),
-        .uo_out (uo_out),
-        .uio_in (uio_in),
-        .uio_out(uio_out),
-        .uio_oe (uio_oe),
-        .ena    (1'b1),
-        .clk    (clk),
-        .rst_n  (rst_n)
-    );
+    generate
+        if (PACKET_MODE) begin : g_packet
+            lean_silicon_lsc1 asic (
+                .ui_in(ui_in), .uo_out(uo_out), .uio_in(uio_in),
+                .uio_out(uio_out), .uio_oe(uio_oe), .ena(1'b1),
+                .clk(clk), .rst_n(rst_n)
+            );
+        end else begin : g_mincore
+            lean_silicon_lsc1_mincore asic (
+                .ui_in(ui_in), .uo_out(uo_out), .uio_in(uio_in),
+                .uio_out(uio_out), .uio_oe(uio_oe), .ena(1'b1),
+                .clk(clk), .rst_n(rst_n)
+            );
+        end
+    endgenerate
 
     // Unused uio_oe and other bits are left floating in harness; ASIC drives them.
     wire _unused = &{uio_oe, rx_overrun, 1'b0};

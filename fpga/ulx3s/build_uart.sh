@@ -43,12 +43,18 @@ fi
 } > "$STAGE/tool_versions_uart.txt" 2>&1
 cat "$STAGE/tool_versions_uart.txt"
 
-# Collect sources: bridge + uart + exact ASIC top + MinCore + multiplier.
+# Collect sources: bridge + UART + packetized ASIC top + stream adapter,
+# diagnostic MinCore top and the shared arithmetic datapath.
 # Relative to this directory, which the cd above guarantees, so the paths that
 # land in the archived yosys log are repository-relative and identical on any
 # machine. The repository root is two levels up, not three.
 SOURCES="ulx3s_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv \
          ../../asic_core/rtl/lean_silicon_lsc1.sv \
+         ../../asic_core/rtl/lean_silicon_lsc1_mincore.sv \
+         ../../asic_core/rtl/lsc1_packet_frontend.sv \
+         ../../asic_core/rtl/lsc1_packet_rx.sv \
+         ../../asic_core/rtl/lsc1_packet_tx.sv \
+         ../../asic_core/rtl/lsc1_stream_adapter.sv \
          ../../asic_core/rtl/leanvm_b_stream_alu.sv \
          ../../asic_core/rtl/gf128_mul_bitstream.sv \
          ../../asic_core/rtl/gf2n_mul_bitstream.sv"

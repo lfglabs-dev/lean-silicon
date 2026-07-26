@@ -28,6 +28,7 @@ module uart_rx #(
     reg [3:0]  bit_cnt;
     reg [7:0]  shift;
     reg        receiving;
+    reg        wait_idle;
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -35,6 +36,7 @@ module uart_rx #(
             bit_cnt     <= 0;
             shift       <= 0;
             receiving   <= 0;
+            wait_idle    <= 0;
             rx_valid    <= 0;
             framing_err <= 0;
             rx_data     <= 0;
@@ -43,8 +45,14 @@ module uart_rx #(
             framing_err <= 0;
 
             if (!receiving) begin
-                // Wait for start bit (falling edge)
-                if (rx_s == 1'b0) begin
+                // After a framing error (UART BREAK), require an observed high
+                // level before arming another start.  Otherwise the remaining
+                // low tail is mistaken for a second start and can decode as a
+                // spurious 0xff byte when the line returns high.
+                if (wait_idle) begin
+                    if (rx_s == 1'b1)
+                        wait_idle <= 1'b0;
+                end else if (rx_s == 1'b0) begin
                     receiving <= 1'b1;
                     // Sample in middle of start bit: count DIV/2
                     div_cnt <= DIV[15:1];
@@ -67,6 +75,7 @@ module uart_rx #(
                         // Stop bit
                         if (rx_s != 1'b1) begin
                             framing_err <= 1'b1;
+                            wait_idle <= 1'b1;
                         end else begin
                             rx_data  <= shift;
                             rx_valid <= 1'b1;
