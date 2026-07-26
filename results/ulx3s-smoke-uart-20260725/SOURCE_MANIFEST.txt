@@ -1,0 +1,9 @@
+=== SOURCE PROVENANCE ===
+revision: a11c521a0a09168ff91a0ffcf0aa3fd5787f8271
+inputs-match-revision: yes
+737518912d916251885645517f2d5cabf3c786b47c71cb9f725cf3ae2c985326  tools/portable_build_support.py
+e401ecd06a20a3f1e54de6e47ff6e12f61064bd2b9278517fe3d0db97933bd8a  tools/atomic_publish.py
+a2b4b3a985df1ecde148745dcc94684c77364cf9a4fa22735f2f4754aa0489db  tools/source_provenance.py
+2193c115f54fc49c77280a544b0963bbff3cc5840fb5795fdf44e7dcb44f5781  fpga/ulx3s/build_smoke.sh
+cd4a528e8502a4761efa123743afd1f6e180681af3349f05c5777ee489a92689  fpga/ulx3s/smoke_top.sv
+1b2982830abbaaf932c48f8df3d0163e450e9cab6d065998f25984b677d415f2  fpga/ulx3s/ulx3s_v318_smoke.lpf

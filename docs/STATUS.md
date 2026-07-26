@@ -11,7 +11,7 @@
 | lean_compiler integration | artifact exported from the frozen compiler; `hints`/`main_frame`/`witness`/`trace` are `pub(crate)` upstream | `tools/lean_compiler_export.py`, `docs/HOST_RUNTIME.md` section 4 |
 | Host vs frozen Rust comparison | final memory only, for the 12 cells the fixture run touched; `cycles` and every per-step field explicitly not compared | `tools/host_upstream_comparison.py`, `docs/HOST_RUNTIME.md` section 5 |
 | Full scalar semantics | not implemented | planned graph |
-| ULX3S harness bitstream | not implemented | pin contract only |
+| ULX3S harness bitstreams | source-built, archived; not hardware-validated | `docs/ULX3S_SMOKE_AND_UART.md`, `results/ulx3s-smoke-uart-20260725/` |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
 | RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |

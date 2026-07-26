@@ -1,0 +1,7 @@
+# Yosys script for minimal smoke (no UART, no ASIC core)
+read_verilog -sv smoke_top.sv
+hierarchy -check -top smoke_top
+proc
+check
+synth_ecp5 -top smoke_top
+write_json smoke.json
