@@ -157,17 +157,54 @@ def send_bytes(
     inter_byte_delay: float = 0.0,
     timeout: float = TIMEOUT_S,
 ) -> None:
-    """Write a request and bound its output drain by the transaction deadline."""
+    """Write a request and bound every write and drain by one deadline.
+
+    ``Serial.write`` may block up to ``write_timeout`` and is permitted to
+    return a short count.  Neither is a reason to grant a fresh full timeout:
+    one request has one budget.  Each backend call therefore receives only the
+    time left, is additionally bounded by a worker for implementations that
+    ignore ``write_timeout``, and advances only by bytes actually accepted.
+    """
     deadline = time.monotonic() + timeout
-    for b in data:
-        ser.write(bytes([b]))
-        if inter_byte_delay > 0:
-            time.sleep(inter_byte_delay)
-    _call_within(
-        ser.flush,
-        deadline - time.monotonic(),
-        "flush timeout before the request drained",
-    )
+    restore_write_timeout = getattr(ser, "write_timeout", None)
+    offset = 0
+    try:
+        while offset < len(data):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("write timeout before the request was sent")
+            if hasattr(ser, "write_timeout"):
+                ser.write_timeout = remaining
+            written = _call_within(
+                lambda: ser.write(data[offset:]),
+                remaining,
+                "write timeout before the request was sent",
+            )
+            if (
+                not isinstance(written, int)
+                or written < 0
+                or written > len(data) - offset
+            ):
+                raise OSError(f"serial write returned invalid byte count {written!r}")
+            if written == 0:
+                # A nonblocking backend can make no progress; avoid a hot spin
+                # while still charging this pause to the same transaction.
+                time.sleep(min(0.0005, max(0.0, deadline - time.monotonic())))
+                continue
+            offset += written
+            if inter_byte_delay > 0 and offset < len(data):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("write timeout before the request was sent")
+                time.sleep(min(inter_byte_delay, remaining))
+        _call_within(
+            ser.flush,
+            deadline - time.monotonic(),
+            "flush timeout before the request drained",
+        )
+    finally:
+        if restore_write_timeout is not None:
+            ser.write_timeout = restore_write_timeout
 
 
 def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:

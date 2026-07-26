@@ -192,15 +192,64 @@ class FlushDeadlineTest(unittest.TestCase):
         # Model 60 ms of writes before the drain. A direct ``ser.flush()``
         # (or a fresh 80 ms worker budget) would bypass this assertion.
         port = Port()
-        original = ulx3s_uart._call_within
         with mock.patch.object(
-            ulx3s_uart.time, "monotonic", side_effect=[10.0, 10.06]
+            ulx3s_uart.time, "monotonic", side_effect=[10.0, 10.0, 10.06]
         ), mock.patch.object(
-            ulx3s_uart, "_call_within", wraps=original
+            ulx3s_uart, "_call_within", wraps=ulx3s_uart._call_within
         ) as bounded:
             ulx3s_uart.send_bytes(port, b"\x01\x02", timeout=0.08)
         self.assertEqual(bounded.call_args.args[0], port.flush)
         self.assertAlmostEqual(bounded.call_args.args[1], 0.02, places=9)
+
+    def test_slow_writes_share_one_transaction_deadline(self):
+        """Mutation-sensitive: direct writes would allow one timeout per byte."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class SlowPort:
+            write_timeout = 30.0
+
+            def write(self, data: bytes) -> int:
+                release.wait(30)
+                return len(data)
+
+            def flush(self) -> None:
+                raise AssertionError("flush must not follow a timed-out write")
+
+        start = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "write timeout"):
+            ulx3s_uart.send_bytes(SlowPort(), b"\x01\x02\x03", timeout=0.05)
+        self.assertLess(time.monotonic() - start, 1.0)
+
+    def test_partial_writes_rearm_only_the_remaining_deadline(self):
+        class PartialPort:
+            def __init__(self) -> None:
+                self.write_timeout = 30.0
+                self.calls: list[tuple[bytes, float]] = []
+                self.sent = bytearray()
+
+            def write(self, data: bytes) -> int:
+                self.calls.append((data, self.write_timeout))
+                self.sent.extend(data[:1])
+                return 1
+
+            def flush(self) -> None:
+                pass
+
+        port = PartialPort()
+        times = iter([10.0, 10.0, 10.02, 10.04, 10.06])
+        with mock.patch.object(ulx3s_uart.time, "monotonic", side_effect=times):
+            ulx3s_uart.send_bytes(port, b"\x10\x20\x30", timeout=0.08)
+        self.assertEqual(bytes(port.sent), b"\x10\x20\x30")
+        self.assertEqual(
+            [data for data, _ in port.calls],
+            [b"\x10\x20\x30", b"\x20\x30", b"\x30"],
+        )
+        self.assertEqual(port.write_timeout, 30.0)
+        for observed, expected in zip(
+            [budget for _, budget in port.calls], [0.08, 0.06, 0.04]
+        ):
+            self.assertAlmostEqual(observed, expected)
 
 
 class MulExitStatusTest(unittest.TestCase):
