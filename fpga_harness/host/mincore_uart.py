@@ -185,6 +185,7 @@ class MinCoreDriver:
                 error.observed = bytes(drained)
                 raise
             except Exception as error:
+                self._usable = False  # the unread buffered bytes stay on the wire
                 raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes",
                                        observed=bytes(drained)) from error
             # A read that returns nothing while bytes are still reported buffered
