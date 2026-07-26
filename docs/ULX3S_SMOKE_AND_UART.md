@@ -8,6 +8,9 @@
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
 - Artefact source revision: `62e96e7` (clean tree, no uncommitted changes).
+  This commit is preserved in this branch's published ancestry (it is an
+  ancestor of reviewed head `dfd23be`), so a fresh clone of the PR head can
+  resolve and check out the revision recorded by both source manifests.
   Rebuilding from a fresh checkout at that revision with the pinned toolchain
   below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
   `smoke.svf` byte for byte, at the same reported Fmax.
