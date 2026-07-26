@@ -70,6 +70,7 @@ inductive DerefMode where
 inductive Fault where
   | address
   | unresolvedPointer
+  | invalidInverse
   | writeConflict
   | cellMismatch
   deriving DecidableEq, Repr
@@ -244,59 +245,81 @@ theorem executeDeref_success_frame {encode : Index → Word} {mode : DerefMode}
 
 /-! JUMP is a control update only.  It performs no fetch and owns no resolver. -/
 
+/-- A host inverse proposal is valid only for a nonzero value and product one. -/
+def acceptsInverse (value witness : GHASH128.Word) : Bool :=
+  value != 0#128 && GHASH128.mul value witness == 1#128
+
 inductive JumpResult where
   | ok (control : Control)
   | fault (reason : Fault)
   deriving DecidableEq, Repr
 
 def jump (encode : Index → Word) (control : Control) (condition : Word)
-    (targetPcWord targetFpWord : Word)
+    (targetPcWord targetFpWord inverseWitness : Word)
     (resolvedTargets : Option (Index × Index)) : JumpResult :=
   if condition = 0#128 then
-    match checkedOffset control.pc 1 with
-    | some nextPc => .ok { control with pc := nextPc }
-    | none => .fault .address
+    if inverseWitness = 0#128 then
+      match checkedOffset control.pc 1 with
+      | some nextPc => .ok { control with pc := nextPc }
+      | none => .fault .address
+    else
+      .fault .invalidInverse
   else
-    match resolvedTargets with
-    | some (targetPc, targetFp) =>
-        if targetPc ≤ CheckedIndex.max ∧ targetFp ≤ CheckedIndex.max ∧
-            encode targetPc = targetPcWord ∧ encode targetFp = targetFpWord then
-          .ok { pc := targetPc, fp := targetFp }
-        else
-          .fault .unresolvedPointer
-    | none => .fault .unresolvedPointer
+    if acceptsInverse condition inverseWitness then
+      match resolvedTargets with
+      | some (targetPc, targetFp) =>
+          if targetPc ≤ CheckedIndex.max ∧ targetFp ≤ CheckedIndex.max ∧
+              encode targetPc = targetPcWord ∧ encode targetFp = targetFpWord then
+            .ok { pc := targetPc, fp := targetFp }
+          else
+            .fault .unresolvedPointer
+      | none => .fault .unresolvedPointer
+    else
+      .fault .invalidInverse
 
 @[simp] theorem jump_not_taken {encode : Index → Word} {control : Control}
     {nextPc : Index} {targetPcWord targetFpWord : Word}
     (h : checkedOffset control.pc 1 = some nextPc) :
-    jump encode control 0#128 targetPcWord targetFpWord none =
+    jump encode control 0#128 targetPcWord targetFpWord 0#128 none =
       .ok { control with pc := nextPc } := by
   simp [jump, h]
 
 @[simp] theorem jump_taken {encode : Index → Word} {control : Control}
     {condition : Word} (hnz : condition ≠ 0#128) (targetPc targetFp : Index)
+    (inverseWitness : Word)
+    (hinv : acceptsInverse condition inverseWitness = true)
     (hpc : CheckedIndex.valid targetPc) (hfp : CheckedIndex.valid targetFp) :
     jump encode control condition (encode targetPc) (encode targetFp)
+      inverseWitness
       (some (targetPc, targetFp)) =
       .ok { pc := targetPc, fp := targetFp } := by
   have hpc' : targetPc ≤ CheckedIndex.max := hpc
   have hfp' : targetFp ≤ CheckedIndex.max := hfp
-  simp [jump, hnz, hpc', hfp']
+  simp [jump, hnz, hinv, hpc', hfp']
+
+@[simp] theorem jump_rejects_bad_inverse {encode : Index → Word}
+    {control : Control} {condition : Word} (hnz : condition ≠ 0#128)
+    {targetPc targetFp : Index} {targetPcWord targetFpWord inverseWitness : Word}
+    (hinv : acceptsInverse condition inverseWitness = false) :
+    jump encode control condition targetPcWord targetFpWord inverseWitness
+      (some (targetPc, targetFp)) = .fault .invalidInverse := by
+  simp [jump, hnz, hinv]
 
 @[simp] theorem jump_rejects_bad_target {encode : Index → Word}
     {control : Control} {condition : Word} (hnz : condition ≠ 0#128)
-    {targetPc targetFp : Index} {targetPcWord targetFpWord : Word}
+    {targetPc targetFp : Index} {targetPcWord targetFpWord inverseWitness : Word}
+    (hinv : acceptsInverse condition inverseWitness = true)
     (hbad : encode targetPc ≠ targetPcWord ∨ encode targetFp ≠ targetFpWord) :
-    jump encode control condition targetPcWord targetFpWord
+    jump encode control condition targetPcWord targetFpWord inverseWitness
       (some (targetPc, targetFp)) = .fault .unresolvedPointer := by
   rcases hbad with hbad | hbad
-  · simp [jump, hnz, hbad]
-  · simp [jump, hnz, hbad]
+  · simp [jump, hnz, hinv, hbad]
+  · simp [jump, hnz, hinv, hbad]
 
 theorem jump_not_taken_preserves_fp {encode : Index → Word}
     {control control' : Control} {targetPcWord targetFpWord : Word}
     {targets : Option (Index × Index)}
-    (h : jump encode control 0#128 targetPcWord targetFpWord targets =
+    (h : jump encode control 0#128 targetPcWord targetFpWord 0#128 targets =
       .ok control') :
     control'.fp = control.fp := by
   simp only [jump, ↓reduceIte] at h
@@ -307,17 +330,16 @@ theorem jump_not_taken_preserves_fp {encode : Index → Word}
   next => cases h
 
 theorem jump_deterministic (encode : Index → Word) (control : Control)
-    (condition targetPcWord targetFpWord : Word)
+    (condition targetPcWord targetFpWord inverseWitness : Word)
     (targets : Option (Index × Index)) (r₁ r₂ : JumpResult)
-    (h₁ : jump encode control condition targetPcWord targetFpWord targets = r₁)
-    (h₂ : jump encode control condition targetPcWord targetFpWord targets = r₂) :
+    (h₁ : jump encode control condition targetPcWord targetFpWord inverseWitness
+      targets = r₁)
+    (h₂ : jump encode control condition targetPcWord targetFpWord inverseWitness
+      targets = r₂) :
     r₁ = r₂ := by
   rw [← h₁, ← h₂]
 
 /-! Host-proposed inversion witnesses are checked, never computed. -/
-
-def acceptsInverse (value witness : GHASH128.Word) : Bool :=
-  value != 0#128 && GHASH128.mul value witness == 1#128
 
 theorem acceptsInverse_sound {value witness : GHASH128.Word}
     (h : acceptsInverse value witness = true) :
