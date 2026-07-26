@@ -1,6 +1,9 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect sim lean formal clean package checksums
+
+HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
+HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
@@ -12,6 +15,17 @@ scalar-differential:
 m2-differential:
 	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
 	$(PYTHON) tools/m2_rtl_differential.py --upstream "$(LEANVM_B_UPSTREAM)"
+
+# Regenerates the checked-in program artifact from the frozen upstream compiler.
+host-export:
+	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
+	$(PYTHON) tools/lean_compiler_export.py --upstream "$(LEANVM_B_UPSTREAM)" \
+	  --source $(HOST_SOURCE) --out $(HOST_ARTIFACT)
+
+# Without LEANVM_B_UPSTREAM this compares against the recorded upstream run.
+host-comparison:
+	$(PYTHON) tools/host_upstream_comparison.py --artifact $(HOST_ARTIFACT) \
+	  $(if $(LEANVM_B_UPSTREAM),--upstream "$(LEANVM_B_UPSTREAM)",)
 
 design-space:
 	$(PYTHON) tools/design_space.py
@@ -45,7 +59,7 @@ fpga-harness:
 fpga-detect:
 	$(PYTHON) fpga_harness/board_detect.py
 
-check: python design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
+check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim
