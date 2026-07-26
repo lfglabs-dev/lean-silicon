@@ -128,7 +128,7 @@ python3 -m fpga_harness.ulx3s_uart --port /dev/ttyUSB0 --tx set --payload 000000
 
 ## P2 Tests
 - Boundary: `make fpga-boundary` (and direct `python3 fpga_harness/boundary_check.py`) → OK
-- Harness unit tests: `make fpga-harness` → 134 tests OK
+- Harness unit tests: `make fpga-harness` → 139 tests OK
 - Sim: `make python` → 163 tests OK
 - Icarus benches: `make sim` builds and runs both `test/tb_stream_alu.sv` and
   `test/tb_uart_bridge.sv`. The bridge bench is wired into the target rather

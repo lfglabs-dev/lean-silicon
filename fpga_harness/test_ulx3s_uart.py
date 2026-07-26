@@ -226,6 +226,93 @@ class StatusSignatureTest(unittest.TestCase):
             run_status(ulx3s_uart.STATUS_SIGNATURE[:3])
 
 
+class _FakeClock:
+    """Virtual clock, so deadline behaviour is asserted without real waiting."""
+
+    def __init__(self, start: float = 1000.0) -> None:
+        self.t = start
+
+    def __call__(self) -> float:
+        return self.t
+
+    def advance(self, seconds: float) -> None:
+        self.t += seconds
+
+
+class _StallingPort:
+    """Delivers one byte late, then stalls for whatever timeout it was armed with."""
+
+    def __init__(self, clock, first_byte_after: float, port_timeout: float) -> None:
+        self.timeout = port_timeout
+        self._clock = clock
+        self._first_byte_after = first_byte_after
+        self.armed: list = []
+        self.calls = 0
+
+    def read(self, n: int) -> bytes:
+        self.calls += 1
+        self.armed.append(self.timeout)
+        if self.calls == 1:
+            self._clock.advance(self._first_byte_after)
+            return b"\x01"
+        # A real blocking read consumes exactly the timeout it was armed with.
+        self._clock.advance(self.timeout)
+        return b""
+
+
+class RecvExactDeadlineTest(unittest.TestCase):
+    """`recv_exact` must bound the whole call, not each read separately.
+
+    pyserial applies the timeout set in open_port to every individual read, so
+    a byte arriving just before the deadline used to buy the read after it a
+    whole fresh timeout: a 2 s budget took 3.9 s. Re-arm from the time left.
+    """
+
+    def _run(self, budget=2.0, first_byte_after=1.9):
+        clock = _FakeClock()
+        port = _StallingPort(clock, first_byte_after, port_timeout=budget)
+        start = clock.t
+        with mock.patch.object(ulx3s_uart.time, "time", clock), mock.patch.object(
+            ulx3s_uart.time, "sleep", lambda s: None
+        ):
+            with self.assertRaises(TimeoutError):
+                ulx3s_uart.recv_exact(port, 4, timeout=budget)
+        return port, clock.t - start
+
+    def test_call_does_not_outlive_its_budget(self):
+        _, elapsed = self._run(budget=2.0, first_byte_after=1.9)
+        self.assertLessEqual(elapsed, 2.0 + 1e-9, "a late byte bought a second full timeout")
+
+    def test_each_read_is_armed_with_only_the_time_left(self):
+        port, _ = self._run(budget=2.0, first_byte_after=1.9)
+        self.assertGreaterEqual(port.calls, 2)
+        self.assertAlmostEqual(port.armed[1], 0.1, places=9)
+
+    def test_armed_timeouts_never_increase(self):
+        port, _ = self._run(budget=2.0, first_byte_after=0.5)
+        self.assertEqual(port.armed, sorted(port.armed, reverse=True))
+
+    def test_port_timeout_is_restored_for_the_next_transaction(self):
+        port, _ = self._run(budget=2.0, first_byte_after=1.9)
+        self.assertEqual(port.timeout, 2.0)
+
+    def test_a_port_without_a_timeout_attribute_still_works(self):
+        # Re-arming must not require the object to already expose .timeout.
+        class Bare:
+            def __init__(self, data):
+                self.data = bytearray(data)
+
+            def read(self, n):
+                chunk = bytes(self.data[:n])
+                del self.data[:n]
+                return chunk
+
+        self.assertEqual(
+            ulx3s_uart.recv_exact(Bare(ulx3s_uart.STATUS_SIGNATURE), 4, timeout=1.0),
+            ulx3s_uart.STATUS_SIGNATURE,
+        )
+
+
 class AbortByteInPayloadTest(unittest.TestCase):
     """0x7f inside an operand aborts the transaction in the bridge.
 

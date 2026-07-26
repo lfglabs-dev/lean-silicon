@@ -96,15 +96,31 @@ def send_bytes(ser: serial.Serial, data: bytes, inter_byte_delay: float = 0.0) -
 
 
 def recv_exact(ser: serial.Serial, n: int, timeout: float = TIMEOUT_S) -> bytes:
-    """Read exactly n bytes or raise on timeout."""
+    """Read exactly n bytes or raise once `timeout` seconds have passed.
+
+    The port's own timeout is re-armed to the time actually left before each
+    read. Leaving it at the value set in open_port bounds each read separately
+    rather than the call as a whole, so a byte landing just before the deadline
+    buys the read after it a whole fresh timeout: a 2 s budget takes nearly 4 s,
+    and a dribbling link stretches it further still.
+    """
     buf = bytearray()
     deadline = time.time() + timeout
-    while len(buf) < n and time.time() < deadline:
-        chunk = ser.read(n - len(buf))
-        if chunk:
-            buf.extend(chunk)
-        else:
-            time.sleep(0.0005)
+    restore = getattr(ser, "timeout", None)
+    try:
+        while len(buf) < n:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            ser.timeout = remaining
+            chunk = ser.read(n - len(buf))
+            if chunk:
+                buf.extend(chunk)
+            else:
+                time.sleep(max(0.0, min(0.0005, deadline - time.time())))
+    finally:
+        if restore is not None:
+            ser.timeout = restore
     if len(buf) != n:
         raise TimeoutError(f"expected {n} bytes, got {len(buf)}")
     return bytes(buf)
