@@ -64,6 +64,7 @@ def build_inputs(script: Path) -> set[str]:
         '"$RECIPE"': [script.name],
         '"$SUPPORT"': [_shell_var(text, "SUPPORT")],
         '"$ROOT/tools/atomic_publish.py"': ["../../tools/atomic_publish.py"],
+        '"$ROOT/tools/source_provenance.py"': ["../../tools/source_provenance.py"],
         "$SOURCES": sources.group(1).replace("\\\n", " ").split() if sources else [],
     }
     names: list[str] = []

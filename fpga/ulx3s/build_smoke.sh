@@ -54,7 +54,8 @@ cat "$STAGE/tool_versions.txt"
 # a match for an artifact HEAD cannot reproduce.
 RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST.txt" \
-    "${TOP}.sv" "$LPF" "$RECIPE" "$SUPPORT" "$ROOT/tools/atomic_publish.py"
+    "${TOP}.sv" "$LPF" "$RECIPE" "$SUPPORT" "$ROOT/tools/atomic_publish.py" \
+    "$ROOT/tools/source_provenance.py"
 
 echo "=== SYNTH ==="
 yosys -p "read_verilog -sv ${TOP}.sv; hierarchy -check -top ${TOP}; proc; check; synth_ecp5 -top ${TOP}; write_json ${TOP}.json" \

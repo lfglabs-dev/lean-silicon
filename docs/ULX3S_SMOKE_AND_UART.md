@@ -65,7 +65,7 @@ The LPF carries `FREQUENCY PORT "clk" 25.000000 MHz`. Without it nextpnr falls
 back to a 12 MHz default and a passing report says nothing about the real board
 clock.
 ```
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 161.47 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 25.00 MHz)
 ```
 
 ### Bitstream artefacts
