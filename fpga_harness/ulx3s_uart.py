@@ -31,6 +31,10 @@ try:
 except ImportError:  # pragma: no cover - only hit without pyserial installed
     serial = None  # type: ignore[assignment]
 
+COMMUNICATION_ERRORS = (
+    (TimeoutError, serial.SerialException) if serial is not None else (TimeoutError,)
+)
+
 # The GF(2^128) oracle lives in sim/, one level up from this package.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
@@ -318,9 +322,10 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0 if ok else 1
 
         return 0
-    except ValueError as e:
-        # A payload the link cannot carry is a tooling limit, not a bad board,
-        # so it must not share exit 1 with a genuine mismatch.
+    except (ValueError,) + COMMUNICATION_ERRORS as e:
+        # A payload the link cannot carry or a transaction that did not
+        # complete is not a bad board result, so neither may share exit 1 with
+        # a complete response that genuinely mismatches its oracle.
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
     finally:

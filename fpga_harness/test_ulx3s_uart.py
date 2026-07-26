@@ -222,8 +222,25 @@ class StatusSignatureTest(unittest.TestCase):
         self.assertEqual(fake.written, bytes([ulx3s_uart.ABORT, ulx3s_uart.STATUS]))
 
     def test_short_reply_is_not_silently_accepted(self):
-        with self.assertRaises(TimeoutError):
-            run_status(ulx3s_uart.STATUS_SIGNATURE[:3])
+        with mock.patch("sys.stderr") as stderr:
+            self.assertEqual(run_status(ulx3s_uart.STATUS_SIGNATURE[:3]), 2)
+        self.assertIn("expected 4 bytes, got 3", str(stderr.write.call_args_list))
+
+    def test_serial_transport_failure_is_reported_as_communication_error(self):
+        if ulx3s_uart.serial is None:
+            self.skipTest("pyserial is not installed")
+        fake = FakeSerial(b"", command_len=2)
+        with mock.patch.object(
+            ulx3s_uart, "open_port", return_value=fake
+        ), mock.patch.object(
+            ulx3s_uart,
+            "tx_status",
+            side_effect=ulx3s_uart.serial.SerialTimeoutException("write timed out"),
+        ), mock.patch("sys.stderr") as stderr:
+            rc = ulx3s_uart.main(["--port", "/dev/null", "--tx", "status"])
+        self.assertEqual(rc, 2)
+        self.assertIn("write timed out", str(stderr.write.call_args_list))
+        self.assertTrue(fake.closed)
 
 
 class _FakeClock:
