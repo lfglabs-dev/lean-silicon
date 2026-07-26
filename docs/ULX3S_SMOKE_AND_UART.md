@@ -7,13 +7,17 @@
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `aa6b41b` (clean tree, no uncommitted changes).
+- Artefact source revision: `62e96e7` (clean tree, no uncommitted changes).
   Rebuilding from a fresh checkout at that revision with the pinned toolchain
   below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
   `smoke.svf` byte for byte, at the same reported Fmax.
-- Design sources unchanged since `01e7046`: no commit after it touches the RTL or
-  the LPF, so every revision from `01e7046` onward emits these same bytes. The
-  later commits on this branch move host tooling, tests and evidence only.
+- Design sources unchanged since `62e96e7`: no commit after it touches the RTL,
+  the LPF or the build recipes -- the whole set the manifests digest -- so every
+  revision from `62e96e7` onward emits these same bytes. The RTL and LPF alone
+  have been unchanged since `01e7046`; `62e96e7` widened what provenance records
+  and left every synthesis command untouched, so the emitted bytes did not move
+  with it. The later commits on this branch carry host tooling, tests and
+  evidence only.
 - Branch: `fpga/ulx3s-smoke-uart-mincore`
 - Ownership: PR #13 owns host runtime files; PR #15 owns `board_detect/tests/global` and SHA256SUMS. Those paths untouched.
 
