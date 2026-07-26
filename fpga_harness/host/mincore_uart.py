@@ -163,6 +163,10 @@ class MinCoreDriver:
         transaction budget instead of being checked only once it returns.  The
         budget is re-read between them so that a slow query is charged against
         the read that follows it rather than granting it a stale allowance.
+
+        The drain is complete only when the device reports nothing buffered, and
+        a failure carries the bytes this drain already consumed so a caller can
+        report them instead of dropping the evidence of what arrived.
         """
         deadline, drained = self._deadline(deadline), bytearray()
         while True:
@@ -172,16 +176,22 @@ class MinCoreDriver:
                     break
                 chunk = self._bounded(lambda: self.transport.read(min(buffered, 4096)),
                                       deadline - self.clock(), message)
-            except TransportTimeout:
+            except TransportTimeout as error:
                 self._usable = False  # an abandoned call may still consume bytes later
+                error.observed = bytes(drained)
                 raise
-            except TransportFailure:
+            except TransportFailure as error:
+                error.observed = bytes(drained)
                 raise
             except Exception as error:
-                raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes") from error
-            if not chunk:
-                break
-            drained.extend(chunk)
+                raise TransportFailure(f"stale-input drain failed after {len(drained)} bytes",
+                                       observed=bytes(drained)) from error
+            # A read that returns nothing while bytes are still reported buffered
+            # made zero progress, so it is retried under the same budget.  Ending
+            # the drain there would leave those bytes to contaminate the response
+            # that follows, or let an immediately reported extra byte pass as none.
+            if chunk:
+                drained.extend(chunk)
         return bytes(drained)
 
     def _bounded(self, call: Callable[[], object], budget: float, timeout_message: str) -> object:
@@ -288,7 +298,18 @@ class MinCoreDriver:
             raise TransportFailure("output flush failed; transaction was not retried") from error
 
     def _reject_buffered_extra(self, deadline: Optional[float] = None, response: bytes = b"") -> None:
-        extra = self.drain_stale(deadline)
+        """Reject bytes still buffered once a complete response has been accepted.
+
+        A drain that fails partway has already consumed bytes the device sent
+        after this request, so they are reported together with the response:
+        those bytes are the evidence that framing was lost, and recording only
+        the accepted fixed-length response would omit it.
+        """
+        try:
+            extra = self.drain_stale(deadline)
+        except MinCoreError as error:
+            error.observed = response + error.observed
+            raise
         if extra:
             raise ResponseError(f"unexpected buffered response bytes: {extra.hex()}",
                                 observed=response + extra)
@@ -315,7 +336,14 @@ class MinCoreDriver:
         deadline = self.clock() + self.timeout
         response = b""
         try:
-            self.drain_stale(deadline)
+            try:
+                self.drain_stale(deadline)
+            except MinCoreError as error:
+                # Stale bytes predate the request, so they are not a response to
+                # it; reporting them as one would claim an observation this
+                # exchange never made.
+                error.observed = b""
+                raise
             self._write_all(request, deadline)
             needed = response_length(operation)
             if needed == 0:

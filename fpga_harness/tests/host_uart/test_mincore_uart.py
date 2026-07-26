@@ -299,6 +299,57 @@ class MinCoreUartTests(unittest.TestCase):
         with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
             driver.exchange("status")
 
+    def test_a_reported_byte_the_drain_cannot_read_is_never_a_finished_drain(self):
+        """Zero progress is not synchronization: the drain fails instead of passing."""
+        class PhantomExtra(FakeSerial):
+            """Reports one buffered byte that every read declines to deliver."""
+            @property
+            def in_waiting(self): return len(self.incoming) or 1
+
+        driver = MinCoreDriver(PhantomExtra(responses=(STATUS_BYTES,)), .2, Clock())
+        with self.assertRaisesRegex(TransportTimeout, "stale-input drain timeout"):
+            driver.exchange("status")  # accepting STATUS here would hide the extra byte
+        with self.assertRaisesRegex(TransportFailure, "unusable after an indeterminate exchange"):
+            driver.exchange("status")
+
+    def test_bytes_drained_before_a_timeout_are_reported_with_the_response(self):
+        """The bytes that prove framing was lost must survive the drain timeout."""
+        class DribbleAfterResponse(FakeSerial):
+            """Answers STATUS, then offers one more unexpected byte forever."""
+            def __init__(self):
+                super().__init__(); self.answered = False
+            @property
+            def in_waiting(self): return len(self.incoming) or (1 if self.answered else 0)
+            def read(self, size=1):
+                if self.answered and not self.incoming:
+                    self.incoming.extend(b"\xe0")
+                return super().read(size)
+            def write(self, data):
+                self.answered = True
+                self.incoming.extend(STATUS_BYTES)
+                return super().write(data)
+
+        with self.assertRaises(TransportTimeout) as stopped:
+            MinCoreDriver(DribbleAfterResponse(), .2, Clock()).exchange("status")
+        observed = stopped.exception.observed
+        self.assertEqual(observed[:len(STATUS_BYTES)], STATUS_BYTES)
+        self.assertGreater(len(observed), len(STATUS_BYTES))  # not just the accepted response
+        self.assertEqual(set(observed[len(STATUS_BYTES):]), {0xE0})
+
+    def test_a_timed_out_preflight_drain_reports_no_response(self):
+        """Stale bytes drained before the request are no answer to it."""
+        class StaleThenStalled(FakeSerial):
+            @property
+            def in_waiting(self): return len(self.incoming) or 1
+            def read(self, size=1):
+                if not self.incoming:
+                    self.incoming.extend(b"\xa5")  # never runs out of stale bytes
+                return super().read(size)
+
+        with self.assertRaises(TransportTimeout) as stopped:
+            MinCoreDriver(StaleThenStalled(), .2, Clock()).exchange("status")
+        self.assertEqual(stopped.exception.observed, b"")
+
     def test_invalid_operands_are_rejected_before_the_wire_is_touched(self):
         vector = VECTORS["set128"]
         serial = FakeSerial(b"stale", responses=(vector.expected,))

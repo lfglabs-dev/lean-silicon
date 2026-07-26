@@ -54,7 +54,11 @@ transport failure rather than an uncaught error.  Request operands are checked
 before that drain runs, so a rejected request never consumes a buffered byte,
 and a drain that fails or times out is itself an indeterminate outcome: it
 leaves an unknown number of stale bytes that a later exchange would otherwise
-read back as a response.  `--timeout` bounds one whole exchange rather than each
+read back as a response.  A drain ends only where the device reports nothing
+buffered: a read that returns no byte while one is still reported made no
+progress, so it is retried under the same budget instead of being counted as a
+finished drain that would let a reported extra byte pass as none.
+`--timeout` bounds one whole exchange rather than each
 phase: the drain, write, read, and flush share a single deadline, so phases that
 each stop just inside the limit cannot sum to several multiples of it.  A
 blocking call cannot be interrupted, so every transport call — the buffered-count
@@ -99,7 +103,10 @@ to the exception class name and `execution_attempted: true`.  Bytes that did
 arrive before the failure are kept: a rejected response (`STATUS` answering
 `01 01 00 08`) or a partial read that then timed out records the observed length
 and digest with `serial_response_observed: true`, so a failed exchange is never
-reported as a silent wire.  `pass` stays `null`, because those bytes were never
+reported as a silent wire.  Extra bytes a post-response drain consumed before it
+timed out are reported with the response they followed, because those bytes are
+the evidence that framing was lost.  Stale bytes drained *before* the request are
+not, since they answer no request this exchange sent.  `pass` stays `null`, because those bytes were never
 accepted.  The device may already have changed state,
 so a run that sent bytes and then timed out must not be indistinguishable from
 one that never ran; `execution_attempted` reports that the port was opened and
