@@ -260,6 +260,76 @@ def tx_status(ser: serial.Serial, timeout: float = TIMEOUT_S) -> bytes:
     return recv_response(ser, 4, timeout=timeout)
 
 
+def encode_request(
+    operation: str,
+    *,
+    a: bytes = b"",
+    b: bytes = b"",
+    value: bytes = b"",
+    include_resync: bool = True,
+) -> bytes:
+    """Encode the bytes the maintained bridge receives for one transaction.
+
+    The bridge uses an in-band ``0x7f`` byte to assert the ASIC's separate
+    ABORT pin. Every transaction helper sends that byte before its opcode, so
+    callers recording a wire transcript must include it as well. Historical
+    evidence captured from the older 115200-baud candidate can opt out with
+    ``include_resync=False``; active callers should keep the default.
+    """
+    prefix = bytes([ABORT]) if include_resync else b""
+    if operation == "status":
+        return prefix + bytes([STATUS])
+    if operation == "clear":
+        return prefix + bytes([CLEAR])
+    if operation == "set":
+        if len(value) != 16:
+            raise ValueError("SET128 value must be exactly 16 bytes")
+        reject_abort_byte("SET128 value", value)
+        return prefix + bytes([SET128]) + value
+    if len(a) != 16 or len(b) != 16:
+        raise ValueError(f"{operation.upper()}128 operands must each be exactly 16 bytes")
+    reject_abort_byte(f"{operation.upper()}128 operand A", a)
+    reject_abort_byte(f"{operation.upper()}128 operand B", b)
+    if operation == "xor":
+        interleaved = bytes(byte for pair in zip(a, b) for byte in pair)
+        return prefix + bytes([XOR128]) + interleaved
+    if operation == "mul":
+        return prefix + bytes([MUL128]) + a + b
+    raise ValueError(f"unsupported MinCore operation: {operation}")
+
+
+class MinCoreSerialDriver:
+    """Reusable transaction adapter over the reviewed PR #16 UART helpers."""
+
+    def __init__(self, ser: serial.Serial, timeout: float = TIMEOUT_S) -> None:
+        self.ser = ser
+        self.timeout = timeout
+
+    def exchange(
+        self,
+        operation: str,
+        *,
+        a: bytes = b"",
+        b: bytes = b"",
+        value: bytes = b"",
+    ) -> tuple[bytes, bytes]:
+        request = encode_request(operation, a=a, b=b, value=value)
+        if operation == "status":
+            response = tx_status(self.ser, timeout=self.timeout)
+        elif operation == "clear":
+            tx_clear(self.ser)
+            response = b""
+        elif operation == "set":
+            response = tx_set(self.ser, value, timeout=self.timeout)
+        elif operation == "xor":
+            response = tx_xor(self.ser, a, b, timeout=self.timeout)
+        elif operation == "mul":
+            response = tx_mul(self.ser, a, b, timeout=self.timeout)
+        else:  # encode_request normally rejects this before any I/O.
+            raise ValueError(f"unsupported MinCore operation: {operation}")
+        return request, response
+
+
 # Payload width each command consumes, in bytes. Single source of truth for the
 # CLI validation below and for the usage examples the docs advertise.
 PAYLOAD_BYTES = {"set": 16, "xor": 32, "mul": 32, "status": 0, "clear": 0}

@@ -1,13 +1,15 @@
 # ULX3S v3.1.8 Smoke and UART Harness (Sprint Deliverable)
 
-**Status**: Reviewable artefacts only. Never merged. Never programmed to hardware.
+**Status**: PR #16 review artifacts plus a bounded PR #19 physical follow-up on
+one ULX3S-85F. All programming described here was SRAM-only; no flash write was
+performed.
 
 ## Worktree and provenance
 - Branch base: `03926bbbbdc907d74214e4004985d36055d93a76` (`origin/main`). This is
   the pre-feature revision the branch was cut from. It contains none of the
   `fpga/ulx3s` design or build files, so it cannot build or identify the
   artefacts and must not be read as their source.
-- Artefact source revision: `0735354c53be421a8d67ceb0214b0b9da2835cac`
+- Artefact source revision: `9d5741961a3851c584fc2882ae7eccd41a1ec404`
   (clean tree, no uncommitted changes). Both source manifests record this full
   object ID, including every RTL, constraint, recipe and build-support input.
   This commit is in the published PR ancestry, so a non-shallow clone of the
@@ -16,7 +18,8 @@
   Rebuilding from a fresh checkout at that revision with the pinned toolchain
   below reproduces `ulx3s_smoke.bit`, `ulx3s_bridge.bit`, `smoke.config` and
   `smoke.svf` byte for byte, at the same reported Fmax.
-- Design sources unchanged since `0735354c53be421a8d67ceb0214b0b9da2835cac`:
+- Design sources unchanged since `0735354c53be421a8d67ceb0214b0b9da2835cac`;
+  the physical follow-up rebuild is recorded at `9d5741961a3851c584fc2882ae7eccd41a1ec404`:
   the regenerated archive records the complete build-input set at this exact
   revision. The RTL and LPF alone have been unchanged since `01e7046`; the
   later process-group support change is now included in both manifests and was
@@ -45,7 +48,7 @@
 ### Toolchain (pinned OSS CAD Suite 2026-07-25)
 Reproduced verbatim in `results/ulx3s-smoke-uart-20260725/tool_versions.txt`:
 ```
-Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/bin/clang++ 18.1.8)
+Yosys 0.67+94 (git sha1 7defa5186-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin23.5-clang++ 18.1.8)
 "nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.10-100-gfb95bb8e)
 Project Trellis ecppack Version 1.4-79-g56bb170
 ```
@@ -57,7 +60,8 @@ make -C fpga/ulx3s smoke      # runs fpga/ulx3s/build_smoke.sh
 The script resolves the repository root from its own location, so it may be run
 from any working directory. It archives the bitstream, config and SVF into
 `results/ulx3s-smoke-uart-20260725/` under the names the manifest lists, writes
-`SHA256SUMS` there, and then re-verifies it with `sha256sum -c` before exiting.
+`SHA256SUMS` there, and then re-verifies it with the portable Python checker
+before exiting.
 
 ### Post-route timing (captured)
 The LPF carries `FREQUENCY PORT "clk" 25.000000 MHz`. Without it nextpnr falls
@@ -69,7 +73,7 @@ Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 2
 
 ### Bitstream artefacts
 - `results/ulx3s-smoke-uart-20260725/ulx3s_smoke.bit`
-- SHA256: `eb3d81acee7562549af79f6c6d03d713c86f5a46a0892b6fd056f2c073cb45d2`
+- SHA256: `96eb9eda7421bac902eacaeced21eee0db9a80b8f2f2effdb52b515d68e0b2e3`
 
 ## P1 UART + bridge (1 Mbaud)
 - UART RX/TX: [fpga/ulx3s/uart_rx.sv](../fpga/ulx3s/uart_rx.sv), [uart_tx.sv](../fpga/ulx3s/uart_tx.sv)
@@ -98,14 +102,14 @@ Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 2
 ### Bridge post-route (same flow)
 Built with `make -C fpga/ulx3s uart`.
 ```
-Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 154.37 MHz (PASS at 25.00 MHz)
+Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 161.58 MHz (PASS at 25.00 MHz)
 ```
 Device utilisation confirms the core is really in the image, not optimised away:
 703 TRELLIS_COMB and 402 TRELLIS_FF against 34/25 for the bare smoke design.
 Only 4 TRELLIS_IO are used (`clk`, `led`, `uart_rx`, `uart_tx`), so the 8-bit
 ASIC boundary is not widened out to pins.
 - Bitstream: `results/ulx3s-smoke-uart-20260725/ulx3s_bridge.bit`
-- SHA256: `7272b0d8f5ccbe5de328aa1f0d1461e6e35b58cc4a2e132e5024aedeed08c187`
+- SHA256: `efa908bc6b4285d5461a4d6c2c65081ce7063efc7ede080a867ddbde81edde0e`
 - Byte-identical across two independent runs of the build script.
 
 ## P1 Python driver (new harness-owned path)
@@ -121,6 +125,33 @@ ASIC boundary is not widened out to pins.
   four garbage bytes exit 1. This matters because `status` is the default `--tx`.
 - Stale-byte drain on open and between transactions.
 - Timeout and clear/status support.
+
+### Restricted compiled-program runner (PR #19)
+
+`fpga_harness/host/mincore_program.py` reuses this maintained 1 Mbaud driver
+instead of the older 115200-baud diagnostic transport. It loads the frozen
+leanVM-b compiler artifact, owns bytecode, `pc`, `fp` and write-once memory on
+the host, and delegates each supported `Set`, `Xor` and `Mul` result through
+`MinCoreSerialDriver`. Consequently every active transaction inherits this
+bridge's `0x7f` resynchronization, payload restriction and response checks.
+
+Each returned arithmetic value is independently checked by the host runtime
+before its destination cell is committed. A conflict, missing operand,
+transport error or incorrect result changes no destination cell. The runner
+stops before `Deref`, `Jump` or `Blake3`; it is not a v1 packet executor and
+does not claim full VM execution.
+
+```sh
+make fpga-run-program FPGA_PORT=/dev/cu.usbserial-D01623
+```
+
+The historical `program-run.json` under `results/fpga-lsc1-20260726/` was
+captured against the older candidate bitstream and remains immutable evidence
+for that transport. It proves a 12-operation arithmetic prefix on that
+candidate, not a physical run of the maintained PR #16 bitstream. The active
+runner's maintained-driver integration is covered by deterministic tests and
+the UART bridge simulation; programming this bitstream still requires the
+review gate below.
 
 ### Known transport limitation: `0x7f` is not carried transparently
 
@@ -175,8 +206,10 @@ make check          # includes fpga-boundary, fpga-harness, checksum-check
 make sim            # both Icarus benches
 ```
 
-## Programming (SRAM-only, review gate)
-**Never execute before independent review.**
+## Programming (SRAM-only)
+
+The PR #19 follow-up executed both commands below after verifying the exact
+manifest hash. Neither command used `-f`.
 
 ```sh
 # SRAM load only (volatile). Power cycle to recover.
@@ -191,9 +224,15 @@ Power-cycle recovery: remove power or press reset; SRAM contents are lost.
 
 ## What this is not
 - Not a CPU/ISA validation.
-- Not a datapath validation on silicon.
-- Not a claim that bytes crossed a physical ULX3S.
-- The artefacts prove: reproducible OSS flow from the exact source recorded under "Worktree and provenance" above, exact `lean_silicon_lsc1` pin contract instantiated, post-route timing closed against an explicit 25 MHz constraint, and clean tests.
+- Not a complete leanVM-b execution or a v1 packet-endpoint validation.
+- The physical follow-up proves STATUS/SET/XOR/MUL bytes crossed one ULX3S and
+  that the supported 12-operation prefix matched the frozen upstream memory.
+  It does not prove the unsupported JUMP suffix, a second board, flash
+  persistence, or clean source-to-bitstream identity beyond the recorded
+  manifest and exact tested digest.
+- The build artefacts additionally prove the exact `lean_silicon_lsc1` pin
+  contract is instantiated and timing closes against an explicit 25 MHz
+  constraint.
 
 ## Supported transaction sequence (MinCore protocol)
 - SET128 (0x03): 1+16 bytes in → 16 bytes echo
@@ -206,7 +245,11 @@ Power-cycle recovery: remove power or press reset; SRAM contents are lost.
 All bytes traverse ui_in/uo_out/uio_* ready/valid. No wide bypass.
 
 ## Blockers / limits
-- No physical ULX3S attached in sprint environment.
+- The original PR #16 sprint had no physical board; the PR #19 follow-up used
+  one LFE5U-85F (`IDCODE 0x41113043`). A human observer confirmed the D0
+  heartbeat and performed a real power-cycle. The changed D0-D2 LED state and
+  loss of the UART STATUS signature confirm that the tested SRAM image did not
+  persist; the configuration that booted afterward was not authenticated.
 - No Verilator full bridge test (Icarus only; Verilator would require additional wrapper).
 - Bridge driver lacks host-side flow control backpressure beyond TX_READY gating.
 - LPF is hypothesis only for v3.1.8; full pin list and bank voltages unverified here.
@@ -220,13 +263,14 @@ All bytes traverse ui_in/uo_out/uio_* ready/valid. No wide bypass.
 
 ## Artefact manifest (local)
 Every file listed below is present in the committed results directory. Verify with
-`cd results/ulx3s-smoke-uart-20260725 && sha256sum -c SHA256SUMS && sha256sum -c SHA256SUMS_bridge.txt`.
+`python3 tools/portable_build_support.py check results/ulx3s-smoke-uart-20260725 SHA256SUMS`
+and the same command with `SHA256SUMS_bridge.txt`.
 ```
 results/ulx3s-smoke-uart-20260725/
   SHA256SUMS               # ulx3s_smoke.bit, smoke.config, smoke.svf
   SHA256SUMS_bridge.txt    # ulx3s_bridge.bit
-  ulx3s_smoke.bit          # eb3d81ac...
-  ulx3s_bridge.bit         # 7272b0d8...
+  ulx3s_smoke.bit          # 96eb9eda...
+  ulx3s_bridge.bit         # efa908bc...
   smoke.config
   smoke.svf
   tool_versions.txt        tool_versions_uart.txt
