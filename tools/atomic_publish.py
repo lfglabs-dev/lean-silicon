@@ -11,7 +11,8 @@ from pathlib import Path
 import shutil
 import signal
 
-AT_FDCWD = -100
+AT_FDCWD_LINUX = -100
+AT_FDCWD_DARWIN = -2
 RENAME_EXCHANGE = 2
 # Darwin calls the equivalent operation RENAME_SWAP.  It deliberately has the
 # same value as Linux's RENAME_EXCHANGE, but keeping a separately named
@@ -31,9 +32,9 @@ def _exchange(left: Path, right: Path) -> None:
     renameat2 = getattr(libc, "renameat2", None)
     if renameat2 is not None:
         result = renameat2(
-            AT_FDCWD,
+            AT_FDCWD_LINUX,
             os.fsencode(left),
-            AT_FDCWD,
+            AT_FDCWD_LINUX,
             os.fsencode(right),
             RENAME_EXCHANGE,
         )
@@ -48,9 +49,9 @@ def _exchange(left: Path, right: Path) -> None:
     renameatx_np = getattr(libc, "renameatx_np", None)
     if renameatx_np is not None:
         result = renameatx_np(
-            AT_FDCWD,
+            AT_FDCWD_DARWIN,
             os.fsencode(left),
-            AT_FDCWD,
+            AT_FDCWD_DARWIN,
             os.fsencode(right),
             RENAME_SWAP,
         )
