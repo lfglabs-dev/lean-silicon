@@ -251,6 +251,24 @@ class FlushDeadlineTest(unittest.TestCase):
         ):
             self.assertAlmostEqual(observed, expected)
 
+    def test_inter_byte_delay_uses_one_write_per_byte(self):
+        class FullBufferPort:
+            def __init__(self) -> None:
+                self.calls: list[bytes] = []
+
+            def write(self, data: bytes) -> int:
+                self.calls.append(data)
+                return len(data)
+
+            def flush(self) -> None:
+                pass
+
+        port = FullBufferPort()
+        with mock.patch.object(ulx3s_uart.time, "sleep") as sleep:
+            ulx3s_uart.send_bytes(port, b"\x10\x20\x30", inter_byte_delay=0.01)
+        self.assertEqual(port.calls, [b"\x10", b"\x20", b"\x30"])
+        self.assertEqual(sleep.call_count, 2)
+
 
 class MulExitStatusTest(unittest.TestCase):
     def test_correct_product_succeeds(self):

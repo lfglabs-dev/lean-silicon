@@ -175,15 +175,16 @@ def send_bytes(
                 raise TimeoutError("write timeout before the request was sent")
             if hasattr(ser, "write_timeout"):
                 ser.write_timeout = remaining
+            chunk = data[offset : offset + 1] if inter_byte_delay > 0 else data[offset:]
             written = _call_within(
-                lambda: ser.write(data[offset:]),
+                lambda: ser.write(chunk),
                 remaining,
                 "write timeout before the request was sent",
             )
             if (
                 not isinstance(written, int)
                 or written < 0
-                or written > len(data) - offset
+                or written > len(chunk)
             ):
                 raise OSError(f"serial write returned invalid byte count {written!r}")
             if written == 0:
