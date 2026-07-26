@@ -71,6 +71,7 @@ inductive Fault where
   | address
   | unresolvedPointer
   | invalidInverse
+  | invalidBranch
   | writeConflict
   | cellMismatch
   deriving DecidableEq, Repr
@@ -258,12 +259,15 @@ def jump (encode : Index → Word) (control : Control) (condition : Word)
     (targetPcWord targetFpWord inverseWitness : Word)
     (resolvedTargets : Option (Index × Index)) : JumpResult :=
   if condition = 0#128 then
-    if inverseWitness = 0#128 then
-      match checkedOffset control.pc 1 with
-      | some nextPc => .ok { control with pc := nextPc }
-      | none => .fault .address
-    else
-      .fault .invalidInverse
+    match resolvedTargets with
+    | some _ => .fault .invalidBranch
+    | none =>
+        if inverseWitness = 0#128 then
+          match checkedOffset control.pc 1 with
+          | some nextPc => .ok { control with pc := nextPc }
+          | none => .fault .address
+        else
+          .fault .invalidInverse
   else
     if acceptsInverse condition inverseWitness then
       match resolvedTargets with
@@ -283,6 +287,13 @@ def jump (encode : Index → Word) (control : Control) (condition : Word)
     jump encode control 0#128 targetPcWord targetFpWord 0#128 none =
       .ok { control with pc := nextPc } := by
   simp [jump, h]
+
+@[simp] theorem jump_not_taken_rejects_targets {encode : Index → Word}
+    {control : Control} {targetPcWord targetFpWord : Word}
+    (targetPc targetFp : Index) :
+    jump encode control 0#128 targetPcWord targetFpWord 0#128
+      (some (targetPc, targetFp)) = .fault .invalidBranch := by
+  simp [jump]
 
 @[simp] theorem jump_taken {encode : Index → Word} {control : Control}
     {condition : Word} (hnz : condition ≠ 0#128) (targetPc targetFp : Index)
@@ -322,12 +333,15 @@ theorem jump_not_taken_preserves_fp {encode : Index → Word}
     (h : jump encode control 0#128 targetPcWord targetFpWord 0#128 targets =
       .ok control') :
     control'.fp = control.fp := by
-  simp only [jump, ↓reduceIte] at h
-  split at h
-  next nextPc heq =>
-    cases h
-    rfl
-  next => cases h
+  cases targets with
+  | some targets => simp [jump] at h
+  | none =>
+      simp only [jump, ↓reduceIte, ↓reduceIte] at h
+      split at h
+      next nextPc heq =>
+        cases h
+        rfl
+      next => cases h
 
 theorem jump_deterministic (encode : Index → Word) (control : Control)
     (condition targetPcWord targetFpWord inverseWitness : Word)
