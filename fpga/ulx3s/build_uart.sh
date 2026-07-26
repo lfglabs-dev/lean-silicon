@@ -52,6 +52,7 @@ SOURCES="ulx3s_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv \
          ../../asic_core/rtl/lean_silicon_lsc1.sv \
          ../../asic_core/rtl/lean_silicon_lsc1_mincore.sv \
          ../../asic_core/rtl/lsc1_packet_frontend.sv \
+         ../../asic_core/rtl/lsc1_field_encoder.sv \
          ../../asic_core/rtl/lsc1_packet_rx.sv \
          ../../asic_core/rtl/lsc1_packet_tx.sv \
          ../../asic_core/rtl/lsc1_stream_adapter.sv \

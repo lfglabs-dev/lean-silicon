@@ -19,6 +19,7 @@ RTL = [
     "asic_core/rtl/gf128_mul_bitstream.sv",
     "asic_core/rtl/leanvm_b_stream_alu.sv",
     "asic_core/rtl/lsc1_stream_adapter.sv",
+    "asic_core/rtl/lsc1_field_encoder.sv",
     "asic_core/rtl/lsc1_packet_frontend.sv",
     "test/packet_frontend/tb_lsc1_packet_vector.sv",
 ]
@@ -85,6 +86,118 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         frames.append(protocol.RequestFrame(0x7F, b""))
         for frame in frames:
             with self.subTest(opcode=int(frame.opcode), length=len(frame.payload)):
+                self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+
+    def test_deref_and_jump_match_the_executable_model(self) -> None:
+        base = 40
+        pointer = protocol.Cell(True, protocol.field_encode(base))
+        frames = [
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=1, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.ABSENT, local=protocol.Cell(True, 0x99),
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=2, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.ABSENT, local=protocol.ABSENT,
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_PC, txn_id=3, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.ABSENT, local=protocol.ABSENT,
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_FP, txn_id=4, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.ABSENT, local=protocol.ABSENT,
+            ),
+            protocol.build_jump(
+                txn_id=5, pc=12, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(10, 11, 10),
+                cells=(
+                    protocol.Cell(True, 1),
+                    protocol.Cell(True, protocol.field_encode(15)),
+                    protocol.Cell(True, 1),
+                ),
+                taken=True, dest_pc=15, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, 1),
+            ),
+            protocol.build_jump(
+                txn_id=6, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(0, 1, 2),
+                cells=(
+                    protocol.Cell(True, 0), protocol.ABSENT, protocol.ABSENT,
+                ),
+                taken=False, dest_pc=0, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, 0),
+            ),
+        ]
+        for frame in frames:
+            with self.subTest(opcode=int(frame.opcode)):
+                self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+
+    def test_deref_and_jump_faults_match_the_executable_model(self) -> None:
+        base = 40
+        pointer = protocol.Cell(True, protocol.field_encode(base))
+        frames = [
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=1, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3,
+                pointer=protocol.Cell(True, 0), base=base,
+                target=protocol.ABSENT, local=protocol.Cell(True, 1),
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=2, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.Cell(True, 1), local=protocol.Cell(True, 2),
+            ),
+            protocol.build_jump(
+                txn_id=3, pc=12, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(10, 11, 10),
+                cells=(
+                    protocol.Cell(True, 1),
+                    protocol.Cell(True, protocol.field_encode(15)),
+                    protocol.Cell(True, 1),
+                ),
+                taken=False, dest_pc=0, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, 0),
+            ),
+            protocol.build_jump(
+                txn_id=4, pc=12, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(10, 11, 10),
+                cells=(
+                    protocol.Cell(True, 1),
+                    protocol.Cell(True, protocol.field_encode(15)),
+                    protocol.Cell(True, 1),
+                ),
+                taken=True, dest_pc=15, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, 0),
+            ),
+            protocol.build_jump(
+                txn_id=5, pc=12, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(10, 11, 10),
+                cells=(
+                    protocol.Cell(True, 1), protocol.Cell(True, 0xBAD),
+                    protocol.Cell(True, 1),
+                ),
+                taken=True, dest_pc=15, dest_fp=0,
+                proposed_inverse=protocol.Cell(True, 1),
+            ),
+        ]
+        for frame in frames:
+            with self.subTest(opcode=int(frame.opcode), txn=frame.payload[:4].hex()):
                 self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
 
 

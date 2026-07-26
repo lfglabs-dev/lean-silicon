@@ -1,6 +1,6 @@
 `default_nettype none
 
-// Packet endpoint for SET_CONSTANT, XOR, and MUL_NATIVE.  Results are staged
+// Packet endpoint for the scalar LSC-1 instruction set.  Results are staged
 // and become committed only on a matching RETIRE frame.  The explicit stream
 // adapter below preserves the product top's 8-bit ready/valid ASIC boundary.
 module lsc1_packet_frontend (
@@ -18,29 +18,37 @@ module lsc1_packet_frontend (
     output reg        done_pulse
 );
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03,
+                     OP_DEREF_CELL = 8'h04, OP_DEREF_PC = 8'h05,
+                     OP_DEREF_FP = 8'h06, OP_JUMP = 8'h07,
                      OP_NEGOTIATE = 8'h10, OP_RETIRE = 8'h12,
                      OP_STATUS = 8'h13;
     localparam [7:0] OK = 8'h00, RETIRED = 8'h02, INFO = 8'h03,
                      BAD_OPCODE = 8'h82, BAD_LENGTH = 8'h83,
                      BAD_FLAGS = 8'h85, BAD_PROFILE = 8'h86,
                      BAD_STATE = 8'h87, BAD_CELL = 8'h88,
-                     U32_OVERFLOW = 8'h89, BAD_INVERSE = 8'h8b,
+                     U32_OVERFLOW = 8'h89, BAD_POINTER = 8'h8a,
+                     BAD_INVERSE = 8'h8b,
                      WRITE_CONFLICT = 8'h8c,
+                     DEREF_MISMATCH = 8'h8d,
                      MUL_BACKSOLVE_ZERO = 8'h8e,
+                     BAD_BRANCH_PROPOSAL = 8'h8f,
                      UNSUPPORTED_IN_PROFILE = 8'h90,
                      RETIRE_MISMATCH = 8'h92,
                      STATE_MISMATCH = 8'h94, INDEX_RANGE = 8'h95,
                      ALIAS_INCONSISTENT = 8'h96;
-    localparam [2:0] C_IDLE = 3'd0, C_VERIFY_INVERSE = 3'd1,
-                     C_SOLVE = 3'd2, C_FORWARD = 3'd3,
-                     C_SET = 3'd4, C_XOR_SOLVE = 3'd5;
+    localparam [3:0] C_IDLE = 4'd0, C_VERIFY_INVERSE = 4'd1,
+                     C_SOLVE = 4'd2, C_FORWARD = 4'd3,
+                     C_SET = 4'd4, C_XOR_SOLVE = 4'd5,
+                     C_DEREF_POINTER = 4'd6, C_DEREF_VALUE = 4'd7,
+                     C_JUMP_INVERSE = 4'd8, C_JUMP_PC = 4'd9,
+                     C_JUMP_FP = 4'd10;
 
     wire frame_valid, rx_fault_valid;
     wire parser_rx_ready;
     wire rx_busy;
     wire [7:0] frame_opcode, rx_fault_status;
     wire [15:0] frame_length;
-    wire [751:0] frame_payload;
+    wire [2047:0] frame_payload;
     wire tx_busy;
     wire tx_done;
     wire [31:0] tx_payload_crc;
@@ -49,14 +57,18 @@ module lsc1_packet_frontend (
     reg [15:0] tx_length;
     reg [543:0] tx_payload;
     reg capture_result_crc;
-    reg [2:0] compute_state;
+    reg [3:0] compute_state;
     reg alu_start;
     reg [7:0] alu_operation;
     reg [127:0] alu_operand_a, alu_operand_b;
     wire alu_busy, alu_done, alu_fault;
     wire [127:0] alu_result;
+    reg encoder_start;
+    reg [15:0] encoder_index;
+    wire encoder_busy, encoder_done, encoder_fault;
+    wire [127:0] encoder_result;
     wire lane_enable = !tx_busy && !tx_start &&
-                       compute_state == C_IDLE && !alu_busy;
+                       compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
     reg result_pending;
     reg [31:0] staged_txn_id, staged_next_pc, staged_next_fp;
@@ -94,9 +106,15 @@ module lsc1_packet_frontend (
         .done_pulse(alu_done), .fault(alu_fault), .result(alu_result)
     );
 
+    lsc1_field_encoder field_encoder (
+        .clk(clk), .rst_n(rst_n), .abort(abort), .start(encoder_start),
+        .index(encoder_index), .busy(encoder_busy), .done_pulse(encoder_done),
+        .fault(encoder_fault), .result(encoder_result)
+    );
+
     assign rx_ready = parser_rx_ready && lane_enable;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
-                  compute_state != C_IDLE || alu_busy;
+                  compute_state != C_IDLE || alu_busy || encoder_busy;
 
     task automatic emit_fault;
         input [7:0] status;
@@ -117,10 +135,14 @@ module lsc1_packet_frontend (
         end
     endtask
 
-    integer n_writes, result_length;
+    integer n_writes, n_deferred, result_length;
     reg [31:0] txn_id, pc, fp, off_a, off_b, off_c;
     reg [31:0] addr_a, addr_b, addr_c;
+    reg [31:0] base_index, proposed_pc, proposed_fp;
+    reg [31:0] next_pc_value, next_fp_value;
+    reg [31:0] deferred_target, deferred_local;
     reg [7:0] profile, pres_a, pres_b, pres_c, inv_present;
+    reg [7:0] taken_proposal;
     reg [127:0] val_a, val_b, val_c, inv_value, result_value;
     reg [127:0] solved_a, solved_b;
     reg [543:0] result_bytes, retired_bytes;
@@ -133,8 +155,8 @@ module lsc1_packet_frontend (
         begin
             result_bytes = 0;
             result_bytes[0 +: 32] = txn_id;
-            result_bytes[32 +: 32] = pc + 1'b1;
-            result_bytes[64 +: 32] = fp;
+            result_bytes[32 +: 32] = next_pc_value;
+            result_bytes[64 +: 32] = next_fp_value;
             result_bytes[96 +: 8] = n_writes;
             if (n_writes != 0) begin
                 result_bytes[104 +: 32] = write_address;
@@ -149,21 +171,28 @@ module lsc1_packet_frontend (
                 end else begin
                     result_length = 39;
                 end
+            end else if (n_deferred != 0) begin
+                result_bytes[104 +: 8] = 1;
+                result_bytes[112 +: 32] = deferred_target;
+                result_bytes[144 +: 32] = deferred_local;
+                result_bytes[176 +: 8] = access_count;
+                result_bytes[184 +: 32] = addr_a;
+                result_bytes[216 +: 32] = addr_b;
+                result_bytes[248 +: 32] = addr_c;
+                result_length = 35;
             end else begin
-                result_bytes[104 +: 8] = 0; // n_deferred
+                result_bytes[104 +: 8] = 0;
                 result_bytes[112 +: 8] = access_count;
                 result_bytes[120 +: 32] = addr_a;
                 if (access_count == 3) begin
                     result_bytes[152 +: 32] = addr_b;
                     result_bytes[184 +: 32] = addr_c;
                     result_length = 27;
-                end else begin
-                    result_length = 19;
-                end
+                end else result_length = 19;
             end
             staged_txn_id <= txn_id;
-            staged_next_pc <= pc + 1'b1;
-            staged_next_fp <= fp;
+            staged_next_pc <= next_pc_value;
+            staged_next_fp <= next_fp_value;
             staged_result_crc <= 0;
             capture_result_crc <= 1'b1;
             result_pending <= 1'b1;
@@ -193,6 +222,42 @@ module lsc1_packet_frontend (
         end
     endtask
 
+    task automatic finish_deref_pointer;
+        begin
+            if (encoder_fault || encoder_result != val_a) begin
+                compute_state <= C_IDLE;
+                emit_fault(BAD_POINTER, txn_id, 0);
+            end else if (frame_opcode == OP_DEREF_CELL) begin
+                compute_state <= C_IDLE;
+                if (profile == 0 && !pres_c) begin
+                    emit_fault(UNSUPPORTED_IN_PROFILE, txn_id, 0);
+                end else if (pres_b && pres_c && val_b != val_c) begin
+                    emit_fault(DEREF_MISMATCH, txn_id, 0);
+                end else begin
+                    if (pres_b && !pres_c) begin
+                        n_writes = 1;
+                        write_address = addr_c;
+                        write_value = val_b;
+                    end else if (!pres_b && pres_c) begin
+                        n_writes = 1;
+                        write_address = addr_b;
+                        write_value = val_c;
+                    end else if (!pres_b && !pres_c) begin
+                        n_deferred = 1;
+                        deferred_target = addr_b;
+                        deferred_local = addr_c;
+                    end
+                    emit_result(3);
+                end
+            end else begin
+                encoder_index <= frame_opcode == OP_DEREF_PC
+                    ? pc[15:0] + 16'd2 : fp[15:0];
+                encoder_start <= 1'b1;
+                compute_state <= C_DEREF_VALUE;
+            end
+        end
+    endtask
+
     always @(posedge clk) begin
         if (!rst_n) begin
             tx_start <= 1'b0;
@@ -205,6 +270,8 @@ module lsc1_packet_frontend (
             alu_operation <= 0;
             alu_operand_a <= 0;
             alu_operand_b <= 0;
+            encoder_start <= 1'b0;
+            encoder_index <= 0;
             result_pending <= 1'b0;
             staged_txn_id <= 0;
             staged_next_pc <= 0;
@@ -224,6 +291,7 @@ module lsc1_packet_frontend (
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             alu_start <= 1'b0;
+            encoder_start <= 1'b0;
             result_pending <= 1'b0;
             fault <= 1'b1;
             last_status <= 8'h93;
@@ -232,13 +300,62 @@ module lsc1_packet_frontend (
         end else begin
             tx_start <= 1'b0;
             alu_start <= 1'b0;
+            encoder_start <= 1'b0;
             done_pulse <= 1'b0;
             if (tx_done && capture_result_crc) begin
                 staged_result_crc <= tx_payload_crc;
                 capture_result_crc <= 1'b0;
             end
 
-            if (alu_done && compute_state == C_SET) begin
+            if (encoder_done && compute_state == C_DEREF_POINTER) begin
+                finish_deref_pointer();
+            end else if (encoder_done && compute_state == C_DEREF_VALUE) begin
+                compute_state <= C_IDLE;
+                if (encoder_fault) begin
+                    emit_fault(BAD_STATE, txn_id, 3);
+                end else if (pres_b && val_b != encoder_result) begin
+                    emit_fault(WRITE_CONFLICT, txn_id, 0);
+                end else begin
+                    if (!pres_b) begin
+                        n_writes = 1;
+                        write_address = addr_b;
+                        write_value = encoder_result;
+                    end
+                    emit_result(3);
+                end
+            end else if (encoder_done && compute_state == C_JUMP_PC) begin
+                if (encoder_fault) begin
+                    compute_state <= C_IDLE;
+                    emit_fault(BAD_STATE, txn_id, 3);
+                end else if (encoder_result != val_b) begin
+                    compute_state <= C_IDLE;
+                    emit_fault(BAD_POINTER, txn_id, 0);
+                end else begin
+                    encoder_index <= proposed_fp[15:0];
+                    encoder_start <= 1'b1;
+                    compute_state <= C_JUMP_FP;
+                end
+            end else if (encoder_done && compute_state == C_JUMP_FP) begin
+                compute_state <= C_IDLE;
+                if (encoder_fault) begin
+                    emit_fault(BAD_STATE, txn_id, 3);
+                end else if (encoder_result != val_c) begin
+                    emit_fault(BAD_POINTER, txn_id, 0);
+                end else begin
+                    next_pc_value = proposed_pc;
+                    next_fp_value = proposed_fp;
+                    emit_result(3);
+                end
+            end else if (alu_done && compute_state == C_JUMP_INVERSE) begin
+                if (alu_fault || alu_result != 128'h1) begin
+                    compute_state <= C_IDLE;
+                    emit_fault(BAD_INVERSE, txn_id, 0);
+                end else begin
+                    encoder_index <= proposed_pc[15:0];
+                    encoder_start <= 1'b1;
+                    compute_state <= C_JUMP_PC;
+                end
+            end else if (alu_done && compute_state == C_SET) begin
                 if (alu_fault || alu_result != result_value) begin
                     compute_state <= C_IDLE;
                     emit_fault(BAD_STATE, txn_id, 3);
@@ -370,11 +487,19 @@ module lsc1_packet_frontend (
                     end
                 end else if (frame_opcode != OP_XOR &&
                              frame_opcode != OP_MUL &&
-                             frame_opcode != OP_SET) begin
+                             frame_opcode != OP_SET &&
+                             frame_opcode != OP_DEREF_CELL &&
+                             frame_opcode != OP_DEREF_PC &&
+                             frame_opcode != OP_DEREF_FP &&
+                             frame_opcode != OP_JUMP) begin
                     emit_fault(BAD_OPCODE, 0, 0);
                 end else if ((frame_opcode == OP_SET && frame_length != 51) ||
                              (frame_opcode == OP_XOR && frame_length != 77) ||
-                             (frame_opcode == OP_MUL && frame_length != 94)) begin
+                             (frame_opcode == OP_MUL && frame_length != 94) ||
+                             ((frame_opcode == OP_DEREF_CELL ||
+                               frame_opcode == OP_DEREF_PC ||
+                               frame_opcode == OP_DEREF_FP) && frame_length != 81) ||
+                             (frame_opcode == OP_JUMP && frame_length != 103)) begin
                     emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
                 end else if (result_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
@@ -389,8 +514,13 @@ module lsc1_packet_frontend (
                     decision_detail = 0;
                     result_bytes = 0;
                     n_writes = 0;
+                    n_deferred = 0;
                     write_address = 0;
                     write_value = 0;
+                    deferred_target = 0;
+                    deferred_local = 0;
+                    next_pc_value = pc + 1'b1;
+                    next_fp_value = fp;
 
                     if (frame_payload[13*8 +: 8] != 0) begin
                         decision_ok = 1'b0; decision_fault = BAD_FLAGS; decision_detail = 1;
@@ -423,6 +553,100 @@ module lsc1_packet_frontend (
                         end
                         addr_a = fp + off_a;
                         addr_b = 0; addr_c = 0;
+                    end else if (decision_ok &&
+                                 (frame_opcode == OP_DEREF_CELL ||
+                                  frame_opcode == OP_DEREF_PC ||
+                                  frame_opcode == OP_DEREF_FP)) begin
+                        off_a = frame_payload[112 +: 32];
+                        off_b = frame_payload[144 +: 32];
+                        off_c = frame_payload[176 +: 32];
+                        pres_a = frame_payload[26*8 +: 8];
+                        val_a = frame_payload[216 +: 128];
+                        base_index = frame_payload[43*8 +: 32];
+                        pres_b = frame_payload[47*8 +: 8];
+                        val_b = frame_payload[384 +: 128];
+                        pres_c = frame_payload[64*8 +: 8];
+                        val_c = frame_payload[520 +: 128];
+                        if (off_a > 32'hffffffff-fp || off_c > 32'hffffffff-fp ||
+                            off_b > 32'hffffffff-base_index) begin
+                            decision_ok = 0; decision_fault = U32_OVERFLOW;
+                        end else if (base_index >= 32'h00010000 ||
+                                     (frame_opcode == OP_DEREF_PC && pc > 32'h0000fffd)) begin
+                            decision_ok = 0; decision_fault = INDEX_RANGE;
+                        end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||
+                            (!pres_a && val_a != 0) || (!pres_b && val_b != 0) ||
+                            (!pres_c && val_c != 0)) begin
+                            decision_ok = 0; decision_fault = BAD_CELL;
+                        end else begin
+                            addr_a = fp + off_a;
+                            addr_b = base_index + off_b;
+                            addr_c = fp + off_c;
+                            if ((addr_a == addr_b && (pres_a != pres_b || val_a != val_b)) ||
+                                (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
+                                (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
+                                decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
+                            end else begin
+                                encoder_index <= base_index[15:0];
+                                encoder_start <= 1'b1;
+                                compute_state <= C_DEREF_POINTER;
+                                decision_deferred = 1'b1;
+                            end
+                        end
+                    end else if (decision_ok && frame_opcode == OP_JUMP) begin
+                        off_a = frame_payload[112 +: 32];
+                        off_b = frame_payload[144 +: 32];
+                        off_c = frame_payload[176 +: 32];
+                        pres_a = frame_payload[26*8 +: 8];
+                        val_a = frame_payload[216 +: 128];
+                        pres_b = frame_payload[43*8 +: 8];
+                        val_b = frame_payload[352 +: 128];
+                        pres_c = frame_payload[60*8 +: 8];
+                        val_c = frame_payload[488 +: 128];
+                        taken_proposal = frame_payload[77*8 +: 8];
+                        proposed_pc = frame_payload[78*8 +: 32];
+                        proposed_fp = frame_payload[82*8 +: 32];
+                        inv_present = frame_payload[86*8 +: 8];
+                        inv_value = frame_payload[696 +: 128];
+                        if (off_a > 32'hffffffff-fp || off_b > 32'hffffffff-fp ||
+                            off_c > 32'hffffffff-fp) begin
+                            decision_ok = 0; decision_fault = U32_OVERFLOW;
+                        end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||
+                            (!pres_a && val_a != 0) || (!pres_b && val_b != 0) ||
+                            (!pres_c && val_c != 0) || inv_present > 1 ||
+                            (!inv_present && inv_value != 0)) begin
+                            decision_ok = 0; decision_fault = BAD_CELL;
+                        end else begin
+                            addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
+                            if ((addr_a == addr_b && (pres_a != pres_b || val_a != val_b)) ||
+                                (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
+                                (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
+                                decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
+                            end else if (taken_proposal > 1 ||
+                                         taken_proposal != (val_a != 0)) begin
+                                decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
+                                decision_detail = 1;
+                            end else if (taken_proposal) begin
+                                if (proposed_pc >= 32'h00010000 ||
+                                    proposed_fp >= 32'h00010000) begin
+                                    decision_ok = 0; decision_fault = INDEX_RANGE;
+                                end else if (!inv_present) begin
+                                    decision_ok = 0; decision_fault = BAD_INVERSE;
+                                end else begin
+                                    alu_operation <= OP_MUL;
+                                    alu_operand_a <= val_a;
+                                    alu_operand_b <= inv_value;
+                                    alu_start <= 1'b1;
+                                    compute_state <= C_JUMP_INVERSE;
+                                    decision_deferred = 1'b1;
+                                end
+                            end else if ((inv_present && inv_value != 0)) begin
+                                decision_ok = 0; decision_fault = BAD_INVERSE;
+                                decision_detail = 3;
+                            end else if (proposed_pc != 0 || proposed_fp != 0) begin
+                                decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
+                                decision_detail = 2;
+                            end
+                        end
                     end else if (decision_ok) begin
                         off_a = frame_payload[112 +: 32];
                         off_b = frame_payload[144 +: 32];

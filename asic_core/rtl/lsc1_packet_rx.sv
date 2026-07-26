@@ -13,7 +13,7 @@ module lsc1_packet_rx (
     input  wire          frame_ready,
     output reg  [7:0]    frame_opcode,
     output reg  [15:0]   frame_length,
-    output reg  [751:0]  frame_payload,
+    output reg  [2047:0] frame_payload,
     output reg           fault_valid,
     output reg  [7:0]    fault_status,
     output wire          busy

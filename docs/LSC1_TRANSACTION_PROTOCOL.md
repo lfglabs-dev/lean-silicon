@@ -5,9 +5,10 @@ protocol carried over the LSC-1 8-bit ready/valid lane.
 
 - **Protocol version:** `1` (the `version` byte of every envelope).
 - **Status:** normative for the protocol and for the executable model
-  `sim/lsc1_transaction.py`. **It is not implemented in RTL.** `docs/LSC1_PROTOCOL.md`
-  records that the present RTL top is protocol *seed-0*; this document specifies
-  what v1 must become, and nothing here is a claim about existing hardware.
+  `sim/lsc1_transaction.py`. The RTL packet frontend implements negotiation,
+  status, retirement, SET/XOR/MUL, DEREF Cell/Pc/Fp and JUMP. BLAKE3 service
+  exchange remains model-only; see `docs/STATUS.md` for the exact capability
+  boundary.
 - **Executable companion:** `sim/lsc1_transaction.py`. Every packet length,
   status code and budget in this document is generated from that module and is
   checked against it by `sim/test_lsc1_protocol_doc.py`. Do not hand-edit the
