@@ -441,6 +441,8 @@ class RuntimeTests(unittest.TestCase):
 
     def test_an_acceptable_write_batch_is_still_retired_and_applied(self):
         """Guards the two tests above from passing because RETIRE never happens."""
+        # An Xor so both written addresses are ones the frame actually carried;
+        # a two-address batch is not a legal SET_CONSTANT frame.
         result_payload = (
             (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
             + bytes([2])
@@ -454,7 +456,7 @@ class RuntimeTests(unittest.TestCase):
         )
         memory = HostMemory(cells={3: 0xBB})
         runtime = self._ScriptedRuntime(
-            program(set_slot(2, 1)),
+            program({"op": "Xor", "a": 2, "b": 3, "c": 4}),
             memory=memory,
             result_payload=result_payload,
             retire_payload=retire_payload,
@@ -464,6 +466,72 @@ class RuntimeTests(unittest.TestCase):
         self.assertIsNone(record.fault)
         self.assertEqual(memory.read(2), 0xAA)
         self.assertEqual(memory.read(3), 0xBB)
+
+    def test_a_write_outside_the_frame_is_refused_before_retire_is_sent(self):
+        # A SET_CONSTANT frame carries exactly one cell. A result that writes
+        # some other address decided nothing about it: the host never sent that
+        # cell, so the endpoint cannot have reasoned about its value.
+        result_payload = (
+            (1).to_bytes(4, "little") + (7).to_bytes(4, "little") + bytes(4)
+            + bytes([1])
+            + (9).to_bytes(4, "little") + (0xDEAD).to_bytes(16, "little")
+            + bytes([0, 0])
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (7).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory()
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        with self.assertRaisesRegex(ProtocolViolation, "writes address 9"):
+            runtime.step()
+        self.assertEqual(memory.cells, {})
+        self.assertEqual(runtime.pc, 0)
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_an_access_outside_the_frame_is_refused_before_retire_is_sent(self):
+        result_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes(4)
+            + bytes([0])
+            + bytes([0])
+            + bytes([1]) + (9).to_bytes(4, "little")
+        )
+        retire_payload = (
+            (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+            + (1).to_bytes(4, "little") + bytes(4)
+        )
+        memory = HostMemory()
+        runtime = self._ScriptedRuntime(
+            program(set_slot(2, 1)),
+            memory=memory,
+            result_payload=result_payload,
+            retire_payload=retire_payload,
+        )
+        with self.assertRaisesRegex(ProtocolViolation, "access to address 9"):
+            runtime.step()
+        self.assertNotIn(protocol.Opcode.RETIRE, runtime.sent)
+
+    def test_every_real_endpoint_effect_stays_inside_the_frame(self):
+        # The containment rule must not reject the endpoint it is written
+        # against: drive the real endpoint and assert each opcode only ever
+        # touches addresses its own request carried.
+        runtime = HostRuntime(program(
+            set_slot(2, 3),
+            set_slot(3, 5),
+            {"op": "Xor", "a": 2, "b": 3, "c": 4},
+            {"op": "Mul", "a": 2, "b": 3, "c": 5},
+        ))
+        result = runtime.run()
+        self.assertEqual(result.terminal, "halted")
+        for record in result.records:
+            frame = set(record.addresses)
+            self.assertTrue({w["address"] for w in record.writes} <= frame)
+            self.assertTrue(set(record.accesses) <= frame)
 
     def test_stale_retire_txn_id_is_protocol_violation(self):
         result_payload = (

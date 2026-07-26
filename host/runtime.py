@@ -443,6 +443,29 @@ class HostRuntime:
             staged.record_deferred(item["target"], item["local"])
         staged.resolve_deferred()
 
+        # The host packed this frame, so it knows every address the transition
+        # was handed. Section 14 leaves the transition *decision* to the
+        # endpoint, and none of this second-guesses it, but an effect on a cell
+        # that was never in the request is outside the frame rather than a
+        # decision about it: the host never sent that cell, so the endpoint
+        # cannot have reasoned about its current value, and applying it would
+        # corrupt a memory image section 14 makes the host's own.
+        in_frame = set(addresses)
+        for write in writes:
+            if write["address"] not in in_frame:
+                raise ProtocolViolation(
+                    f"result writes address {write['address']}, which "
+                    f"{record.opcode} did not carry; frame addresses are "
+                    f"{sorted(in_frame)}"
+                )
+        for address in result["accesses"]:
+            if address not in in_frame:
+                raise ProtocolViolation(
+                    f"result counts an access to address {address}, which "
+                    f"{record.opcode} did not carry; frame addresses are "
+                    f"{sorted(in_frame)}"
+                )
+
         retire = self._exchange(
             protocol.build_retire(
                 txn_id=result["txn_id"],
