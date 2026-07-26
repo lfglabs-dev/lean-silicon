@@ -64,7 +64,7 @@ done
 # report a match for an artifact HEAD cannot reproduce.
 RECIPE=$(basename -- "$0")
 python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST_uart.txt" \
-    $SOURCES "$LPF" "$RECIPE" "$SUPPORT"
+    $SOURCES "$LPF" "$RECIPE" "$SUPPORT" "$ROOT/tools/atomic_publish.py"
 
 echo "=== SYNTH (full bridge + MinCore) ==="
 yosys -p "

@@ -69,7 +69,7 @@ Info: Max frequency for clock '$glbnet$clk$TRELLIS_IO_IN': 291.97 MHz (PASS at 2
 
 ### Bitstream artefacts
 - `results/ulx3s-smoke-uart-20260725/ulx3s_smoke.bit`
-- SHA256: `eb3d81acee7562549af79f6c6d03d713c86f5a46a0892b6fd056f2c073cb45d2`
+- SHA256: `96eb9eda7421bac902eacaeced21eee0db9a80b8f2f2effdb52b515d68e0b2e3`
 
 ## P1 UART + bridge (1 Mbaud)
 - UART RX/TX: [fpga/ulx3s/uart_rx.sv](../fpga/ulx3s/uart_rx.sv), [uart_tx.sv](../fpga/ulx3s/uart_tx.sv)
@@ -105,7 +105,7 @@ Device utilisation confirms the core is really in the image, not optimised away:
 Only 4 TRELLIS_IO are used (`clk`, `led`, `uart_rx`, `uart_tx`), so the 8-bit
 ASIC boundary is not widened out to pins.
 - Bitstream: `results/ulx3s-smoke-uart-20260725/ulx3s_bridge.bit`
-- SHA256: `7272b0d8f5ccbe5de328aa1f0d1461e6e35b58cc4a2e132e5024aedeed08c187`
+- SHA256: `eacee77bdca486f173cacdb56709e442942eb85f9111eabcb96026976f8bae51`
 - Byte-identical across two independent runs of the build script.
 
 ## P1 Python driver (new harness-owned path)
@@ -225,8 +225,8 @@ Every file listed below is present in the committed results directory. Verify wi
 results/ulx3s-smoke-uart-20260725/
   SHA256SUMS               # ulx3s_smoke.bit, smoke.config, smoke.svf
   SHA256SUMS_bridge.txt    # ulx3s_bridge.bit
-  ulx3s_smoke.bit          # eb3d81ac...
-  ulx3s_bridge.bit         # 7272b0d8...
+  ulx3s_smoke.bit          # 96eb9eda...
+  ulx3s_bridge.bit         # eacee77b...
   smoke.config
   smoke.svf
   tool_versions.txt        tool_versions_uart.txt
