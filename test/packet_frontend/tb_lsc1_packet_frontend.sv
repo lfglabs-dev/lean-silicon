@@ -238,13 +238,32 @@ module tb_lsc1_packet_frontend;
         send_frame(1, 8'h03, 0, 51, 0);
         wait_response(8'h87);
 
+        // Framing is validated before dispatch state; preserve the staged result.
+        build_set(32'h14, 1, 4);
+        send_frame(1, 8'h03, 0, 50, 0);
+        wait_response(8'h83);
+        clear_payload(); put_u32(0, 32'h13); put_u32(4, saved_result_crc);
+        send_frame(1, 8'h12, 0, 8, 0);
+        wait_response(8'h02);
+
+        // Restage before checking that a bad result CRC discards the result.
+        build_set(32'h13, 2, 4);
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
+        saved_result_length = response[3] | (response[4] << 8);
+        saved_result_crc = 32'hffffffff;
+        for (i = 0; i < saved_result_length; i = i + 1)
+            saved_result_crc = crc_byte(saved_result_crc, response[5+i]);
+        saved_result_crc = ~saved_result_crc;
+        response_count = 0;
+
         // Matching txn with bad result CRC discards the staged result.
         clear_payload(); put_u32(0, 32'h13); put_u32(4, saved_result_crc ^ 1);
         send_frame(1, 8'h12, 0, 8, 0);
         wait_response(8'h92);
 
         // Restage, then prove a foreign RETIRE also discards; retry is BAD_STATE.
-        build_set(32'h15, 1, 4);
+        build_set(32'h15, 2, 4);
         send_frame(1, 8'h03, 0, 51, 0);
         wait (response_count >= 5 + (response[3] | response[4]<<8) + 4);
         saved_result_length = response[3] | (response[4] << 8);
@@ -281,13 +300,28 @@ module tb_lsc1_packet_frontend;
         repeat (2) @(posedge clk);
         if (response_count != 0 || busy) $fatal(1, "reset retained partial packet");
 
-        // ABORT also cancels a partial packet, reports ABORTED, and never DONE.
+        // ABORT cancels a partial packet without emitting a response.
         send_beat(8'ha1, 0); send_beat(1, 0);
         @(negedge clk); abort = 1;
         @(posedge clk);
         @(negedge clk); abort = 0;
-        wait_response(8'h93);
+        repeat (12) @(posedge clk);
+        if (response_count != 0 || busy || tx_valid)
+            $fatal(1, "ABORT emitted a response for a partial packet");
         if (dut.retire_seq != 0) $fatal(1, "reset/abort changed retirement state");
+
+        // ABORT also discards a queued result response and its staged result.
+        @(negedge clk); tx_ready = 0;
+        build_set(32'h20, 0, 0);
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait (tx_valid);
+        @(negedge clk); abort = 1;
+        @(posedge clk);
+        @(negedge clk); abort = 0;
+        tx_ready = 1;
+        repeat (12) @(posedge clk);
+        if (response_count != 0 || busy || tx_valid || dut.result_pending)
+            $fatal(1, "ABORT retained or emitted a pending response");
 
         // Exercise the two other owned opcodes and check their staged writes.
         build_binary(32'h21, 0, 8'h01);
@@ -325,7 +359,7 @@ module tb_lsc1_packet_frontend;
             $fatal(1, "MUL backsolve result mismatch");
         retire_last(32'h23, 0);
         wait_response(8'h02);
-        if (done_count != 4 || dut.retire_seq != 3)
+        if (done_count != 5 || dut.retire_seq != 3)
             $fatal(1, "DONE count disagrees with successful retirements");
 
         $display("PASS: LSC-1 Phase-3 packet frontend adversarial test");

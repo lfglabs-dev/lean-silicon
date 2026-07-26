@@ -28,7 +28,7 @@ module lsc1_packet_frontend (
                      WRITE_CONFLICT = 8'h8c,
                      MUL_BACKSOLVE_ZERO = 8'h8e,
                      UNSUPPORTED_IN_PROFILE = 8'h90,
-                     RETIRE_MISMATCH = 8'h92, ABORTED = 8'h93,
+                     RETIRE_MISMATCH = 8'h92,
                      STATE_MISMATCH = 8'h94, INDEX_RANGE = 8'h95,
                      ALIAS_INCONSISTENT = 8'h96;
     localparam [1:0] C_IDLE = 2'd0, C_VERIFY_INVERSE = 2'd1,
@@ -37,7 +37,7 @@ module lsc1_packet_frontend (
     wire frame_valid, rx_fault_valid;
     wire parser_rx_ready;
     wire rx_busy;
-    wire lane_enable = !tx_busy && !tx_start && !abort_response_pending &&
+    wire lane_enable = !tx_busy && !tx_start &&
                        compute_state == C_IDLE && !mul_busy;
     wire [7:0] frame_opcode, rx_fault_status;
     wire [15:0] frame_length;
@@ -49,7 +49,6 @@ module lsc1_packet_frontend (
     reg [7:0] tx_status;
     reg [15:0] tx_length;
     reg [543:0] tx_payload;
-    reg abort_response_pending;
     reg capture_result_crc;
     reg [1:0] compute_state;
     reg mul_start;
@@ -64,7 +63,7 @@ module lsc1_packet_frontend (
     reg [31:0] committed_pc, committed_fp, retire_seq;
 
     wire event_valid = frame_valid || rx_fault_valid;
-    wire event_ready = !tx_busy && !tx_start && !abort_response_pending &&
+    wire event_ready = !tx_busy && !tx_start &&
                        compute_state == C_IDLE;
 
     lsc1_packet_rx receiver (
@@ -93,7 +92,7 @@ module lsc1_packet_frontend (
 
     assign rx_ready = parser_rx_ready && lane_enable;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
-                  abort_response_pending || compute_state != C_IDLE || mul_busy;
+                  compute_state != C_IDLE || mul_busy;
 
     task automatic emit_fault;
         input [7:0] status;
@@ -193,7 +192,6 @@ module lsc1_packet_frontend (
             tx_status <= 0;
             tx_length <= 0;
             tx_payload <= 0;
-            abort_response_pending <= 1'b0;
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             mul_start <= 1'b0;
@@ -212,7 +210,6 @@ module lsc1_packet_frontend (
             done_pulse <= 1'b0;
         end else if (abort) begin
             tx_start <= 1'b0;
-            abort_response_pending <= 1'b1;
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             mul_start <= 1'b0;
@@ -250,9 +247,6 @@ module lsc1_packet_frontend (
                 compute_state <= C_FORWARD;
             end else if (mul_done && compute_state == C_FORWARD) begin
                 finish_binary(mul_result);
-            end else if (abort_response_pending && !tx_busy) begin
-                abort_response_pending <= 1'b0;
-                emit_fault(ABORTED, 0, 0);
             end else if (event_valid && event_ready) begin
                 if (rx_fault_valid) begin
                     emit_fault(rx_fault_status, 0, 0);
@@ -289,6 +283,10 @@ module lsc1_packet_frontend (
                              frame_opcode != OP_MUL &&
                              frame_opcode != OP_SET) begin
                     emit_fault(BAD_OPCODE, 0, 0);
+                end else if ((frame_opcode == OP_SET && frame_length != 51) ||
+                             (frame_opcode == OP_XOR && frame_length != 77) ||
+                             (frame_opcode == OP_MUL && frame_length != 94)) begin
+                    emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
                 end else if (result_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
                 end else begin
@@ -305,11 +303,7 @@ module lsc1_packet_frontend (
                     write_address = 0;
                     write_value = 0;
 
-                    if ((frame_opcode == OP_SET && frame_length != 51) ||
-                        (frame_opcode == OP_XOR && frame_length != 77) ||
-                        (frame_opcode == OP_MUL && frame_length != 94)) begin
-                        decision_ok = 1'b0; decision_fault = BAD_LENGTH; decision_detail = 2;
-                    end else if (frame_payload[13*8 +: 8] != 0) begin
+                    if (frame_payload[13*8 +: 8] != 0) begin
                         decision_ok = 1'b0; decision_fault = BAD_FLAGS; decision_detail = 1;
                     end else if (profile > 1) begin
                         decision_ok = 1'b0; decision_fault = BAD_PROFILE;

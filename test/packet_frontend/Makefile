@@ -35,7 +35,25 @@ mutation:
 	    echo "RETIRE transaction-ID mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
 	  grep -q "status got=02 expected=92" "$$d/txn.out"; \
-	  echo "PASS: queued BUSY, SET value, and RETIRE transaction-ID mutations were detected"
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i "/end else if (abort) begin/,/end else begin/ s/result_pending <= 1'b0;/result_pending <= 1'b1;/" \
+	    "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/abort.vvp" \
+	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/abort.vvp" >"$$d/abort.out" 2>&1; then \
+	    echo "ABORT-discard mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "ABORT retained or emitted a pending response" "$$d/abort.out"; \
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i "s/frame_opcode == OP_SET && frame_length != 51/1'b0 \\&\\& frame_opcode == OP_SET \\&\\& frame_length != 51/" \
+	    "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/length.vvp" \
+	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/length.vvp" >"$$d/length.out" 2>&1; then \
+	    echo "BAD_LENGTH-order mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "status got=87 expected=83" "$$d/length.out"; \
+	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
 
 clean:
 	rm -f tb_lsc1_packet_frontend.vvp
