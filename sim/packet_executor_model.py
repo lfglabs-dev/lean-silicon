@@ -404,19 +404,28 @@ class PacketExecutor:
         except PacketFault as fault:
             self._fault(fault.status, fault.txn_id or txn_id, fault.detail)
 
-    def _preamble(self, reader: Reader) -> tuple[int, int, int, Profile]:
-        txn_id, pc, fp = reader.u32(), reader.u32(), reader.u32()
-        profile_code = reader.u8()
-        if profile_code not in (0, 1):
-            raise PacketFault(Status.BAD_PROFILE)
-        profile = Profile(profile_code)
-        if reader.u8() != 0:
-            raise PacketFault(Status.BAD_FLAGS, 1)
-        return txn_id, pc, fp, profile
-
     def _instruction(self, opcode: Opcode, reader: Reader) -> int:
-        txn_id, pc, fp, profile = self._preamble(reader)
+        txn_id = reader.u32()
         try:
+            pc, fp = reader.u32(), reader.u32()
+            profile_code = reader.u8()
+            if profile_code not in (0, 1):
+                raise PacketFault(Status.BAD_PROFILE)
+            profile = Profile(profile_code)
+            if reader.u8() != 0:
+                raise PacketFault(Status.BAD_FLAGS, 1)
+
+            # Decode the complete fixed payload before considering transaction
+            # state.  Malformed frames are rejected by their codec fault even
+            # when a prior transaction is awaiting retirement.
+            if opcode is Opcode.SET_CONSTANT:
+                offset, constant, supplied_cell = reader.u32(), reader.f128(), reader.cell()
+            else:
+                offsets = tuple(reader.u32() for _ in range(3))
+                cells = tuple(reader.cell() for _ in range(3))
+                inverse = reader.cell() if opcode is Opcode.MUL_NATIVE else Cell(False)
+            reader.finish()
+
             if self.state is not State.IDLE:
                 raise PacketFault(Status.BAD_STATE)
             if profile is not self.profile:
@@ -428,17 +437,11 @@ class PacketExecutor:
 
             memory = FrameMemory()
             if opcode is Opcode.SET_CONSTANT:
-                offset, constant, cell = reader.u32(), reader.f128(), reader.cell()
-                reader.finish()
                 address = checked_add(fp, offset)
-                memory.supply(address, cell)
+                memory.supply(address, supplied_cell)
                 memory.write_once(address, constant)
                 accesses = [address]
             else:
-                offsets = tuple(reader.u32() for _ in range(3))
-                cells = tuple(reader.cell() for _ in range(3))
-                inverse = reader.cell() if opcode is Opcode.MUL_NATIVE else Cell(False)
-                reader.finish()
                 addresses = tuple(checked_add(fp, offset) for offset in offsets)
                 for address, cell in zip(addresses, cells):
                     memory.supply(address, cell)

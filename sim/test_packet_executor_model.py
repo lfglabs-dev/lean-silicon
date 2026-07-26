@@ -53,6 +53,7 @@ def drive_request(
     *,
     rx_stalls: set[int] | None = None,
     tx_pattern: tuple[bool, ...] = (True,),
+    done_samples: list[bool] | None = None,
 ) -> bytes:
     rx_stalls = rx_stalls or set()
     sent = 0
@@ -66,6 +67,8 @@ def drive_request(
             rx_valid=rx_valid,
             tx_ready=tx_ready,
         )
+        if done_samples is not None:
+            done_samples.append(record.pins.done_pulse)
         if record.rx_committed:
             sent += 1
         if record.tx_committed:
@@ -170,9 +173,16 @@ class PacketExecutorTests(unittest.TestCase):
         result_payload = decode_response(candidate_result)[1]
         retirement = retire(0xA0B0C0D0, crc32(result_payload))
 
-        candidate_retired = drive_request(candidate, retirement, tx_pattern=(False, True))
-        expected_retired = drive_request(expected, retirement, tx_pattern=(False, True))
+        candidate_done, expected_done = [], []
+        candidate_retired = drive_request(
+            candidate, retirement, tx_pattern=(False, True), done_samples=candidate_done
+        )
+        expected_retired = drive_request(
+            expected, retirement, tx_pattern=(False, True), done_samples=expected_done
+        )
         self.assertEqual(candidate_retired, expected_retired)
+        self.assertEqual(candidate_done, expected_done)
+        self.assertEqual(sum(candidate_done), 1)
         self.assertEqual(
             (candidate.committed_pc, candidate.committed_fp, candidate.retire_seq),
             (expected.committed_pc, expected.committed_fp, expected.retire_seq),
@@ -181,6 +191,30 @@ class PacketExecutorTests(unittest.TestCase):
         # exactly its first drain cycle and must now be low on both endpoints.
         self.assertFalse(candidate.pins().done_pulse)
         self.assertFalse(expected.pins().done_pulse)
+
+    def test_decoded_transaction_id_survives_malformed_preamble(self):
+        for position, status in ((18, Status.BAD_PROFILE), (19, Status.BAD_FLAGS)):
+            request = bytearray(set_request(0x44332211, 0, 1))
+            request[position] = 2 if status is Status.BAD_PROFILE else 1
+            request[-4:] = crc32(request[:-4]).to_bytes(4, "little")
+            candidate = drive_request(PacketExecutor(), bytes(request))
+            expected = drive_request(reference.Lsc1Endpoint(), bytes(request))
+            actual_status, payload = decode_response(candidate)
+            self.assertEqual(decode_response(expected)[0], actual_status)
+            self.assertEqual((actual_status, payload[:4]), (status, b"\x11\x22\x33\x44"))
+
+    def test_malformed_payload_precedes_result_pending_state_guard(self):
+        candidate, expected = PacketExecutor(), reference.Lsc1Endpoint()
+        first = set_request(1, 0, 1)
+        self.assertEqual(drive_request(candidate, first), drive_request(expected, first))
+        malformed = bytearray(set_request(0x44332211, 0, 1))
+        malformed[40] = 2
+        malformed[-4:] = crc32(malformed[:-4]).to_bytes(4, "little")
+        candidate_response = drive_request(candidate, bytes(malformed))
+        expected_response = drive_request(expected, bytes(malformed))
+        status, payload = decode_response(candidate_response)
+        self.assertEqual(decode_response(expected_response)[0], status)
+        self.assertEqual((status, payload[:4]), (Status.BAD_CELL, b"\x11\x22\x33\x44"))
 
     def test_seeded_random_differential_and_scalar_oracle(self):
         rng = random.Random(0xC308034A)
