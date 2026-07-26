@@ -40,6 +40,8 @@ test_poisoned_result_wrong_txn_id_is_protocol_violation (test_host_runtime.Resul
 test_poisoned_stale_frame_regressions (test_host_runtime.ResultPayloadTests.test_poisoned_stale_frame_regressions)
 Poisoned or stale frames (wrong txn, tampered CRC) must be refused; F1 binding preserved. ... ok
 test_a_corrupted_response_is_not_reported_as_a_preparation_fault (test_host_runtime.RuntimeTests.test_a_corrupted_response_is_not_reported_as_a_preparation_fault) ... ok
+test_a_deferred_local_outside_the_frame_is_refused_before_retire_is_sent (test_host_runtime.RuntimeTests.test_a_deferred_local_outside_the_frame_is_refused_before_retire_is_sent) ... ok
+test_a_deferred_target_outside_the_frame_is_refused_before_retire_is_sent (test_host_runtime.RuntimeTests.test_a_deferred_target_outside_the_frame_is_refused_before_retire_is_sent) ... ok
 test_a_duplicate_retire_against_the_real_endpoint_is_refused (test_host_runtime.RuntimeTests.test_a_duplicate_retire_against_the_real_endpoint_is_refused) ... ok
 test_a_fault_bound_to_another_transaction_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_bound_to_another_transaction_is_a_protocol_violation) ... ok
 test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation (test_host_runtime.RuntimeTests.test_a_fault_payload_of_the_wrong_size_is_a_protocol_violation) ... ok
@@ -59,6 +61,8 @@ test_an_acceptable_write_batch_is_still_retired_and_applied (test_host_runtime.R
 Guards the two tests above from passing because RETIRE never happens. ... ok
 test_an_access_outside_the_frame_is_refused_before_retire_is_sent (test_host_runtime.RuntimeTests.test_an_access_outside_the_frame_is_refused_before_retire_is_sent) ... ok
 test_an_idle_guard_fault_is_still_attributed_to_the_step (test_host_runtime.RuntimeTests.test_an_idle_guard_fault_is_still_attributed_to_the_step) ... ok
+test_an_in_frame_deferred_pair_is_still_retired_and_recorded (test_host_runtime.RuntimeTests.test_an_in_frame_deferred_pair_is_still_retired_and_recorded)
+Guards the two tests above from passing because RETIRE never happens. ... ok
 test_an_invalid_deferred_equality_is_refused_before_retire_is_sent (test_host_runtime.RuntimeTests.test_an_invalid_deferred_equality_is_refused_before_retire_is_sent) ... ok
 test_an_overflowing_effective_address_is_a_fault_terminal (test_host_runtime.RuntimeTests.test_an_overflowing_effective_address_is_a_fault_terminal) ... ok
 test_arbitrary_rx_tx_stalls_and_backpressure (test_host_runtime.RuntimeTests.test_arbitrary_rx_tx_stalls_and_backpressure)
@@ -72,6 +76,7 @@ test_negotiate_requires_every_schema_field (test_host_runtime.RuntimeTests.test_
 test_sentinel_requires_zero_frame_pointer (test_host_runtime.RuntimeTests.test_sentinel_requires_zero_frame_pointer) ... ok
 test_set_xor_mul_are_driven_end_to_end (test_host_runtime.RuntimeTests.test_set_xor_mul_are_driven_end_to_end) ... ok
 test_stale_retire_txn_id_is_protocol_violation (test_host_runtime.RuntimeTests.test_stale_retire_txn_id_is_protocol_violation) ... ok
+test_the_real_endpoint_defers_only_inside_the_frame (test_host_runtime.RuntimeTests.test_the_real_endpoint_defers_only_inside_the_frame) ... ok
 test_the_step_limit_is_a_terminal_not_a_hang (test_host_runtime.RuntimeTests.test_the_step_limit_is_a_terminal_not_a_hang) ... ok
 test_the_step_record_carries_the_whole_comparison_schema (test_host_runtime.RuntimeTests.test_the_step_record_carries_the_whole_comparison_schema) ... ok
 test_unintegrated_opcodes_stop_the_run_and_say_what_is_missing (test_host_runtime.RuntimeTests.test_unintegrated_opcodes_stop_the_run_and_say_what_is_missing) ... ok
@@ -241,7 +246,7 @@ test_runner_profile_and_edges (test_scalar_step_oracle.ScalarStepOracleTests.tes
 test_seeded_field_differential_algorithms (test_scalar_step_oracle.ScalarStepOracleTests.test_seeded_field_differential_algorithms) ... ok
 
 ----------------------------------------------------------------------
-Ran 233 tests in 10.722s
+Ran 237 tests in 10.043s
 
 OK
 python3 tools/host_upstream_comparison.py --artifact host/fixtures/assert_set_xor_mul.program.json \
@@ -393,6 +398,6 @@ test_wide_function_argument_is_not_a_boundary_violation (test_boundary_check.Sub
 test_wide_task_argument_is_not_a_boundary_violation (test_boundary_check.SubprogramScopeTests.test_wide_task_argument_is_not_a_boundary_violation) ... ok
 
 ----------------------------------------------------------------------
-Ran 77 tests in 0.017s
+Ran 77 tests in 0.016s
 
 OK
