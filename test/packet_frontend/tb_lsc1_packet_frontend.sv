@@ -280,6 +280,14 @@ module tb_lsc1_packet_frontend;
         payload[34] = 2;
         send_frame(1, 8'h03, 0, 51, 0);
         wait_response(8'h88);
+        clear_payload();
+        payload[0] = 2; payload[1] = 2; payload[2] = 2;
+        send_frame(1, 8'h10, 0, 7, 0);
+        wait_response(8'h86);
+        clear_payload();
+        payload[0] = 2; payload[1] = 2; payload[2] = 1;
+        send_frame(1, 8'h10, 0, 7, 0);
+        wait_response(8'h87);
 
         // Framing is validated before dispatch state; preserve the staged result.
         build_set(32'h14, 1, 4);
@@ -332,6 +340,9 @@ module tb_lsc1_packet_frontend;
         clear_payload();
         send_beat(8'ha1, 0); send_beat(1, 0); send_beat(8'h03, 0);
         send_beat(0, 0); send_beat(1, 0); send_beat(1, 0);
+        wait (response_count >= 14);
+        if (response[9] !== 1)
+            $fatal(1, "oversized header BAD_LENGTH detail mismatch");
         wait_response(8'h83); // 257-byte declaration rejected at the header
 
         // A truncated frame cannot retire: reset drops it without a response.

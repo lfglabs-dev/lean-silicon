@@ -385,7 +385,7 @@ module lsc1_packet_frontend (
             end else if (alu_done && compute_state == C_VERIFY_INVERSE) begin
                 if (alu_fault || alu_result != 128'h1) begin
                     compute_state <= C_IDLE;
-                    emit_fault(BAD_INVERSE, txn_id, 0);
+                    emit_fault(BAD_INVERSE, txn_id, 2);
                 end else begin
                     alu_operation <= OP_MUL;
                     alu_operand_a <= val_c;
@@ -413,7 +413,8 @@ module lsc1_packet_frontend (
                 end
             end else if (event_valid && event_ready) begin
                 if (rx_fault_valid) begin
-                    emit_fault(rx_fault_status, 0, 0);
+                    emit_fault(rx_fault_status, 0,
+                               rx_fault_status == BAD_LENGTH ? 1 : 0);
                 end else if (frame_opcode == OP_STATUS) begin
                     if (frame_length != 0) begin
                         emit_fault(BAD_LENGTH, 0, 2);
@@ -437,6 +438,10 @@ module lsc1_packet_frontend (
                 end else if (frame_opcode == OP_NEGOTIATE) begin
                     if (frame_length != 7) begin
                         emit_fault(BAD_LENGTH, 0, 2);
+                    end else if (frame_payload[16 +: 8] > 1) begin
+                        emit_fault(BAD_PROFILE, 0, 0);
+                    end else if (result_pending) begin
+                        emit_fault(BAD_STATE, 0, 0);
                     end else if (!(frame_payload[0 +: 8] <= 1 &&
                                    frame_payload[8 +: 8] >= 1)) begin
                         emit_fault(8'h81, 0, 0);
@@ -444,8 +449,6 @@ module lsc1_packet_frontend (
                         // This integrated subset implements interpreter-compatible
                         // reconciliation only and advertises that honestly.
                         emit_fault(BAD_PROFILE, 0, 0);
-                    end else if (result_pending) begin
-                        emit_fault(BAD_STATE, 0, 0);
                     end else begin
                         active_profile <= frame_payload[16 +: 8];
                         result_bytes = 0;

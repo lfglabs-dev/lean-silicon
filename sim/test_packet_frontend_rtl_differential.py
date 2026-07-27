@@ -101,6 +101,17 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         base = 40
         pointer = protocol.Cell(True, protocol.field_encode(base))
         frames = [
+            protocol.build_binary_op(
+                protocol.Opcode.MUL_NATIVE, txn_id=0, pc=0, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                offsets=(1, 2, 3),
+                cells=(
+                    protocol.ABSENT,
+                    protocol.Cell(True, 7),
+                    protocol.Cell(True, 9),
+                ),
+                proposed_inverse=protocol.Cell(True, 1),
+            ),
             protocol.build_deref(
                 protocol.Opcode.DEREF_CELL, txn_id=1, pc=5, fp=64,
                 profile=protocol.Profile.INTERPRETER_COMPAT,
