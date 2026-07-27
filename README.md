@@ -1,11 +1,19 @@
-# leanSilicon
+<p align="center">
+  <img src="docs/assets/lean-silicon-logo.png" alt="Project logo" width="520">
+</p>
 
-**Project objective:** a formally verified physical scalar coprocessor for
-leanVM-b. **Current status:** verification in progress; the current evidence
-does not establish that objective.
+<p align="center">
+  A physical scalar coprocessor for leanVM-b, designed around an explicit
+  hardware boundary and a verification-first implementation path.
+</p>
+
+> [!IMPORTANT]
+> **Project objective:** a formally verified physical scalar coprocessor for
+> leanVM-b. **Current status:** verification in progress; the current evidence
+> does not establish that objective.
 
 LSC-1 receives one host-prepared instruction transaction at a time over an
-8-bit ready/valid interface. The Mac owns compilation, program storage, VM
+8-bit ready/valid interface. The host owns compilation, program storage, VM
 memory, hints/witnesses, pointer resolution, deferred equality, inversion
 assistance, BLAKE3, traces, and proofs. The ASIC validates and executes the
 non-BLAKE3 scalar transition, returning next pc/fp, writes, deferred events,
