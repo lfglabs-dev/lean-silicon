@@ -16,5 +16,6 @@ the upstream comparison.
 This package consumes the transaction protocol. It does not define wire
 formats, opcodes, status codes or profiles, and must not change them.
 
-`SET_CONSTANT`, `XOR` and `MUL_NATIVE` are integrated. `DEREF`, `JUMP` and
-`BLAKE3` raise `UnsupportedCapability` naming the missing host capability.
+`SET_CONSTANT`, `XOR`, `MUL_NATIVE`, `DEREF` and `JUMP` are integrated in the
+host runtime. `BLAKE3` raises `UnsupportedCapability` naming the missing host
+service.
