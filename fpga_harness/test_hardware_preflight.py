@@ -39,12 +39,16 @@ class SafetyTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             preflight.main(["--flash"])
 
-    def test_uart_probe_child_only_opens_and_closes(self) -> None:
-        command = preflight._serial_probe_command("/dev/ttyUSB0", 0.1)
-        self.assertEqual(command[-1], "/dev/ttyUSB0")
-        self.assertIn("s.close()", command[2])
-        self.assertNotIn("write(", command[2])
-        self.assertNotIn("send_break", command[2])
+    def test_uart_candidates_are_never_opened(self) -> None:
+        with mock.patch.object(preflight, "serial_candidates", return_value=["/dev/ttyUSB0"]), \
+             mock.patch.object(preflight, "device_metadata", return_value={"path": "/dev/ttyUSB0"}), \
+             mock.patch.object(preflight, "safe_loader_detect", return_value={"idcode": None}), \
+             mock.patch.object(preflight.board_detect, "_enumerate_usb", return_value=()), \
+             mock.patch.object(preflight, "_git", side_effect=["abc", ""]), \
+             mock.patch.object(preflight, "bounded", side_effect=AssertionError("UART command executed")):
+            payload = preflight.evidence(0.1)
+        self.assertEqual(payload["uart"]["candidates"], [{"path": "/dev/ttyUSB0"}])
+        self.assertIn("not opened", payload["uart"]["probe"])
 
     def test_evidence_records_no_hardware_writes_and_redacts(self) -> None:
         with mock.patch.object(preflight, "serial_candidates", return_value=[]), mock.patch.object(preflight, "safe_loader_detect", return_value={"idcode": None}), mock.patch.object(preflight.board_detect, "_enumerate_usb", return_value=()), mock.patch.object(preflight, "_git", side_effect=["abc", ""]):

@@ -245,9 +245,30 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 proposed_inverse=protocol.Cell(True, 1),
             ),
         ]
+        valid_jump = protocol.build_jump(
+            txn_id=6, pc=12, fp=0,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            offsets=(10, 11, 10),
+            cells=(
+                protocol.Cell(True, 1),
+                protocol.Cell(True, protocol.field_encode(15)),
+                protocol.Cell(True, 1),
+            ),
+            taken=True, dest_pc=15, dest_fp=0,
+            proposed_inverse=protocol.Cell(True, 1),
+        )
+        malformed_payload = bytearray(valid_jump.payload)
+        malformed_payload[77] = 2
         for frame in frames:
             with self.subTest(opcode=int(frame.opcode), txn=frame.payload[:4].hex()):
                 self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+        malformed = protocol.RequestFrame(valid_jump.opcode, bytes(malformed_payload))
+        rtl_fault = self.rtl_exchange(malformed)
+        model_fault = model_exchange(malformed)
+        self.assertEqual(rtl_fault[2], int(protocol.Status.BAD_BRANCH_PROPOSAL))
+        self.assertEqual(rtl_fault[2], model_fault[2])
+        self.assertEqual(rtl_fault[9], 3)
+        self.assertEqual(rtl_fault[9], model_fault[9])
 
 
 if __name__ == "__main__":

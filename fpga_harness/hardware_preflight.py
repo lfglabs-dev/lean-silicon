@@ -5,9 +5,9 @@ This command deliberately has no bitstream argument and never invokes a loader
 with a programming or flash option.  Its only JTAG operation is the bounded
 ``openFPGALoader -b ulx3s --detect`` scan.  On Linux it prefers the stable FTDI
 by-id name containing the documented ULX3S serial ``D01623`` and only then
-falls back to a bounded, sorted ``/dev/ttyUSB*`` list.  A candidate UART is
-opened and closed in a short-lived child process; no bytes, BREAK, DTR/RTS
-change, flush, or drain operation is performed.
+falls back to a bounded, sorted ``/dev/ttyUSB*`` list. Candidate UARTs are
+inspected through filesystem metadata only. The command never opens a serial
+device, so it cannot send bytes or change BREAK, DTR, or RTS.
 """
 from __future__ import annotations
 
@@ -81,15 +81,6 @@ def device_metadata(path: str) -> dict[str, object]:
     }
 
 
-def _serial_probe_command(path: str, timeout: float) -> list[str]:
-    code = (
-        "import serial,sys; "
-        f"s=serial.Serial(sys.argv[1], baudrate=1000000, timeout={timeout!r}, write_timeout={timeout!r}); "
-        "s.close(); print('opened-and-closed')"
-    )
-    return [sys.executable, "-c", code, path]
-
-
 def safe_loader_detect(timeout: float) -> dict[str, object]:
     loader = shutil.which("openFPGALoader")
     command = [loader, "-b", "ulx3s", "--detect"] if loader else ["openFPGALoader", "-b", "ulx3s", "--detect"]
@@ -113,21 +104,13 @@ def version(name: str) -> str | None:
     return value or None
 
 
-def evidence(timeout: float, check_uart: bool = True) -> dict[str, object]:
-    """Collect safe observations.  This function never writes protocol bytes."""
+def evidence(timeout: float) -> dict[str, object]:
+    """Collect safe observations without opening a UART device."""
     candidates = serial_candidates()
-    uart: dict[str, object] = {"candidates": [device_metadata(p) for p in candidates]}
-    if check_uart and candidates:
-        path = candidates[0]
-        command = _serial_probe_command(path, timeout)
-        rc, output = bounded(command, timeout)
-        uart["open_close"] = {
-            "path": path, "command": command, "timeout_seconds": timeout,
-            "returncode": rc, "output": output,
-            "protocol_writes": False, "break_sent": False,
-        }
-    elif check_uart:
-        uart["open_close"] = {"skipped": "no serial candidate; loader released before UART probe"}
+    uart: dict[str, object] = {
+        "probe": "metadata-only; serial devices were not opened",
+        "candidates": [device_metadata(p) for p in candidates],
+    }
     usb = [
         {"vid": f"0x{vid:04x}", "pid": f"0x{pid:04x}", "label": label}
         for vid, pid, label in board_detect._enumerate_usb()
@@ -162,7 +145,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--output", type=Path, help="write JSON evidence to this new file")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S)
-    parser.add_argument("--no-uart-open", action="store_true", help="do not open/close a discovered UART")
+    parser.add_argument(
+        "--no-uart-open",
+        action="store_true",
+        help="deprecated compatibility option; UART devices are never opened",
+    )
     args, unknown = parser.parse_known_args(argv)
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
@@ -170,7 +157,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("programming and persistent-flash options are refused")
     if unknown:
         parser.error(f"unknown arguments: {' '.join(unknown)}")
-    payload = evidence(args.timeout, check_uart=not args.no_uart_open)
+    payload = evidence(args.timeout)
     encoded = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.output:
         if args.output.exists():

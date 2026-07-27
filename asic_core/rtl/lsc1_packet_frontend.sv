@@ -621,8 +621,10 @@ module lsc1_packet_frontend (
                                 (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
                                 (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
-                            end else if (taken_proposal > 1 ||
-                                         taken_proposal != (val_a != 0)) begin
+                            end else if (taken_proposal > 1) begin
+                                decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
+                                decision_detail = 3;
+                            end else if (taken_proposal != (val_a != 0)) begin
                                 decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
                                 decision_detail = 1;
                             end else if (taken_proposal) begin
