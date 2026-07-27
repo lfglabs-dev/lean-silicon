@@ -266,6 +266,21 @@ module tb_lsc1_packet_frontend;
         send_frame(1, 8'h03, 0, 51, 0);
         wait_response(8'h87);
 
+        // Payload decoding precedes the pending-state guard.  Profile is
+        // decoded before flags, and decoder faults have transaction ID zero.
+        build_set(32'h14, 1, 4);
+        payload[12] = 2;
+        payload[13] = 1;
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait (response_count >= 14);
+        if ({response[8],response[7],response[6],response[5]} !== 0)
+            $fatal(1, "decoder fault acquired payload transaction ID");
+        wait_response(8'h86);
+        build_set(32'h14, 1, 4);
+        payload[34] = 2;
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait_response(8'h88);
+
         // Framing is validated before dispatch state; preserve the staged result.
         build_set(32'h14, 1, 4);
         send_frame(1, 8'h03, 0, 50, 0);

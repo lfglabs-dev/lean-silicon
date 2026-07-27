@@ -135,6 +135,14 @@ module lsc1_packet_frontend (
         end
     endtask
 
+    function automatic cell_is_malformed;
+        input [7:0] present;
+        input [127:0] value;
+        begin
+            cell_is_malformed = present > 1 || (!present && value != 0);
+        end
+    endfunction
+
     integer n_writes, n_deferred, result_length;
     reg [31:0] txn_id, pc, fp, off_a, off_b, off_c;
     reg [31:0] addr_a, addr_b, addr_c;
@@ -501,6 +509,51 @@ module lsc1_packet_frontend (
                                frame_opcode == OP_DEREF_FP) && frame_length != 81) ||
                              (frame_opcode == OP_JUMP && frame_length != 103)) begin
                     emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
+                // Match decode_request_payload: malformed payloads are rejected
+                // before dispatch sees the pending transaction, and decoder
+                // faults do not acquire the payload transaction ID.
+                end else if (frame_payload[12*8 +: 8] > 1) begin
+                    emit_fault(BAD_PROFILE, 0, 0);
+                end else if (frame_payload[13*8 +: 8] != 0) begin
+                    emit_fault(BAD_FLAGS, 0, 1);
+                end else if (frame_opcode == OP_SET &&
+                             cell_is_malformed(frame_payload[34*8 +: 8],
+                                               frame_payload[280 +: 128])) begin
+                    emit_fault(BAD_CELL, 0, 0);
+                end else if ((frame_opcode == OP_DEREF_CELL ||
+                              frame_opcode == OP_DEREF_PC ||
+                              frame_opcode == OP_DEREF_FP) &&
+                             (cell_is_malformed(frame_payload[26*8 +: 8],
+                                                frame_payload[216 +: 128]) ||
+                              cell_is_malformed(frame_payload[47*8 +: 8],
+                                                frame_payload[384 +: 128]) ||
+                              cell_is_malformed(frame_payload[64*8 +: 8],
+                                                frame_payload[520 +: 128]))) begin
+                    emit_fault(BAD_CELL, 0, 0);
+                end else if (frame_opcode == OP_JUMP &&
+                             (cell_is_malformed(frame_payload[26*8 +: 8],
+                                                frame_payload[216 +: 128]) ||
+                              cell_is_malformed(frame_payload[43*8 +: 8],
+                                                frame_payload[352 +: 128]) ||
+                              cell_is_malformed(frame_payload[60*8 +: 8],
+                                                frame_payload[488 +: 128]) ||
+                              cell_is_malformed(frame_payload[86*8 +: 8],
+                                                frame_payload[696 +: 128]))) begin
+                    emit_fault(BAD_CELL, 0, 0);
+                end else if (frame_opcode == OP_JUMP &&
+                             frame_payload[77*8 +: 8] > 1) begin
+                    emit_fault(BAD_BRANCH_PROPOSAL, 0, 3);
+                end else if ((frame_opcode == OP_XOR || frame_opcode == OP_MUL) &&
+                             (cell_is_malformed(frame_payload[26*8 +: 8],
+                                                frame_payload[216 +: 128]) ||
+                              cell_is_malformed(frame_payload[43*8 +: 8],
+                                                frame_payload[352 +: 128]) ||
+                              cell_is_malformed(frame_payload[60*8 +: 8],
+                                                frame_payload[488 +: 128]) ||
+                              (frame_opcode == OP_MUL &&
+                               cell_is_malformed(frame_payload[77*8 +: 8],
+                                                 frame_payload[624 +: 128])))) begin
+                    emit_fault(BAD_CELL, 0, 0);
                 end else if (result_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
                 end else begin
@@ -522,11 +575,7 @@ module lsc1_packet_frontend (
                     next_pc_value = pc + 1'b1;
                     next_fp_value = fp;
 
-                    if (frame_payload[13*8 +: 8] != 0) begin
-                        decision_ok = 1'b0; decision_fault = BAD_FLAGS; decision_detail = 1;
-                    end else if (profile > 1) begin
-                        decision_ok = 1'b0; decision_fault = BAD_PROFILE;
-                    end else if (profile != active_profile) begin
+                    if (profile != active_profile) begin
                         decision_ok = 1'b0; decision_fault = BAD_PROFILE;
                     end else if (state_valid && (pc != committed_pc || fp != committed_fp)) begin
                         decision_ok = 1'b0; decision_fault = STATE_MISMATCH;
