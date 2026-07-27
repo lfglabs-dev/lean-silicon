@@ -68,9 +68,9 @@ protocol lower bound is:
 1 + 16 A + 16 B + 16 output = 49 cycles
 ```
 
-## Exact source-level state count
+## Exact MinCore arithmetic state count
 
-The implemented radix-1 design has 273 explicit sequential bits:
+The radix-1 MinCore arithmetic subcomponent has 273 explicit sequential bits:
 
 ```text
 4 state + 4 byte index + 8 scratch + 1 fault + 128 shifted A + 128 accumulator
@@ -79,6 +79,10 @@ The implemented radix-1 design has 273 explicit sequential bits:
 The 17-bit stream engine meets the direct lower bound implied by its declared
 requirements: 11 phases, 16 positions, one saved arbitrary byte, and a sticky
 fault flag. This is not a protocol-independent lower bound.
+
+This count deliberately excludes packet receive/transmit storage, transactional
+staging, the stream adapter, and the field encoder. It therefore is not the
+sequential-state total of the shipped `lean_silicon_lsc1` packetized top.
 
 ## Restricted gate model
 
@@ -157,9 +161,10 @@ The current RTL is the result of repeated state/liveness and datapath passes:
 7. destructively serialize the accumulator instead of selecting a result byte;
 8. make output completion combinational, eliminating the result holding byte.
 
-The explicit state fell from the first 423-bit sketch to 273 bits. More
-aggressive reductions require changing a stated property, such as dropping the
-sticky fault bit, resending A from the host, or changing the protocol.
+The MinCore arithmetic state fell from the first 423-bit sketch to 273 bits.
+More aggressive reductions within that subcomponent require changing a stated
+property, such as dropping the sticky fault bit, resending A from the host, or
+changing its byte-stream protocol.
 
 ## Claims deferred until EDA results exist
 

@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight sim lean formal clean package checksums
+.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -39,7 +39,7 @@ interface-check:
 consistency:
 	$(PYTHON) tools/repo_consistency.py
 
-gate-count:
+mincore-state-count:
 	$(PYTHON) tools/rtl_state_count.py
 
 smoke:
@@ -62,7 +62,7 @@ fpga-detect:
 fpga-preflight:
 	$(PYTHON) fpga_harness/hardware_preflight.py
 
-check: python host-comparison design-space exact-xor interface-check consistency checksum-check gate-count smoke placeholders fpga-boundary fpga-harness
+check: python host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim

@@ -10,4 +10,5 @@
 * Radix 1 is exact minimum direct transition logic in this digit-serial family.
 * Radix 8 reaches the 49-cycle protocol lower bound when output starts only after both operands arrive.
 * All four points are Pareto-optimal under (state bits, direct digit-step gates, ideal cycles).
+* State counts cover the MinCore arithmetic subcomponent, not the packetized top.
 * These are architecture counts, not post-layout Sky130 area estimates.
