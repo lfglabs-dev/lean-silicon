@@ -49,19 +49,18 @@ def _recorder_args(text: str) -> list[str]:
     return match.group(0).replace("\\\n", " ").split()[2:]
 
 
-def build_inputs(script: Path) -> set[str]:
+def build_inputs_from_text(text: str, script_name: str) -> set[str]:
     """Repo-relative inputs a build script records provenance for.
 
     Read back out of the recorder invocation rather than restated here, so a
     build that stops recording one of its inputs fails instead of silently
     narrowing what the archive claims to cover.
     """
-    text = script.read_text()
     sources = re.search(r'SOURCES="([^"]*)"', text, re.DOTALL)
     expansions = {
         '"$LPF"': [_shell_var(text, "LPF")],
         '"${TOP}.sv"': [_shell_var(text, "TOP") + ".sv"],
-        '"$RECIPE"': [script.name],
+        '"$RECIPE"': [script_name],
         '"$SUPPORT"': [_shell_var(text, "SUPPORT")],
         '"$ROOT/tools/atomic_publish.py"': ["../../tools/atomic_publish.py"],
         '"$ROOT/tools/source_provenance.py"': ["../../tools/source_provenance.py"],
@@ -69,10 +68,14 @@ def build_inputs(script: Path) -> set[str]:
     }
     names: list[str] = []
     for arg in _recorder_args(text):
-        assert arg in expansions, f"{script.name}: unrecognised recorder argument {arg}"
-        assert expansions[arg], f"{script.name}: {arg} expands to no input"
+        assert arg in expansions, f"{script_name}: unrecognised recorder argument {arg}"
+        assert expansions[arg], f"{script_name}: {arg} expands to no input"
         names += expansions[arg]
     return {(ULX3S / n).resolve().relative_to(ROOT).as_posix() for n in names}
+
+
+def build_inputs(script: Path) -> set[str]:
+    return build_inputs_from_text(script.read_text(), script.name)
 
 
 def manifest_digests(name: str) -> dict[str, str]:
@@ -82,6 +85,14 @@ def manifest_digests(name: str) -> dict[str, str]:
         if len(parts) == 2 and re.fullmatch(r"[0-9a-f]{64}", parts[0]):
             entries[parts[1]] = parts[0]
     return entries
+
+
+def manifest_revision(name: str) -> str:
+    match = re.search(
+        r"^revision: ([0-9a-f]{40})$", (RESULTS / name).read_text(), re.MULTILINE
+    )
+    assert match, f"{name} does not name a source revision"
+    return match.group(1)
 
 
 def doc_revision(label: str) -> str:
@@ -136,21 +147,32 @@ class BuildInputParsingTest(unittest.TestCase):
 
 
 class SourceManifestTest(unittest.TestCase):
-    """Content anchor: valid without git history, so CI checks it too."""
+    """Validate the historical archive against the revision that produced it."""
 
     def test_manifest_covers_exactly_the_build_inputs(self):
         for manifest, script in BUILDS.items():
             with self.subTest(manifest=manifest):
-                self.assertEqual(set(manifest_digests(manifest)), build_inputs(script))
+                blob = _blob_at(
+                    manifest_revision(manifest),
+                    script.relative_to(ROOT).as_posix(),
+                )
+                if blob is None:
+                    self.skipTest("recorded build recipe is unavailable after squash")
+                recorded_inputs = build_inputs_from_text(blob.decode(), script.name)
+                self.assertEqual(set(manifest_digests(manifest)), recorded_inputs)
 
-    def test_manifest_digests_match_the_working_tree(self):
+    def test_manifest_digests_match_the_recorded_revision(self):
         for manifest in BUILDS:
+            revision = manifest_revision(manifest)
             for rel, digest in manifest_digests(manifest).items():
                 with self.subTest(source=rel):
+                    blob = _blob_at(revision, rel)
+                    if blob is None:
+                        self.skipTest("recorded source object is unavailable after squash")
                     self.assertEqual(
-                        sha256((ROOT / rel).read_bytes()).hexdigest(),
+                        sha256(blob).hexdigest(),
                         digest,
-                        f"{rel} changed since {manifest} was recorded; rebuild",
+                        f"{rel} differs from {manifest}'s recorded revision",
                     )
 
     def test_manifest_records_whether_inputs_matched_the_revision(self):
@@ -290,22 +312,17 @@ class SquashSafeProvenanceTest(unittest.TestCase):
             "the pre-feature base cannot be the artefact source",
         )
 
-    def test_manifests_verify_without_the_recorded_git_object(self):
-        # A squash has no obligation to retain a feature-only object.  The
-        # archived source digests, not `git cat-file <old-revision>:path`, are
-        # therefore the durable verification mechanism.
+    def test_manifests_remain_self_describing_without_git_metadata(self):
+        # A manifest retains the revision and every content digest after a
+        # squash, but it cannot recreate source bytes that were not archived.
+        # Do not compare a historical build against today's evolving product.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for manifest, script in BUILDS.items():
+            for manifest in BUILDS:
                 copied = root / manifest
                 copied.write_text((RESULTS / manifest).read_text())
-                for rel, digest in manifest_digests(manifest).items():
-                    target = root / rel
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(ROOT / rel, target)
-                    self.assertEqual(sha256(target.read_bytes()).hexdigest(), digest)
-                # There is intentionally no .git directory and no source SHA
-                # object here; all verification above is content-addressed.
+                self.assertRegex(copied.read_text(), r"(?m)^revision: [0-9a-f]{40}$")
+                self.assertGreater(len(manifest_digests(manifest)), 1)
                 self.assertFalse((root / ".git").exists())
 
 

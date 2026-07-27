@@ -11,6 +11,7 @@ No program fetch, VM-memory array/controller, pointer reverse map, trace store,
 inverter, or BLAKE3 datapath crosses this boundary. The physical transport is
 defined in [LSC1_PROTOCOL](LSC1_PROTOCOL.md).
 
-The current implementation only wraps the historical MinCore GF(2^128)
-stream-ALU as a datapath seed. It preserves its arithmetic and proof history
-without claiming the architectural features above are already in RTL.
+The current packet frontend wraps the historical MinCore GF(2^128) stream ALU
+as its arithmetic datapath and implements the scalar instruction set above,
+including host-proposed pointer and inverse witness checks. BLAKE3 service
+offload and the formal refinement bridges remain outside the implemented RTL.

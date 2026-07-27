@@ -23,7 +23,7 @@ module ulx3s_top #(
             assign uart_tx = 1'b1; // idle
             wire _u = uart_rx;
         end else begin : g_uart
-            uart_bridge u_bridge (
+            uart_bridge #(.PACKET_MODE(1'b0)) u_bridge (
                 .clk(clk),
                 .uart_rx(uart_rx),
                 .uart_tx(uart_tx)

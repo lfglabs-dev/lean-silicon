@@ -594,8 +594,10 @@ class MinCoreUartTests(unittest.TestCase):
             subprocess.run(["git", *command], cwd=root, env=environment, check=True,
                            stdout=subprocess.DEVNULL)
         # repo_provenance() walks up from the module file, so point it at the sandbox.
-        self.enterContext(mock.patch.object(
-            mincore_uart, "__file__", str(root / "fpga_harness" / "host" / "mincore_uart.py")))
+        patcher = mock.patch.object(
+            mincore_uart, "__file__", str(root / "fpga_harness" / "host" / "mincore_uart.py"))
+        patcher.start()
+        self.addCleanup(patcher.stop)
         return root
 
     def test_a_tracked_evidence_target_cannot_launder_a_dirty_tree(self):
