@@ -9,6 +9,7 @@ import unittest
 from fpga_harness.host.lsc1_packet_uart import (
     PacketSerialDriver,
     PacketTransportError,
+    PhysicalHostRuntime,
     _instruction_frame,
     _result_exit_status,
     _validate_fresh_status,
@@ -190,6 +191,21 @@ class PacketSerialDriverTests(unittest.TestCase):
                     _result_exit_status("program", {"terminal": terminal}), 2
                 )
         self.assertEqual(_result_exit_status("status", {}), 0)
+
+    def test_physical_runtime_reports_bytes_not_unobservable_endpoint_cycles(self) -> None:
+        runtime = object.__new__(PhysicalHostRuntime)
+        runtime.driver = type("Driver", (), {})()
+        runtime.driver.exchanges = [type("Exchange", (), {
+            "request": b"abc", "response": b"de",
+        })()]
+        runtime.driver.exchange = lambda frame: protocol.ResponseFrame(
+            protocol.Status.INFO, b""
+        )
+        runtime.lane_cycles = None
+        runtime.lane_bytes = 0
+        PhysicalHostRuntime._exchange(runtime, protocol.build_status_query())
+        self.assertIsNone(runtime.lane_cycles)
+        self.assertEqual(runtime.lane_bytes, 5)
 
 
 if __name__ == "__main__":

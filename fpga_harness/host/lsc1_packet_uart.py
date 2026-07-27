@@ -216,11 +216,14 @@ class PhysicalHostRuntime(HostRuntime):
     def __init__(self, program, driver: PacketSerialDriver):
         self.driver = driver
         super().__init__(program, profile=protocol.Profile.INTERPRETER_COMPAT)
+        # The UART protocol exposes bytes and wall time, not endpoint clock
+        # edges. Do not mislabel either quantity as exact physical lane cycles.
+        self.lane_cycles = None
 
     def _exchange(self, frame: protocol.RequestFrame) -> protocol.ResponseFrame:
         reply = self.driver.exchange(frame)
         exchange = self.driver.exchanges[-1]
-        self.lane_cycles += len(exchange.request) + len(exchange.response)
+        self.lane_bytes += len(exchange.request) + len(exchange.response)
         return reply
 
     def _negotiate(self) -> None:

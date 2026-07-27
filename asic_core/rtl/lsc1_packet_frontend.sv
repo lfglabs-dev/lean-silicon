@@ -429,8 +429,6 @@ module lsc1_packet_frontend (
                 end else if (frame_opcode == OP_NEGOTIATE) begin
                     if (frame_length != 7) begin
                         emit_fault(BAD_LENGTH, 0, 2);
-                    end else if (result_pending) begin
-                        emit_fault(BAD_STATE, 0, 0);
                     end else if (!(frame_payload[0 +: 8] <= 1 &&
                                    frame_payload[8 +: 8] >= 1)) begin
                         emit_fault(8'h81, 0, 0);
@@ -438,6 +436,8 @@ module lsc1_packet_frontend (
                         // This integrated subset implements interpreter-compatible
                         // reconciliation only and advertises that honestly.
                         emit_fault(BAD_PROFILE, 0, 0);
+                    end else if (result_pending) begin
+                        emit_fault(BAD_STATE, 0, 0);
                     end else begin
                         active_profile <= frame_payload[16 +: 8];
                         result_bytes = 0;

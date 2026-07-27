@@ -57,7 +57,8 @@ class StepRecord:
     status: str | None = None
     fault: str | None = None
     retire_seq: int | None = None
-    lane_cycles: int = 0
+    lane_cycles: int | None = 0
+    lane_bytes: int = 0
 
     def as_dict(self) -> dict:
         return {
@@ -79,6 +80,7 @@ class StepRecord:
             "fault": self.fault,
             "retire_seq": self.retire_seq,
             "lane_cycles": self.lane_cycles,
+            "lane_bytes": self.lane_bytes,
         }
 
 
@@ -270,6 +272,7 @@ class HostRuntime:
         self.txn_id = 0
         self.step_index = 0
         self.lane_cycles = 0
+        self.lane_bytes = 0
         self.faulted = False
         self._negotiate()
 
@@ -328,7 +331,9 @@ class HostRuntime:
         except protocol.ProtocolFault as fault:
             raise PreparationFault(fault.status) from fault
 
-    def _prepare(self, operation) -> tuple["protocol.RequestFrame", list[int]]:
+    def _prepare(
+        self, operation
+    ) -> tuple["protocol.RequestFrame", list[int], dict | None]:
         """Build one self-contained request, or refuse and say why."""
         if not operation.integrated:
             raise UnsupportedCapability(
@@ -348,7 +353,7 @@ class HostRuntime:
                 constant=operation.operands["k"],
                 cell=self.memory.cell(address),
             )
-            return frame, [address]
+            return frame, [address], None
 
         if operation.kind == "Deref":
             alpha = operation.operands["alpha"]
@@ -375,7 +380,7 @@ class HostRuntime:
                 target=self.memory.cell(target_address),
                 local=self.memory.cell(local_address),
             )
-            return frame, [pointer_address, target_address, local_address]
+            return frame, [pointer_address, target_address, local_address], None
 
         if operation.kind == "Jump":
             offsets = (
@@ -404,7 +409,11 @@ class HostRuntime:
                 taken=taken, dest_pc=dest_pc, dest_fp=dest_fp,
                 proposed_inverse=inverse,
             )
-            return frame, addresses
+            return frame, addresses, {
+                "taken": taken,
+                "dest_pc": dest_pc,
+                "dest_fp": dest_fp,
+            }
 
         offsets = (operation.operands["a"], operation.operands["b"], operation.operands["c"])
         addresses = [self._address(offset) for offset in offsets]
@@ -420,7 +429,7 @@ class HostRuntime:
             cells=cells,
             proposed_inverse=self._inverse_witness(opcode, cells),
         )
-        return frame, addresses
+        return frame, addresses, None
 
     def _inverse_witness(self, opcode, cells) -> "protocol.Cell":
         """Propose ``known**-1`` only when the endpoint will actually back-solve.
@@ -446,7 +455,7 @@ class HostRuntime:
 
     def step(self) -> StepRecord:
         operation = self.program.at(self.pc)
-        frame, addresses = self._prepare(operation)
+        frame, addresses, branch = self._prepare(operation)
         record = StepRecord(
             index=self.step_index,
             txn_id=self.txn_id,
@@ -458,14 +467,21 @@ class HostRuntime:
         self.step_index += 1
         record.addresses = addresses
         record.inputs = self._inputs(addresses)
+        record.branch = branch
 
         before = self.lane_cycles
+        before_bytes = self.lane_bytes
         reply = self._exchange(frame)
         if reply.status is not protocol.Status.OK:
             check_fault_response(reply, expected_txn_id=self.txn_id)
             record.status = reply.status.name
             record.fault = reply.status.name
-            record.lane_cycles = self.lane_cycles - before
+            record.lane_cycles = (
+                self.lane_cycles - before
+                if self.lane_cycles is not None and before is not None
+                else None
+            )
+            record.lane_bytes = self.lane_bytes - before_bytes
             self.faulted = True
             return record
 
@@ -547,7 +563,12 @@ class HostRuntime:
             )
             record.status = retire.status.name
             record.fault = retire.status.name
-            record.lane_cycles = self.lane_cycles - before
+            record.lane_cycles = (
+                self.lane_cycles - before
+                if self.lane_cycles is not None and before is not None
+                else None
+            )
+            record.lane_bytes = self.lane_bytes - before_bytes
             self.faulted = True
             return record
         if len(retire.payload) != 16:
@@ -592,7 +613,12 @@ class HostRuntime:
         record.accesses = result["accesses"]
         record.status = protocol.Status.OK.name
         record.retire_seq = int.from_bytes(retire.payload[4:8], "little")
-        record.lane_cycles = self.lane_cycles - before
+        record.lane_cycles = (
+            self.lane_cycles - before
+            if self.lane_cycles is not None and before is not None
+            else None
+        )
+        record.lane_bytes = self.lane_bytes - before_bytes
         return record
 
     def run(self, *, max_steps: int = 1024) -> RunResult:
@@ -636,6 +662,7 @@ class HostRuntime:
             "fp": self.fp,
             "cycles": self.step_index,
             "lane_cycles": self.lane_cycles,
+            "lane_bytes": self.lane_bytes,
             "memory": [f"{value:#034x}" for value in self.memory.image(memory_cells)],
             "written": sorted(self.memory.cells),
             "open_deferred": [

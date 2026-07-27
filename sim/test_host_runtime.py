@@ -970,7 +970,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(set(record.as_dict()), {
             "index", "txn_id", "source_op", "opcode", "pc", "fp", "next_pc", "next_fp",
             "addresses", "inputs", "writes", "branch", "deferred", "accesses",
-            "status", "fault", "retire_seq", "lane_cycles",
+            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes",
         })
         self.assertEqual(record.addresses, [2, 3, 4])
         self.assertEqual([entry["present"] for entry in record.inputs], [True, True, False])
@@ -1062,11 +1062,17 @@ class RuntimeTests(unittest.TestCase):
         taken_result = taken.run()
         self.assertEqual(taken_result.terminal, "halted")
         self.assertEqual((taken.pc, taken.fp), (1, 0))
+        self.assertEqual(taken_result.records[0].branch, {
+            "taken": True, "dest_pc": 1, "dest_fp": 0,
+        })
 
         not_taken = HostRuntime(program({"op": "Jump", "oc": 2, "od": 3, "of": 4}))
         not_taken_result = not_taken.run()
         self.assertEqual(not_taken_result.terminal, "halted")
         self.assertEqual((not_taken.pc, not_taken.fp), (1, 0))
+        self.assertEqual(not_taken_result.records[0].branch, {
+            "taken": False, "dest_pc": 0, "dest_fp": 0,
+        })
 
     def test_the_step_limit_is_a_terminal_not_a_hang(self):
         runtime = HostRuntime(program(set_slot(2, 3), set_slot(3, 4), set_slot(4, 5)))
