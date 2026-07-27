@@ -4,12 +4,13 @@
 The model deliberately counts only quantities that are exact for the declared
 architecture family:
 
-* sequential bits are the RTL registers required by the schedule;
+* sequential bits are the MinCore arithmetic registers required by the schedule;
 * AND2/XOR2 counts are the direct radix-r digit-step network before synthesis;
 * ideal cycles assume no host stalls and the protocol in docs/PROTOCOL.md.
 
-It is not a Sky130 post-layout area estimator.  OpenLane reports remain the
-source of truth for tile selection.
+It excludes the surrounding packet frontend and is not a Sky130 post-layout
+area estimator.  OpenLane reports remain the source of truth for tile
+selection.
 """
 
 from __future__ import annotations
@@ -131,6 +132,7 @@ def write_outputs(points: list[Point], root: Path) -> None:
             "* Radix 1 is exact minimum direct transition logic in this digit-serial family.",
             "* Radix 8 reaches the 49-cycle protocol lower bound when output starts only after both operands arrive.",
             "* All four points are Pareto-optimal under (state bits, direct digit-step gates, ideal cycles).",
+            "* State counts cover the MinCore arithmetic subcomponent, not the packetized top.",
             "* These are architecture counts, not post-layout Sky130 area estimates.",
         ]
     )

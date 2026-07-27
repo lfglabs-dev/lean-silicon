@@ -125,7 +125,9 @@ class AdapterTests(unittest.TestCase):
     def _reject(self, mutate, message):
         document = json.loads(ARTIFACT.read_text())
         mutate(document)
-        directory = self.enterContext(tempfile.TemporaryDirectory())
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = temporary.name
         candidate = pathlib.Path(directory) / "artifact.json"
         candidate.write_text(json.dumps(document))
         with self.assertRaisesRegex(AdapterError, message):
@@ -139,7 +141,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(loaded.at(0).kind, "Set")
         self.assertIsInstance(loaded.at(0).operands["k"], int)
         self.assertTrue(loaded.at(2).integrated)
-        self.assertFalse(loaded.at(12).integrated)
+        self.assertTrue(loaded.at(12).integrated)
 
     def test_host_package_imports_with_deferred_annotations_policy(self):
         for module_path in sorted((ROOT / "host").glob("*.py")):
@@ -592,11 +594,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(record.deferred, [])
 
     def test_the_real_endpoint_defers_only_inside_the_frame(self):
-        # DEREF is not integrated in the host, so no run reaches this path and
-        # the assertion above is vacuous for deferred. The rule still has to be
-        # the one the endpoint already obeys, or it would block DEREF the day it
-        # is integrated. Drive DEREF_CELL with both sides absent -- the one case
-        # that hands the equality back -- straight at the real endpoint, and
+        # Exercise the one DEREF_CELL quadrant that hands an equality back and
         # check the pair against the addresses the request itself names.
         fp, alpha, beta, gamma, base = 4, 1, 2, 3, 8
         endpoint = protocol.Lsc1Endpoint()
@@ -972,7 +970,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(set(record.as_dict()), {
             "index", "txn_id", "source_op", "opcode", "pc", "fp", "next_pc", "next_fp",
             "addresses", "inputs", "writes", "branch", "deferred", "accesses",
-            "status", "fault", "retire_seq", "lane_cycles",
+            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes",
         })
         self.assertEqual(record.addresses, [2, 3, 4])
         self.assertEqual([entry["present"] for entry in record.inputs], [True, True, False])
@@ -1022,20 +1020,59 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result.terminal, "fault")
         self.assertEqual(result.records[-1].fault, "MUL_BACKSOLVE_ZERO")
 
-    def test_unintegrated_opcodes_stop_the_run_and_say_what_is_missing(self):
-        for kind, slot in (
-            ("Deref", {"op": "Deref", "alpha": 2, "beta": 0, "gamma": 3, "mode": "Cell"}),
-            ("Jump", {"op": "Jump", "oc": 2, "od": 3, "of": 4}),
-            ("Blake3", {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 7,
-                        "metadata": f"{0:#034x}"}),
-        ):
-            with self.subTest(kind=kind):
-                runtime = HostRuntime(program(set_slot(2, 3), slot))
+    def test_unintegrated_blake3_stops_the_run_and_says_what_is_missing(self):
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 7,
+                "metadata": f"{0:#034x}"}
+        runtime = HostRuntime(program(set_slot(2, 3), slot))
+        result = runtime.run()
+        self.assertEqual(result.terminal, "unsupported")
+        self.assertIn("Blake3", result.reason)
+        self.assertIn(adapter.DEFERRED_OPS["Blake3"].split(";")[0], result.reason)
+        self.assertEqual(len(result.records), 1)
+
+    def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
+        expectations = {
+            "Cell": 0x55,
+            "Pc": protocol.field_encode(2),
+            "Fp": protocol.field_encode(0),
+        }
+        for mode, expected in expectations.items():
+            with self.subTest(mode=mode):
+                memory = HostMemory(cells={
+                    0: 1, 1: 0, 2: protocol.field_encode(8), 3: 0x55,
+                })
+                runtime = HostRuntime(program({
+                    "op": "Deref", "alpha": 2, "beta": 1,
+                    "gamma": 3, "mode": mode,
+                }), memory=memory)
                 result = runtime.run()
-                self.assertEqual(result.terminal, "unsupported")
-                self.assertIn(kind, result.reason)
-                self.assertIn(adapter.DEFERRED_OPS[kind].split(";")[0], result.reason)
-                self.assertEqual(len(result.records), 1)
+                self.assertEqual(result.terminal, "halted")
+                self.assertEqual(runtime.memory.read(9), expected)
+                self.assertEqual(result.records[0].accesses, [2, 9, 3])
+
+    def test_jump_taken_and_not_taken_are_host_proposed_and_verified(self):
+        taken_memory = HostMemory(cells={
+            0: 1, 1: 0, 2: 1,
+            3: protocol.field_encode(1), 4: protocol.field_encode(0),
+        })
+        taken = HostRuntime(
+            program({"op": "Jump", "oc": 2, "od": 3, "of": 4}),
+            memory=taken_memory,
+        )
+        taken_result = taken.run()
+        self.assertEqual(taken_result.terminal, "halted")
+        self.assertEqual((taken.pc, taken.fp), (1, 0))
+        self.assertEqual(taken_result.records[0].branch, {
+            "taken": True, "dest_pc": 1, "dest_fp": 0,
+        })
+
+        not_taken = HostRuntime(program({"op": "Jump", "oc": 2, "od": 3, "of": 4}))
+        not_taken_result = not_taken.run()
+        self.assertEqual(not_taken_result.terminal, "halted")
+        self.assertEqual((not_taken.pc, not_taken.fp), (1, 0))
+        self.assertEqual(not_taken_result.records[0].branch, {
+            "taken": False, "dest_pc": 0, "dest_fp": 0,
+        })
 
     def test_the_step_limit_is_a_terminal_not_a_hang(self):
         runtime = HostRuntime(program(set_slot(2, 3), set_slot(3, 4), set_slot(4, 5)))
@@ -1090,9 +1127,7 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
     def test_host_writes_agree_with_the_frozen_final_memory(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
         result = runtime.run()
-        # The fixture's only unintegrated instruction is the terminating JUMP.
-        self.assertEqual(result.terminal, "unsupported")
-        self.assertIn("Jump", result.reason)
+        self.assertEqual(result.terminal, "halted")
 
         mem = [int(value, 16) for value in self.upstream["mem"]]
         self.assertEqual(len(mem), self.upstream["mem_used"])
@@ -1102,24 +1137,24 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 self.assertLess(address, self.upstream["mem_used"])
                 self.assertEqual(value, mem[address])
 
-    def test_unsupported_suffix_is_prefix_match_never_full_match(self):
+    def test_complete_program_is_a_full_match(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
         result = runtime.run()
         comparison = compare(runtime, result, self.upstream)
-        self.assertEqual(result.terminal, "unsupported")
-        self.assertEqual(comparison["result"], "PREFIX_MATCH")
-        self.assertIn("unsupported_suffix", comparison["not_compared"])
+        self.assertEqual(result.terminal, "halted")
+        self.assertEqual(comparison["result"], "MATCH")
+        self.assertNotIn("unsupported_suffix", comparison["not_compared"])
 
     def test_the_host_covers_every_cell_the_frozen_run_touched(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
         runtime.run()
         self.assertEqual(sorted(runtime.memory.cells), list(range(self.upstream["mem_used"])))
 
-    def test_cycles_are_not_claimed_equal_because_the_host_stops_early(self):
+    def test_complete_program_cycles_match_the_frozen_run(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))
         result = runtime.run()
-        self.assertNotEqual(result.terminal, "halted")
-        self.assertLess(runtime.step_index, self.upstream["cycles"])
+        self.assertEqual(result.terminal, "halted")
+        self.assertEqual(runtime.step_index, self.upstream["cycles"])
 
     def test_step_limit_cannot_be_reported_as_a_match(self):
         runtime = HostRuntime(self.program, memory=HostMemory.with_public_input(1, 0))

@@ -183,16 +183,44 @@ module tb_lsc1_packet_frontend;
         rst_n = 1;
         repeat (2) @(posedge clk);
 
+        // Negotiate the only profile this integrated RTL currently advertises.
+        clear_payload();
+        payload[0] = 1; payload[1] = 1; payload[2] = 1;
+        send_frame(1, 8'h10, 0, 7, 0);
+        wait (response_count >= 23);
+        if (response[5] !== 1 || response[6] !== 1 ||
+            response[7] !== 0 || response[8] !== 1 ||
+            response[9] !== 16 || response[10] !== 0 ||
+            response[11] !== 2 || response[12] !== 0 ||
+            response[13] !== 0 || response[14] !== 0 ||
+            response[15] !== 8'h31 || response[16] !== 8'h43 ||
+            response[17] !== 8'h53 || response[18] !== 8'h4c)
+            $fatal(1, "NEGOTIATE capability payload mismatch");
+        wait_response(8'h00);
+
+        // STATUS_QUERY is a non-mutating packet response.
+        clear_payload();
+        send_frame(1, 8'h13, 0, 0, 0);
+        wait (response_count >= 29);
+        if (response[5] !== 0 || response[24] !== 0)
+            $fatal(1, "initial STATUS state mismatch");
+        wait_response(8'h03);
+
         // Valid SET with deterministic input stalls and output backpressure.
         build_set(32'h11, 0, 4);
         send_frame(1, 8'h03, 0, 51, 0);
         @(negedge clk); tx_ready = 0;
         wait (tx_valid);
+        #1; // allow combinational tx_data to settle after active/index update
         held_tx_byte = tx_data;
         repeat (12) begin
             @(posedge clk);
-            if (!tx_valid || tx_data !== held_tx_byte || rx_ready)
+            if (!tx_valid || tx_data !== held_tx_byte || rx_ready) begin
+                $display("DEBUG tx_valid=%0d tx_data=%02x held=%02x rx_ready=%0d adapter_state=%0d adapter_result_index=%0d",
+                         tx_valid, tx_data, held_tx_byte, rx_ready,
+                         dut.adapter.state, dut.adapter.result_index);
                 $fatal(1, "output backpressure stability/receive exclusion failed");
+            end
         end
         @(negedge clk); tx_ready = 1;
         wait (response_count >= 5);
@@ -236,6 +264,29 @@ module tb_lsc1_packet_frontend;
         response_count = 0;
         build_set(32'h14, 1, 4);
         send_frame(1, 8'h03, 0, 51, 0);
+        wait_response(8'h87);
+
+        // Payload decoding precedes the pending-state guard.  Profile is
+        // decoded before flags, and decoder faults have transaction ID zero.
+        build_set(32'h14, 1, 4);
+        payload[12] = 2;
+        payload[13] = 1;
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait (response_count >= 14);
+        if ({response[8],response[7],response[6],response[5]} !== 0)
+            $fatal(1, "decoder fault acquired payload transaction ID");
+        wait_response(8'h86);
+        build_set(32'h14, 1, 4);
+        payload[34] = 2;
+        send_frame(1, 8'h03, 0, 51, 0);
+        wait_response(8'h88);
+        clear_payload();
+        payload[0] = 2; payload[1] = 2; payload[2] = 2;
+        send_frame(1, 8'h10, 0, 7, 0);
+        wait_response(8'h86);
+        clear_payload();
+        payload[0] = 2; payload[1] = 2; payload[2] = 1;
+        send_frame(1, 8'h10, 0, 7, 0);
         wait_response(8'h87);
 
         // Framing is validated before dispatch state; preserve the staged result.
@@ -289,6 +340,9 @@ module tb_lsc1_packet_frontend;
         clear_payload();
         send_beat(8'ha1, 0); send_beat(1, 0); send_beat(8'h03, 0);
         send_beat(0, 0); send_beat(1, 0); send_beat(1, 0);
+        wait (response_count >= 14);
+        if (response[9] !== 1)
+            $fatal(1, "oversized header BAD_LENGTH detail mismatch");
         wait_response(8'h83); // 257-byte declaration rejected at the header
 
         // A truncated frame cannot retire: reset drops it without a response.

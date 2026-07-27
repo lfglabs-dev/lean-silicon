@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Check and report the explicit sequential state in the implemented RTL.
+"""Check and report explicit sequential state in the MinCore arithmetic block.
 
 This is intentionally a source-architecture count, not a mapped-cell estimate.
 The script verifies that the expected declarations still exist before emitting
-the total, so documentation cannot silently drift after an RTL refactor.
+the total, so the MinCore design-space documentation cannot silently drift
+after an RTL refactor.  It is not a count of the packet frontend or of the
+complete ``lean_silicon_lsc1`` source closure.
 """
 
 from __future__ import annotations
@@ -32,12 +34,15 @@ def main() -> None:
             raise SystemExit(f"state declaration for {name!r} not found in {path}")
 
     total = sum(bits for _, bits, _, _ in COMPONENTS)
-    print("Explicit source-level sequential state")
+    print("Explicit source-level sequential state (MinCore arithmetic only)")
     for name, bits, _, _ in COMPONENTS:
         print(f"  {name:24s} {bits:3d} bits")
     print(f"  {'TOTAL':24s} {total:3d} bits")
     if total != 273:
-        raise SystemExit(f"unexpected total {total}; documentation assumes 273")
+        raise SystemExit(
+            f"unexpected MinCore arithmetic total {total}; "
+            "design-space documentation assumes 273"
+        )
 
 
 if __name__ == "__main__":

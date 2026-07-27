@@ -64,6 +64,24 @@ def main() -> None:
     for source in project["source_files"]:
         if not (ROOT / source).is_file():
             raise SystemExit(f"missing Tiny Tapeout source file: {source}")
+    required_sources = {
+        "asic_core/rtl/gf2n_mul_bitstream.sv",
+        "asic_core/rtl/gf128_mul_bitstream.sv",
+        "asic_core/rtl/leanvm_b_stream_alu.sv",
+        "asic_core/rtl/lsc1_stream_adapter.sv",
+        "asic_core/rtl/lsc1_field_encoder.sv",
+        "asic_core/rtl/lsc1_packet_rx.sv",
+        "asic_core/rtl/lsc1_packet_tx.sv",
+        "asic_core/rtl/lsc1_packet_frontend.sv",
+        "asic_core/rtl/lean_silicon_lsc1.sv",
+    }
+    configured_sources = set(project["source_files"])
+    if configured_sources != required_sources:
+        missing = sorted(required_sources - configured_sources)
+        extra = sorted(configured_sources - required_sources)
+        raise SystemExit(
+            f"Tiny Tapeout source closure drifted: missing={missing}, extra={extra}"
+        )
 
     print("Interface constants agree across RTL, Python, and info.yaml")
     print(f"  commands: {len(EXPECTED)}")

@@ -35,8 +35,8 @@ For each instruction the host:
 
 1. reads its own memory for every address the transition can touch, and packs
    each one as a present cell or an absent cell;
-2. proposes a witness where the endpoint will need one (currently only the MUL
-   back-solve inverse);
+2. proposes witnesses where the endpoint needs them (MUL back-solve and taken
+   JUMP inversion) and resolves pointer-map indexes for DEREF/JUMP;
 3. builds the request with the existing `sim/lsc1_transaction.py` builders and
    drives it over the byte lane;
 4. decodes the `OK` result payload, and only then retires it by echoing
@@ -49,16 +49,16 @@ before the host has read it back.
 
 ## 3. What is integrated, and what is not
 
-Integrated end to end: `SET_CONSTANT`, `XOR`, `MUL_NATIVE`, including the
-INTERPRETER_COMPAT back-solve path and its inverse witness.
+Integrated through the host and executable packet model: `SET_CONSTANT`,
+`XOR`, `MUL_NATIVE`, `DEREF_CELL`, `DEREF_PC`, `DEREF_FP` and `JUMP`, including
+pointer re-encoding, deferred equality and inverse witnesses. The FPGA RTL
+integration status is tracked separately in `docs/STATUS.md`.
 
 Not integrated. Each raises `UnsupportedCapability` naming the missing piece;
 none of them silently degrade or skip an instruction:
 
 | Compiler opcode | Missing host capability |
 |---|---|
-| `Deref` | pointer-map driven request preparation and the deferred-equality reconciliation loop |
-| `Jump` | branch proposal and destination re-encoding |
 | `Blake3` | a BLAKE3 compression implementation to answer `SERVICE_REQUIRED` |
 
 Index range is limited to `2**16` by the protocol (`INDEX_BITS`), and
@@ -123,13 +123,10 @@ memory image, `cycles` and `mem_used`. The tool therefore:
 
 Equivalence is claimed only for the entries under `comparison.compared`.
 
-For the checked-in fixture the compared set is the 12 cells the frozen run
-touched, and `cycles` is explicitly not compared: the fixture's terminating
-`JUMP` is not integrated, so the host executes a 12-step prefix of the 13-cycle
-upstream run. The result is therefore `PREFIX_MATCH`, never the full-run
-`MATCH` reserved for a valid sentinel halt. `sim/test_host_runtime.py` asserts
-that boundary directly, so a future change that silently claimed more would
-fail.
+For the checked-in fixture, the host executes all 13 upstream cycles including
+the terminating `JUMP`. The comparison covers all 12 touched cells and the
+cycle count and returns `MATCH`. Per-step upstream trace fields remain outside
+the claim because `Execution::trace` is not public at the frozen revision.
 
 ## 6. Reproducing
 

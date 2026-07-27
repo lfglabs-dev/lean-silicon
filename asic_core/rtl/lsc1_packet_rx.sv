@@ -13,7 +13,7 @@ module lsc1_packet_rx (
     input  wire          frame_ready,
     output reg  [7:0]    frame_opcode,
     output reg  [15:0]   frame_length,
-    output reg  [751:0]  frame_payload,
+    output reg  [2047:0] frame_payload,
     output reg           fault_valid,
     output reg  [7:0]    fault_status,
     output wire          busy
@@ -121,7 +121,9 @@ module lsc1_packet_rx (
                     end
                     S_BODY: begin
                         if (body_index < declared_length) begin
-                            if (body_index < 16'd94)
+                            // Keep this bound coupled to the declared storage capacity.
+                            // JUMP's inverse witness occupies payload bytes 86 through 102.
+                            if (body_index < MAX_PAYLOAD)
                                 frame_payload[body_index*8 +: 8] <= rx_data;
                             crc <= crc_byte(crc, rx_data);
                         end else begin
