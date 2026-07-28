@@ -67,6 +67,8 @@ class ServiceRequired:
     def __post_init__(self) -> None:
         if len(self.message) != 64 or len(self.chaining_value) != 32:
             raise ServiceSemanticError("BLAKE3 requires 64 message and 32 CV bytes")
+        if not 0 <= self.counter < 1 << 64:
+            raise ServiceSemanticError("counter must be a u64")
         if not 0 <= self.block_len <= 64:
             raise ServiceSemanticError("block_len must be in 0..64")
         if self.flags & ~KNOWN_FLAGS:
@@ -241,7 +243,7 @@ class ModelServiceAdapter:
 
     def compute(self, request: ServiceRequired,
                 service: Callable[[ServiceRequired], bytes] = compress) -> ServiceResponse:
-        if request.key != self.outstanding:
+        if request != self._outstanding_request:
             raise ServiceSemanticError("request is stale or not outstanding")
         for attempt in range(self.max_retries + 1):
             try:

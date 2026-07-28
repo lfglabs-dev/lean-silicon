@@ -79,9 +79,16 @@ class SchemaTests(unittest.TestCase):
 
     def test_metadata_is_rejected_before_compression(self):
         key = ServiceKey(1, 1, 1, 1)
-        for block_len, flags in ((65, 0), (64, 0x80)):
+        for counter, block_len, flags in (
+            (-1, 64, 0),
+            (1 << 64, 64, 0),
+            (0, 65, 0),
+            (0, 64, 0x80),
+        ):
             with self.assertRaises(ServiceSemanticError):
-                ServiceRequired(key, bytes(64), bytes(32), 0, block_len, flags)
+                ServiceRequired(
+                    key, bytes(64), bytes(32), counter, block_len, flags,
+                )
 
     def test_keys_and_direct_responses_enforce_schema_ranges(self):
         for key in (
@@ -223,6 +230,20 @@ class AdapterAndModelTests(unittest.TestCase):
         adapter.abort()
         with self.assertRaises(ServiceSemanticError):
             adapter.accept_required(reply.payload)
+
+    def test_compute_requires_the_exact_accepted_request(self):
+        _, adapter, request = self.pending()
+        altered = ServiceRequired(
+            request.key,
+            bytes((request.message[0] ^ 1,)) + request.message[1:],
+            request.chaining_value,
+            request.counter,
+            request.block_len,
+            request.flags,
+        )
+        with self.assertRaises(ServiceSemanticError):
+            adapter.compute(altered)
+        self.assertEqual(adapter.compute(request).key, request.key)
 
     def test_reset_rejects_invalid_epoch_without_changing_state(self):
         _, adapter, request = self.pending()
