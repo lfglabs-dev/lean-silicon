@@ -5,6 +5,7 @@
 | LSC-1 boundary and pin top | established | `asic_core/rtl/lean_silicon_lsc1.sv` |
 | MinCore arithmetic seed | historical/exercised seed | existing simulation/formal suites |
 | v1 transaction protocol | specified and executably modelled | `docs/LSC1_TRANSACTION_PROTOCOL.md`, `sim/lsc1_transaction.py` |
+| Lean v1 packet/transaction foundation | request/response round trips, validation precedence, atomic staging, abort/reset, matching retirement and exactly-once behavior proved for a pure functional model | `lean/LeanVMBMinCore/{Packet,Transaction}.lean`; CRC-32 instantiation and RTL/oracle refinement remain open |
 | v1 scalar packet executor | SET/XOR/MUL/DEREF/JUMP implemented in RTL; BLAKE3 service pending | `asic_core/rtl/lsc1_packet_frontend.sv`, RTL differential tests |
 | Host runtime, SET/XOR/MUL/DEREF/JUMP transactions | driven against the executable endpoint; frozen fixture reaches full `MATCH` | `docs/HOST_RUNTIME.md`, `host/`, `sim/test_host_runtime.py` |
 | Host runtime, BLAKE3 | not implemented, explicit unsupported path | `host/lean_compiler_adapter.py` |
