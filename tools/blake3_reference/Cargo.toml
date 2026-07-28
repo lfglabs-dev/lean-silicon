@@ -1,0 +1,8 @@
+[package]
+name = "lsc1-blake3-reference"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+blake3_guts = "=0.0.0"
