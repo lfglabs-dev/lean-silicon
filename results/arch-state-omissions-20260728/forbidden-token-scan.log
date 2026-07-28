@@ -1,0 +1,2 @@
+formal/ARCH_STATE.md:48:observations. No cutpoints, black boxes, symbolic bridge state, or ignored
+asic_core/rtl/lsc1_packet_frontend.sv:278:    // of such fields).  No symbolic bridge or assumed cutpoint is used.

@@ -15,9 +15,9 @@ asserts coverage mechanically.
 | --- | --- | --- |
 | RX parser | phase, header/body positions, declared length, header context, CRCs, complete accepted frame and parser fault | request acceptance and command dispatch |
 | Frontend | compute phase, staged transaction/CRC, committed PC/FP, sequence, profile, status/fault | profile choice, RETIRE, STATUS, future request validation |
-| TX serializer | busy, byte index, saved status/length/payload, payload CRC | `tx_valid` and every response byte under backpressure |
-| ALU adapter | phase, operation, payload/result positions, result | deferred arithmetic completion |
-| Field encoder | busy, bit index, saved index, result | pointer witness completion |
+| TX serializer | active, byte index, saved status/length/payload, saved CRC, working envelope/payload CRCs, completion and payload CRC | `tx_valid`, every response byte, and the next checksum state under backpressure |
+| ALU adapter and core | phase, saved opcode/operands, payload/result positions, result/fault/pulse, core phase/index/scratch, GF shift/accumulator | deferred arithmetic completion and next stream byte |
+| Field encoder and nested multiplier | busy, start/progress, index, accumulator, operands, result/fault/pulse, and the nested adapter/core/GF state | pointer witness completion and every intermediate multiplication cycle |
 
 ```
 RX registered frame ──► frontend decode/compute ──► staged result ──► TX registered serializer ──► tx_valid/tx_data
@@ -29,8 +29,10 @@ RX registered frame ──► frontend decode/compute ──► staged result �
 ```
 
 All arrows cross registered boundaries except the listed busy/output functions.
-The map checker requires every public `arch_*` port and every packet output to
-be covered, and its self-mutation guard rejects a changed source mapping.
+The map has explicit bit widths. The checker requires every public `arch_*`
+port, every nonblocking-assigned state element in the active recursive module
+tree, and every packet output reconstruction to be covered. Its mutation guard
+rejects altered TX CRC and saved-operand mappings.
 
 `R(rtl, arch)` is direct equality to the mapped registered RTL signal. The only
 derived fields are busy flags and protocol outputs, whose source registers are

@@ -56,16 +56,63 @@ module lsc1_packet_frontend (
     output wire [7:0]   arch_tx_status,
     output wire [543:0] arch_tx_payload,
     output wire [31:0]  arch_tx_payload_crc,
+    output wire         arch_tx_active,
+    output wire [31:0]  arch_tx_saved_crc,
+    output wire [31:0]  arch_tx_envelope_crc_work,
+    output wire [31:0]  arch_tx_payload_crc_work,
+    output wire         arch_tx_done_pulse,
+    output wire         arch_tx_start,
+    output wire [7:0]   arch_tx_start_status,
+    output wire [15:0]  arch_tx_start_length,
+    output wire [543:0] arch_tx_start_payload,
+    output wire         arch_capture_result_crc,
     output wire         arch_alu_busy,
     output wire [2:0]   arch_alu_phase,
     output wire [7:0]   arch_alu_operation,
     output wire [5:0]   arch_alu_payload_index,
     output wire [4:0]   arch_alu_result_index,
     output wire [127:0] arch_alu_result,
+    output wire [127:0] arch_alu_saved_a,
+    output wire [127:0] arch_alu_saved_b,
+    output wire         arch_alu_done_pulse,
+    output wire         arch_alu_fault,
+    output wire [3:0]   arch_alu_core_phase,
+    output wire [3:0]   arch_alu_core_byte_index,
+    output wire [7:0]   arch_alu_core_scratch_byte,
+    output wire         arch_alu_core_fault,
+    output wire [127:0] arch_alu_core_mul_a_shift,
+    output wire [127:0] arch_alu_core_mul_accumulator,
+    output wire         arch_alu_start,
+    output wire [7:0]   arch_alu_start_operation,
+    output wire [127:0] arch_alu_start_operand_a,
+    output wire [127:0] arch_alu_start_operand_b,
     output wire         arch_encoder_busy,
     output wire [4:0]   arch_encoder_bit_index,
     output wire [15:0]  arch_encoder_index,
     output wire [127:0] arch_encoder_result,
+    output wire         arch_encoder_done_pulse,
+    output wire         arch_encoder_fault,
+    output wire         arch_encoder_multiply_start,
+    output wire [127:0] arch_encoder_accumulator,
+    output wire [127:0] arch_encoder_operand_a,
+    output wire [127:0] arch_encoder_operand_b,
+    output wire [2:0]   arch_encoder_multiplier_phase,
+    output wire [7:0]   arch_encoder_multiplier_operation,
+    output wire [5:0]   arch_encoder_multiplier_payload_index,
+    output wire [4:0]   arch_encoder_multiplier_result_index,
+    output wire [127:0] arch_encoder_multiplier_saved_a,
+    output wire [127:0] arch_encoder_multiplier_saved_b,
+    output wire         arch_encoder_multiplier_done_pulse,
+    output wire         arch_encoder_multiplier_fault,
+    output wire [127:0] arch_encoder_multiplier_result,
+    output wire [3:0]   arch_encoder_multiplier_core_phase,
+    output wire [3:0]   arch_encoder_multiplier_core_byte_index,
+    output wire [7:0]   arch_encoder_multiplier_core_scratch_byte,
+    output wire         arch_encoder_multiplier_core_fault,
+    output wire [127:0] arch_encoder_multiplier_core_mul_a_shift,
+    output wire [127:0] arch_encoder_multiplier_core_mul_accumulator,
+    output wire         arch_encoder_start,
+    output wire [15:0]  arch_encoder_start_index,
     output wire         arch_fault,
     output wire         arch_done_pulse
 );
@@ -111,6 +158,8 @@ module lsc1_packet_frontend (
     wire [15:0] tx_arch_index, tx_arch_length;
     wire [7:0] tx_arch_status;
     wire [543:0] tx_arch_payload;
+    wire tx_arch_active, tx_arch_done_pulse;
+    wire [31:0] tx_arch_saved_crc, tx_arch_envelope_crc_work, tx_arch_payload_crc_work, tx_arch_payload_crc;
     reg tx_start;
     reg [7:0] tx_status;
     reg [15:0] tx_length;
@@ -126,12 +175,27 @@ module lsc1_packet_frontend (
     wire [7:0] alu_arch_operation;
     wire [5:0] alu_arch_payload_index;
     wire [4:0] alu_arch_result_index;
+    wire [127:0] alu_arch_saved_a, alu_arch_saved_b, alu_arch_core_mul_a_shift, alu_arch_core_mul_accumulator;
+    wire alu_arch_done_pulse, alu_arch_fault, alu_arch_core_fault;
+    wire [3:0] alu_arch_core_state, alu_arch_core_byte_index;
+    wire [7:0] alu_arch_core_scratch_byte;
     reg encoder_start;
     reg [15:0] encoder_index;
     wire encoder_busy, encoder_done, encoder_fault;
     wire [127:0] encoder_result;
     wire [4:0] encoder_arch_bit_index;
     wire [15:0] encoder_arch_saved_index;
+    wire encoder_arch_multiply_start, encoder_arch_done_pulse, encoder_arch_fault, encoder_arch_multiplier_core_fault;
+    wire [127:0] encoder_arch_accumulator, encoder_arch_operand_a, encoder_arch_operand_b;
+    wire [2:0] encoder_arch_multiplier_state;
+    wire [7:0] encoder_arch_multiplier_operation, encoder_arch_multiplier_core_scratch_byte;
+    wire [5:0] encoder_arch_multiplier_payload_index;
+    wire [4:0] encoder_arch_multiplier_result_index;
+    wire [127:0] encoder_arch_multiplier_saved_a, encoder_arch_multiplier_saved_b;
+    wire encoder_arch_multiplier_done_pulse, encoder_arch_multiplier_fault;
+    wire [127:0] encoder_arch_multiplier_result;
+    wire [3:0] encoder_arch_multiplier_core_state, encoder_arch_multiplier_core_byte_index;
+    wire [127:0] encoder_arch_multiplier_core_mul_a_shift, encoder_arch_multiplier_core_mul_accumulator;
     wire lane_enable = !tx_busy && !tx_start &&
                        compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
@@ -167,7 +231,10 @@ module lsc1_packet_frontend (
         .payload_crc(tx_payload_crc),
         .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready),
         .arch_index(tx_arch_index), .arch_length(tx_arch_length),
-        .arch_status(tx_arch_status), .arch_payload(tx_arch_payload)
+        .arch_status(tx_arch_status), .arch_payload(tx_arch_payload),
+        .arch_active(tx_arch_active), .arch_saved_crc(tx_arch_saved_crc),
+        .arch_envelope_crc_work(tx_arch_envelope_crc_work), .arch_payload_crc_work(tx_arch_payload_crc_work),
+        .arch_done_pulse(tx_arch_done_pulse), .arch_payload_crc(tx_arch_payload_crc)
     );
 
     lsc1_stream_adapter adapter (
@@ -176,14 +243,30 @@ module lsc1_packet_frontend (
         .operand_b(alu_operand_b), .busy(alu_busy),
         .done_pulse(alu_done), .fault(alu_fault), .result(alu_result),
         .arch_state(alu_arch_state), .arch_operation(alu_arch_operation),
-        .arch_payload_index(alu_arch_payload_index), .arch_result_index(alu_arch_result_index)
+        .arch_payload_index(alu_arch_payload_index), .arch_result_index(alu_arch_result_index),
+        .arch_saved_a(alu_arch_saved_a), .arch_saved_b(alu_arch_saved_b),
+        .arch_done_pulse(alu_arch_done_pulse), .arch_fault(alu_arch_fault), .arch_result(),
+        .arch_core_state(alu_arch_core_state), .arch_core_byte_index(alu_arch_core_byte_index),
+        .arch_core_scratch_byte(alu_arch_core_scratch_byte), .arch_core_fault(alu_arch_core_fault),
+        .arch_core_mul_a_shift(alu_arch_core_mul_a_shift), .arch_core_mul_accumulator(alu_arch_core_mul_accumulator)
     );
 
     lsc1_field_encoder field_encoder (
         .clk(clk), .rst_n(rst_n), .abort(abort), .start(encoder_start),
         .index(encoder_index), .busy(encoder_busy), .done_pulse(encoder_done),
         .fault(encoder_fault), .result(encoder_result),
-        .arch_bit_index(encoder_arch_bit_index), .arch_saved_index(encoder_arch_saved_index)
+        .arch_bit_index(encoder_arch_bit_index), .arch_saved_index(encoder_arch_saved_index),
+        .arch_multiply_start(encoder_arch_multiply_start), .arch_accumulator(encoder_arch_accumulator),
+        .arch_operand_a(encoder_arch_operand_a), .arch_operand_b(encoder_arch_operand_b),
+        .arch_done_pulse(encoder_arch_done_pulse), .arch_fault(encoder_arch_fault), .arch_result(),
+        .arch_multiplier_state(encoder_arch_multiplier_state), .arch_multiplier_operation(encoder_arch_multiplier_operation),
+        .arch_multiplier_payload_index(encoder_arch_multiplier_payload_index), .arch_multiplier_result_index(encoder_arch_multiplier_result_index),
+        .arch_multiplier_saved_a(encoder_arch_multiplier_saved_a), .arch_multiplier_saved_b(encoder_arch_multiplier_saved_b),
+        .arch_multiplier_done_pulse(encoder_arch_multiplier_done_pulse), .arch_multiplier_fault(encoder_arch_multiplier_fault),
+        .arch_multiplier_result(encoder_arch_multiplier_result),
+        .arch_multiplier_core_state(encoder_arch_multiplier_core_state), .arch_multiplier_core_byte_index(encoder_arch_multiplier_core_byte_index),
+        .arch_multiplier_core_scratch_byte(encoder_arch_multiplier_core_scratch_byte), .arch_multiplier_core_fault(encoder_arch_multiplier_core_fault),
+        .arch_multiplier_core_mul_a_shift(encoder_arch_multiplier_core_mul_a_shift), .arch_multiplier_core_mul_accumulator(encoder_arch_multiplier_core_mul_accumulator)
     );
 
     assign rx_ready = parser_rx_ready && lane_enable;
@@ -228,16 +311,63 @@ module lsc1_packet_frontend (
     assign arch_tx_status = tx_arch_status;
     assign arch_tx_payload = tx_arch_payload;
     assign arch_tx_payload_crc = tx_payload_crc;
+    assign arch_tx_active = tx_arch_active;
+    assign arch_tx_saved_crc = tx_arch_saved_crc;
+    assign arch_tx_envelope_crc_work = tx_arch_envelope_crc_work;
+    assign arch_tx_payload_crc_work = tx_arch_payload_crc_work;
+    assign arch_tx_done_pulse = tx_arch_done_pulse;
+    assign arch_tx_start = tx_start;
+    assign arch_tx_start_status = tx_status;
+    assign arch_tx_start_length = tx_length;
+    assign arch_tx_start_payload = tx_payload;
+    assign arch_capture_result_crc = capture_result_crc;
     assign arch_alu_busy = alu_busy;
     assign arch_alu_phase = alu_arch_state;
     assign arch_alu_operation = alu_arch_operation;
     assign arch_alu_payload_index = alu_arch_payload_index;
     assign arch_alu_result_index = alu_arch_result_index;
     assign arch_alu_result = alu_result;
+    assign arch_alu_saved_a = alu_arch_saved_a;
+    assign arch_alu_saved_b = alu_arch_saved_b;
+    assign arch_alu_done_pulse = alu_arch_done_pulse;
+    assign arch_alu_fault = alu_arch_fault;
+    assign arch_alu_core_phase = alu_arch_core_state;
+    assign arch_alu_core_byte_index = alu_arch_core_byte_index;
+    assign arch_alu_core_scratch_byte = alu_arch_core_scratch_byte;
+    assign arch_alu_core_fault = alu_arch_core_fault;
+    assign arch_alu_core_mul_a_shift = alu_arch_core_mul_a_shift;
+    assign arch_alu_core_mul_accumulator = alu_arch_core_mul_accumulator;
+    assign arch_alu_start = alu_start;
+    assign arch_alu_start_operation = alu_operation;
+    assign arch_alu_start_operand_a = alu_operand_a;
+    assign arch_alu_start_operand_b = alu_operand_b;
     assign arch_encoder_busy = encoder_busy;
     assign arch_encoder_bit_index = encoder_arch_bit_index;
     assign arch_encoder_index = encoder_arch_saved_index;
     assign arch_encoder_result = encoder_result;
+    assign arch_encoder_done_pulse = encoder_arch_done_pulse;
+    assign arch_encoder_fault = encoder_arch_fault;
+    assign arch_encoder_multiply_start = encoder_arch_multiply_start;
+    assign arch_encoder_accumulator = encoder_arch_accumulator;
+    assign arch_encoder_operand_a = encoder_arch_operand_a;
+    assign arch_encoder_operand_b = encoder_arch_operand_b;
+    assign arch_encoder_multiplier_phase = encoder_arch_multiplier_state;
+    assign arch_encoder_multiplier_operation = encoder_arch_multiplier_operation;
+    assign arch_encoder_multiplier_payload_index = encoder_arch_multiplier_payload_index;
+    assign arch_encoder_multiplier_result_index = encoder_arch_multiplier_result_index;
+    assign arch_encoder_multiplier_saved_a = encoder_arch_multiplier_saved_a;
+    assign arch_encoder_multiplier_saved_b = encoder_arch_multiplier_saved_b;
+    assign arch_encoder_multiplier_done_pulse = encoder_arch_multiplier_done_pulse;
+    assign arch_encoder_multiplier_fault = encoder_arch_multiplier_fault;
+    assign arch_encoder_multiplier_result = encoder_arch_multiplier_result;
+    assign arch_encoder_multiplier_core_phase = encoder_arch_multiplier_core_state;
+    assign arch_encoder_multiplier_core_byte_index = encoder_arch_multiplier_core_byte_index;
+    assign arch_encoder_multiplier_core_scratch_byte = encoder_arch_multiplier_core_scratch_byte;
+    assign arch_encoder_multiplier_core_fault = encoder_arch_multiplier_core_fault;
+    assign arch_encoder_multiplier_core_mul_a_shift = encoder_arch_multiplier_core_mul_a_shift;
+    assign arch_encoder_multiplier_core_mul_accumulator = encoder_arch_multiplier_core_mul_accumulator;
+    assign arch_encoder_start = encoder_start;
+    assign arch_encoder_start_index = encoder_index;
     assign arch_fault = fault;
     assign arch_done_pulse = done_pulse;
 

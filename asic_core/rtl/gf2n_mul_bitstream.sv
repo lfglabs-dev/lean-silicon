@@ -37,7 +37,9 @@ module gf2n_mul_bitstream #(
     input  wire                    bit_last,
 
     input  wire                    result_shift,
-    output wire [BYTE_BITS-1:0]    result_byte
+    output wire [BYTE_BITS-1:0]    result_byte,
+    output wire [WIDTH-1:0]        arch_a_shift,
+    output wire [WIDTH-1:0]        arch_accumulator
 );
 
     reg [WIDTH-1:0] a_shift;
@@ -68,6 +70,8 @@ module gf2n_mul_bitstream #(
     endfunction
 
     assign result_byte = accumulator[BYTE_BITS-1:0];
+    assign arch_a_shift = a_shift;
+    assign arch_accumulator = accumulator;
 
     always @(posedge clk) begin
         if (!rst_n) begin

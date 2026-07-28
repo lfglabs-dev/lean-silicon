@@ -20,7 +20,9 @@ module gf128_mul_bitstream (
     input  wire         bit_last,
 
     input  wire         result_shift,
-    output wire [7:0]   result_byte
+    output wire [7:0]   result_byte,
+    output wire [127:0] arch_a_shift,
+    output wire [127:0] arch_accumulator
 );
 
     gf2n_mul_bitstream #(
@@ -38,7 +40,9 @@ module gf128_mul_bitstream (
         .bit_value    (bit_value),
         .bit_last     (bit_last),
         .result_shift (result_shift),
-        .result_byte  (result_byte)
+        .result_byte  (result_byte),
+        .arch_a_shift (arch_a_shift),
+        .arch_accumulator (arch_accumulator)
     );
 
 endmodule

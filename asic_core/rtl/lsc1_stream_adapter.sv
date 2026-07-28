@@ -18,7 +18,18 @@ module lsc1_stream_adapter (
     output wire [2:0]   arch_state,
     output wire [7:0]   arch_operation,
     output wire [5:0]   arch_payload_index,
-    output wire [4:0]   arch_result_index
+    output wire [4:0]   arch_result_index,
+    output wire [127:0] arch_saved_a,
+    output wire [127:0] arch_saved_b,
+    output wire         arch_done_pulse,
+    output wire         arch_fault,
+    output wire [127:0] arch_result,
+    output wire [3:0]   arch_core_state,
+    output wire [3:0]   arch_core_byte_index,
+    output wire [7:0]   arch_core_scratch_byte,
+    output wire         arch_core_fault,
+    output wire [127:0] arch_core_mul_a_shift,
+    output wire [127:0] arch_core_mul_accumulator
 );
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03;
     localparam [2:0] S_IDLE = 3'd0, S_CLEAR = 3'd1,
@@ -50,12 +61,18 @@ module lsc1_stream_adapter (
         .rx_ready(core_rx_ready),
         .tx_data(core_tx_data), .tx_valid(core_tx_valid),
         .tx_ready(core_tx_ready),
-        .busy(core_busy), .done_pulse(core_done), .fault(core_fault)
+        .busy(core_busy), .done_pulse(core_done), .fault(core_fault),
+        .arch_state(arch_core_state), .arch_byte_index(arch_core_byte_index),
+        .arch_scratch_byte(arch_core_scratch_byte),
+        .arch_mul_a_shift(arch_core_mul_a_shift), .arch_mul_accumulator(arch_core_mul_accumulator)
     );
 
     assign busy = state != S_IDLE;
     assign arch_state = state; assign arch_operation = saved_operation;
     assign arch_payload_index = payload_index; assign arch_result_index = result_index;
+    assign arch_saved_a = saved_a; assign arch_saved_b = saved_b;
+    assign arch_done_pulse = done_pulse; assign arch_fault = fault; assign arch_result = result;
+    assign arch_core_fault = core_fault;
 
     always @(*) begin
         core_rx_valid = 1'b0;

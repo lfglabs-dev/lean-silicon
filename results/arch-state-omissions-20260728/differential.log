@@ -1,0 +1,9 @@
+test_adversarial_jump_inverse_and_xor_backsolve_match_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model) ... ok
+test_deref_and_jump_faults_match_the_executable_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_deref_and_jump_faults_match_the_executable_model) ... ok
+test_deref_and_jump_match_the_executable_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_deref_and_jump_match_the_executable_model) ... ok
+test_seeded_set_xor_mul_and_frame_faults (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_seeded_set_xor_mul_and_frame_faults) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.193s
+
+OK

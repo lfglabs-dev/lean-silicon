@@ -1,28 +1,520 @@
 {
-  "schema": 1,
+  "schema": 2,
   "module": "lsc1_packet_frontend",
-  "relation": "R(rtl_state, arch_state) is direct field equality; every source is a registered RTL signal except parser_busy, tx_busy, alu_busy, encoder_busy, and output-valid/data, which are documented functions of the listed registered state.",
+  "relation": "R is direct equality at each active clock boundary; every mapped source is registered state or an explicit output reconstruction function. No symbolic bridge, cutpoint, or ignored output channel is used.",
   "fields": {
-    "arch_phase":"compute_state", "arch_parser_busy":"rx_busy", "arch_parser_phase":"parser_arch_state",
-    "arch_parser_header_index":"parser_arch_header_index", "arch_parser_body_index":"parser_arch_body_index",
-    "arch_parser_declared_length":"parser_arch_declared_length", "arch_parser_version":"parser_arch_version",
-    "arch_parser_opcode":"parser_arch_opcode", "arch_parser_flags":"parser_arch_flags", "arch_parser_crc":"parser_arch_crc",
-    "arch_parser_received_crc":"parser_arch_received_crc", "arch_frame_valid":"frame_valid",
-    "arch_frame_opcode":"frame_opcode", "arch_frame_length":"frame_length", "arch_frame_payload":"frame_payload",
-    "arch_rx_fault_valid":"rx_fault_valid", "arch_rx_fault_status":"rx_fault_status",
-    "arch_result_pending":"result_pending", "arch_staged_txn_id":"staged_txn_id",
-    "arch_staged_next_pc":"staged_next_pc", "arch_staged_next_fp":"staged_next_fp",
-    "arch_staged_result_crc":"staged_result_crc", "arch_state_valid":"state_valid",
-    "arch_committed_pc":"committed_pc", "arch_committed_fp":"committed_fp", "arch_retire_seq":"retire_seq",
-    "arch_active_profile":"active_profile", "arch_last_status":"last_status", "arch_last_fault":"last_fault",
-    "arch_tx_busy":"tx_busy", "arch_tx_index":"tx_arch_index", "arch_tx_length":"tx_arch_length",
-    "arch_tx_status":"tx_arch_status", "arch_tx_payload":"tx_arch_payload",
-    "arch_tx_payload_crc":"tx_payload_crc", "arch_alu_busy":"alu_busy", "arch_alu_phase":"alu_arch_state",
-    "arch_alu_operation":"alu_arch_operation", "arch_alu_payload_index":"alu_arch_payload_index",
-    "arch_alu_result_index":"alu_arch_result_index", "arch_alu_result":"alu_result", "arch_encoder_busy":"encoder_busy",
-    "arch_encoder_bit_index":"encoder_arch_bit_index", "arch_encoder_index":"encoder_arch_saved_index",
-    "arch_encoder_result":"encoder_result", "arch_fault":"fault", "arch_done_pulse":"done_pulse"
+    "arch_phase": {
+      "source": "compute_state",
+      "width": 4
+    },
+    "arch_parser_busy": {
+      "source": "rx_busy",
+      "width": 1
+    },
+    "arch_parser_phase": {
+      "source": "parser_arch_state",
+      "width": 3
+    },
+    "arch_parser_header_index": {
+      "source": "parser_arch_header_index",
+      "width": 3
+    },
+    "arch_parser_body_index": {
+      "source": "parser_arch_body_index",
+      "width": 16
+    },
+    "arch_parser_declared_length": {
+      "source": "parser_arch_declared_length",
+      "width": 16
+    },
+    "arch_parser_version": {
+      "source": "parser_arch_version",
+      "width": 8
+    },
+    "arch_parser_opcode": {
+      "source": "parser_arch_opcode",
+      "width": 8
+    },
+    "arch_parser_flags": {
+      "source": "parser_arch_flags",
+      "width": 8
+    },
+    "arch_parser_crc": {
+      "source": "parser_arch_crc",
+      "width": 32
+    },
+    "arch_parser_received_crc": {
+      "source": "parser_arch_received_crc",
+      "width": 32
+    },
+    "arch_frame_valid": {
+      "source": "frame_valid",
+      "width": 1
+    },
+    "arch_frame_opcode": {
+      "source": "frame_opcode",
+      "width": 8
+    },
+    "arch_frame_length": {
+      "source": "frame_length",
+      "width": 16
+    },
+    "arch_frame_payload": {
+      "source": "frame_payload",
+      "width": 2048
+    },
+    "arch_rx_fault_valid": {
+      "source": "rx_fault_valid",
+      "width": 1
+    },
+    "arch_rx_fault_status": {
+      "source": "rx_fault_status",
+      "width": 8
+    },
+    "arch_result_pending": {
+      "source": "result_pending",
+      "width": 1
+    },
+    "arch_staged_txn_id": {
+      "source": "staged_txn_id",
+      "width": 32
+    },
+    "arch_staged_next_pc": {
+      "source": "staged_next_pc",
+      "width": 32
+    },
+    "arch_staged_next_fp": {
+      "source": "staged_next_fp",
+      "width": 32
+    },
+    "arch_staged_result_crc": {
+      "source": "staged_result_crc",
+      "width": 32
+    },
+    "arch_state_valid": {
+      "source": "state_valid",
+      "width": 1
+    },
+    "arch_committed_pc": {
+      "source": "committed_pc",
+      "width": 32
+    },
+    "arch_committed_fp": {
+      "source": "committed_fp",
+      "width": 32
+    },
+    "arch_retire_seq": {
+      "source": "retire_seq",
+      "width": 32
+    },
+    "arch_active_profile": {
+      "source": "active_profile",
+      "width": 8
+    },
+    "arch_last_status": {
+      "source": "last_status",
+      "width": 8
+    },
+    "arch_last_fault": {
+      "source": "last_fault",
+      "width": 8
+    },
+    "arch_tx_busy": {
+      "source": "tx_busy",
+      "width": 1
+    },
+    "arch_tx_index": {
+      "source": "tx_arch_index",
+      "width": 16
+    },
+    "arch_tx_length": {
+      "source": "tx_arch_length",
+      "width": 16
+    },
+    "arch_tx_status": {
+      "source": "tx_arch_status",
+      "width": 8
+    },
+    "arch_tx_payload": {
+      "source": "tx_arch_payload",
+      "width": 544
+    },
+    "arch_tx_payload_crc": {
+      "source": "tx_payload_crc",
+      "width": 32
+    },
+    "arch_tx_active": {
+      "source": "tx_arch_active",
+      "width": 1
+    },
+    "arch_tx_saved_crc": {
+      "source": "tx_arch_saved_crc",
+      "width": 32
+    },
+    "arch_tx_envelope_crc_work": {
+      "source": "tx_arch_envelope_crc_work",
+      "width": 32
+    },
+    "arch_tx_payload_crc_work": {
+      "source": "tx_arch_payload_crc_work",
+      "width": 32
+    },
+    "arch_tx_done_pulse": {
+      "source": "tx_arch_done_pulse",
+      "width": 1
+    },
+    "arch_tx_start": {
+      "source": "tx_start",
+      "width": 1
+    },
+    "arch_tx_start_status": {
+      "source": "tx_status",
+      "width": 8
+    },
+    "arch_tx_start_length": {
+      "source": "tx_length",
+      "width": 16
+    },
+    "arch_tx_start_payload": {
+      "source": "tx_payload",
+      "width": 544
+    },
+    "arch_capture_result_crc": {
+      "source": "capture_result_crc",
+      "width": 1
+    },
+    "arch_alu_busy": {
+      "source": "alu_busy",
+      "width": 1
+    },
+    "arch_alu_phase": {
+      "source": "alu_arch_state",
+      "width": 3
+    },
+    "arch_alu_operation": {
+      "source": "alu_arch_operation",
+      "width": 8
+    },
+    "arch_alu_payload_index": {
+      "source": "alu_arch_payload_index",
+      "width": 6
+    },
+    "arch_alu_result_index": {
+      "source": "alu_arch_result_index",
+      "width": 5
+    },
+    "arch_alu_result": {
+      "source": "alu_result",
+      "width": 128
+    },
+    "arch_alu_saved_a": {
+      "source": "alu_arch_saved_a",
+      "width": 128
+    },
+    "arch_alu_saved_b": {
+      "source": "alu_arch_saved_b",
+      "width": 128
+    },
+    "arch_alu_done_pulse": {
+      "source": "alu_arch_done_pulse",
+      "width": 1
+    },
+    "arch_alu_fault": {
+      "source": "alu_arch_fault",
+      "width": 1
+    },
+    "arch_alu_core_phase": {
+      "source": "alu_arch_core_state",
+      "width": 4
+    },
+    "arch_alu_core_byte_index": {
+      "source": "alu_arch_core_byte_index",
+      "width": 4
+    },
+    "arch_alu_core_scratch_byte": {
+      "source": "alu_arch_core_scratch_byte",
+      "width": 8
+    },
+    "arch_alu_core_fault": {
+      "source": "alu_arch_core_fault",
+      "width": 1
+    },
+    "arch_alu_core_mul_a_shift": {
+      "source": "alu_arch_core_mul_a_shift",
+      "width": 128
+    },
+    "arch_alu_core_mul_accumulator": {
+      "source": "alu_arch_core_mul_accumulator",
+      "width": 128
+    },
+    "arch_alu_start": {
+      "source": "alu_start",
+      "width": 1
+    },
+    "arch_alu_start_operation": {
+      "source": "alu_operation",
+      "width": 8
+    },
+    "arch_alu_start_operand_a": {
+      "source": "alu_operand_a",
+      "width": 128
+    },
+    "arch_alu_start_operand_b": {
+      "source": "alu_operand_b",
+      "width": 128
+    },
+    "arch_encoder_busy": {
+      "source": "encoder_busy",
+      "width": 1
+    },
+    "arch_encoder_bit_index": {
+      "source": "encoder_arch_bit_index",
+      "width": 5
+    },
+    "arch_encoder_index": {
+      "source": "encoder_arch_saved_index",
+      "width": 16
+    },
+    "arch_encoder_result": {
+      "source": "encoder_result",
+      "width": 128
+    },
+    "arch_encoder_done_pulse": {
+      "source": "encoder_arch_done_pulse",
+      "width": 1
+    },
+    "arch_encoder_fault": {
+      "source": "encoder_arch_fault",
+      "width": 1
+    },
+    "arch_encoder_multiply_start": {
+      "source": "encoder_arch_multiply_start",
+      "width": 1
+    },
+    "arch_encoder_accumulator": {
+      "source": "encoder_arch_accumulator",
+      "width": 128
+    },
+    "arch_encoder_operand_a": {
+      "source": "encoder_arch_operand_a",
+      "width": 128
+    },
+    "arch_encoder_operand_b": {
+      "source": "encoder_arch_operand_b",
+      "width": 128
+    },
+    "arch_encoder_multiplier_phase": {
+      "source": "encoder_arch_multiplier_state",
+      "width": 3
+    },
+    "arch_encoder_multiplier_operation": {
+      "source": "encoder_arch_multiplier_operation",
+      "width": 8
+    },
+    "arch_encoder_multiplier_payload_index": {
+      "source": "encoder_arch_multiplier_payload_index",
+      "width": 6
+    },
+    "arch_encoder_multiplier_result_index": {
+      "source": "encoder_arch_multiplier_result_index",
+      "width": 5
+    },
+    "arch_encoder_multiplier_saved_a": {
+      "source": "encoder_arch_multiplier_saved_a",
+      "width": 128
+    },
+    "arch_encoder_multiplier_saved_b": {
+      "source": "encoder_arch_multiplier_saved_b",
+      "width": 128
+    },
+    "arch_encoder_multiplier_done_pulse": {
+      "source": "encoder_arch_multiplier_done_pulse",
+      "width": 1
+    },
+    "arch_encoder_multiplier_fault": {
+      "source": "encoder_arch_multiplier_fault",
+      "width": 1
+    },
+    "arch_encoder_multiplier_result": {
+      "source": "encoder_arch_multiplier_result",
+      "width": 128
+    },
+    "arch_encoder_multiplier_core_phase": {
+      "source": "encoder_arch_multiplier_core_state",
+      "width": 4
+    },
+    "arch_encoder_multiplier_core_byte_index": {
+      "source": "encoder_arch_multiplier_core_byte_index",
+      "width": 4
+    },
+    "arch_encoder_multiplier_core_scratch_byte": {
+      "source": "encoder_arch_multiplier_core_scratch_byte",
+      "width": 8
+    },
+    "arch_encoder_multiplier_core_fault": {
+      "source": "encoder_arch_multiplier_core_fault",
+      "width": 1
+    },
+    "arch_encoder_multiplier_core_mul_a_shift": {
+      "source": "encoder_arch_multiplier_core_mul_a_shift",
+      "width": 128
+    },
+    "arch_encoder_multiplier_core_mul_accumulator": {
+      "source": "encoder_arch_multiplier_core_mul_accumulator",
+      "width": 128
+    },
+    "arch_encoder_start": {
+      "source": "encoder_start",
+      "width": 1
+    },
+    "arch_encoder_start_index": {
+      "source": "encoder_index",
+      "width": 16
+    },
+    "arch_fault": {
+      "source": "fault",
+      "width": 1
+    },
+    "arch_done_pulse": {
+      "source": "done_pulse",
+      "width": 1
+    }
   },
-  "observable_outputs": ["rx_ready", "tx_data", "tx_valid", "busy", "fault", "done_pulse"],
-  "partitions": ["reset", "idle", "parser", "compute", "response", "retire"]
+  "registered_coverage": {
+    "lsc1_packet_frontend": {
+      "compute_state": "arch_phase",
+      "result_pending": "arch_result_pending",
+      "staged_txn_id": "arch_staged_txn_id",
+      "staged_next_pc": "arch_staged_next_pc",
+      "staged_next_fp": "arch_staged_next_fp",
+      "staged_result_crc": "arch_staged_result_crc",
+      "state_valid": "arch_state_valid",
+      "committed_pc": "arch_committed_pc",
+      "committed_fp": "arch_committed_fp",
+      "retire_seq": "arch_retire_seq",
+      "active_profile": "arch_active_profile",
+      "last_status": "arch_last_status",
+      "last_fault": "arch_last_fault",
+      "tx_start": "arch_tx_start",
+      "tx_status": "arch_tx_start_status",
+      "tx_length": "arch_tx_start_length",
+      "tx_payload": "arch_tx_start_payload",
+      "capture_result_crc": "arch_capture_result_crc",
+      "alu_start": "arch_alu_start",
+      "alu_operation": "arch_alu_start_operation",
+      "alu_operand_a": "arch_alu_start_operand_a",
+      "alu_operand_b": "arch_alu_start_operand_b",
+      "encoder_start": "arch_encoder_start",
+      "encoder_index": "arch_encoder_start_index",
+      "fault": "arch_fault",
+      "done_pulse": "arch_done_pulse"
+    },
+    "lsc1_packet_tx": {
+      "active": "arch_tx_active",
+      "index": "arch_tx_index",
+      "saved_length": "arch_tx_length",
+      "saved_status": "arch_tx_status",
+      "saved_payload": "arch_tx_payload",
+      "saved_crc": "arch_tx_saved_crc",
+      "envelope_crc_work": "arch_tx_envelope_crc_work",
+      "payload_crc_work": "arch_tx_payload_crc_work",
+      "payload_crc": "arch_tx_payload_crc",
+      "done_pulse": "arch_tx_done_pulse"
+    },
+    "lsc1_stream_adapter": {
+      "state": "arch_alu_phase",
+      "saved_operation": "arch_alu_operation",
+      "saved_a": "arch_alu_saved_a",
+      "saved_b": "arch_alu_saved_b",
+      "payload_index": "arch_alu_payload_index",
+      "result_index": "arch_alu_result_index",
+      "result": "arch_alu_result",
+      "done_pulse": "arch_alu_done_pulse",
+      "fault": "arch_alu_fault"
+    },
+    "leanvm_b_stream_alu": {
+      "state": "arch_alu_core_phase",
+      "byte_index": "arch_alu_core_byte_index",
+      "scratch_byte": "arch_alu_core_scratch_byte",
+      "fault": "arch_alu_core_fault"
+    },
+    "gf2n_mul_bitstream": {
+      "a_shift": "arch_alu_core_mul_a_shift",
+      "accumulator": "arch_alu_core_mul_accumulator"
+    },
+    "lsc1_field_encoder": {
+      "busy": "arch_encoder_busy",
+      "multiply_start": "arch_encoder_multiply_start",
+      "bit_index": "arch_encoder_bit_index",
+      "saved_index": "arch_encoder_index",
+      "accumulator": "arch_encoder_accumulator",
+      "operand_a": "arch_encoder_operand_a",
+      "operand_b": "arch_encoder_operand_b",
+      "result": "arch_encoder_result",
+      "done_pulse": "arch_encoder_done_pulse",
+      "fault": "arch_encoder_fault"
+    },
+    "lsc1_field_encoder.multiplier": {
+      "state": "arch_encoder_multiplier_phase",
+      "saved_operation": "arch_encoder_multiplier_operation",
+      "saved_a": "arch_encoder_multiplier_saved_a",
+      "saved_b": "arch_encoder_multiplier_saved_b",
+      "payload_index": "arch_encoder_multiplier_payload_index",
+      "result_index": "arch_encoder_multiplier_result_index",
+      "result": "arch_encoder_multiplier_result",
+      "done_pulse": "arch_encoder_multiplier_done_pulse",
+      "fault": "arch_encoder_multiplier_fault"
+    },
+    "lsc1_field_encoder.multiplier.core": {
+      "state": "arch_encoder_multiplier_core_phase",
+      "byte_index": "arch_encoder_multiplier_core_byte_index",
+      "scratch_byte": "arch_encoder_multiplier_core_scratch_byte",
+      "fault": "arch_encoder_multiplier_core_fault"
+    },
+    "lsc1_field_encoder.multiplier.core.gf": {
+      "a_shift": "arch_encoder_multiplier_core_mul_a_shift",
+      "accumulator": "arch_encoder_multiplier_core_mul_accumulator"
+    },
+    "lsc1_packet_rx": {
+      "state": "arch_parser_phase",
+      "header_index": "arch_parser_header_index",
+      "body_index": "arch_parser_body_index",
+      "declared_length": "arch_parser_declared_length",
+      "version": "arch_parser_version",
+      "opcode": "arch_parser_opcode",
+      "flags": "arch_parser_flags",
+      "crc": "arch_parser_crc",
+      "received_crc": "arch_parser_received_crc",
+      "frame_valid": "arch_frame_valid",
+      "frame_opcode": "arch_frame_opcode",
+      "frame_length": "arch_frame_length",
+      "frame_payload": "arch_frame_payload",
+      "fault_valid": "arch_rx_fault_valid",
+      "fault_status": "arch_rx_fault_status"
+    }
+  },
+  "observable_outputs": [
+    "rx_ready",
+    "tx_data",
+    "tx_valid",
+    "busy",
+    "fault",
+    "done_pulse"
+  ],
+  "output_reconstruction": {
+    "tx_valid": "arch_tx_active",
+    "tx_data": "packet-TX byte function(arch_tx_index, arch_tx_length, arch_tx_status, arch_tx_payload, arch_tx_saved_crc)",
+    "busy": "OR(parser, tx active/start, queued event/result, compute, ALU, encoder)",
+    "rx_ready": "parser ready AND lane-enable",
+    "fault": "arch_fault",
+    "done_pulse": "arch_done_pulse"
+  },
+  "partitions": [
+    "reset",
+    "idle",
+    "parser",
+    "compute",
+    "response",
+    "retire"
+  ]
 }

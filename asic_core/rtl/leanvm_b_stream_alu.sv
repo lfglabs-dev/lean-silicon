@@ -40,7 +40,12 @@ module leanvm_b_stream_alu (
 
     output wire       busy,
     output wire       done_pulse,
-    output reg        fault
+    output reg        fault,
+    output wire [3:0] arch_state,
+    output wire [3:0] arch_byte_index,
+    output wire [7:0] arch_scratch_byte,
+    output wire [127:0] arch_mul_a_shift,
+    output wire [127:0] arch_mul_accumulator
 );
 
     localparam [7:0] CMD_XOR128  = 8'h01;
@@ -97,10 +102,15 @@ module leanvm_b_stream_alu (
         .bit_value    (mul_bit_value),
         .bit_last     (mul_bit_last),
         .result_shift (mul_result_shift),
-        .result_byte  (mul_result_byte)
+        .result_byte  (mul_result_byte),
+        .arch_a_shift (arch_mul_a_shift),
+        .arch_accumulator (arch_mul_accumulator)
     );
 
     assign busy = (state != S_IDLE);
+    assign arch_state = state;
+    assign arch_byte_index = byte_index;
+    assign arch_scratch_byte = scratch_byte;
 
     function automatic [7:0] status_byte;
         input [3:0] index;
