@@ -83,6 +83,23 @@ class SchemaTests(unittest.TestCase):
             with self.assertRaises(ServiceSemanticError):
                 ServiceRequired(key, bytes(64), bytes(32), 0, block_len, flags)
 
+    def test_keys_and_direct_responses_enforce_schema_ranges(self):
+        for key in (
+            (0, 1, 1, 1),
+            (1 << 64, 1, 1, 1),
+            (1, -1, 1, 1),
+            (1, 1 << 32, 1, 1),
+            (1, 1, -1, 1),
+            (1, 1, 1 << 32, 1),
+            (1, 1, 1, 1 << 8),
+        ):
+            with self.subTest(key=key):
+                with self.assertRaises(ServiceSemanticError):
+                    ServiceKey(*key)
+        key = ServiceKey(1, 1, 1, 1)
+        with self.assertRaises(ServiceSemanticError):
+            ServiceResponse(key, ServiceStatus.OK, b"short")
+
 
 class ScatterGatherDesignContractTests(unittest.TestCase):
     def test_documented_direction_preserves_current_rtl_boundary(self):
@@ -193,6 +210,28 @@ class AdapterAndModelTests(unittest.TestCase):
         adapter.reset(0xAABBCCDE)
         with self.assertRaises(ServiceSemanticError):
             adapter.to_v1(good)
+
+    def test_retry_requires_identical_operands_and_abort_tombstones_key(self):
+        _, adapter, request = self.pending()
+        endpoint = protocol.Lsc1Endpoint()
+        reply = exchange(endpoint, blake3_request())
+        altered = bytearray(reply.payload)
+        altered[10] ^= 1
+        with self.assertRaises(ServiceSemanticError):
+            adapter.accept_required(bytes(altered))
+        self.assertEqual(adapter.accept_required(reply.payload), request)
+        adapter.abort()
+        with self.assertRaises(ServiceSemanticError):
+            adapter.accept_required(reply.payload)
+
+    def test_reset_rejects_invalid_epoch_without_changing_state(self):
+        _, adapter, request = self.pending()
+        for epoch in (0, -1, 1 << 64):
+            with self.subTest(epoch=epoch):
+                with self.assertRaises(ValueError):
+                    adapter.reset(epoch)
+                self.assertEqual(adapter.session_epoch, request.key.session_epoch)
+                self.assertEqual(adapter.outstanding, request.key)
 
     def test_infrastructure_retry_is_bounded_and_semantic_failure_is_not_retried(self):
         _, adapter, request = self.pending()

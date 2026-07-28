@@ -44,6 +44,16 @@ class ServiceKey:
     service_id: int
     kind: int
 
+    def __post_init__(self) -> None:
+        if not 0 < self.session_epoch < 1 << 64:
+            raise ServiceSemanticError("session_epoch must be a nonzero u64")
+        if not 0 <= self.txn_id < 1 << 32:
+            raise ServiceSemanticError("txn_id must be a u32")
+        if not 0 <= self.service_id < 1 << 32:
+            raise ServiceSemanticError("service_id must be a u32")
+        if not 0 <= self.kind < 1 << 8:
+            raise ServiceSemanticError("kind must be a u8")
+
 
 @dataclass(frozen=True)
 class ServiceRequired:
@@ -119,9 +129,13 @@ class ServiceResponse:
     status: ServiceStatus
     digest: bytes
 
-    def encode(self) -> bytes:
+    def __post_init__(self) -> None:
+        if not isinstance(self.status, ServiceStatus):
+            raise ServiceSemanticError("unsupported service status")
         if len(self.digest) != 32:
             raise ServiceSemanticError("digest must be exactly 32 bytes")
+
+    def encode(self) -> bytes:
         return (
             bytes((SCHEMA_VERSION,))
             + self.key.session_epoch.to_bytes(8, "little")
@@ -203,9 +217,12 @@ class ModelServiceAdapter:
     def __init__(self, session_epoch: int, *, max_retries: int = 2) -> None:
         if not 0 < session_epoch < 1 << 64:
             raise ValueError("session_epoch must be a nonzero u64")
+        if max_retries < 0:
+            raise ValueError("max_retries must be nonnegative")
         self.session_epoch = session_epoch
         self.max_retries = max_retries
         self.outstanding: ServiceKey | None = None
+        self._outstanding_request: ServiceRequired | None = None
         self.completed: set[ServiceKey] = set()
 
     def accept_required(self, payload: bytes) -> ServiceRequired:
@@ -213,10 +230,13 @@ class ModelServiceAdapter:
         if self.outstanding is not None:
             if request.key != self.outstanding:
                 raise ServiceSemanticError("another service transaction is outstanding")
+            if request != self._outstanding_request:
+                raise ServiceSemanticError("retry changed service operands")
         elif request.key in self.completed:
             raise ServiceSemanticError("replayed SERVICE_REQUIRED")
         else:
             self.outstanding = request.key
+            self._outstanding_request = request
         return request
 
     def compute(self, request: ServiceRequired,
@@ -255,13 +275,20 @@ class ModelServiceAdapter:
             raise ServiceSemanticError("cannot complete a stale service")
         self.completed.add(key)
         self.outstanding = None
+        self._outstanding_request = None
 
     def abort(self) -> None:
+        if self.outstanding is not None:
+            self.completed.add(self.outstanding)
         self.outstanding = None
+        self._outstanding_request = None
 
     def reset(self, new_session_epoch: int) -> None:
+        if not 0 < new_session_epoch < 1 << 64:
+            raise ValueError("session_epoch must be a nonzero u64")
         if new_session_epoch == self.session_epoch:
             raise ValueError("reset requires a fresh session epoch")
         self.session_epoch = new_session_epoch
         self.outstanding = None
+        self._outstanding_request = None
         self.completed.clear()
