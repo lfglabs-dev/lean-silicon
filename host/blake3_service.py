@@ -222,6 +222,7 @@ class ModelServiceAdapter:
         if max_retries < 0:
             raise ValueError("max_retries must be nonnegative")
         self.session_epoch = session_epoch
+        self._used_epochs = {session_epoch}
         self.max_retries = max_retries
         self.outstanding: ServiceKey | None = None
         self._outstanding_request: ServiceRequired | None = None
@@ -288,8 +289,9 @@ class ModelServiceAdapter:
     def reset(self, new_session_epoch: int) -> None:
         if not 0 < new_session_epoch < 1 << 64:
             raise ValueError("session_epoch must be a nonzero u64")
-        if new_session_epoch == self.session_epoch:
-            raise ValueError("reset requires a fresh session epoch")
+        if new_session_epoch in self._used_epochs:
+            raise ValueError("reset requires an epoch never used by this adapter")
+        self._used_epochs.add(new_session_epoch)
         self.session_epoch = new_session_epoch
         self.outstanding = None
         self._outstanding_request = None

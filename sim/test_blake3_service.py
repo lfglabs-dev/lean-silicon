@@ -254,6 +254,17 @@ class AdapterAndModelTests(unittest.TestCase):
                 self.assertEqual(adapter.session_epoch, request.key.session_epoch)
                 self.assertEqual(adapter.outstanding, request.key)
 
+    def test_reset_never_reuses_an_earlier_epoch(self):
+        adapter = ModelServiceAdapter(0xA)
+        adapter.reset(0xB)
+        with self.assertRaises(ValueError):
+            adapter.reset(0xA)
+        self.assertEqual(adapter.session_epoch, 0xB)
+        adapter.reset(0xC)
+        with self.assertRaises(ValueError):
+            adapter.reset(0xB)
+        self.assertEqual(adapter.session_epoch, 0xC)
+
     def test_infrastructure_retry_is_bounded_and_semantic_failure_is_not_retried(self):
         _, adapter, request = self.pending()
         calls = 0
