@@ -21,6 +21,7 @@ formal/stream_alu_mul_pulse_induction/
 formal/stream_alu_mul_pulse_cover/
 openlane/
 reports/
+tools/blake3_reference/target/
 
 # Scratch outputs of the ULX3S build scripts. The scripts archive the copies
 # that matter under results/.
