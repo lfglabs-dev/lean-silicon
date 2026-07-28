@@ -1,0 +1,906 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Executing script file `formal/lsc1_packet_rx_status_accept.ys' --
+
+1. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_rx.sv
+Parsing formal SystemVerilog input from `asic_core/rtl/lsc1_packet_rx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_rx'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: formal/lsc1_packet_rx_status_accept.sv
+Parsing formal SystemVerilog input from `formal/lsc1_packet_rx_status_accept.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_rx_status_accept'.
+Successfully finished Verilog frontend.
+
+3. Executing PREP pass.
+
+3.1. Executing HIERARCHY pass (managing design hierarchy).
+
+3.1.1. Analyzing design hierarchy..
+Top module:  \lsc1_packet_rx_status_accept
+Used module:     \lsc1_packet_rx
+
+3.1.2. Analyzing design hierarchy..
+Top module:  \lsc1_packet_rx_status_accept
+Used module:     \lsc1_packet_rx
+Removed 0 unused modules.
+Module lsc1_packet_rx_status_accept directly or indirectly contains formal properties -> setting "keep" attribute.
+
+3.2. Executing PROC pass (convert processes to netlists).
+
+3.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+3.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 7 switch rules as full_case in process $proc$formal/lsc1_packet_rx_status_accept.sv:24$248 in module lsc1_packet_rx_status_accept.
+Marked 11 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_rx.sv:71$23 in module lsc1_packet_rx.
+Removed a total of 0 dead cases.
+
+3.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 26 assignments to connections.
+
+3.2.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$285'.
+  Set init value: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_EN = 1'0
+Found init rule in `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$283'.
+  Set init value: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_EN = 1'0
+Found init rule in `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$281'.
+  Set init value: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN = 1'0
+
+3.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+3.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~22 debug messages>
+
+3.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$285'.
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$283'.
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$281'.
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+     1/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN[0:0]$262
+     2/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK[0:0]$261
+     3/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:37$241_EN[0:0]$264
+     4/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK[0:0]$263
+     5/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:38$242_EN[0:0]$266
+     6/6: $0$formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK[0:0]$265
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:33$256'.
+Creating decoders for process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:24$248'.
+     1/7: $7\rx_data[7:0]
+     2/7: $6\rx_data[7:0]
+     3/7: $5\rx_data[7:0]
+     4/7: $4\rx_data[7:0]
+     5/7: $3\rx_data[7:0]
+     6/7: $2\rx_data[7:0]
+     7/7: $1\rx_data[7:0]
+Creating decoders for process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+     1/89: $0\received_crc[31:0] [31:24]
+     2/89: $0\received_crc[31:0] [23:16]
+     3/89: $0\received_crc[31:0] [15:8]
+     4/89: $0\received_crc[31:0] [7:0]
+     5/89: $5$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7[2047:0]$185
+     6/89: $5$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6[2047:0]$184
+     7/89: $5$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8[31:0]$186
+     8/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.$result[31:0]$177
+     9/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.bit_index[31:0]$180
+    10/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.work[31:0]$181
+    11/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.data[7:0]$179
+    12/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.crc_in[31:0]$178
+    13/89: $4$lookahead\frame_payload$22[2047:0]$182
+    14/89: $4$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8[31:0]$176
+    15/89: $4$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7[2047:0]$175
+    16/89: $4$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6[2047:0]$174
+    17/89: $0\declared_length[15:0] [15:8]
+    18/89: $0\declared_length[15:0] [7:0]
+    19/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.bit_index[31:0]$103
+    20/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.data[7:0]$102
+    21/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.$result[31:0]$101
+    22/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.work[31:0]$85
+    23/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.bit_index[31:0]$84
+    24/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.data[7:0]$83
+    25/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.$result[31:0]$82
+    26/89: $3$lookahead\frame_payload$22[2047:0]$99
+    27/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.work[31:0]$98
+    28/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.bit_index[31:0]$97
+    29/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.data[7:0]$96
+    30/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.crc_in[31:0]$95
+    31/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.$result[31:0]$94
+    32/89: $3$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8[31:0]$93
+    33/89: $3$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7[2047:0]$92
+    34/89: $3$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6[2047:0]$91
+    35/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.work[31:0]$90
+    36/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.bit_index[31:0]$89
+    37/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.data[7:0]$88
+    38/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.crc_in[31:0]$87
+    39/89: $3\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.$result[31:0]$86
+    40/89: $2$lookahead\frame_payload$22[2047:0]$81
+    41/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.work[31:0]$80
+    42/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.bit_index[31:0]$79
+    43/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.data[7:0]$78
+    44/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.crc_in[31:0]$77
+    45/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.$result[31:0]$76
+    46/89: $2$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8[31:0]$75
+    47/89: $2$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7[2047:0]$74
+    48/89: $2$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6[2047:0]$73
+    49/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.work[31:0]$72
+    50/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.bit_index[31:0]$71
+    51/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.data[7:0]$70
+    52/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.crc_in[31:0]$69
+    53/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.$result[31:0]$68
+    54/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.work[31:0]$67
+    55/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.bit_index[31:0]$66
+    56/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.data[7:0]$65
+    57/89: $2\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.$result[31:0]$64
+    58/89: $1$lookahead\frame_payload$22[2047:0]$61
+    59/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.work[31:0]$60
+    60/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.bit_index[31:0]$59
+    61/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.data[7:0]$58
+    62/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.crc_in[31:0]$57
+    63/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.$result[31:0]$56
+    64/89: $1$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8[31:0]$55
+    65/89: $1$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7[2047:0]$54
+    66/89: $1$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6[2047:0]$53
+    67/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.work[31:0]$52
+    68/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.bit_index[31:0]$51
+    69/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.data[7:0]$50
+    70/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.crc_in[31:0]$49
+    71/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.$result[31:0]$48
+    72/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.work[31:0]$47
+    73/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.bit_index[31:0]$46
+    74/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.data[7:0]$45
+    75/89: $1\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.$result[31:0]$44
+    76/89: $5$lookahead\frame_payload$22[2047:0]$187
+    77/89: $0\crc[31:0]
+    78/89: $0\flags[7:0]
+    79/89: $0\opcode[7:0]
+    80/89: $0\version[7:0]
+    81/89: $4\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.work[31:0]$104
+    82/89: $0\body_index[15:0]
+    83/89: $0\header_index[2:0]
+    84/89: $0\state[2:0]
+    85/89: $0\fault_status[7:0]
+    86/89: $0\fault_valid[0:0]
+    87/89: $0\frame_length[15:0]
+    88/89: $0\frame_opcode[7:0]
+    89/89: $0\frame_valid[0:0]
+
+3.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:33$239_CHECK' from process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:33$256'.
+No latch inferred for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:33$239_EN' from process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:33$256'.
+No latch inferred for signal `\lsc1_packet_rx_status_accept.\rx_data' from process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:24$248'.
+
+3.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\lsc1_packet_rx_status_accept.\step' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1311' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1312' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1313' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1314' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:37$241_EN' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1315' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1316' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx_status_accept.$formal$formal/lsc1_packet_rx_status_accept.sv:38$242_EN' using process `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+  created $dff cell `$procdff$1317' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\frame_valid' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1318' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\frame_opcode' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1319' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\frame_length' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1320' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\frame_payload' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1321' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\fault_valid' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1322' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\fault_status' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1323' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\state' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1324' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\header_index' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1325' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\body_index' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1326' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\declared_length' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1327' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\version' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1328' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\opcode' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1329' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\flags' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1330' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1331' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\received_crc' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1332' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.$result' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1333' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.data' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1334' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.bit_index' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1335' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:107$3.work' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1336' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.$result' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1337' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.crc_in' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1338' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.data' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1339' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.bit_index' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1340' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:113$4.work' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1341' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.$bitselwrite$mask$asic_core/rtl/lsc1_packet_rx.sv:136$6' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1342' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.$bitselwrite$data$asic_core/rtl/lsc1_packet_rx.sv:136$7' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1343' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.$bitselwrite$sel$asic_core/rtl/lsc1_packet_rx.sv:136$8' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1344' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.$result' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1345' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.crc_in' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1346' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.data' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1347' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.bit_index' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1348' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.\crc_byte$func$asic_core/rtl/lsc1_packet_rx.sv:137$9.work' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1349' with positive edge clock.
+Creating register for signal `\lsc1_packet_rx.$lookahead\frame_payload$22' using process `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+  created $dff cell `$procdff$1350' with positive edge clock.
+
+3.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+3.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$285'.
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$283'.
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:0$281'.
+Found and cleaned up 1 empty switch in `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:34$260'.
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:33$256'.
+Found and cleaned up 7 empty switches in `\lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:24$248'.
+Removing empty process `lsc1_packet_rx_status_accept.$proc$formal/lsc1_packet_rx_status_accept.sv:24$248'.
+Found and cleaned up 14 empty switches in `\lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+Removing empty process `lsc1_packet_rx.$proc$asic_core/rtl/lsc1_packet_rx.sv:71$23'.
+Cleaned up 22 empty switches.
+
+3.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+<suppressed ~4 debug messages>
+Optimizing module lsc1_packet_rx.
+<suppressed ~98 debug messages>
+
+3.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+Optimizing module lsc1_packet_rx.
+
+3.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+Finding unused cells or wires in module \lsc1_packet_rx..
+Removed 215 unused cells and 657 unused wires.
+<suppressed ~228 debug messages>
+
+3.5. Executing CHECK pass (checking for obvious problems).
+Checking module lsc1_packet_rx...
+Checking module lsc1_packet_rx_status_accept...
+Found and reported 0 problems.
+
+3.6. Executing OPT pass (performing simple optimizations).
+
+3.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx.
+Optimizing module lsc1_packet_rx_status_accept.
+
+3.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx'.
+<suppressed ~156 debug messages>
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+Removed a total of 52 cells.
+
+3.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_rx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 2/2 on $mux $procmux$1015.
+    dead port 2/2 on $mux $procmux$1017.
+    dead port 2/2 on $mux $procmux$1019.
+    dead port 1/2 on $mux $procmux$1022.
+    dead port 2/2 on $mux $procmux$559.
+    dead port 2/2 on $mux $procmux$561.
+    dead port 1/2 on $mux $procmux$564.
+    dead port 2/2 on $mux $procmux$720.
+    dead port 1/2 on $mux $procmux$723.
+    dead port 1/2 on $mux $procmux$851.
+Running muxtree optimizer on module \lsc1_packet_rx_status_accept..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 1/2 on $mux $procmux$303.
+    dead port 1/2 on $mux $procmux$306.
+    dead port 1/2 on $mux $procmux$309.
+    dead port 1/2 on $mux $procmux$312.
+    dead port 1/2 on $mux $procmux$315.
+    dead port 1/2 on $mux $procmux$318.
+    dead port 1/2 on $mux $procmux$324.
+    dead port 1/2 on $mux $procmux$327.
+    dead port 1/2 on $mux $procmux$330.
+    dead port 1/2 on $mux $procmux$333.
+    dead port 1/2 on $mux $procmux$336.
+    dead port 1/2 on $mux $procmux$342.
+    dead port 1/2 on $mux $procmux$345.
+    dead port 1/2 on $mux $procmux$348.
+    dead port 1/2 on $mux $procmux$351.
+    dead port 1/2 on $mux $procmux$357.
+    dead port 1/2 on $mux $procmux$360.
+    dead port 1/2 on $mux $procmux$363.
+    dead port 1/2 on $mux $procmux$369.
+    dead port 1/2 on $mux $procmux$372.
+    dead port 1/2 on $mux $procmux$378.
+Removed 31 multiplexer ports.
+<suppressed ~50 debug messages>
+
+3.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_rx.
+    New ctrl vector for $pmux cell $procmux$1154: { $auto$opt_reduce.cc:134:opt_pmux$1402 $procmux$1109_CMP }
+  Optimizing cells in module \lsc1_packet_rx.
+  Optimizing cells in module \lsc1_packet_rx_status_accept.
+Performed a total of 1 changes.
+
+3.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx'.
+<suppressed ~45 debug messages>
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+<suppressed ~12 debug messages>
+Removed a total of 19 cells.
+
+3.6.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx..
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+Removed 0 unused cells and 110 unused wires.
+<suppressed ~2 debug messages>
+
+3.6.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx.
+Optimizing module lsc1_packet_rx_status_accept.
+
+3.6.8. Rerunning OPT passes. (Maybe there is more to do..)
+
+3.6.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_rx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \lsc1_packet_rx_status_accept..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~42 debug messages>
+
+3.6.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_rx.
+  Optimizing cells in module \lsc1_packet_rx_status_accept.
+Performed a total of 0 changes.
+
+3.6.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx'.
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+Removed a total of 0 cells.
+
+3.6.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx..
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+
+3.6.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx.
+Optimizing module lsc1_packet_rx_status_accept.
+
+3.6.14. Finished OPT passes. (There is nothing left to do.)
+
+3.7. Executing WREDUCE pass (reducing word size of cells).
+Removed top 1 bits (of 3) from port B of cell lsc1_packet_rx.$ne$asic_core/rtl/lsc1_packet_rx.sv:60$16 ($ne).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1353 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1355 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1357 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1359 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1361 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1363 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1365 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1367 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1369 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1371 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1373 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1375 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1377 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1379 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1381 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1383 ($not).
+Removed top 7 bits (of 16) from port B of cell lsc1_packet_rx.$gt$asic_core/rtl/lsc1_packet_rx.sv:122$171 ($gt).
+Removed top 7 bits (of 16) from port B of cell lsc1_packet_rx.$lt$asic_core/rtl/lsc1_packet_rx.sv:135$183 ($lt).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_rx.$mul$asic_core/rtl/lsc1_packet_rx.sv:136$188 ($mul).
+Removed top 12 bits (of 32) from port Y of cell lsc1_packet_rx.$mul$asic_core/rtl/lsc1_packet_rx.sv:136$188 ($mul).
+Removed top 12 bits (of 32) from port A of cell lsc1_packet_rx.$add$asic_core/rtl/lsc1_packet_rx.sv:0$189 ($add).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_rx.$add$asic_core/rtl/lsc1_packet_rx.sv:0$189 ($add).
+Removed top 11 bits (of 32) from port Y of cell lsc1_packet_rx.$add$asic_core/rtl/lsc1_packet_rx.sv:0$189 ($add).
+Removed top 11 bits (of 33) from port A of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub).
+Converting cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub) from signed to unsigned.
+Removed top 10 bits (of 33) from port Y of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub).
+Removed top 1 bits (of 22) from port A of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub).
+Removed top 1 bits (of 23) from port Y of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:0$190 ($sub).
+Removed top 11 bits (of 33) from port A of cell lsc1_packet_rx.$neg$asic_core/rtl/lsc1_packet_rx.sv:0$191 ($neg).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_rx.$sub$asic_core/rtl/lsc1_packet_rx.sv:139$233 ($sub).
+Removed top 7 bits (of 8) from port B of cell lsc1_packet_rx.$ne$asic_core/rtl/lsc1_packet_rx.sv:147$236 ($ne).
+Removed top 24 bits (of 32) from port A of cell lsc1_packet_rx.$auto$opt_expr.cc:706:replace_const_cells$1351 ($not).
+Removed top 30 bits (of 32) from port B of cell lsc1_packet_rx.$procmux$402_CMP0 ($eq).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_rx.$procmux$419_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell lsc1_packet_rx.$procmux$1018_CMP0 ($eq).
+Removed top 2 bits (of 3) from port B of cell lsc1_packet_rx.$procmux$1031_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell lsc1_packet_rx.$procmux$1048_CMP0 ($eq).
+Removed top 2 bits (of 3) from port B of cell lsc1_packet_rx.$procmux$1064_CMP0 ($eq).
+Removed top 30 bits (of 32) from port B of cell lsc1_packet_rx.$procmux$1144_CMP0 ($eq).
+Removed top 2 bits (of 3) from mux cell lsc1_packet_rx.$procmux$1152 ($mux).
+Removed top 1 bits (of 3) from port B of cell lsc1_packet_rx.$procmux$1156_CMP0 ($eq).
+Removed top 1 bits (of 3) from mux cell lsc1_packet_rx.$procmux$1162 ($mux).
+Removed top 11 bits (of 32) from wire lsc1_packet_rx.$add$asic_core/rtl/lsc1_packet_rx.sv:0$189_Y.
+Removed top 12 bits (of 32) from wire lsc1_packet_rx.$mul$asic_core/rtl/lsc1_packet_rx.sv:136$188_Y.
+Removed top 2 bits (of 3) from wire lsc1_packet_rx.$procmux$1152_Y.
+Removed top 1 bits (of 3) from wire lsc1_packet_rx.$procmux$1162_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$110_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$114_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$118_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$122_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$126_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$130_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$134_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$139_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$143_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$147_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$151_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$155_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$159_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$163_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_rx.$shr$asic_core/rtl/lsc1_packet_rx.sv:55$167_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$109_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$113_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$117_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$121_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$125_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$129_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$133_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$142_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$146_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$150_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$154_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$158_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$162_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$ternary$asic_core/rtl/lsc1_packet_rx.sv:55$166_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_rx.$xor$asic_core/rtl/lsc1_packet_rx.sv:53$138_Y.
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_rx_status_accept.$ge$formal/lsc1_packet_rx_status_accept.sv:11$245 ($ge).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_rx_status_accept.$le$formal/lsc1_packet_rx_status_accept.sv:11$246 ($le).
+Removed top 4 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:24$249 ($eq).
+Removed top 3 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:25$250 ($eq).
+Removed top 3 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:26$251 ($eq).
+Removed top 2 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:27$252 ($eq).
+Removed top 1 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:28$253 ($eq).
+Removed top 1 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:29$254 ($eq).
+Removed top 1 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:30$255 ($eq).
+Removed top 1 bits (of 5) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:36$268 ($eq).
+Removed top 3 bits (of 8) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:38$271 ($eq).
+Removed top 3 bits (of 8) from port B of cell lsc1_packet_rx_status_accept.$eq$formal/lsc1_packet_rx_status_accept.sv:39$274 ($eq).
+Removed top 3 bits (of 8) from mux cell lsc1_packet_rx_status_accept.$procmux$300 ($mux).
+Removed top 1 bits (of 8) from mux cell lsc1_packet_rx_status_accept.$procmux$321 ($mux).
+Removed top 1 bits (of 8) from wire lsc1_packet_rx_status_accept.$6\rx_data[7:0].
+Removed top 3 bits (of 8) from wire lsc1_packet_rx_status_accept.$7\rx_data[7:0].
+
+3.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx..
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+Removed 0 unused cells and 36 unused wires.
+<suppressed ~2 debug messages>
+
+3.9. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+3.10. Executing OPT pass (performing simple optimizations).
+
+3.10.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx.
+Optimizing module lsc1_packet_rx_status_accept.
+
+3.10.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx'.
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+Removed a total of 0 cells.
+
+3.10.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx..
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+
+3.10.4. Finished fast OPT passes.
+
+3.11. Printing statistics.
+
+=== lsc1_packet_rx ===
+
+   Number of wires:                237
+   Number of wire bits:          25229
+   Number of public wires:          33
+   Number of public wire bits:    2350
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                211
+     $add                            3
+     $and                            1
+     $dff                           15
+     $eq                             9
+     $gt                             1
+     $logic_and                      5
+     $logic_not                      6
+     $logic_or                       3
+     $lt                             2
+     $mul                            1
+     $mux                          120
+     $ne                             4
+     $neg                            1
+     $not                           19
+     $or                             1
+     $pmux                          12
+     $reduce_bool                    2
+     $reduce_or                      1
+     $shift                          2
+     $sub                            2
+     $xor                            1
+
+=== lsc1_packet_rx_status_accept ===
+
+   Number of wires:                 57
+   Number of wire bits:           2303
+   Number of public wires:          24
+   Number of public wire bits:    2228
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 43
+     $add                            1
+     $anyseq                         1
+     $assert                         3
+     $assume                         1
+     $dff                            5
+     $eq                            10
+     $ge                             1
+     $le                             1
+     $logic_and                      4
+     $logic_not                      3
+     $mux                           11
+     $reduce_bool                    1
+     lsc1_packet_rx                  1
+
+=== design hierarchy ===
+
+   lsc1_packet_rx_status_accept      1
+     lsc1_packet_rx                  1
+
+   Number of wires:                294
+   Number of wire bits:          27532
+   Number of public wires:          57
+   Number of public wire bits:    4578
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                253
+     $add                            4
+     $and                            1
+     $anyseq                         1
+     $assert                         3
+     $assume                         1
+     $dff                           20
+     $eq                            19
+     $ge                             1
+     $gt                             1
+     $le                             1
+     $logic_and                      9
+     $logic_not                      9
+     $logic_or                       3
+     $lt                             2
+     $mul                            1
+     $mux                          131
+     $ne                             4
+     $neg                            1
+     $not                           19
+     $or                             1
+     $pmux                          12
+     $reduce_bool                    3
+     $reduce_or                      1
+     $shift                          2
+     $sub                            2
+     $xor                            1
+
+3.12. Executing CHECK pass (checking for obvious problems).
+Checking module lsc1_packet_rx...
+Checking module lsc1_packet_rx_status_accept...
+Found and reported 0 problems.
+
+4. Executing FLATTEN pass (flatten design).
+Deleting now unused module lsc1_packet_rx.
+<suppressed ~1 debug messages>
+
+5. Executing OPT pass (performing simple optimizations).
+
+5.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+<suppressed ~30 debug messages>
+
+5.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+5.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_rx_status_accept..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~39 debug messages>
+
+5.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_rx_status_accept.
+Performed a total of 0 changes.
+
+5.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+Removed a total of 0 cells.
+
+5.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $flatten\dut.$procdff$1318 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1306_Y, Q = \dut.frame_valid, rval = 1'0).
+Adding EN signal on $auto$ff.cc:266:slice$1439 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1306_Y, Q = \dut.frame_valid).
+Adding SRST signal on $flatten\dut.$procdff$1319 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1281_Y, Q = \dut.frame_opcode, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1457 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.opcode, Q = \dut.frame_opcode).
+Adding SRST signal on $flatten\dut.$procdff$1320 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1258_Y, Q = \dut.frame_length, rval = 16'0000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1469 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.declared_length, Q = \dut.frame_length).
+Adding SRST signal on $flatten\dut.$procdff$1321 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$2$lookahead\frame_payload$22[2047:0]$81, Q = \dut.frame_payload, rval = 2048'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1481 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$3$lookahead\frame_payload$22[2047:0]$99, Q = \dut.frame_payload).
+Adding SRST signal on $flatten\dut.$procdff$1322 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1235_Y, Q = \dut.fault_valid, rval = 1'0).
+Adding EN signal on $auto$ff.cc:266:slice$1491 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1235_Y, Q = \dut.fault_valid).
+Adding SRST signal on $flatten\dut.$procdff$1323 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1199_Y, Q = \dut.fault_status, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1511 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1186_Y, Q = \dut.fault_status).
+Adding SRST signal on $flatten\dut.$procdff$1324 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1165_Y, Q = \dut.state, rval = 3'000).
+Adding EN signal on $auto$ff.cc:266:slice$1529 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1165_Y, Q = \dut.state).
+Adding SRST signal on $flatten\dut.$procdff$1325 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1126_Y, Q = \dut.header_index, rval = 3'000).
+Adding EN signal on $auto$ff.cc:266:slice$1541 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1120_Y, Q = \dut.header_index).
+Adding SRST signal on $flatten\dut.$procdff$1326 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1112_Y, Q = \dut.body_index, rval = 16'0000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1549 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1105_Y, Q = \dut.body_index).
+Adding SRST signal on $flatten\dut.$procdff$1327 ($dff) from module lsc1_packet_rx_status_accept (D = { $flatten\dut.$procmux$610_Y $flatten\dut.$procmux$624_Y }, Q = \dut.declared_length, rval = 16'0000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1557 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.rx_data, Q = \dut.declared_length [7:0]).
+Adding EN signal on $auto$ff.cc:266:slice$1557 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.rx_data, Q = \dut.declared_length [15:8]).
+Adding SRST signal on $flatten\dut.$procdff$1328 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1084_Y, Q = \dut.version, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1564 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.rx_data, Q = \dut.version).
+Adding SRST signal on $flatten\dut.$procdff$1329 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1067_Y, Q = \dut.opcode, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1568 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.rx_data, Q = \dut.opcode).
+Adding SRST signal on $flatten\dut.$procdff$1330 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1051_Y, Q = \dut.flags, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1572 ($sdff) from module lsc1_packet_rx_status_accept (D = \dut.rx_data, Q = \dut.flags).
+Adding SRST signal on $flatten\dut.$procdff$1331 ($dff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1036_Y, Q = \dut.crc, rval = 32'11111111111111111111111111111111).
+Adding EN signal on $auto$ff.cc:266:slice$1576 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$1029_Y, Q = \dut.crc).
+Adding SRST signal on $flatten\dut.$procdff$1332 ($dff) from module lsc1_packet_rx_status_accept (D = { $flatten\dut.$procmux$393_Y $flatten\dut.$procmux$409_Y $flatten\dut.$procmux$426_Y $flatten\dut.$procmux$444_Y }, Q = \dut.received_crc, rval = 0).
+Adding EN signal on $auto$ff.cc:266:slice$1586 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$390_Y, Q = \dut.received_crc [31:24]).
+Adding EN signal on $auto$ff.cc:266:slice$1586 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$441_Y, Q = \dut.received_crc [7:0]).
+Adding EN signal on $auto$ff.cc:266:slice$1586 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$423_Y, Q = \dut.received_crc [15:8]).
+Adding EN signal on $auto$ff.cc:266:slice$1586 ($sdff) from module lsc1_packet_rx_status_accept (D = $flatten\dut.$procmux$406_Y, Q = \dut.received_crc [23:16]).
+
+5.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+Removed 102 unused cells and 111 unused wires.
+<suppressed ~111 debug messages>
+
+5.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+<suppressed ~9 debug messages>
+
+5.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_rx_status_accept..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~29 debug messages>
+
+5.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_rx_status_accept.
+Performed a total of 0 changes.
+
+5.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+<suppressed ~45 debug messages>
+Removed a total of 15 cells.
+
+5.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+Removed 0 unused cells and 18 unused wires.
+<suppressed ~1 debug messages>
+
+5.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+
+5.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_rx_status_accept..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~29 debug messages>
+
+5.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_rx_status_accept.
+Performed a total of 0 changes.
+
+5.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_rx_status_accept'.
+Removed a total of 0 cells.
+
+5.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_rx_status_accept..
+
+5.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_rx_status_accept.
+
+5.23. Finished OPT passes. (There is nothing left to do.)
+
+6. Executing SAT pass (solving SAT problems in the circuit).
+
+Setting up time step 1:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN = 1'0
+Final init constraint equation: { $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK \step \dut.received_crc [23:0] \dut.crc \dut.flags \dut.opcode \dut.version \dut.declared_length \dut.body_index \dut.header_index \dut.state \dut.fault_valid \dut.frame_length \dut.frame_opcode \dut.frame_valid $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN } = 153'000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 2:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 3:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 4:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 5:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 6:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 7:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 8:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 9:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 10:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 11:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 12:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Setting up time step 13:
+Final constraint equation: { } = { }
+Imported 201 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:37$241_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+Import proof for assert: $formal$formal/lsc1_packet_rx_status_accept.sv:38$242_CHECK when $formal$formal/lsc1_packet_rx_status_accept.sv:36$240_EN.
+
+Solving problem with 122884 variables and 335302 clauses..
+SAT proof finished - no model found: SUCCESS!
+
+                  /$$$$$$      /$$$$$$$$     /$$$$$$$
+                 /$$__  $$    | $$_____/    | $$__  $$
+                | $$  \ $$    | $$          | $$  \ $$
+                | $$  | $$    | $$$$$       | $$  | $$
+                | $$  | $$    | $$__/       | $$  | $$
+                | $$/$$ $$    | $$          | $$  | $$
+                |  $$$$$$/ /$$| $$$$$$$$ /$$| $$$$$$$//$$
+                 \____ $$$|__/|________/|__/|_______/|__/
+                       \__/
+
+End of script. Logfile hash: e9b3f2180a, CPU: user 5.85s system 0.08s, MEM: 106.27 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 42% 1x proc_mux (2 sec), 20% 3x opt_dff (1 sec), ...

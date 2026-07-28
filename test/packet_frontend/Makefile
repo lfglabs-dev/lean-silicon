@@ -7,7 +7,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim one-cycle-boundary mutation differential-mutation clean
+.PHONY: sim one-cycle-boundary mutation bounded-path-mutation differential-mutation clean
 
 sim:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
@@ -78,6 +78,17 @@ mutation:
 	  fi; \
 	  grep -q "status got=00 expected=86" "$$d/profile.out"; \
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, abort status, length-order, and profile mutations were detected"
+
+bounded-path-mutation:
+	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp ../../asic_core/rtl/lsc1_packet_tx.sv ../../formal/lsc1_packet_tx_status_response.sv ../../formal/lsc1_packet_tx_status_response.ys "$$d/"; \
+	  sed -i.bak "s/tx_data = saved_status;/tx_data = 8'h00;/" "$$d/lsc1_packet_tx.sv"; \
+	  sed -i.bak "s#asic_core/rtl/lsc1_packet_tx.sv#$$d/lsc1_packet_tx.sv#" "$$d/lsc1_packet_tx_status_response.ys"; \
+	  if (cd ../.. && yosys -s "$$d/lsc1_packet_tx_status_response.ys") >"$$d/mutation.out" 2>&1; then \
+	    echo "INFO response status serialization mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "Assert.*failed" "$$d/mutation.out"; \
+	  echo "PASS: bounded INFO-status serializer assertion detected mutation"
 
 differential-mutation:
 	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \

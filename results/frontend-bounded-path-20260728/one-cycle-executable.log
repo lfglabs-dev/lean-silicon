@@ -1,0 +1,17 @@
+make: Entering directory '/tmp/lean-silicon-pr30.0LkbvS/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_packet_frontend_one_cycle_boundary -o tb_lsc1_packet_frontend_one_cycle_boundary.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_lsc1_packet_frontend_one_cycle_boundary.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+vvp tb_lsc1_packet_frontend_one_cycle_boundary.vvp
+PASS: full frontend registered reset/abort/idle boundary model
+tb_lsc1_packet_frontend_one_cycle_boundary.sv:50: $finish called at 75000 (1ps)
+make: Leaving directory '/tmp/lean-silicon-pr30.0LkbvS/test/packet_frontend'

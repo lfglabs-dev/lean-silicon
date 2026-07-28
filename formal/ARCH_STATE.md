@@ -53,9 +53,21 @@ next-state mutations fail mechanically. Reset still clears the map with profile
 1. No cutpoints, black boxes, symbolic bridge state, or ignored output channel
 is used.
 
-This is a correspondence interface, not a claim of full LSC-1 refinement or
-release sequential equivalence. The full-frontend formal harness is bounded to
-180 seconds in the milestone runner and may record `UNRESOLVED` rather than
-turn a resource limit into a proof. The remaining blocker is a phase-complete
-transition/refinement model for accepted frames, decode, compute completion,
-and response serialization under arbitrary backpressure.
+## Concrete bounded accepted-path partitions
+
+The former flat full-frontend SAT attempt is not treated as evidence: its
+flattening of the large decode cone timed out.  The milestone runner instead
+proves two concrete RTL partitions with `-verify`: a reset-established packet
+receiver accepts the exact valid zero-length STATUS frame (including CRC), and
+the shipped TX serializer emits its INFO envelope and CRC through two fixed
+ready-low cycles.  The existing full-frontend executable test supplies the
+connected non-vacuous SET path: accepted frame, decode, ALU completion,
+response payload, and a 12-cycle output stall.
+
+This is a bounded composed milestone, not a monolithic end-to-end formal proof:
+the formal partitions do not prove that the controller connects every accepted
+frame to every response, do not quantify over arbitrary/unbounded
+backpressure, and do not establish release sequential equivalence.  Reset
+coverage remains the separate receiver reset proof.  Release equivalence and
+ASIC readiness remain explicit BLOCKS pending a reviewed phase-complete
+architecture transition/refinement model.

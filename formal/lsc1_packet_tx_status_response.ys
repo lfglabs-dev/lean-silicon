@@ -1,0 +1,6 @@
+read_verilog -formal -sv asic_core/rtl/lsc1_packet_tx.sv formal/lsc1_packet_tx_status_response.sv
+prep -top lsc1_packet_tx_status_response
+flatten
+opt
+select -module lsc1_packet_tx_status_response
+sat -seq 14 -prove-asserts -verify -set-assumes -set-init-zero

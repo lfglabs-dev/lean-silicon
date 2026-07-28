@@ -1,0 +1,1753 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Executing script file `formal/lsc1_packet_tx_status_response.ys' --
+
+1. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_tx.sv
+Parsing formal SystemVerilog input from `asic_core/rtl/lsc1_packet_tx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_tx'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: formal/lsc1_packet_tx_status_response.sv
+Parsing formal SystemVerilog input from `formal/lsc1_packet_tx_status_response.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_tx_status_response'.
+Successfully finished Verilog frontend.
+
+3. Executing PREP pass.
+
+3.1. Executing HIERARCHY pass (managing design hierarchy).
+
+3.1.1. Analyzing design hierarchy..
+Top module:  \lsc1_packet_tx_status_response
+Used module:     \lsc1_packet_tx
+
+3.1.2. Analyzing design hierarchy..
+Top module:  \lsc1_packet_tx_status_response
+Used module:     \lsc1_packet_tx
+Removed 0 unused modules.
+Module lsc1_packet_tx_status_response directly or indirectly contains formal properties -> setting "keep" attribute.
+
+3.2. Executing PROC pass (convert processes to netlists).
+
+3.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+3.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 1 switch rules as full_case in process $proc$formal/lsc1_packet_tx_status_response.sv:25$309 in module lsc1_packet_tx_status_response.
+Marked 7 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_tx.sv:79$20 in module lsc1_packet_tx.
+Marked 7 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_tx.sv:61$6 in module lsc1_packet_tx.
+Removed a total of 0 dead cases.
+
+3.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 1 redundant assignment.
+Promoted 36 assignments to connections.
+
+3.2.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$389'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$387'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$385'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$383'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$381'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$379'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$377'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$375'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$373'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$371'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$369'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN = 1'0
+Found init rule in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$367'.
+  Set init value: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN = 1'0
+
+3.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+3.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~17 debug messages>
+
+3.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$389'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$387'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$385'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$383'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$381'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$379'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$377'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$375'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$373'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$371'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$369'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$367'.
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+     1/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN[0:0]$311
+     2/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK[0:0]$310
+     3/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN[0:0]$313
+     4/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK[0:0]$312
+     5/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN[0:0]$315
+     6/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK[0:0]$314
+     7/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN[0:0]$317
+     8/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK[0:0]$316
+     9/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN[0:0]$319
+    10/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK[0:0]$318
+    11/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN[0:0]$321
+    12/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK[0:0]$320
+    13/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN[0:0]$323
+    14/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK[0:0]$322
+    15/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN[0:0]$325
+    16/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK[0:0]$324
+    17/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN[0:0]$327
+    18/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK[0:0]$326
+    19/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN[0:0]$329
+    20/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK[0:0]$328
+    21/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN[0:0]$331
+    22/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK[0:0]$330
+    23/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN[0:0]$333
+    24/24: $0$formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK[0:0]$332
+Creating decoders for process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:24$305'.
+Creating decoders for process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+     1/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result[31:0]$207
+     2/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index[31:0]$210
+     3/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work[31:0]$211
+     4/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data[7:0]$209
+     5/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in[31:0]$208
+     6/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result[31:0]$202
+     7/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index[31:0]$205
+     8/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work[31:0]$206
+     9/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data[7:0]$204
+    10/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in[31:0]$203
+    11/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result[31:0]$162
+    12/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index[31:0]$165
+    13/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work[31:0]$166
+    14/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data[7:0]$164
+    15/105: $5\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in[31:0]$163
+    16/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work[31:0]$127
+    17/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index[31:0]$126
+    18/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data[7:0]$125
+    19/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in[31:0]$124
+    20/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result[31:0]$123
+    21/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work[31:0]$122
+    22/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index[31:0]$121
+    23/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data[7:0]$120
+    24/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in[31:0]$119
+    25/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result[31:0]$118
+    26/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work[31:0]$117
+    27/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index[31:0]$116
+    28/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data[7:0]$115
+    29/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in[31:0]$114
+    30/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result[31:0]$113
+    31/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.$result[31:0]$108
+    32/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.bit_index[31:0]$111
+    33/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.work[31:0]$112
+    34/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.data[7:0]$110
+    35/105: $4\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.crc_in[31:0]$109
+    36/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work[31:0]$105
+    37/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index[31:0]$104
+    38/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data[7:0]$103
+    39/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in[31:0]$102
+    40/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result[31:0]$101
+    41/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work[31:0]$100
+    42/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index[31:0]$99
+    43/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data[7:0]$98
+    44/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in[31:0]$97
+    45/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result[31:0]$96
+    46/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work[31:0]$95
+    47/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index[31:0]$94
+    48/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data[7:0]$93
+    49/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in[31:0]$92
+    50/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result[31:0]$91
+    51/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.work[31:0]$90
+    52/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.bit_index[31:0]$89
+    53/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.data[7:0]$88
+    54/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.crc_in[31:0]$87
+    55/105: $3\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.$result[31:0]$86
+    56/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work[31:0]$84
+    57/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index[31:0]$83
+    58/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data[7:0]$82
+    59/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in[31:0]$81
+    60/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result[31:0]$80
+    61/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work[31:0]$79
+    62/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index[31:0]$78
+    63/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data[7:0]$77
+    64/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in[31:0]$76
+    65/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result[31:0]$75
+    66/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work[31:0]$74
+    67/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index[31:0]$73
+    68/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data[7:0]$72
+    69/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in[31:0]$71
+    70/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result[31:0]$70
+    71/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.work[31:0]$69
+    72/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.bit_index[31:0]$68
+    73/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.data[7:0]$67
+    74/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.crc_in[31:0]$66
+    75/105: $2\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.$result[31:0]$65
+    76/105: $0\done_pulse[0:0]
+    77/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work[31:0]$62
+    78/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index[31:0]$61
+    79/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data[7:0]$60
+    80/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in[31:0]$59
+    81/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result[31:0]$58
+    82/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work[31:0]$57
+    83/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index[31:0]$56
+    84/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data[7:0]$55
+    85/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in[31:0]$54
+    86/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result[31:0]$53
+    87/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work[31:0]$52
+    88/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index[31:0]$51
+    89/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data[7:0]$50
+    90/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in[31:0]$49
+    91/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result[31:0]$48
+    92/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.work[31:0]$47
+    93/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.bit_index[31:0]$46
+    94/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.data[7:0]$45
+    95/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.crc_in[31:0]$44
+    96/105: $1\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.$result[31:0]$43
+    97/105: $0\payload_crc_work[31:0]
+    98/105: $0\envelope_crc_work[31:0]
+    99/105: $0\saved_crc[31:0]
+   100/105: $0\saved_payload[543:0]
+   101/105: $0\saved_status[7:0]
+   102/105: $0\saved_length[15:0]
+   103/105: $0\index[15:0]
+   104/105: $0\active[0:0]
+   105/105: $0\payload_crc[31:0]
+Creating decoders for process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:61$6'.
+     1/7: $7\tx_data[7:0]
+     2/7: $6\tx_data[7:0]
+     3/7: $5\tx_data[7:0]
+     4/7: $4\tx_data[7:0]
+     5/7: $3\tx_data[7:0]
+     6/7: $2\tx_data[7:0]
+     7/7: $1\tx_data[7:0]
+
+3.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:24$285_CHECK' from process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:24$305'.
+No latch inferred for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:24$285_EN' from process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:24$305'.
+No latch inferred for signal `\lsc1_packet_tx.\tx_data' from process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:61$6'.
+
+3.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\lsc1_packet_tx_status_response.\step' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1609' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1610' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1611' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1612' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1613' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1614' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1615' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1616' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1617' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1618' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1619' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1620' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1621' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1622' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1623' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1624' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1625' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1626' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1627' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1628' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1629' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1630' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1631' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1632' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx_status_response.$formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN' using process `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+  created $dff cell `$procdff$1633' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\done_pulse' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1634' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\payload_crc' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1635' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\active' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1636' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\index' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1637' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_length' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1638' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_status' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1639' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_payload' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1640' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_crc' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1641' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\envelope_crc_work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1642' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\payload_crc_work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1643' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.$result' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1644' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.crc_in' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1645' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.data' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1646' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.bit_index' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1647' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:104$2.work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1648' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.$result' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1649' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.crc_in' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1650' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.data' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1651' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.bit_index' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1652' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:106$3.work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1653' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.$result' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1654' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.crc_in' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1655' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.data' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1656' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.bit_index' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1657' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:108$4.work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1658' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.$result' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1659' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.crc_in' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1660' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.data' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1661' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.bit_index' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1662' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$asic_core/rtl/lsc1_packet_tx.sv:110$5.work' using process `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+  created $dff cell `$procdff$1663' with positive edge clock.
+
+3.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+3.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$389'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$387'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$385'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$383'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$381'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$379'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$377'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$375'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$373'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$371'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$369'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:0$367'.
+Found and cleaned up 3 empty switches in `\lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:25$309'.
+Removing empty process `lsc1_packet_tx_status_response.$proc$formal/lsc1_packet_tx_status_response.sv:24$305'.
+Found and cleaned up 7 empty switches in `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+Removing empty process `lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:79$20'.
+Found and cleaned up 7 empty switches in `\lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:61$6'.
+Removing empty process `lsc1_packet_tx.$proc$asic_core/rtl/lsc1_packet_tx.sv:61$6'.
+Cleaned up 17 empty switches.
+
+3.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+<suppressed ~10 debug messages>
+Optimizing module lsc1_packet_tx.
+<suppressed ~99 debug messages>
+
+3.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+Optimizing module lsc1_packet_tx.
+
+3.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Finding unused cells or wires in module \lsc1_packet_tx..
+Removed 295 unused cells and 902 unused wires.
+<suppressed ~313 debug messages>
+
+3.5. Executing CHECK pass (checking for obvious problems).
+Checking module lsc1_packet_tx...
+Checking module lsc1_packet_tx_status_response...
+Found and reported 0 problems.
+
+3.6. Executing OPT pass (performing simple optimizations).
+
+3.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx.
+Optimizing module lsc1_packet_tx_status_response.
+
+3.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx'.
+<suppressed ~18 debug messages>
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+<suppressed ~84 debug messages>
+Removed a total of 34 cells.
+
+3.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 1/2 on $mux $procmux$1529.
+    dead port 1/2 on $mux $procmux$1532.
+    dead port 1/2 on $mux $procmux$1535.
+    dead port 1/2 on $mux $procmux$1538.
+    dead port 1/2 on $mux $procmux$1541.
+    dead port 1/2 on $mux $procmux$1544.
+    dead port 1/2 on $mux $procmux$1550.
+    dead port 1/2 on $mux $procmux$1553.
+    dead port 1/2 on $mux $procmux$1556.
+    dead port 1/2 on $mux $procmux$1559.
+    dead port 1/2 on $mux $procmux$1562.
+    dead port 1/2 on $mux $procmux$1568.
+    dead port 1/2 on $mux $procmux$1571.
+    dead port 1/2 on $mux $procmux$1574.
+    dead port 1/2 on $mux $procmux$1577.
+    dead port 1/2 on $mux $procmux$1583.
+    dead port 1/2 on $mux $procmux$1586.
+    dead port 1/2 on $mux $procmux$1589.
+    dead port 1/2 on $mux $procmux$1595.
+    dead port 1/2 on $mux $procmux$1598.
+    dead port 1/2 on $mux $procmux$1604.
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 21 multiplexer ports.
+<suppressed ~65 debug messages>
+
+3.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx.
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+    New ctrl vector for $pmux cell $procmux$558: $auto$opt_reduce.cc:134:opt_pmux$1729
+    New ctrl vector for $pmux cell $procmux$571: $auto$opt_reduce.cc:134:opt_pmux$1731
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 2 changes.
+
+3.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx'.
+<suppressed ~90 debug messages>
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+<suppressed ~3 debug messages>
+Removed a total of 31 cells.
+
+3.6.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx..
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Removed 0 unused cells and 102 unused wires.
+<suppressed ~2 debug messages>
+
+3.6.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx.
+Optimizing module lsc1_packet_tx_status_response.
+
+3.6.8. Rerunning OPT passes. (Maybe there is more to do..)
+
+3.6.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~51 debug messages>
+
+3.6.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx.
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 0 changes.
+
+3.6.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx'.
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+Removed a total of 0 cells.
+
+3.6.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx..
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+
+3.6.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx.
+Optimizing module lsc1_packet_tx_status_response.
+
+3.6.14. Finished OPT passes. (There is nothing left to do.)
+
+3.7. Executing WREDUCE pass (reducing word size of cells).
+Removed top 15 bits (of 16) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:63$8 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:64$9 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:65$10 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:66$11 ($eq).
+Removed top 29 bits (of 32) from port A of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:67$12 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:67$12 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$lt$asic_core/rtl/lsc1_packet_tx.sv:67$13 ($lt).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$sub$asic_core/rtl/lsc1_packet_tx.sv:68$14 ($sub).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$sub$asic_core/rtl/lsc1_packet_tx.sv:68$14 ($sub).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_tx.$mul$asic_core/rtl/lsc1_packet_tx.sv:68$15 ($mul).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:0$16 ($add).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:103$106 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:103$106 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$le$asic_core/rtl/lsc1_packet_tx.sv:103$107 ($le).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1664 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1666 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1668 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1670 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1672 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1674 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1676 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1678 ($not).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$ge$asic_core/rtl/lsc1_packet_tx.sv:105$161 ($ge).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1680 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1684 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1686 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1688 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1690 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1692 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1694 ($not).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:107$201 ($eq).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1714 ($not).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:113$282 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:113$282 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$eq$asic_core/rtl/lsc1_packet_tx.sv:113$283 ($eq).
+Removed top 30 bits (of 32) from port B of cell lsc1_packet_tx.$procmux$1525_CMP0 ($eq).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_tx.$procmux$1526_CMP0 ($eq).
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:103$106_Y.
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:113$282_Y.
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$asic_core/rtl/lsc1_packet_tx.sv:67$12_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$129_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$133_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$137_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$141_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$145_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$149_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$153_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$157_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$168_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$172_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$176_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$180_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$184_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$188_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$192_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$asic_core/rtl/lsc1_packet_tx.sv:45$196_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$132_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$136_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$140_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$144_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$148_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$152_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$156_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$171_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$175_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$179_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$183_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$187_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$191_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$195_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$xor$asic_core/rtl/lsc1_packet_tx.sv:43$128_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$xor$asic_core/rtl/lsc1_packet_tx.sv:43$167_Y.
+Removed top 4 bits (of 5) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:10$300 ($eq).
+Removed top 3 bits (of 5) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:14$301 ($eq).
+Removed top 2 bits (of 5) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:14$302 ($eq).
+Removed top 6 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:28$336 ($eq).
+Removed top 1 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:30$340 ($eq).
+Removed top 7 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:30$341 ($eq).
+Removed top 6 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:31$342 ($eq).
+Removed top 1 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:32$345 ($eq).
+Removed top 1 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:33$347 ($eq).
+Removed top 4 bits (of 8) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:34$348 ($eq).
+Removed top 1 bits (of 5) from port B of cell lsc1_packet_tx_status_response.$eq$formal/lsc1_packet_tx_status_response.sv:37$349 ($eq).
+Removed top 15 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$430_CMP0 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$453_CMP0 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$474_CMP0 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$493_CMP0 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$510_CMP0 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$525_CMP0 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$538_CMP0 ($eq).
+Removed top 12 bits (of 16) from port B of cell lsc1_packet_tx_status_response.$procmux$549_CMP0 ($eq).
+
+3.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx..
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Removed 0 unused cells and 35 unused wires.
+<suppressed ~1 debug messages>
+
+3.9. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+3.10. Executing OPT pass (performing simple optimizations).
+
+3.10.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx.
+Optimizing module lsc1_packet_tx_status_response.
+
+3.10.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx'.
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+Removed a total of 0 cells.
+
+3.10.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx..
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+
+3.10.4. Finished fast OPT passes.
+
+3.11. Printing statistics.
+
+=== lsc1_packet_tx ===
+
+   Number of wires:                155
+   Number of wire bits:           5505
+   Number of public wires:          31
+   Number of public wire bits:    2011
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                119
+     $add                            5
+     $dff                           10
+     $eq                             8
+     $ge                             1
+     $le                             1
+     $logic_and                      2
+     $logic_not                      5
+     $logic_or                       1
+     $lt                             1
+     $mul                            1
+     $mux                           60
+     $not                           18
+     $pmux                           1
+     $shiftx                         1
+     $sub                            2
+     $xor                            2
+
+=== lsc1_packet_tx_status_response ===
+
+   Number of wires:                124
+   Number of wire bits:           1439
+   Number of public wires:          24
+   Number of public wire bits:    1335
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                119
+     $add                            1
+     $anyseq                         1
+     $assert                        12
+     $assume                         1
+     $dff                           25
+     $eq                            20
+     $logic_and                      5
+     $logic_not                      6
+     $logic_or                       1
+     $mux                           44
+     $reduce_bool                    1
+     $reduce_or                      1
+     lsc1_packet_tx                  1
+
+=== design hierarchy ===
+
+   lsc1_packet_tx_status_response      1
+     lsc1_packet_tx                  1
+
+   Number of wires:                279
+   Number of wire bits:           6944
+   Number of public wires:          55
+   Number of public wire bits:    3346
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                237
+     $add                            6
+     $anyseq                         1
+     $assert                        12
+     $assume                         1
+     $dff                           35
+     $eq                            28
+     $ge                             1
+     $le                             1
+     $logic_and                      7
+     $logic_not                     11
+     $logic_or                       2
+     $lt                             1
+     $mul                            1
+     $mux                          104
+     $not                           18
+     $pmux                           1
+     $reduce_bool                    1
+     $reduce_or                      1
+     $shiftx                         1
+     $sub                            2
+     $xor                            2
+
+3.12. Executing CHECK pass (checking for obvious problems).
+Checking module lsc1_packet_tx...
+Checking module lsc1_packet_tx_status_response...
+Found and reported 0 problems.
+
+4. Executing FLATTEN pass (flatten design).
+Deleting now unused module lsc1_packet_tx.
+<suppressed ~1 debug messages>
+
+5. Executing OPT pass (performing simple optimizations).
+
+5.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+<suppressed ~15 debug messages>
+
+5.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+<suppressed ~21 debug messages>
+Removed a total of 7 cells.
+
+5.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~51 debug messages>
+
+5.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 0 changes.
+
+5.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+Removed a total of 0 cells.
+
+5.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $procdff$1631 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$558_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN, rval = 1'0).
+Adding SRST signal on $procdff$1629 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$548_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN, rval = 1'0).
+Adding SRST signal on $procdff$1627 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$537_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN, rval = 1'0).
+Adding SRST signal on $procdff$1625 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$524_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN, rval = 1'0).
+Adding SRST signal on $procdff$1623 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$509_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN, rval = 1'0).
+Adding SRST signal on $procdff$1621 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$492_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN, rval = 1'0).
+Adding SRST signal on $procdff$1619 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$473_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN, rval = 1'0).
+Adding SRST signal on $procdff$1617 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$452_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN, rval = 1'0).
+Adding SRST signal on $procdff$1615 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$429_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN, rval = 1'0).
+Adding SRST signal on $procdff$1613 ($dff) from module lsc1_packet_tx_status_response (D = $procmux$404_Y, Q = $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN, rval = 1'0).
+Adding SRST signal on $flatten\dut.$procdff$1634 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1354_Y, Q = \dut.done_pulse, rval = 1'0).
+Adding SRST signal on $flatten\dut.$procdff$1635 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1518_Y, Q = \dut.payload_crc, rval = 0).
+Adding EN signal on $auto$ff.cc:266:slice$1784 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$ternary$asic_core/rtl/lsc1_packet_tx.sv:109$281_Y, Q = \dut.payload_crc).
+Adding SRST signal on $flatten\dut.$procdff$1636 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1503_Y, Q = \dut.active, rval = 1'0).
+Adding EN signal on $auto$ff.cc:266:slice$1790 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1503_Y, Q = \dut.active).
+Adding SRST signal on $flatten\dut.$procdff$1637 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1488_Y, Q = \dut.index, rval = 16'0000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1798 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$add$asic_core/rtl/lsc1_packet_tx.sv:117$284_Y, Q = \dut.index).
+Adding SRST signal on $flatten\dut.$procdff$1638 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1479_Y, Q = \dut.saved_length, rval = 16'0000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1808 ($sdff) from module lsc1_packet_tx_status_response (D = 16'0000000000000000, Q = \dut.saved_length).
+Adding SRST signal on $flatten\dut.$procdff$1639 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1473_Y, Q = \dut.saved_status, rval = 8'00000000).
+Adding EN signal on $auto$ff.cc:266:slice$1810 ($sdff) from module lsc1_packet_tx_status_response (D = 8'00000011, Q = \dut.saved_status).
+Adding SRST signal on $flatten\dut.$procdff$1640 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1467_Y, Q = \dut.saved_payload, rval = 544'0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000).
+Adding EN signal on $auto$ff.cc:266:slice$1812 ($sdff) from module lsc1_packet_tx_status_response (D = 544'0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, Q = \dut.saved_payload).
+Adding SRST signal on $flatten\dut.$procdff$1641 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1458_Y, Q = \dut.saved_crc, rval = 0).
+Adding EN signal on $auto$ff.cc:266:slice$1814 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$not$asic_core/rtl/lsc1_packet_tx.sv:108$245_Y, Q = \dut.saved_crc).
+Adding SRST signal on $flatten\dut.$procdff$1642 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1443_Y, Q = \dut.envelope_crc_work, rval = 32'11111111111111111111111111111111).
+Adding EN signal on $auto$ff.cc:266:slice$1822 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$160_Y, Q = \dut.envelope_crc_work).
+Adding SRST signal on $flatten\dut.$procdff$1643 ($dff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$procmux$1431_Y, Q = \dut.payload_crc_work, rval = 32'11111111111111111111111111111111).
+Adding EN signal on $auto$ff.cc:266:slice$1830 ($sdff) from module lsc1_packet_tx_status_response (D = $flatten\dut.$ternary$asic_core/rtl/lsc1_packet_tx.sv:45$199_Y, Q = \dut.payload_crc_work).
+Setting constant 0-bit at position 0 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 1 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 2 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 3 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 4 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 5 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 6 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 7 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 8 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 9 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 10 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 11 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 12 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 13 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 14 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 15 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 16 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 17 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 18 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 19 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 20 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 21 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 22 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 23 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 24 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 25 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 26 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 27 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 28 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 29 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 30 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 31 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 32 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 33 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 34 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 35 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 36 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 37 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 38 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 39 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 40 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 41 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 42 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 43 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 44 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 45 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 46 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 47 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 48 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 49 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 50 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 51 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 52 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 53 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 54 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 55 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 56 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 57 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 58 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 59 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 60 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 61 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 62 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 63 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 64 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 65 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 66 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 67 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 68 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 69 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 70 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 71 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 72 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 73 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 74 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 75 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 76 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 77 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 78 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 79 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 80 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 81 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 82 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 83 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 84 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 85 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 86 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 87 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 88 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 89 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 90 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 91 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 92 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 93 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 94 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 95 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 96 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 97 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 98 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 99 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 100 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 101 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 102 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 103 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 104 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 105 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 106 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 107 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 108 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 109 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 110 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 111 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 112 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 113 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 114 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 115 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 116 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 117 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 118 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 119 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 120 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 121 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 122 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 123 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 124 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 125 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 126 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 127 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 128 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 129 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 130 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 131 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 132 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 133 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 134 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 135 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 136 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 137 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 138 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 139 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 140 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 141 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 142 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 143 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 144 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 145 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 146 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 147 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 148 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 149 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 150 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 151 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 152 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 153 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 154 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 155 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 156 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 157 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 158 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 159 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 160 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 161 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 162 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 163 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 164 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 165 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 166 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 167 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 168 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 169 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 170 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 171 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 172 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 173 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 174 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 175 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 176 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 177 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 178 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 179 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 180 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 181 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 182 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 183 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 184 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 185 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 186 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 187 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 188 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 189 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 190 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 191 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 192 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 193 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 194 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 195 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 196 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 197 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 198 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 199 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 200 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 201 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 202 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 203 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 204 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 205 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 206 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 207 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 208 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 209 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 210 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 211 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 212 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 213 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 214 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 215 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 216 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 217 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 218 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 219 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 220 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 221 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 222 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 223 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 224 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 225 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 226 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 227 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 228 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 229 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 230 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 231 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 232 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 233 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 234 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 235 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 236 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 237 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 238 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 239 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 240 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 241 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 242 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 243 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 244 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 245 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 246 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 247 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 248 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 249 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 250 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 251 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 252 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 253 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 254 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 255 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 256 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 257 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 258 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 259 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 260 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 261 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 262 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 263 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 264 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 265 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 266 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 267 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 268 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 269 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 270 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 271 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 272 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 273 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 274 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 275 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 276 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 277 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 278 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 279 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 280 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 281 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 282 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 283 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 284 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 285 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 286 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 287 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 288 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 289 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 290 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 291 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 292 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 293 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 294 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 295 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 296 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 297 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 298 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 299 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 300 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 301 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 302 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 303 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 304 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 305 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 306 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 307 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 308 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 309 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 310 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 311 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 312 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 313 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 314 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 315 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 316 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 317 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 318 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 319 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 320 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 321 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 322 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 323 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 324 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 325 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 326 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 327 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 328 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 329 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 330 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 331 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 332 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 333 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 334 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 335 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 336 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 337 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 338 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 339 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 340 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 341 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 342 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 343 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 344 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 345 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 346 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 347 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 348 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 349 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 350 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 351 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 352 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 353 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 354 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 355 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 356 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 357 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 358 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 359 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 360 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 361 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 362 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 363 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 364 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 365 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 366 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 367 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 368 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 369 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 370 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 371 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 372 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 373 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 374 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 375 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 376 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 377 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 378 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 379 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 380 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 381 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 382 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 383 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 384 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 385 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 386 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 387 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 388 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 389 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 390 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 391 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 392 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 393 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 394 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 395 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 396 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 397 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 398 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 399 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 400 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 401 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 402 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 403 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 404 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 405 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 406 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 407 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 408 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 409 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 410 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 411 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 412 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 413 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 414 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 415 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 416 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 417 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 418 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 419 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 420 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 421 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 422 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 423 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 424 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 425 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 426 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 427 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 428 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 429 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 430 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 431 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 432 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 433 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 434 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 435 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 436 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 437 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 438 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 439 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 440 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 441 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 442 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 443 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 444 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 445 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 446 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 447 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 448 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 449 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 450 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 451 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 452 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 453 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 454 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 455 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 456 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 457 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 458 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 459 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 460 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 461 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 462 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 463 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 464 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 465 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 466 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 467 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 468 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 469 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 470 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 471 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 472 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 473 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 474 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 475 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 476 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 477 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 478 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 479 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 480 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 481 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 482 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 483 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 484 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 485 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 486 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 487 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 488 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 489 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 490 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 491 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 492 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 493 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 494 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 495 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 496 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 497 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 498 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 499 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 500 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 501 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 502 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 503 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 504 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 505 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 506 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 507 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 508 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 509 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 510 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 511 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 512 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 513 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 514 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 515 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 516 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 517 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 518 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 519 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 520 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 521 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 522 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 523 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 524 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 525 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 526 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 527 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 528 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 529 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 530 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 531 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 532 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 533 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 534 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 535 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 536 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 537 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 538 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 539 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 540 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 541 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 542 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 543 on $auto$ff.cc:266:slice$1813 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 2 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 3 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 4 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 5 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 6 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 7 on $auto$ff.cc:266:slice$1811 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 0 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 1 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 2 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 3 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 4 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 5 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 6 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 7 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 8 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 9 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 10 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 11 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 12 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 13 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 14 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 15 on $auto$ff.cc:266:slice$1809 ($sdffe) from module lsc1_packet_tx_status_response.
+
+5.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Removed 44 unused cells and 55 unused wires.
+<suppressed ~46 debug messages>
+
+5.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+<suppressed ~8 debug messages>
+
+5.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~43 debug messages>
+
+5.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 0 changes.
+
+5.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+<suppressed ~21 debug messages>
+Removed a total of 7 cells.
+
+5.13. Executing OPT_DFF pass (perform DFF optimizations).
+Setting constant 0-bit at position 0 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 1 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 2 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 3 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 4 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 5 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 6 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 7 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 8 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 9 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 10 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 11 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 12 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 13 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 14 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 15 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 16 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 17 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 18 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 19 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 20 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 21 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 22 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 23 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 24 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 25 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 26 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 27 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 28 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 29 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 30 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+Setting constant 0-bit at position 31 on $auto$ff.cc:266:slice$1785 ($sdffe) from module lsc1_packet_tx_status_response.
+
+5.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Removed 23 unused cells and 44 unused wires.
+<suppressed ~25 debug messages>
+
+5.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+<suppressed ~2 debug messages>
+
+5.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~35 debug messages>
+
+5.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 0 changes.
+
+5.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+Removed a total of 0 cells.
+
+5.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+Removed 0 unused cells and 2 unused wires.
+<suppressed ~1 debug messages>
+
+5.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+
+5.23. Rerunning OPT passes. (Maybe there is more to do..)
+
+5.24. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \lsc1_packet_tx_status_response..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~35 debug messages>
+
+5.25. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \lsc1_packet_tx_status_response.
+Performed a total of 0 changes.
+
+5.26. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\lsc1_packet_tx_status_response'.
+Removed a total of 0 cells.
+
+5.27. Executing OPT_DFF pass (perform DFF optimizations).
+
+5.28. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \lsc1_packet_tx_status_response..
+
+5.29. Executing OPT_EXPR pass (perform const folding).
+Optimizing module lsc1_packet_tx_status_response.
+
+5.30. Finished OPT passes. (There is nothing left to do.)
+
+6. Executing SAT pass (solving SAT problems in the circuit).
+
+Setting up time step 1:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN = 1'0
+Import set-constraint from init attribute: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN = 1'0
+Final init constraint equation: { $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK \step \dut.saved_status [1:0] \dut.envelope_crc_work \dut.saved_crc \dut.index \dut.active \dut.done_pulse $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN } = 113'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 2:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 3:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 4:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 5:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 6:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 7:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 8:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 9:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 10:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 11:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 12:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 13:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Setting up time step 14:
+Final constraint equation: { } = { }
+Imported 161 cells to SAT database.
+Import constraint from assume cell: \dut.clk when 1'1.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:27$286_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:27$286_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$287_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$287_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:30$288_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:30$288_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$289_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$289_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:31$290_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:31$290_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$291_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$291_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:32$292_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:32$292_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$293_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$293_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:33$294_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:33$294_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$295_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$295_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:34$296_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:34$296_EN.
+Import proof for assert: $formal$formal/lsc1_packet_tx_status_response.sv:37$297_CHECK when $formal$formal/lsc1_packet_tx_status_response.sv:37$297_EN.
+
+Solving problem with 102508 variables and 275515 clauses..
+SAT proof finished - no model found: SUCCESS!
+
+                  /$$$$$$      /$$$$$$$$     /$$$$$$$
+                 /$$__  $$    | $$_____/    | $$__  $$
+                | $$  \ $$    | $$          | $$  \ $$
+                | $$  | $$    | $$$$$       | $$  | $$
+                | $$  | $$    | $$__/       | $$  | $$
+                | $$/$$ $$    | $$          | $$  | $$
+                |  $$$$$$/ /$$| $$$$$$$$ /$$| $$$$$$$//$$
+                 \____ $$$|__/|________/|__/|_______/|__/
+                       \__/
+
+End of script. Logfile hash: 3aed429a9f, CPU: user 0.85s system 0.04s, MEM: 81.72 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 48% 1x sat (0 sec), 12% 11x opt_expr (0 sec), ...

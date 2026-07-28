@@ -1,0 +1,6 @@
+read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv formal/lsc1_packet_rx_status_accept.sv
+prep -top lsc1_packet_rx_status_accept
+flatten
+opt
+select -module lsc1_packet_rx_status_accept
+sat -seq 13 -prove-asserts -verify -set-assumes -set-init-zero
