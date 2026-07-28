@@ -11,10 +11,12 @@ lake build LeanVMBMinCore
 
 Modules:
 
-- `Packet.lean` — executable request/response envelopes, ordered validation,
-  checksum-parametric round trips, and concrete codec examples. The stable
-  checksum seam is intended for a later proof that instantiates the protocol's
-  CRC-32 implementation without changing packet consumers.
+- `Packet.lean` — executable parsed request/response envelopes, ordered request
+  validation, protocol-size-bounded checksum-parametric round trips, and
+  concrete codec examples. Byte-stream reception and per-opcode payload schemas
+  remain outside this model. The stable checksum seam is intended for a later
+  proof that instantiates the protocol's CRC-32 implementation without changing
+  packet consumers.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   abort preservation, matching commit, mismatch rejection, reset, and
   exactly-once retirement theorems. Arithmetic and control instruction models

@@ -17,6 +17,7 @@ abbrev ChecksumFn := List Byte → Checksum
 def protocolVersion : Byte := 1
 def requestSof : Byte := 0xa1
 def responseSof : Byte := 0x5a
+def maxPayloadBytes : Nat := 256
 
 structure Request where
   opcode : Byte
@@ -94,42 +95,61 @@ def encodeResponse (checksum : ChecksumFn) (response : Response) : ResponseWire 
 def decodeRequest (checksum : ChecksumFn) (frame : RequestWire) :
     Except DecodeError Request :=
   if frame.sof != requestSof then .error .badSof
+  else if frame.declaredLength > maxPayloadBytes then .error .badLength
+  else if frame.checksum != checksum (requestChecksumBody frame) then .error .badChecksum
   else if frame.version != protocolVersion then .error .badVersion
   else if frame.flags != 0 then .error .badFlags
   else if frame.declaredLength != frame.payload.length then .error .badLength
-  else if frame.checksum != checksum (requestChecksumBody frame) then .error .badChecksum
   else .ok { opcode := frame.opcode, flags := frame.flags, payload := frame.payload }
 
 /-- The response wire type has no flags field, matching the asymmetric v1 envelope. -/
 def decodeResponse (checksum : ChecksumFn) (frame : ResponseWire) :
     Except DecodeError Response :=
   if frame.sof != responseSof then .error .badSof
+  else if frame.declaredLength > maxPayloadBytes then .error .badLength
   else if frame.version != protocolVersion then .error .badVersion
   else if frame.declaredLength != frame.payload.length then .error .badLength
   else if frame.checksum != checksum (responseChecksumBody frame) then .error .badChecksum
   else .ok { status := frame.status, payload := frame.payload }
 
 @[simp] theorem decode_encode_request (checksum : ChecksumFn) (opcode : Byte)
-    (payload : List Byte) :
+    (payload : List Byte) (hlength : payload.length ≤ maxPayloadBytes) :
     decodeRequest checksum (encodeRequest checksum {
       opcode := opcode, flags := 0, payload := payload
     }) = .ok { opcode := opcode, flags := 0, payload := payload } := by
-  simp [decodeRequest, encodeRequest, requestChecksumBody]
+  simp [decodeRequest, encodeRequest, requestChecksumBody, Nat.not_lt.mpr hlength]
 
-@[simp] theorem decode_encode_response (checksum : ChecksumFn) (response : Response) :
+@[simp] theorem decode_encode_response (checksum : ChecksumFn) (response : Response)
+    (hlength : response.payload.length ≤ maxPayloadBytes) :
     decodeResponse checksum (encodeResponse checksum response) = .ok response := by
-  simp [decodeResponse, encodeResponse, responseChecksumBody]
+  simp [decodeResponse, encodeResponse, responseChecksumBody, Nat.not_lt.mpr hlength]
 
 theorem bad_sof_precedes_other_request_errors (checksum : ChecksumFn)
     (frame : RequestWire) (h : frame.sof ≠ requestSof) :
     decodeRequest checksum frame = .error .badSof := by
   simp [decodeRequest, h]
 
-theorem bad_version_precedes_request_flags_length_checksum (checksum : ChecksumFn)
+theorem oversized_request_precedes_checksum_and_header_errors (checksum : ChecksumFn)
     (frame : RequestWire) (hsof : frame.sof = requestSof)
+    (hlength : maxPayloadBytes < frame.declaredLength) :
+    decodeRequest checksum frame = .error .badLength := by
+  simp [decodeRequest, hsof, hlength]
+
+theorem bad_checksum_precedes_request_version_flags_and_payload_length
+    (checksum : ChecksumFn) (frame : RequestWire)
+    (hsof : frame.sof = requestSof)
+    (hlength : frame.declaredLength ≤ maxPayloadBytes)
+    (hchecksum : frame.checksum ≠ checksum (requestChecksumBody frame)) :
+    decodeRequest checksum frame = .error .badChecksum := by
+  simp [decodeRequest, hsof, Nat.not_lt.mpr hlength, hchecksum]
+
+theorem bad_version_precedes_request_flags_and_payload_length (checksum : ChecksumFn)
+    (frame : RequestWire) (hsof : frame.sof = requestSof)
+    (hlength : frame.declaredLength ≤ maxPayloadBytes)
+    (hchecksum : frame.checksum = checksum (requestChecksumBody frame))
     (hver : frame.version ≠ protocolVersion) :
     decodeRequest checksum frame = .error .badVersion := by
-  simp [decodeRequest, hsof, hver]
+  simp [decodeRequest, hsof, Nat.not_lt.mpr hlength, hchecksum, hver]
 
 def exampleChecksum (bytes : List Byte) : Checksum :=
   bytes.foldl (fun acc byte => acc + byte.toUInt32) 0
@@ -138,12 +158,13 @@ example :
     decodeRequest exampleChecksum
       (encodeRequest exampleChecksum { opcode := 0x03, payload := [0x2a, 0x00] }) =
       .ok { opcode := 0x03, flags := 0, payload := [0x2a, 0x00] } := by
-  exact decode_encode_request exampleChecksum 0x03 [0x2a, 0x00]
+  exact decode_encode_request exampleChecksum 0x03 [0x2a, 0x00] (by decide)
 
 example :
     decodeResponse exampleChecksum
       (encodeResponse exampleChecksum { status := 0x00, payload := [0x01] }) =
       .ok { status := 0x00, payload := [0x01] } := by
   exact decode_encode_response exampleChecksum { status := 0x00, payload := [0x01] }
+    (by decide)
 
 end LeanVMBMinCore.Packet

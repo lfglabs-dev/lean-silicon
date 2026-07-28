@@ -9,10 +9,12 @@ pinned Lean toolchain. They are functional-model results only; the limits in
 
 | Declaration | Meaning |
 | --- | --- |
-| `decode_encode_request` | A canonical request encoded with any checksum function decodes to the same request. |
-| `decode_encode_response` | A response encoded with any checksum function decodes to the same response. |
+| `decode_encode_request` | A protocol-sized canonical request encoded with any checksum function decodes to the same request. |
+| `decode_encode_response` | A protocol-sized response encoded with any checksum function decodes to the same response. |
 | `bad_sof_precedes_other_request_errors` | A wrong request SOF is reported before later envelope checks. |
-| `bad_version_precedes_request_flags_length_checksum` | After a valid SOF, a wrong version is reported before flags, length, and checksum checks. |
+| `oversized_request_precedes_checksum_and_header_errors` | After a valid SOF, a declaration above the 256-byte cap is rejected at the header. |
+| `bad_checksum_precedes_request_version_flags_and_payload_length` | For an in-cap request after a valid SOF, a bad checksum is reported before version, flags, and payload-length checks. |
+| `bad_version_precedes_request_flags_and_payload_length` | After SOF, cap, and checksum validation, a wrong version is reported before flags and payload-length checks. |
 
 The module also contains executable request and response round-trip examples.
 The checksum parameter is a stable refinement seam, not a claim that CRC-32
