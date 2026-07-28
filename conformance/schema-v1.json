@@ -3,6 +3,111 @@
   "$id": "lean-silicon-conformance-v1",
   "title": "leanSilicon immutable conformance corpus v1",
   "type": "object",
+  "$defs": {
+    "hex": {"type": "string", "pattern": "^(?:[0-9a-f]{2})*$"},
+    "endpoint_state": {
+      "type": "object",
+      "required": [
+        "txn_state", "profile", "committed_pc", "committed_fp", "state_valid",
+        "retire_seq", "last_status", "last_fault", "abort_count"
+      ],
+      "properties": {
+        "txn_state": {"type": "string"},
+        "profile": {"type": "string"},
+        "committed_pc": {"type": "integer", "minimum": 0},
+        "committed_fp": {"type": "integer", "minimum": 0},
+        "state_valid": {"type": "boolean"},
+        "retire_seq": {"type": "integer", "minimum": 0},
+        "last_status": {"type": "string"},
+        "last_fault": {"type": "string"},
+        "abort_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "write": {
+      "type": "object",
+      "required": ["address", "value"],
+      "properties": {
+        "address": {"type": "integer", "minimum": 0},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+      },
+      "additionalProperties": false
+    },
+    "retire": {
+      "type": "object",
+      "required": [
+        "attempted", "request_hex", "response_hex", "response_status",
+        "response_payload_hex", "cycles", "txn_id", "result_crc32",
+        "retire_seq", "committed_pc", "committed_fp", "done_pulse"
+      ],
+      "properties": {
+        "attempted": {"type": "boolean"},
+        "request_hex": {"$ref": "#/$defs/hex"},
+        "response_hex": {"$ref": "#/$defs/hex"},
+        "response_status": {"type": ["string", "null"]},
+        "response_payload_hex": {"$ref": "#/$defs/hex"},
+        "cycles": {"type": "integer", "minimum": 0},
+        "txn_id": {"type": ["integer", "null"], "minimum": 0},
+        "result_crc32": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{8}$"
+        },
+        "retire_seq": {"type": "integer", "minimum": 0},
+        "committed_pc": {"type": "integer", "minimum": 0},
+        "committed_fp": {"type": "integer", "minimum": 0},
+        "done_pulse": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "upstream": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["mode", "reason"],
+          "properties": {
+            "mode": {"const": "protocol_only"},
+            "reason": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["mode", "adapter", "expected", "transition"],
+          "properties": {
+            "mode": {"const": "program_execute"},
+            "adapter": {"const": "conformance/rust/frozen_adapter.rs"},
+            "expected": {
+              "type": "object",
+              "required": ["cycles", "mem_used", "memory"],
+              "properties": {
+                "cycles": {"type": "integer", "minimum": 0},
+                "mem_used": {"type": "integer", "minimum": 0},
+                "memory": {
+                  "type": "array",
+                  "items": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+                }
+              },
+              "additionalProperties": false
+            },
+            "transition": {
+              "type": "object",
+              "required": ["next_pc", "next_fp", "writes"],
+              "properties": {
+                "next_pc": {"type": "integer", "minimum": 0},
+                "next_fp": {"type": "integer", "minimum": 0},
+                "writes": {
+                  "type": "array",
+                  "items": {"$ref": "#/$defs/write"}
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
   "required": ["schema", "frozen_upstream", "cases"],
   "properties": {
     "schema": {"const": "lean-silicon-conformance-v1"},
@@ -30,11 +135,26 @@
         "properties": {
           "case_id": {"type": "string", "pattern": "^[a-z0-9_.-]+$"},
           "fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "description": {"type": "string", "minLength": 1},
+          "coverage": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
           "raw": {
             "type": "object",
             "required": ["request_hex", "response_hex"],
-            "additionalProperties": true
-          }
+            "properties": {
+              "request_hex": {"$ref": "#/$defs/hex"},
+              "response_hex": {"$ref": "#/$defs/hex"},
+              "request_cycles": {"type": "integer", "minimum": 0}
+            },
+            "additionalProperties": false
+          },
+          "initial_state": {"$ref": "#/$defs/endpoint_state"},
+          "final_state": {"$ref": "#/$defs/endpoint_state"},
+          "retire": {"$ref": "#/$defs/retire"},
+          "upstream": {"$ref": "#/$defs/upstream"}
         },
         "additionalProperties": true
       }

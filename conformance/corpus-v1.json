@@ -1372,13 +1372,13 @@
         "state_valid": false,
         "txn_state": "idle"
       },
-      "fingerprint": "sha256:16a30eb34ba1569eecaa09fab05d0cf25b0544171fce7f6312a2a745d44ed7f2",
+      "fingerprint": "sha256:eee2fb89e2203e970e4e163d9ca4602477b443c1baa38336a8ece691a04587d7",
       "initial_state": {
-        "abort_count": 0,
+        "abort_count": 1,
         "committed_fp": 0,
         "committed_pc": 0,
-        "last_fault": "OK",
-        "last_status": "OK",
+        "last_fault": "ABORTED",
+        "last_status": "ABORTED",
         "profile": "INTERPRETER_COMPAT",
         "retire_seq": 0,
         "state_valid": false,

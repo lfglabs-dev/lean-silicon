@@ -248,13 +248,14 @@ def lifecycle_cases(reference: lsc1.RequestFrame) -> list[dict]:
         "upstream": upstream("lane.abort.priority"),
     })
 
+    reset_initial = state(endpoint)
     endpoint.step(reset_n=False, abort=True, rx_valid=True, rx_data=lsc1.SOF_REQUEST)
     reset_case = fingerprint({
         "case_id": "lane.reset.priority",
         "description": "Active-low reset has priority over ABORT and a candidate transfer.",
         "coverage": ["reset", "abort", "priority"],
         "raw": {"request_hex": f"{lsc1.SOF_REQUEST:02x}", "response_hex": ""},
-        "initial_state": state(lsc1.Lsc1Endpoint()),
+        "initial_state": reset_initial,
         "final_state": state(endpoint),
         "retire": {
             "attempted": False, "request_hex": "", "response_hex": "",

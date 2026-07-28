@@ -65,12 +65,26 @@ def canonical(value: object) -> bytes:
 
 def validate_corpus() -> dict:
     try:
+        import jsonschema
+
         corpus = json.loads(CORPUS.read_text())
         schema = json.loads(SCHEMA.read_text())
-    except (OSError, json.JSONDecodeError) as error:
+    except (ImportError, OSError, json.JSONDecodeError) as error:
         raise InfrastructureFailure(f"cannot load corpus/schema: {error}") from error
     if corpus.get("schema") != schema.get("$id"):
         raise SemanticFailure("corpus schema identifier does not match schema-v1.json")
+    try:
+        jsonschema.Draft202012Validator.check_schema(schema)
+        errors = sorted(
+            jsonschema.Draft202012Validator(schema).iter_errors(corpus),
+            key=lambda error: list(error.absolute_path),
+        )
+    except jsonschema.SchemaError as error:
+        raise SemanticFailure(f"invalid schema-v1.json: {error.message}") from error
+    if errors:
+        error = errors[0]
+        location = ".".join(str(item) for item in error.absolute_path) or "<root>"
+        raise SemanticFailure(f"schema violation at {location}: {error.message}")
     if corpus.get("frozen_upstream") != {
         "repository": UPSTREAM_REPOSITORY,
         "commit": UPSTREAM_COMMIT,

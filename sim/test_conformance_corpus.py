@@ -102,6 +102,16 @@ class ConformanceCorpusTests(unittest.TestCase):
         for case in protocol_only:
             self.assertIn("reason", case["upstream"])
 
+    def test_reset_case_records_the_actual_pre_edge_state(self) -> None:
+        reset = next(
+            case for case in self.corpus["cases"]
+            if case["case_id"] == "lane.reset.priority"
+        )
+        self.assertEqual(reset["initial_state"]["last_status"], "ABORTED")
+        self.assertEqual(reset["initial_state"]["last_fault"], "ABORTED")
+        self.assertEqual(reset["initial_state"]["abort_count"], 1)
+        self.assertEqual(reset["final_state"]["abort_count"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
