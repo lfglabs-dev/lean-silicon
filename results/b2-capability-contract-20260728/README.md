@@ -36,6 +36,18 @@ claiming a proof. Thus there is no RTL/netlist equivalence result; the precise
 missing repository capability is a release sequential-equivalence harness with
 the required flattening/state correspondence and reset assumptions.
 
+The follow-up release harness is `formal/lsc1_packet_frontend_release_equiv.ys`.
+It normalizes the gold design with the same `proc; memory; flatten; opt` flow
+before `equiv_make`, and deliberately introduces no assumed cutpoints. A
+bounded diagnostic receipt is retained as `equivalence_flattened.*`: the
+normalization removes the submodule-boundary mismatch but still leaves 3417
+generated proof targets, dominated by procedural temporary signals from the
+monolithic packet-front-end clocked process. The 90 s bound expired (exit 124,
+90014 ms) while `equiv_simple` was still traversing target 679/3417; it is not
+a PASS. A sound complete proof requires an
+architectural state interface (or a reviewed invariant that relates those
+temporaries to registered state) rather than additional flat solver time.
+
 Every command and status is retained beside its log. This evidence is a
 committed handoff artifact, not a claim that the planned release equivalence
 gate passed.

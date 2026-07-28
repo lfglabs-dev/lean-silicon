@@ -1,0 +1,34 @@
+# Release-equivalence normalization for the Phase-B packet endpoint.
+#
+# The generated netlist is deliberately compared only after the gold RTL has
+# received the same process/memory lowering and hierarchy flattening used for
+# netlist generation.  This avoids treating unflattened submodule boundaries
+# as correspondence cutpoints.  No cutpoint is assumed by this script:
+# equiv_status -assert can only succeed after every generated obligation has
+# actually been proved by the selected Yosys passes.
+
+read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv \
+    asic_core/rtl/lsc1_packet_tx.sv \
+    asic_core/rtl/gf2n_mul_bitstream.sv \
+    asic_core/rtl/gf128_mul_bitstream.sv \
+    asic_core/rtl/leanvm_b_stream_alu.sv \
+    asic_core/rtl/lsc1_stream_adapter.sv \
+    asic_core/rtl/lsc1_field_encoder.sv \
+    asic_core/rtl/lsc1_packet_frontend.sv
+hierarchy -check -top lsc1_packet_frontend
+proc
+memory
+flatten
+opt
+rename lsc1_packet_frontend gold
+
+read_verilog -formal results/b2-capability-contract-20260728/lsc1_packet_frontend.netlist.v
+rename lsc1_packet_frontend gate
+equiv_make gold gate equiv
+hierarchy -top equiv
+prep -top equiv
+
+# This is intentionally a proof command, not an assumed state correspondence.
+equiv_simple
+equiv_induct -seq 4
+equiv_status -assert
