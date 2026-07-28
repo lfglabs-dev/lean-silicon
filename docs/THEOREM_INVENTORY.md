@@ -24,7 +24,7 @@ has already been proved correct.
 
 | Declaration | Meaning |
 | --- | --- |
-| `stage_is_atomic` | Successful staging does not change committed architectural state. |
+| `stage_is_atomic` | A valid stage succeeds with no fault, preserves committed state and `stateValid`, and enters `resultPending` with exactly the proposed transition. |
 | `out_of_range_stage_is_rejected` | A stage whose current PC or FP is outside the v1 index range is rejected without changing the model. |
 | `state_mismatch_precedes_index_range` | A staged transition that disagrees with valid committed PC/FP reports state mismatch before its current-index range is considered. |
 | `abort_preserves_committed` | Abort does not change committed state. |

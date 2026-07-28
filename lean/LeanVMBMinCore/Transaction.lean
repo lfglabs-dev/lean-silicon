@@ -114,7 +114,8 @@ def step (model : Model) (command : Command) : Outcome :=
     (hidle : model.state = .idle)
     (hrange : currentIndicesInRange transition = true)
     (hmatch : stateMatches model transition = true) :
-    (step model (.stage transition)).model.committed = model.committed := by
+    step model (.stage transition) =
+      { model := { model with state := .resultPending transition } } := by
   simp [step, hidle, hrange, hmatch]
 
 @[simp] theorem out_of_range_stage_is_rejected (model : Model)
