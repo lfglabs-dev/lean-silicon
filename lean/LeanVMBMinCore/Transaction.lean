@@ -12,6 +12,7 @@ namespace LeanVMBMinCore.Transaction
 abbrev TxnId := UInt32
 abbrev Index := UInt32
 abbrev ResultChecksum := UInt32
+def indexLimit : Nat := 2 ^ 16
 
 structure Committed where
   pc : Index
@@ -41,6 +42,7 @@ structure Model where
 
 inductive Fault where
   | badState
+  | indexRange
   | stateMismatch
   | retireMismatch
   deriving DecidableEq, Repr
@@ -69,6 +71,10 @@ def stateMatches (model : Model) (transition : Transition) : Bool :=
     (transition.currentPc == model.committed.pc &&
       transition.currentFp == model.committed.fp)
 
+def currentIndicesInRange (transition : Transition) : Bool :=
+  decide (transition.currentPc.toNat < indexLimit) &&
+    decide (transition.currentFp.toNat < indexLimit)
+
 def step (model : Model) (command : Command) : Outcome :=
   match command with
   | .reset => { model := initial }
@@ -77,7 +83,9 @@ def step (model : Model) (command : Command) : Outcome :=
       match model.state with
       | .resultPending _ => { model := model, fault := some .badState }
       | .idle =>
-          if stateMatches model transition then
+          if !currentIndicesInRange transition then
+            { model := model, fault := some .indexRange }
+          else if stateMatches model transition then
             { model := { model with state := .resultPending transition } }
           else
             { model := model, fault := some .stateMismatch }
@@ -103,9 +111,18 @@ def step (model : Model) (command : Command) : Outcome :=
             }
 
 @[simp] theorem stage_is_atomic (model : Model) (transition : Transition)
-    (hidle : model.state = .idle) (hmatch : stateMatches model transition = true) :
+    (hidle : model.state = .idle)
+    (hrange : currentIndicesInRange transition = true)
+    (hmatch : stateMatches model transition = true) :
     (step model (.stage transition)).model.committed = model.committed := by
-  simp [step, hidle, hmatch]
+  simp [step, hidle, hrange, hmatch]
+
+@[simp] theorem out_of_range_stage_is_rejected (model : Model)
+    (transition : Transition) (hidle : model.state = .idle)
+    (hrange : currentIndicesInRange transition = false) :
+    step model (.stage transition) =
+      { model := model, fault := some .indexRange } := by
+  simp [step, hidle, hrange]
 
 @[simp] theorem abort_preserves_committed (model : Model) :
     (step model .abort).model.committed = model.committed := by

@@ -25,6 +25,7 @@ has already been proved correct.
 | Declaration | Meaning |
 | --- | --- |
 | `stage_is_atomic` | Successful staging does not change committed architectural state. |
+| `out_of_range_stage_is_rejected` | A stage whose current PC or FP is outside the v1 index range is rejected without changing the model. |
 | `abort_preserves_committed` | Abort does not change committed state. |
 | `abort_clears_pending` | Abort returns the transaction state to idle. |
 | `matching_retire_commits` | A matching transaction id and result checksum commits next PC/FP, increments the retirement sequence, and returns idle. |
