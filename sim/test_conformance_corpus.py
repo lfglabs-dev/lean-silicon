@@ -50,6 +50,18 @@ class ConformanceCorpusTests(unittest.TestCase):
                 self.assertIn("initial_state", case)
                 self.assertIn("final_state", case)
                 self.assertIn("retire", case)
+                if case["retire"]["attempted"]:
+                    self.assertTrue(case["retire"]["done_pulse"])
+                if case["upstream"]["mode"] == "program_execute":
+                    staged = case["staged_transition"]
+                    self.assertEqual(
+                        case["upstream"]["transition"],
+                        {
+                            "next_pc": staged["next_pc"],
+                            "next_fp": staged["next_fp"],
+                            "writes": staged["writes"],
+                        },
+                    )
 
     def test_coverage_contract(self) -> None:
         covered = {label for case in self.corpus["cases"] for label in case["coverage"]}

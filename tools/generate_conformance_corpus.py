@@ -31,6 +31,19 @@ UPSTREAM_EXPECTED = {
     "scalar.jump.taken_nontrivial_inverse": (2, 4, [0x53, 8, 1, 0]),
 }
 
+UPSTREAM_TRANSITIONS = {
+    "scalar.set.forward": (1, 0, [(2, 0x1234)]),
+    "scalar.xor.forward": (1, 0, [(2, 0x6042)]),
+    "scalar.mul.forward": (1, 0, [(2, 0x3F7E)]),
+    "scalar.xor.backsolve_a": (1, 0, [(2, 0x2222)]),
+    "scalar.xor.backsolve_b": (1, 0, [(2, 0x2222)]),
+    "scalar.deref.cell": (1, 0, [(8, 0x77)]),
+    "scalar.deref.pc": (1, 0, [(8, 0x04)]),
+    "scalar.deref.fp": (5, 4, [(8, 0x10)]),
+    "scalar.jump.not_taken": (1, 0, []),
+    "scalar.jump.taken_nontrivial_inverse": (3, 0, []),
+}
+
 
 def hx(value: int) -> str:
     return f"{value:032x}"
@@ -72,6 +85,7 @@ def upstream(case_id: str) -> dict:
             "reason": "wire/lifecycle behavior has no Program::execute representation",
         }
     cycles, mem_used, memory = UPSTREAM_EXPECTED[case_id]
+    next_pc, next_fp, writes = UPSTREAM_TRANSITIONS[case_id]
     return {
         "mode": "program_execute",
         "adapter": "conformance/rust/frozen_adapter.rs",
@@ -80,7 +94,40 @@ def upstream(case_id: str) -> dict:
             "mem_used": mem_used,
             "memory": [hx(value) for value in memory],
         },
+        "transition": {
+            "next_pc": next_pc,
+            "next_fp": next_fp,
+            "writes": [
+                {"address": address, "value": hx(value)}
+                for address, value in writes
+            ],
+        },
     }
+
+
+def drive_retire(endpoint: lsc1.Lsc1Endpoint, frame: bytes) -> tuple[bytes, int, bool]:
+    """Drive RETIRE while preserving the acceptance-edge DONE observation."""
+    sent = 0
+    response = bytearray()
+    cycles = 0
+    done_observed = False
+    while cycles < 100_000:
+        record = endpoint.step(
+            rx_data=frame[sent] if sent < len(frame) else 0,
+            rx_valid=sent < len(frame),
+            tx_ready=True,
+        )
+        cycles += 1
+        if record.rx_committed:
+            sent += 1
+        # DONE is asserted by accepting the final RETIRE byte and is sampled
+        # here before the following edge clears the one-cycle pulse.
+        done_observed |= endpoint.pins().done_pulse
+        if record.tx_committed:
+            response.append(record.pins.tx_data)
+        if sent == len(frame) and response and not endpoint.pins().tx_valid:
+            return bytes(response), cycles, done_observed
+    raise TimeoutError("RETIRE drive exceeded max_cycles")
 
 
 def semantic(case_id: str, description: str, coverage: list[str], frame: lsc1.RequestFrame) -> dict:
@@ -109,9 +156,10 @@ def semantic(case_id: str, description: str, coverage: list[str], frame: lsc1.Re
     retire_request = lsc1.build_retire(
         txn_id=staged.txn_id, result_crc=staged.result_crc
     ).encode()
-    retire_raw, retire_cycles = lsc1.drive(endpoint, retire_request)
+    retire_raw, retire_cycles, done_observed = drive_retire(endpoint, retire_request)
     retire_response = lsc1.decode_response(retire_raw)
     assert retire_response.status is lsc1.Status.RETIRED
+    assert done_observed
     return fingerprint({
         "case_id": case_id,
         "description": description,
@@ -136,7 +184,7 @@ def semantic(case_id: str, description: str, coverage: list[str], frame: lsc1.Re
             "retire_seq": endpoint.retire_seq,
             "committed_pc": endpoint.committed_pc,
             "committed_fp": endpoint.committed_fp,
-            "done_pulse": endpoint.pins().done_pulse,
+            "done_pulse": done_observed,
         },
         "upstream": upstream(case_id),
     })

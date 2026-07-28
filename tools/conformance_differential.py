@@ -85,6 +85,19 @@ def validate_corpus() -> dict:
         for key in ("raw", "initial_state", "final_state", "retire", "coverage", "upstream"):
             if key not in case:
                 raise SemanticFailure(f"{case_id}: missing {key}")
+        if case["upstream"].get("mode") == "program_execute":
+            transition = case["upstream"].get("transition")
+            staged = case.get("staged_transition")
+            if not isinstance(staged, dict) or transition != {
+                "next_pc": staged.get("next_pc"),
+                "next_fp": staged.get("next_fp"),
+                "writes": staged.get("writes"),
+            }:
+                raise SemanticFailure(
+                    f"{case_id}: frozen upstream expectation disagrees with corpus transition"
+                )
+        if case["retire"].get("attempted") and case["retire"].get("done_pulse") is not True:
+            raise SemanticFailure(f"{case_id}: successful RETIRE must observe DONE")
     return corpus
 
 
