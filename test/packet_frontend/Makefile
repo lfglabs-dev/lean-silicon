@@ -7,11 +7,15 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim mutation differential-mutation clean
+.PHONY: sim one-cycle-boundary mutation differential-mutation clean
 
 sim:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
 	vvp tb_lsc1_packet_frontend.vvp
+
+one-cycle-boundary:
+	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend_one_cycle_boundary -o tb_lsc1_packet_frontend_one_cycle_boundary.vvp $(RTL) tb_lsc1_packet_frontend_one_cycle_boundary.sv
+	vvp tb_lsc1_packet_frontend_one_cycle_boundary.vvp
 
 mutation:
 	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -58,6 +62,14 @@ mutation:
 	  fi; \
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak "/end else if (abort) begin/,/end else begin/ s/last_status <= 8'h93;/last_status <= 8'h00;/" "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend_one_cycle_boundary -o "$$d/abort-status.vvp" \
+	    "$$d"/*.sv tb_lsc1_packet_frontend_one_cycle_boundary.sv; \
+	  if vvp "$$d/abort-status.vvp" >"$$d/abort-status.out" 2>&1; then \
+	    echo "ABORT status next-state mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "frontend abort next-state mismatch" "$$d/abort-status.out"; \
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
 	  sed -i.bak 's/frame_payload\[16 +: 8\] != 1/1'"'"'b0/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/profile.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
@@ -65,7 +77,7 @@ mutation:
 	    echo "FORWARD_ONLY negotiation mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
 	  grep -q "status got=00 expected=86" "$$d/profile.out"; \
-	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, length-order, and profile mutations were detected"
+	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, abort status, length-order, and profile mutations were detected"
 
 differential-mutation:
 	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \

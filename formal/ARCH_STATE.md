@@ -42,13 +42,20 @@ response. Procedural decode temporaries (`txn_id`, offsets, decisions and local
 write candidates) are excluded because they are not retained across a clock.
 
 The one-cycle relation is the production clocked transition relation under the
-same `(rst_n, abort, rx_data, rx_valid, tx_ready)` inputs. Reset clears the map
-with profile 1; idle stutters when no input is accepted and no response is
-active. At every cycle the public packet outputs agree with their architectural
-observations. No cutpoints, black boxes, symbolic bridge state, or ignored
-output channel is used.
+same `(rst_n, abort, rx_data, rx_valid, tx_ready)` inputs. The bounded
+`lsc1_packet_frontend_one_cycle_boundary` formal harness and its executable
+SystemVerilog counterpart cover the whole integrated frontend boundary (not
+just the parser): abort's next state clears queued work, starts no subunit,
+drops the staged result, and records `0x93`; a quiescent frontend stutters every
+retained transaction, commit, profile, and status field.
+`tools/check_frontend_one_cycle_boundary.py` makes omissions and the two abort
+next-state mutations fail mechanically. Reset still clears the map with profile
+1. No cutpoints, black boxes, symbolic bridge state, or ignored output channel
+is used.
 
-This is a correspondence interface, not a claim of full LSC-1 refinement. The
-next required proof is a phase-complete refinement from these fields to the
-executable model; the smallest currently recorded failing partition must be
-kept if that proof does not close.
+This is a correspondence interface, not a claim of full LSC-1 refinement or
+release sequential equivalence. The full-frontend formal harness is bounded to
+180 seconds in the milestone runner and may record `UNRESOLVED` rather than
+turn a resource limit into a proof. The remaining blocker is a phase-complete
+transition/refinement model for accepted frames, decode, compute completion,
+and response serialization under arbitrary backpressure.
