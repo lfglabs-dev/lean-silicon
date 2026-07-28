@@ -71,6 +71,11 @@ def validate_corpus() -> dict:
         raise InfrastructureFailure(f"cannot load corpus/schema: {error}") from error
     if corpus.get("schema") != schema.get("$id"):
         raise SemanticFailure("corpus schema identifier does not match schema-v1.json")
+    if corpus.get("frozen_upstream") != {
+        "repository": UPSTREAM_REPOSITORY,
+        "commit": UPSTREAM_COMMIT,
+    }:
+        raise SemanticFailure("corpus frozen_upstream identity mismatch")
     seen: set[str] = set()
     for case in corpus.get("cases", []):
         case_id = case.get("case_id")

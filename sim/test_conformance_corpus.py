@@ -38,6 +38,13 @@ class ConformanceCorpusTests(unittest.TestCase):
         self.assertEqual(CORPUS.read_text(), expected)
 
     def test_ids_fingerprints_and_required_records(self) -> None:
+        self.assertEqual(
+            self.corpus["frozen_upstream"],
+            {
+                "repository": "https://github.com/leanEthereum/leanVM-b.git",
+                "commit": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+            },
+        )
         ids = [case["case_id"] for case in self.corpus["cases"]]
         self.assertEqual(len(ids), len(set(ids)))
         for case in self.corpus["cases"]:

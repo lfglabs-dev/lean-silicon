@@ -9,6 +9,14 @@
     "frozen_upstream": {
       "type": "object",
       "required": ["repository", "commit"],
+      "properties": {
+        "repository": {
+          "const": "https://github.com/leanEthereum/leanVM-b.git"
+        },
+        "commit": {
+          "const": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+        }
+      },
       "additionalProperties": false
     },
     "cases": {
