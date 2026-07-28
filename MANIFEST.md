@@ -46,6 +46,9 @@ frozen-ISA/controller and RTL/netlist correspondence bridges.
   tap minimum in the declared model.
 - Cross-file interface, declared-source, packet-marker, and Tiny Tapeout
   metadata consistency checks.
+- Immutable LSC-1 conformance corpus with stable case fingerprints, complete
+  retirement records, byte-lane lifecycle cases, and a Rust differential
+  adapter compiled against the exact frozen upstream source.
 
 ## Local limitation
 
