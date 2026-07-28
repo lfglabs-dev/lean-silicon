@@ -1,0 +1,724 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Executing script file `b1_packet_tx_equiv.ys' --
+
+1. Executing Verilog-2005 frontend: ../asic_core/rtl/lsc1_packet_tx.sv
+Parsing formal SystemVerilog input from `../asic_core/rtl/lsc1_packet_tx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_tx'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: b1_packet_tx_equiv_formal.sv
+Parsing formal SystemVerilog input from `b1_packet_tx_equiv_formal.sv' to AST representation.
+Generating RTLIL representation for module `\b1_packet_tx_equiv_formal'.
+Successfully finished Verilog frontend.
+
+3. Executing PREP pass.
+
+3.1. Executing HIERARCHY pass (managing design hierarchy).
+
+3.1.1. Analyzing design hierarchy..
+Top module:  \b1_packet_tx_equiv_formal
+Used module:     \lsc1_packet_tx
+
+3.1.2. Analyzing design hierarchy..
+Top module:  \b1_packet_tx_equiv_formal
+Used module:     \lsc1_packet_tx
+Removed 0 unused modules.
+Module b1_packet_tx_equiv_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+3.2. Executing PROC pass (convert processes to netlists).
+
+3.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+3.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 3 switch rules as full_case in process $proc$b1_packet_tx_equiv_formal.sv:64$302 in module b1_packet_tx_equiv_formal.
+Marked 1 switch rules as full_case in process $proc$b1_packet_tx_equiv_formal.sv:48$301 in module b1_packet_tx_equiv_formal.
+Marked 7 switch rules as full_case in process $proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20 in module lsc1_packet_tx.
+Marked 7 switch rules as full_case in process $proc$../asic_core/rtl/lsc1_packet_tx.sv:44$6 in module lsc1_packet_tx.
+Removed a total of 0 dead cases.
+
+3.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 1 redundant assignment.
+Promoted 41 assignments to connections.
+
+3.2.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$362'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:89$295_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$360'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:86$294_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$358'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:85$293_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$356'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:83$292_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$354'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:82$291_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$352'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:81$290_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$350'.
+  Set init value: $formal$b1_packet_tx_equiv_formal.sv:80$289_EN = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:45$349'.
+  Set init value: \ref_done = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:44$348'.
+  Set init value: \ref_index = 4'0000
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:43$347'.
+  Set init value: \ref_active = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:18$346'.
+  Set init value: \started = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:17$345'.
+  Set init value: \rst_n = 1'0
+Found init rule in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:16$344'.
+  Set init value: \clk = 1'0
+
+3.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+3.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 1 switch.
+<suppressed ~22 debug messages>
+
+3.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$362'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$360'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$358'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$356'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$354'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$352'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$350'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:45$349'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:44$348'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:43$347'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:18$346'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:17$345'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:16$344'.
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+     1/17: $0\ref_done[0:0]
+     2/17: $0$formal$b1_packet_tx_equiv_formal.sv:80$289_EN[0:0]$308
+     3/17: $0$formal$b1_packet_tx_equiv_formal.sv:80$289_CHECK[0:0]$307
+     4/17: $0$formal$b1_packet_tx_equiv_formal.sv:81$290_EN[0:0]$310
+     5/17: $0$formal$b1_packet_tx_equiv_formal.sv:81$290_CHECK[0:0]$309
+     6/17: $0$formal$b1_packet_tx_equiv_formal.sv:82$291_EN[0:0]$312
+     7/17: $0$formal$b1_packet_tx_equiv_formal.sv:82$291_CHECK[0:0]$311
+     8/17: $0$formal$b1_packet_tx_equiv_formal.sv:83$292_EN[0:0]$314
+     9/17: $0$formal$b1_packet_tx_equiv_formal.sv:83$292_CHECK[0:0]$313
+    10/17: $0$formal$b1_packet_tx_equiv_formal.sv:85$293_EN[0:0]$316
+    11/17: $0$formal$b1_packet_tx_equiv_formal.sv:85$293_CHECK[0:0]$315
+    12/17: $0$formal$b1_packet_tx_equiv_formal.sv:86$294_EN[0:0]$318
+    13/17: $0$formal$b1_packet_tx_equiv_formal.sv:86$294_CHECK[0:0]$317
+    14/17: $0$formal$b1_packet_tx_equiv_formal.sv:89$295_EN[0:0]$320
+    15/17: $0$formal$b1_packet_tx_equiv_formal.sv:89$295_CHECK[0:0]$319
+    16/17: $0\ref_index[3:0]
+    17/17: $0\ref_active[0:0]
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:48$301'.
+     1/1: $1\expected_byte[7:0]
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:25$298'.
+     1/1: $0\started[0:0]
+Creating decoders for process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:24$296'.
+Creating decoders for process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+     1/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result[31:0]$207
+     2/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index[31:0]$210
+     3/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work[31:0]$211
+     4/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data[7:0]$209
+     5/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in[31:0]$208
+     6/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result[31:0]$202
+     7/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index[31:0]$205
+     8/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work[31:0]$206
+     9/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data[7:0]$204
+    10/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in[31:0]$203
+    11/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result[31:0]$162
+    12/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index[31:0]$165
+    13/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work[31:0]$166
+    14/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data[7:0]$164
+    15/105: $5\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in[31:0]$163
+    16/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work[31:0]$127
+    17/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index[31:0]$126
+    18/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data[7:0]$125
+    19/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in[31:0]$124
+    20/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result[31:0]$123
+    21/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work[31:0]$122
+    22/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index[31:0]$121
+    23/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data[7:0]$120
+    24/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in[31:0]$119
+    25/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result[31:0]$118
+    26/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work[31:0]$117
+    27/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index[31:0]$116
+    28/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data[7:0]$115
+    29/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in[31:0]$114
+    30/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result[31:0]$113
+    31/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.$result[31:0]$108
+    32/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.bit_index[31:0]$111
+    33/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.work[31:0]$112
+    34/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.data[7:0]$110
+    35/105: $4\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.crc_in[31:0]$109
+    36/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work[31:0]$105
+    37/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index[31:0]$104
+    38/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data[7:0]$103
+    39/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in[31:0]$102
+    40/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result[31:0]$101
+    41/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work[31:0]$100
+    42/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index[31:0]$99
+    43/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data[7:0]$98
+    44/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in[31:0]$97
+    45/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result[31:0]$96
+    46/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work[31:0]$95
+    47/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index[31:0]$94
+    48/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data[7:0]$93
+    49/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in[31:0]$92
+    50/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result[31:0]$91
+    51/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.work[31:0]$90
+    52/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.bit_index[31:0]$89
+    53/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.data[7:0]$88
+    54/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.crc_in[31:0]$87
+    55/105: $3\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.$result[31:0]$86
+    56/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work[31:0]$84
+    57/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index[31:0]$83
+    58/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data[7:0]$82
+    59/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in[31:0]$81
+    60/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result[31:0]$80
+    61/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work[31:0]$79
+    62/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index[31:0]$78
+    63/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data[7:0]$77
+    64/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in[31:0]$76
+    65/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result[31:0]$75
+    66/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work[31:0]$74
+    67/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index[31:0]$73
+    68/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data[7:0]$72
+    69/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in[31:0]$71
+    70/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result[31:0]$70
+    71/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.work[31:0]$69
+    72/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.bit_index[31:0]$68
+    73/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.data[7:0]$67
+    74/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.crc_in[31:0]$66
+    75/105: $2\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.$result[31:0]$65
+    76/105: $0\done_pulse[0:0]
+    77/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work[31:0]$62
+    78/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index[31:0]$61
+    79/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data[7:0]$60
+    80/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in[31:0]$59
+    81/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result[31:0]$58
+    82/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work[31:0]$57
+    83/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index[31:0]$56
+    84/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data[7:0]$55
+    85/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in[31:0]$54
+    86/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result[31:0]$53
+    87/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work[31:0]$52
+    88/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index[31:0]$51
+    89/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data[7:0]$50
+    90/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in[31:0]$49
+    91/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result[31:0]$48
+    92/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.work[31:0]$47
+    93/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.bit_index[31:0]$46
+    94/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.data[7:0]$45
+    95/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.crc_in[31:0]$44
+    96/105: $1\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.$result[31:0]$43
+    97/105: $0\payload_crc_work[31:0]
+    98/105: $0\envelope_crc_work[31:0]
+    99/105: $0\saved_crc[31:0]
+   100/105: $0\saved_payload[543:0]
+   101/105: $0\saved_status[7:0]
+   102/105: $0\saved_length[15:0]
+   103/105: $0\index[15:0]
+   104/105: $0\active[0:0]
+   105/105: $0\payload_crc[31:0]
+Creating decoders for process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:44$6'.
+     1/7: $7\tx_data[7:0]
+     2/7: $6\tx_data[7:0]
+     3/7: $5\tx_data[7:0]
+     4/7: $4\tx_data[7:0]
+     5/7: $3\tx_data[7:0]
+     6/7: $2\tx_data[7:0]
+     7/7: $1\tx_data[7:0]
+
+3.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\b1_packet_tx_equiv_formal.\expected_byte' from process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:48$301'.
+No latch inferred for signal `\lsc1_packet_tx.\tx_data' from process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:44$6'.
+
+3.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\b1_packet_tx_equiv_formal.\ref_active' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1466' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.\ref_index' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1467' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.\ref_done' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1468' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$past$b1_packet_tx_equiv_formal.sv:85$285$0' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1469' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$past$b1_packet_tx_equiv_formal.sv:85$286$0' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1470' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$past$b1_packet_tx_equiv_formal.sv:85$287$0' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1471' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$past$b1_packet_tx_equiv_formal.sv:87$288$0' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1472' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:80$289_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1473' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:80$289_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1474' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:81$290_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1475' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:81$290_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1476' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:82$291_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1477' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:82$291_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1478' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:83$292_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1479' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:83$292_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1480' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:85$293_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1481' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:85$293_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1482' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:86$294_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1483' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:86$294_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1484' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:89$295_CHECK' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1485' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.$formal$b1_packet_tx_equiv_formal.sv:89$295_EN' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+  created $dff cell `$procdff$1486' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.\rst_n' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:25$298'.
+  created $dff cell `$procdff$1487' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.\started' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:25$298'.
+  created $dff cell `$procdff$1488' with positive edge clock.
+Creating register for signal `\b1_packet_tx_equiv_formal.\clk' using process `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:24$296'.
+  created $ff cell `$procdff$1489' with global clock.
+Creating register for signal `\lsc1_packet_tx.\done_pulse' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1490' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\payload_crc' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1491' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\active' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1492' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\index' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1493' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_length' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1494' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_status' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1495' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_payload' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1496' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\saved_crc' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1497' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\envelope_crc_work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1498' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\payload_crc_work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1499' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.$result' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1500' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.crc_in' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1501' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.data' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1502' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.bit_index' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1503' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:87$2.work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1504' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.$result' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1505' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.crc_in' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1506' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.data' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1507' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.bit_index' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1508' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:89$3.work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1509' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.$result' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1510' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.crc_in' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1511' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.data' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1512' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.bit_index' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1513' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:91$4.work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1514' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.$result' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1515' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.crc_in' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1516' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.data' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1517' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.bit_index' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1518' with positive edge clock.
+Creating register for signal `\lsc1_packet_tx.\crc_byte$func$../asic_core/rtl/lsc1_packet_tx.sv:93$5.work' using process `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+  created $dff cell `$procdff$1519' with positive edge clock.
+
+3.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+3.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$362'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$360'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$358'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$356'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$354'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$352'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:0$350'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:45$349'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:44$348'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:43$347'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:18$346'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:17$345'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:16$344'.
+Found and cleaned up 7 empty switches in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:64$302'.
+Found and cleaned up 1 empty switch in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:48$301'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:48$301'.
+Found and cleaned up 1 empty switch in `\b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:25$298'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:25$298'.
+Removing empty process `b1_packet_tx_equiv_formal.$proc$b1_packet_tx_equiv_formal.sv:24$296'.
+Found and cleaned up 7 empty switches in `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+Removing empty process `lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:62$20'.
+Found and cleaned up 7 empty switches in `\lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:44$6'.
+Removing empty process `lsc1_packet_tx.$proc$../asic_core/rtl/lsc1_packet_tx.sv:44$6'.
+Cleaned up 23 empty switches.
+
+3.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+<suppressed ~4 debug messages>
+Optimizing module lsc1_packet_tx.
+<suppressed ~99 debug messages>
+
+3.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+Optimizing module lsc1_packet_tx.
+
+3.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \b1_packet_tx_equiv_formal..
+Finding unused cells or wires in module \lsc1_packet_tx..
+Removed 296 unused cells and 908 unused wires.
+<suppressed ~314 debug messages>
+
+3.5. Executing CHECK pass (checking for obvious problems).
+Checking module b1_packet_tx_equiv_formal...
+Checking module lsc1_packet_tx...
+Found and reported 0 problems.
+
+3.6. Executing OPT pass (performing simple optimizations).
+
+3.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+Optimizing module lsc1_packet_tx.
+
+3.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\b1_packet_tx_equiv_formal'.
+<suppressed ~3 debug messages>
+Finding identical cells in module `\lsc1_packet_tx'.
+<suppressed ~18 debug messages>
+Removed a total of 7 cells.
+
+3.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \b1_packet_tx_equiv_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+      Replacing known input bits on port A of cell $procmux$433: \ref_active -> 1'0
+      Replacing known input bits on port A of cell $procmux$431: \ref_active -> 1'1
+  Analyzing evaluation results.
+Running muxtree optimizer on module \lsc1_packet_tx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 1/2 on $mux $procmux$1386.
+    dead port 1/2 on $mux $procmux$1389.
+    dead port 1/2 on $mux $procmux$1392.
+    dead port 1/2 on $mux $procmux$1395.
+    dead port 1/2 on $mux $procmux$1398.
+    dead port 1/2 on $mux $procmux$1401.
+    dead port 1/2 on $mux $procmux$1407.
+    dead port 1/2 on $mux $procmux$1410.
+    dead port 1/2 on $mux $procmux$1413.
+    dead port 1/2 on $mux $procmux$1416.
+    dead port 1/2 on $mux $procmux$1419.
+    dead port 1/2 on $mux $procmux$1425.
+    dead port 1/2 on $mux $procmux$1428.
+    dead port 1/2 on $mux $procmux$1431.
+    dead port 1/2 on $mux $procmux$1434.
+    dead port 1/2 on $mux $procmux$1440.
+    dead port 1/2 on $mux $procmux$1443.
+    dead port 1/2 on $mux $procmux$1446.
+    dead port 1/2 on $mux $procmux$1452.
+    dead port 1/2 on $mux $procmux$1455.
+    dead port 1/2 on $mux $procmux$1461.
+Removed 21 multiplexer ports.
+<suppressed ~59 debug messages>
+
+3.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \b1_packet_tx_equiv_formal.
+  Optimizing cells in module \lsc1_packet_tx.
+Performed a total of 0 changes.
+
+3.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\b1_packet_tx_equiv_formal'.
+<suppressed ~27 debug messages>
+Finding identical cells in module `\lsc1_packet_tx'.
+<suppressed ~90 debug messages>
+Removed a total of 39 cells.
+
+3.6.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \b1_packet_tx_equiv_formal..
+Finding unused cells or wires in module \lsc1_packet_tx..
+Removed 0 unused cells and 83 unused wires.
+<suppressed ~2 debug messages>
+
+3.6.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+Optimizing module lsc1_packet_tx.
+
+3.6.8. Rerunning OPT passes. (Maybe there is more to do..)
+
+3.6.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \b1_packet_tx_equiv_formal..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \lsc1_packet_tx..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~41 debug messages>
+
+3.6.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \b1_packet_tx_equiv_formal.
+  Optimizing cells in module \lsc1_packet_tx.
+Performed a total of 0 changes.
+
+3.6.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\b1_packet_tx_equiv_formal'.
+Finding identical cells in module `\lsc1_packet_tx'.
+Removed a total of 0 cells.
+
+3.6.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \b1_packet_tx_equiv_formal..
+Finding unused cells or wires in module \lsc1_packet_tx..
+
+3.6.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+Optimizing module lsc1_packet_tx.
+
+3.6.14. Finished OPT passes. (There is nothing left to do.)
+
+3.7. Executing WREDUCE pass (reducing word size of cells).
+Removed top 28 address bits (of 32) from memory init port b1_packet_tx_equiv_formal.$auto$mem.cc:319:emit$367 ($auto$proc_rom.cc:150:do_switch$365).
+Removed top 15 bits (of 16) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:46$8 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:47$9 ($eq).
+Removed top 14 bits (of 16) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:48$10 ($eq).
+Removed top 13 bits (of 16) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:49$11 ($eq).
+Removed top 29 bits (of 32) from port A of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:50$12 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:50$12 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$lt$../asic_core/rtl/lsc1_packet_tx.sv:50$13 ($lt).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$sub$../asic_core/rtl/lsc1_packet_tx.sv:51$14 ($sub).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$sub$../asic_core/rtl/lsc1_packet_tx.sv:51$14 ($sub).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_tx.$mul$../asic_core/rtl/lsc1_packet_tx.sv:51$15 ($mul).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:0$16 ($add).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:86$106 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:86$106 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$le$../asic_core/rtl/lsc1_packet_tx.sv:86$107 ($le).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1520 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1522 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1524 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1526 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1528 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1530 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1532 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1534 ($not).
+Removed top 29 bits (of 32) from port B of cell lsc1_packet_tx.$ge$../asic_core/rtl/lsc1_packet_tx.sv:88$161 ($ge).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1536 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1540 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1542 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1544 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1546 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1548 ($not).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1550 ($not).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:90$201 ($eq).
+Removed top 1 bits (of 14) from port A of cell lsc1_packet_tx.$auto$opt_expr.cc:706:replace_const_cells$1570 ($not).
+Removed top 28 bits (of 32) from port B of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:96$282 ($add).
+Removed top 15 bits (of 32) from port Y of cell lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:96$282 ($add).
+Removed top 15 bits (of 32) from port B of cell lsc1_packet_tx.$eq$../asic_core/rtl/lsc1_packet_tx.sv:96$283 ($eq).
+Removed top 30 bits (of 32) from port B of cell lsc1_packet_tx.$procmux$1382_CMP0 ($eq).
+Removed top 31 bits (of 32) from port B of cell lsc1_packet_tx.$procmux$1383_CMP0 ($eq).
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:50$12_Y.
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:86$106_Y.
+Removed top 15 bits (of 32) from wire lsc1_packet_tx.$add$../asic_core/rtl/lsc1_packet_tx.sv:96$282_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$129_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$133_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$137_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$141_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$145_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$149_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$153_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$157_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$168_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$172_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$176_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$180_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$184_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$188_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$192_Y.
+Removed top 1 bits (of 32) from wire lsc1_packet_tx.$shr$../asic_core/rtl/lsc1_packet_tx.sv:36$196_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$132_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$136_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$140_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$144_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$148_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$152_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$156_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$171_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$175_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$179_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$183_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$187_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$191_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:36$195_Y.
+Removed top 4 bits (of 32) from wire lsc1_packet_tx.$ternary$../asic_core/rtl/lsc1_packet_tx.sv:92$281_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$xor$../asic_core/rtl/lsc1_packet_tx.sv:34$128_Y.
+Removed top 31 bits (of 32) from wire lsc1_packet_tx.$xor$../asic_core/rtl/lsc1_packet_tx.sv:34$167_Y.
+
+3.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \b1_packet_tx_equiv_formal..
+Finding unused cells or wires in module \lsc1_packet_tx..
+Removed 0 unused cells and 36 unused wires.
+<suppressed ~1 debug messages>
+
+3.9. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+3.10. Executing OPT pass (performing simple optimizations).
+
+3.10.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module b1_packet_tx_equiv_formal.
+Optimizing module lsc1_packet_tx.
+
+3.10.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\b1_packet_tx_equiv_formal'.
+Finding identical cells in module `\lsc1_packet_tx'.
+Removed a total of 0 cells.
+
+3.10.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \b1_packet_tx_equiv_formal..
+Finding unused cells or wires in module \lsc1_packet_tx..
+
+3.10.4. Finished fast OPT passes.
+
+3.11. Printing statistics.
+
+=== b1_packet_tx_equiv_formal ===
+
+   Number of wires:                 72
+   Number of wire bits:            685
+   Number of public wires:          15
+   Number of public wire bits:     606
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 73
+     $add                            1
+     $assert                         6
+     $cover                          1
+     $dff                           19
+     $eq                             6
+     $ff                             1
+     $logic_and                      4
+     $logic_not                      3
+     $logic_or                       1
+     $mem_v2                         1
+     $mux                           28
+     $not                            1
+     lsc1_packet_tx                  1
+
+=== lsc1_packet_tx ===
+
+   Number of wires:                145
+   Number of wire bits:           4791
+   Number of public wires:          21
+   Number of public wire bits:    1297
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                119
+     $add                            5
+     $dff                           10
+     $eq                             8
+     $ge                             1
+     $le                             1
+     $logic_and                      2
+     $logic_not                      5
+     $logic_or                       1
+     $lt                             1
+     $mul                            1
+     $mux                           60
+     $not                           18
+     $pmux                           1
+     $shiftx                         1
+     $sub                            2
+     $xor                            2
+
+=== design hierarchy ===
+
+   b1_packet_tx_equiv_formal         1
+     lsc1_packet_tx                  1
+
+   Number of wires:                217
+   Number of wire bits:           5476
+   Number of public wires:          36
+   Number of public wire bits:    1903
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                191
+     $add                            6
+     $assert                         6
+     $cover                          1
+     $dff                           29
+     $eq                            14
+     $ff                             1
+     $ge                             1
+     $le                             1
+     $logic_and                      6
+     $logic_not                      8
+     $logic_or                       2
+     $lt                             1
+     $mem_v2                         1
+     $mul                            1
+     $mux                           88
+     $not                           19
+     $pmux                           1
+     $shiftx                         1
+     $sub                            2
+     $xor                            2
+
+3.12. Executing CHECK pass (checking for obvious problems).
+Checking module b1_packet_tx_equiv_formal...
+Checking module lsc1_packet_tx...
+Found and reported 0 problems.
+
+4. Executing SMT2 backend.
+
+4.1. Executing BMUXMAP pass.
+
+4.2. Executing DEMUXMAP pass.
+Creating SMT-LIBv2 representation of module lsc1_packet_tx.
+Creating SMT-LIBv2 representation of module b1_packet_tx_equiv_formal.
+
+End of script. Logfile hash: cb1b130594, CPU: user 0.47s system 0.01s, MEM: 19.19 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 20% 5x opt_clean (0 sec), 18% 6x opt_expr (0 sec), ...

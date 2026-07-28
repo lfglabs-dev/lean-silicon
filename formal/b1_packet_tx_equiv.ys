@@ -1,0 +1,3 @@
+read_verilog -formal -sv ../asic_core/rtl/lsc1_packet_tx.sv b1_packet_tx_equiv_formal.sv
+prep -top b1_packet_tx_equiv_formal
+write_smt2 -wires b1_packet_tx_equiv.smt2

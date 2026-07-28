@@ -1,0 +1,6 @@
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module lsc1_packet_tx declared here: ../asic_core/rtl/lsc1_packet_tx.sv:4
+B1_TX_STALL_PASS
+b1_packet_equiv_tb.sv:25: $finish called at 146000 (1ps)
