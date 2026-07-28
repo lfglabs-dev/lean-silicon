@@ -6,8 +6,8 @@ out=results/b2-capability-contract-20260728
 mkdir -p "$out"
 printf '%s\n' "baseline_commit=$(git rev-parse fda85f5efc6f5b460d72204b4d9c0d882960ec29)" > "$out/metadata.txt"
 printf '%s\n' "baseline_tree=$(git rev-parse fda85f5efc6f5b460d72204b4d9c0d882960ec29^{tree})" >> "$out/metadata.txt"
-printf '%s\n' "head=$(git rev-parse HEAD)" >> "$out/metadata.txt"
-printf '%s\n' "head_tree=$(git rev-parse HEAD^{tree})" >> "$out/metadata.txt"
+printf '%s\n' "head=$(git rev-parse 4a4d8cdd9abd56121ae5c8d84df1f1bc42f8ba4a)" >> "$out/metadata.txt"
+printf '%s\n' "head_tree=$(git rev-parse 4a4d8cdd9abd56121ae5c8d84df1f1bc42f8ba4a^{tree})" >> "$out/metadata.txt"
 
 run() {
     name=$1
