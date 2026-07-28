@@ -11,6 +11,17 @@ lake build LeanVMBMinCore
 
 Modules:
 
+- `Packet.lean` — executable parsed request/response envelopes, ordered request
+  validation, protocol-size-bounded checksum-parametric round trips, and
+  concrete codec examples. Byte-stream reception and per-opcode payload schemas
+  remain outside this model. The stable checksum seam is intended for a later
+  proof that instantiates the protocol's CRC-32 implementation without changing
+  packet consumers.
+- `Transaction.lean` — pure staging/retirement state model with atomic staging,
+  v1 current-state index bounds, abort preservation, matching commit, mismatch
+  rejection, reset, and exactly-once retirement theorems. Arithmetic and
+  control instruction models provide already-validated proposed transitions
+  through this interface.
 - `GHASH128.lean` proves the real 128-bit `xtime` tap equations, reduction boundary, and XOR linearity.
 - `GF8.lean` — two independent executable definitions of multiplication in
   `GF(2^8)` and exhaustive `bv_decide` equivalence.

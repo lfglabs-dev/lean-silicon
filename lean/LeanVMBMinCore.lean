@@ -1,4 +1,6 @@
 import LeanVMBMinCore.ByteSerialization
+import LeanVMBMinCore.Packet
+import LeanVMBMinCore.Transaction
 import LeanVMBMinCore.GF8
 import LeanVMBMinCore.GHASH128
 import LeanVMBMinCore.Stream
