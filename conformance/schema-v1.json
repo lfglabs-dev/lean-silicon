@@ -33,6 +33,57 @@
       },
       "additionalProperties": false
     },
+    "deferred": {
+      "type": "object",
+      "required": ["local", "target"],
+      "properties": {
+        "local": {"type": "integer", "minimum": 0},
+        "target": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "staged_transition": {
+      "type": "object",
+      "required": [
+        "accesses", "deferred", "execute_cycles", "fp", "next_fp", "next_pc",
+        "opcode", "pc", "profile", "result_crc32", "result_payload_hex",
+        "txn_id", "writes"
+      ],
+      "properties": {
+        "accesses": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "deferred": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/deferred"}
+        },
+        "execute_cycles": {"type": "integer", "minimum": 0},
+        "fp": {"type": "integer", "minimum": 0},
+        "next_fp": {"type": "integer", "minimum": 0},
+        "next_pc": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1},
+        "pc": {"type": "integer", "minimum": 0},
+        "profile": {"type": "string", "minLength": 1},
+        "result_crc32": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
+        "result_payload_hex": {"$ref": "#/$defs/hex"},
+        "txn_id": {"type": "integer", "minimum": 0},
+        "writes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/write"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "fault": {
+      "type": "object",
+      "required": ["payload_hex", "status"],
+      "properties": {
+        "payload_hex": {"$ref": "#/$defs/hex"},
+        "status": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
     "retire": {
       "type": "object",
       "required": [
@@ -154,9 +205,90 @@
           "initial_state": {"$ref": "#/$defs/endpoint_state"},
           "final_state": {"$ref": "#/$defs/endpoint_state"},
           "retire": {"$ref": "#/$defs/retire"},
-          "upstream": {"$ref": "#/$defs/upstream"}
+          "upstream": {"$ref": "#/$defs/upstream"},
+          "staged_transition": {"$ref": "#/$defs/staged_transition"},
+          "fault": {"$ref": "#/$defs/fault"},
+          "pre_action_state": {"$ref": "#/$defs/endpoint_state"},
+          "lane": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["action", "rx_committed", "same_edge_rx_valid"],
+                "properties": {
+                  "action": {"const": "abort"},
+                  "rx_committed": {"type": "boolean"},
+                  "same_edge_rx_valid": {"type": "boolean"}
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "action", "rx_committed", "same_edge_abort", "same_edge_rx_valid"
+                ],
+                "properties": {
+                  "action": {"const": "reset"},
+                  "rx_committed": {"type": "boolean"},
+                  "same_edge_abort": {"type": "boolean"},
+                  "same_edge_rx_valid": {"type": "boolean"}
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "baseline_cycles", "response_matches_baseline", "rx_gaps",
+                  "stalled_cycles", "tx_gaps"
+                ],
+                "properties": {
+                  "baseline_cycles": {"type": "integer", "minimum": 0},
+                  "response_matches_baseline": {"type": "boolean"},
+                  "rx_gaps": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "stalled_cycles": {"type": "integer", "minimum": 0},
+                  "tx_gaps": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 0}
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
         },
-        "additionalProperties": true
+        "allOf": [
+          {
+            "if": {
+              "properties": {"case_id": {"pattern": "^(?:scalar\\.|protocol\\.)"}},
+              "required": ["case_id"]
+            },
+            "then": {"required": ["staged_transition"]}
+          },
+          {
+            "if": {
+              "properties": {"case_id": {"pattern": "^(?:malformed\\.|error\\.)"}},
+              "required": ["case_id"]
+            },
+            "then": {"required": ["fault"]}
+          },
+          {
+            "if": {
+              "properties": {"case_id": {"pattern": "^lane\\."}},
+              "required": ["case_id"]
+            },
+            "then": {"required": ["lane"]}
+          },
+          {
+            "if": {
+              "properties": {"case_id": {"const": "lane.abort.priority"}},
+              "required": ["case_id"]
+            },
+            "then": {"required": ["pre_action_state"]}
+          }
+        ],
+        "additionalProperties": false
       }
     }
   },

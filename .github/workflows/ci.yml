@@ -40,7 +40,7 @@ jobs:
       - name: Install pinned Rust for locked frozen-oracle probe
         run: rustup toolchain install 1.88.0 --profile minimal
       - name: Compile and simulate RTL
-        run: LEANVM_B_UPSTREAM=/tmp/leanVM-b make sim m2-differential
+        run: LEANVM_B_UPSTREAM=/tmp/leanVM-b make sim m2-differential conformance-differential
 
   lean:
     runs-on: ubuntu-latest

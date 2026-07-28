@@ -1,4 +1,4 @@
-16c3eb42112e6e913a017dd1d12c05ab5c4455ead68d24b12d6c3c4b5dec138c  ./.github/workflows/ci.yml
+3ab4c0298695ac927493f923d3d42015a0d413900c2b0102d10d42fc85ecf766  ./.github/workflows/ci.yml
 7e746c1bc7b8ce78ce75d96f91629a6cc786e154af4d720eb4e119b78fc8e3c9  ./.gitignore
 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  ./LICENSE
 6bdbfe37959e0283134042372101a8a446432eb2516e085bf7850a712720c3c5  ./MANIFEST.md
@@ -22,7 +22,7 @@ d0e2aa043df30c49d946e88503a4edf55ad4fa4467fb8b7e0b49b1e385a58c94  ./asic_core/rt
 abcaeb377fdec71acd13ae9610b91e250c97a6709b5d9a6d208835e677f00ece  ./conformance/README.md
 76ba2ea25dd2f20ea3e50c6d25c774d1fbf45b2960b65d233680c284c0c111d7  ./conformance/corpus-v1.json
 cd41a7e0fda82b96aba2f141829e3168db5a0a7b41dfee77b4718a58f7e3daf2  ./conformance/rust/frozen_adapter.rs
-fe9e3091e75f305655c59444b170f6d0393007b1df08f74c854e4bca454f829a  ./conformance/schema-v1.json
+69e83e18dac54c6271758a759e28ed60697aa5db906a1f51f2c2bc310ba33876  ./conformance/schema-v1.json
 44078c940b3fa598bed96be6856e1f35f2ae9ec8d2ad9b8f0ec3d95fb287d6ed  ./docs/ARCHITECTURE.md
 ac44a1838e7da255ed93835cc0de01e1751efc05f78cf9f8b8145cc963d6836a  ./docs/DECISIONS.md
 5ecf1ccdc8eb9562aaee69502fab30727351290892df2483e29680149eada14f  ./docs/FULL_CORE.md
