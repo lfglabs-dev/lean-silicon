@@ -37,6 +37,8 @@ Frozen leanVM-b evidence remains tied to
   modelled executably by `sim/lsc1_transaction.py`.
 - `host/`: Mac-side runtime that prepares transactions and owns VM state,
   documented in `docs/HOST_RUNTIME.md`.
+- `conformance/`: immutable LSC-1 corpus schema, v1 cases, and the official
+  frozen-upstream Rust differential adapter.
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
 

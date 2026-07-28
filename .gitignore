@@ -8,6 +8,8 @@ __pycache__/
 !info.yaml
 # Exported frozen-compiler program artifacts are checked-in source, not output.
 !host/fixtures/*.json
+# Immutable conformance inputs are reviewed source artifacts, not run output.
+!conformance/*.json
 lean/.lake/
 formal/gf8_mul/
 formal/gf128_serialize/

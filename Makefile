@@ -1,12 +1,19 @@
 PYTHON ?= python3
 
-.PHONY: check python scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal clean package checksums
+.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
+
+conformance-check:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/conformance_differential.py --validate-only
+
+conformance-differential:
+	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/conformance_differential.py --upstream "$(LEANVM_B_UPSTREAM)"
 
 scalar-differential:
 	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
@@ -62,7 +69,7 @@ fpga-detect:
 fpga-preflight:
 	$(PYTHON) fpga_harness/hardware_preflight.py
 
-check: python host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
+check: python conformance-check host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim

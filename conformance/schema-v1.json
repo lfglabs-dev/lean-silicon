@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lean-silicon-conformance-v1",
+  "title": "leanSilicon immutable conformance corpus v1",
+  "type": "object",
+  "required": ["schema", "frozen_upstream", "cases"],
+  "properties": {
+    "schema": {"const": "lean-silicon-conformance-v1"},
+    "frozen_upstream": {
+      "type": "object",
+      "required": ["repository", "commit"],
+      "additionalProperties": false
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id", "fingerprint", "description", "coverage", "raw",
+          "initial_state", "final_state", "retire", "upstream"
+        ],
+        "properties": {
+          "case_id": {"type": "string", "pattern": "^[a-z0-9_.-]+$"},
+          "fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "raw": {
+            "type": "object",
+            "required": ["request_hex", "response_hex"],
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
