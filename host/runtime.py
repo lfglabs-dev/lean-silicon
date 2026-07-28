@@ -295,7 +295,9 @@ class HostRuntime:
             bytes((protocol.PROTOCOL_VERSION, int(self.profile)))
             + protocol.u16le(protocol.MAX_PAYLOAD_BYTES)
             + bytes((protocol.INDEX_BITS, 0))
-            + protocol.u32le(protocol.DEVICE_FEATURES)
+            + protocol.u32le(
+                getattr(self.endpoint, "advertised_features", protocol.DEVICE_FEATURES)
+            )
             + protocol.u32le(protocol.DEVICE_ID)
         )
         if reply.payload != expected:

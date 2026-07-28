@@ -496,10 +496,11 @@ profile, `2` BLAKE3 service offload.
 
 The Phase-B packet RTL advertises only `0x00000002`:
 `INTERPRETER_COMPAT`. It rejects `FORWARD_ONLY` negotiation and does not
-implement BLAKE3 service offload. The executable model remains the frozen
-semantic oracle for the broader profile and service contract, but reports this
-Phase-B device envelope so model/RTL negotiation responses agree for the
-supported interpreter-compatible profile. RTL rejects `FORWARD_ONLY`.
+implement BLAKE3 service offload. `Lsc1Endpoint` is the device-facing
+executable endpoint and also rejects `FORWARD_ONLY` with `BAD_PROFILE`
+(`0x86`). `Lsc1OracleEndpoint` is a separate profile-wide semantic oracle; it
+advertises its broader `0x00000007` envelope and is not a device or RTL
+equivalence claim. RTL rejects `FORWARD_ONLY`.
 
 ### 8.5 `INFO` (status query) — 20 bytes
 

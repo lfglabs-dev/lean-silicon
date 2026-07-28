@@ -634,7 +634,7 @@ class DocumentSemanticsTests(unittest.TestCase):
     FP = 64
 
     def _negotiated(self, profile: Profile) -> Lsc1Endpoint:
-        endpoint = Lsc1Endpoint()
+        endpoint = lsc1.Lsc1OracleEndpoint()
         reply = measure(endpoint, lsc1.build_negotiate(profile=profile))
         self.assertIs(reply.status, Status.OK)
         return endpoint

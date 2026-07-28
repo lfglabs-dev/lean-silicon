@@ -80,6 +80,9 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             protocol.build_status_query(),
             # Phase-B's advertised profile.
             protocol.build_negotiate(profile=protocol.Profile.INTERPRETER_COMPAT),
+            # The device-facing model and RTL must reject the unadvertised
+            # profile with the same BAD_PROFILE response.
+            protocol.build_negotiate(profile=protocol.Profile.FORWARD_ONLY),
         ]
         for txn_id in range(1, 7):
             left = randomizer.getrandbits(128)

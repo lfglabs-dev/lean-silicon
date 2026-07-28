@@ -48,10 +48,9 @@ CRC_BYTES = 4
 MAX_PAYLOAD_BYTES = 256
 DEVICE_ID = 0x4C534331  # "LSC1"
 # Phase-B's advertised device envelope is the interpreter-compatible scalar
-# packet subset.  The executable model remains a semantic oracle for the full
-# frozen protocol below; its negotiation reply deliberately reports only the
-# capability boundary implemented by the shipped packet RTL.
+# packet subset.
 DEVICE_FEATURES = 0b010
+ORACLE_FEATURES = 0b111
 
 CELL_BYTES = 17
 WRITE_BYTES = 20
@@ -996,14 +995,21 @@ class LaneRecord:
 
 
 class Lsc1Endpoint:
-    """Byte-lane LSC-1 v1 endpoint: framing, transaction, and service states.
+    """Device-facing byte-lane LSC-1 v1 endpoint.
 
     The endpoint accepts request bytes only while it has no response bytes
     outstanding, which is how "one outstanding transaction or service request"
     is enforced on the wire.  ``ABORT`` and reset are synchronous and take
     priority over a same-edge candidate transfer, matching the byte/cycle
     contract already recorded in ``docs/PROTOCOL_BYTE_CYCLE_AUDIT.md``.
+
+    Accepted profiles and advertised features are kept together so this device
+    cannot advertise a smaller envelope than it accepts.  Use
+    :class:`Lsc1OracleEndpoint` for profile-wide semantic exploration.
     """
+
+    supported_profiles = frozenset((Profile.INTERPRETER_COMPAT,))
+    advertised_features = DEVICE_FEATURES
 
     def __init__(self) -> None:
         self._reset()
@@ -1167,6 +1173,8 @@ class Lsc1Endpoint:
             raise ProtocolFault(Status.BAD_STATE)
         if not request.version_min <= PROTOCOL_VERSION <= request.version_max:
             raise ProtocolFault(Status.BAD_VERSION)
+        if request.profile not in self.supported_profiles:
+            raise ProtocolFault(Status.BAD_PROFILE)
         self.profile = request.profile
         payload = (
             u8(PROTOCOL_VERSION)
@@ -1174,7 +1182,7 @@ class Lsc1Endpoint:
             + u16le(MAX_PAYLOAD_BYTES)
             + u8(INDEX_BITS)
             + u8(0)
-            + u32le(DEVICE_FEATURES)
+            + u32le(self.advertised_features)
             + u32le(DEVICE_ID)
         )
         self._emit(ResponseFrame(Status.OK, payload))
@@ -1282,6 +1290,13 @@ class Lsc1Endpoint:
             + u32le(self.committed_fp)
         )
         self._emit(ResponseFrame(Status.RETIRED, payload))
+
+
+class Lsc1OracleEndpoint(Lsc1Endpoint):
+    """Profile-wide semantic oracle, separate from the Phase-B device model."""
+
+    supported_profiles = frozenset(Profile)
+    advertised_features = ORACLE_FEATURES
 
 
 _STATE_CODES = {

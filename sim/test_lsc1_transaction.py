@@ -75,8 +75,10 @@ def exchange(endpoint: Lsc1Endpoint, frame: lsc1.RequestFrame) -> lsc1.ResponseF
     return lsc1.decode_response(response)
 
 
-def negotiated(profile: Profile) -> Lsc1Endpoint:
-    endpoint = Lsc1Endpoint()
+def negotiated(
+    profile: Profile, endpoint_type: type[Lsc1Endpoint] = Lsc1Endpoint,
+) -> Lsc1Endpoint:
+    endpoint = endpoint_type()
     reply = exchange(endpoint, lsc1.build_negotiate(profile=profile))
     assert reply.status is Status.OK
     return endpoint
@@ -586,13 +588,19 @@ class ProfileTests(unittest.TestCase):
     def test_default_profile_is_interpreter_compatible(self) -> None:
         self.assertIs(Lsc1Endpoint().profile, Profile.INTERPRETER_COMPAT)
 
-    def test_negotiate_reports_the_phase_b_device_envelope(self) -> None:
+    def test_device_endpoint_rejects_unadvertised_forward_only_negotiation(self) -> None:
         endpoint = Lsc1Endpoint()
         reply = exchange(endpoint, lsc1.build_negotiate(profile=Profile.FORWARD_ONLY))
+        self.assertIs(reply.status, Status.BAD_PROFILE)
+        self.assertIs(endpoint.profile, Profile.INTERPRETER_COMPAT)
+
+    def test_device_endpoint_reports_the_phase_b_device_envelope(self) -> None:
+        endpoint = Lsc1Endpoint()
+        reply = exchange(endpoint, lsc1.build_negotiate(profile=Profile.INTERPRETER_COMPAT))
         self.assertIs(reply.status, Status.OK)
         reader = lsc1._Reader(reply.payload)
         self.assertEqual(reader.u8(), PROTOCOL_VERSION)
-        self.assertEqual(reader.u8(), int(Profile.FORWARD_ONLY))
+        self.assertEqual(reader.u8(), int(Profile.INTERPRETER_COMPAT))
         self.assertEqual(reader.u16(), MAX_PAYLOAD_BYTES)
         self.assertEqual(reader.u8(), lsc1.INDEX_BITS)
         self.assertEqual(reader.u8(), 0)
@@ -600,6 +608,19 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(reader.u32(), lsc1.DEVICE_ID)
         reader.done()
         self.assertEqual(lsc1.DEVICE_FEATURES, 0b010)
+        self.assertIs(endpoint.profile, Profile.INTERPRETER_COMPAT)
+
+    def test_oracle_endpoint_keeps_the_broader_profile_contract(self) -> None:
+        endpoint = lsc1.Lsc1OracleEndpoint()
+        reply = exchange(endpoint, lsc1.build_negotiate(profile=Profile.FORWARD_ONLY))
+        self.assertIs(reply.status, Status.OK)
+        reader = lsc1._Reader(reply.payload)
+        reader.u8()
+        self.assertEqual(reader.u8(), int(Profile.FORWARD_ONLY))
+        reader.u16()
+        reader.u8()
+        reader.u8()
+        self.assertEqual(reader.u32(), lsc1.ORACLE_FEATURES)
         self.assertIs(endpoint.profile, Profile.FORWARD_ONLY)
 
     def test_negotiate_rejects_a_version_window_that_excludes_v1(self) -> None:
@@ -619,7 +640,7 @@ class ProfileTests(unittest.TestCase):
         self.assertIs(reply.status, Status.BAD_PROFILE)
 
     def test_a_request_naming_the_other_profile_is_rejected(self) -> None:
-        endpoint = negotiated(Profile.FORWARD_ONLY)
+        endpoint = negotiated(Profile.FORWARD_ONLY, lsc1.Lsc1OracleEndpoint)
         reply = exchange(endpoint, simple_xor())
         self.assertIs(reply.status, Status.BAD_PROFILE)
         self.assertIsNone(endpoint.staged)
@@ -731,7 +752,7 @@ class BinaryOpTests(unittest.TestCase):
             (ABSENT, ABSENT, Cell(True, 3)),
         ):
             with self.subTest(cells=cells):
-                endpoint = negotiated(Profile.FORWARD_ONLY)
+                endpoint = negotiated(Profile.FORWARD_ONLY, lsc1.Lsc1OracleEndpoint)
                 frame = lsc1.build_binary_op(
                     Opcode.XOR, txn_id=1, pc=0, fp=64, profile=Profile.FORWARD_ONLY,
                     offsets=(1, 2, 3), cells=cells,
@@ -741,7 +762,7 @@ class BinaryOpTests(unittest.TestCase):
                 self.assertIsNone(endpoint.staged)
 
     def test_forward_only_profile_accepts_a_fully_supplied_operand_pair(self) -> None:
-        endpoint = negotiated(Profile.FORWARD_ONLY)
+        endpoint = negotiated(Profile.FORWARD_ONLY, lsc1.Lsc1OracleEndpoint)
         frame = lsc1.build_binary_op(
             Opcode.XOR, txn_id=1, pc=0, fp=64, profile=Profile.FORWARD_ONLY,
             offsets=(1, 2, 3), cells=(Cell(True, 6), Cell(True, 3), ABSENT),
@@ -858,7 +879,11 @@ class DerefTests(unittest.TestCase):
         pc: int = 5,
         fp: int = 64,
     ) -> tuple[Lsc1Endpoint, lsc1.ResponseFrame]:
-        endpoint = negotiated(profile)
+        endpoint_type = (
+            lsc1.Lsc1OracleEndpoint
+            if profile is Profile.FORWARD_ONLY else Lsc1Endpoint
+        )
+        endpoint = negotiated(profile, endpoint_type)
         frame = lsc1.build_deref(
             opcode, txn_id=1, pc=pc, fp=fp, profile=profile,
             alpha=0, beta=2, gamma=3,

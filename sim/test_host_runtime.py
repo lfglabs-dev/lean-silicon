@@ -997,6 +997,7 @@ class RuntimeTests(unittest.TestCase):
                 {"op": "Mul", "a": 2, "b": 3, "c": 4},
             ),
             profile=protocol.Profile.FORWARD_ONLY,
+            endpoint=protocol.Lsc1OracleEndpoint(),
         )
         result = runtime.run()
         self.assertEqual(result.terminal, "fault")
