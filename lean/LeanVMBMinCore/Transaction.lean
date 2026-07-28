@@ -83,12 +83,12 @@ def step (model : Model) (command : Command) : Outcome :=
       match model.state with
       | .resultPending _ => { model := model, fault := some .badState }
       | .idle =>
-          if !currentIndicesInRange transition then
-            { model := model, fault := some .indexRange }
-          else if stateMatches model transition then
-            { model := { model with state := .resultPending transition } }
-          else
+          if !stateMatches model transition then
             { model := model, fault := some .stateMismatch }
+          else if !currentIndicesInRange transition then
+            { model := model, fault := some .indexRange }
+          else
+            { model := { model with state := .resultPending transition } }
   | .retire txnId resultChecksum =>
       match model.state with
       | .idle => { model := model, fault := some .badState }
@@ -119,10 +119,18 @@ def step (model : Model) (command : Command) : Outcome :=
 
 @[simp] theorem out_of_range_stage_is_rejected (model : Model)
     (transition : Transition) (hidle : model.state = .idle)
+    (hmatch : stateMatches model transition = true)
     (hrange : currentIndicesInRange transition = false) :
     step model (.stage transition) =
       { model := model, fault := some .indexRange } := by
-  simp [step, hidle, hrange]
+  simp [step, hidle, hmatch, hrange]
+
+@[simp] theorem state_mismatch_precedes_index_range (model : Model)
+    (transition : Transition) (hidle : model.state = .idle)
+    (hmatch : stateMatches model transition = false) :
+    step model (.stage transition) =
+      { model := model, fault := some .stateMismatch } := by
+  simp [step, hidle, hmatch]
 
 @[simp] theorem abort_preserves_committed (model : Model) :
     (step model .abort).model.committed = model.committed := by
