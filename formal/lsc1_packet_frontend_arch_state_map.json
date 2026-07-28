@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "module": "lsc1_packet_frontend",
+  "relation": "R(rtl_state, arch_state) is direct field equality; every source is a registered RTL signal except parser_busy, tx_busy, alu_busy, encoder_busy, and output-valid/data, which are documented functions of the listed registered state.",
+  "fields": {
+    "arch_phase":"compute_state", "arch_parser_busy":"rx_busy", "arch_parser_phase":"parser_arch_state",
+    "arch_parser_header_index":"parser_arch_header_index", "arch_parser_body_index":"parser_arch_body_index",
+    "arch_parser_declared_length":"parser_arch_declared_length", "arch_parser_version":"parser_arch_version",
+    "arch_parser_opcode":"parser_arch_opcode", "arch_parser_flags":"parser_arch_flags", "arch_parser_crc":"parser_arch_crc",
+    "arch_parser_received_crc":"parser_arch_received_crc", "arch_frame_valid":"frame_valid",
+    "arch_frame_opcode":"frame_opcode", "arch_frame_length":"frame_length", "arch_frame_payload":"frame_payload",
+    "arch_rx_fault_valid":"rx_fault_valid", "arch_rx_fault_status":"rx_fault_status",
+    "arch_result_pending":"result_pending", "arch_staged_txn_id":"staged_txn_id",
+    "arch_staged_next_pc":"staged_next_pc", "arch_staged_next_fp":"staged_next_fp",
+    "arch_staged_result_crc":"staged_result_crc", "arch_state_valid":"state_valid",
+    "arch_committed_pc":"committed_pc", "arch_committed_fp":"committed_fp", "arch_retire_seq":"retire_seq",
+    "arch_active_profile":"active_profile", "arch_last_status":"last_status", "arch_last_fault":"last_fault",
+    "arch_tx_busy":"tx_busy", "arch_tx_index":"tx_arch_index", "arch_tx_length":"tx_arch_length",
+    "arch_tx_status":"tx_arch_status", "arch_tx_payload":"tx_arch_payload",
+    "arch_tx_payload_crc":"tx_payload_crc", "arch_alu_busy":"alu_busy", "arch_alu_phase":"alu_arch_state",
+    "arch_alu_operation":"alu_arch_operation", "arch_alu_payload_index":"alu_arch_payload_index",
+    "arch_alu_result_index":"alu_arch_result_index", "arch_alu_result":"alu_result", "arch_encoder_busy":"encoder_busy",
+    "arch_encoder_bit_index":"encoder_arch_bit_index", "arch_encoder_index":"encoder_arch_saved_index",
+    "arch_encoder_result":"encoder_result", "arch_fault":"fault", "arch_done_pulse":"done_pulse"
+  },
+  "observable_outputs": ["rx_ready", "tx_data", "tx_valid", "busy", "fault", "done_pulse"],
+  "partitions": ["reset", "idle", "parser", "compute", "response", "retire"]
+}

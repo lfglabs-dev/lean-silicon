@@ -14,7 +14,10 @@ module lsc1_packet_tx (
     output reg  [31:0]   payload_crc,
     output reg  [7:0]    tx_data,
     output wire          tx_valid,
-    input  wire          tx_ready
+    input  wire          tx_ready,
+    output wire [15:0]   arch_index, arch_length,
+    output wire [7:0]    arch_status,
+    output wire [543:0]  arch_payload
 );
     reg active;
     reg [15:0] index;
@@ -40,6 +43,8 @@ module lsc1_packet_tx (
 
     assign busy = active;
     assign tx_valid = active;
+    assign arch_index = index; assign arch_length = saved_length;
+    assign arch_status = saved_status; assign arch_payload = saved_payload;
 
     always @(*) begin
         if (index == 0) tx_data = 8'h5a;

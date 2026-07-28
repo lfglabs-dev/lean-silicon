@@ -12,7 +12,9 @@ module lsc1_field_encoder (
     output reg          busy,
     output reg          done_pulse,
     output reg          fault,
-    output reg  [127:0] result
+    output reg  [127:0] result,
+    output wire [4:0]   arch_bit_index,
+    output wire [15:0]  arch_saved_index
 );
     reg         multiply_start;
     reg [4:0]   bit_index;
@@ -22,6 +24,8 @@ module lsc1_field_encoder (
     wire        multiply_busy, multiply_done, multiply_fault;
     wire [127:0] multiply_result;
     reg [127:0] next_accumulator;
+    assign arch_bit_index = bit_index;
+    assign arch_saved_index = saved_index;
 
     function automatic [127:0] field_xtime(input [127:0] value);
         field_xtime = {value[126:0], 1'b0} ^

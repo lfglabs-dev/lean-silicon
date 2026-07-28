@@ -16,7 +16,12 @@ module lsc1_packet_rx (
     output reg  [2047:0] frame_payload,
     output reg           fault_valid,
     output reg  [7:0]    fault_status,
-    output wire          busy
+    output wire          busy,
+    output wire [2:0]    arch_state,
+    output wire [2:0]    arch_header_index,
+    output wire [15:0]   arch_body_index, arch_declared_length,
+    output wire [7:0]    arch_version, arch_opcode, arch_flags,
+    output wire [31:0]   arch_crc, arch_received_crc
 );
     localparam [7:0] SOF = 8'ha1;
     localparam [7:0] VERSION = 8'h01;
@@ -34,6 +39,10 @@ module lsc1_packet_rx (
     reg [31:0] crc;
     reg [31:0] received_crc;
     assign busy = state != S_SOF || frame_valid || fault_valid;
+    assign arch_state = state; assign arch_header_index = header_index;
+    assign arch_body_index = body_index; assign arch_declared_length = declared_length;
+    assign arch_version = version; assign arch_opcode = opcode; assign arch_flags = flags;
+    assign arch_crc = crc; assign arch_received_crc = received_crc;
 
     function automatic [31:0] crc_byte;
         input [31:0] crc_in;

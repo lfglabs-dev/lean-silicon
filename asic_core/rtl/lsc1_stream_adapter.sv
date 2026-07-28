@@ -14,7 +14,11 @@ module lsc1_stream_adapter (
     output wire         busy,
     output reg          done_pulse,
     output reg          fault,
-    output reg  [127:0] result
+    output reg  [127:0] result,
+    output wire [2:0]   arch_state,
+    output wire [7:0]   arch_operation,
+    output wire [5:0]   arch_payload_index,
+    output wire [4:0]   arch_result_index
 );
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03;
     localparam [2:0] S_IDLE = 3'd0, S_CLEAR = 3'd1,
@@ -50,6 +54,8 @@ module lsc1_stream_adapter (
     );
 
     assign busy = state != S_IDLE;
+    assign arch_state = state; assign arch_operation = saved_operation;
+    assign arch_payload_index = payload_index; assign arch_result_index = result_index;
 
     always @(*) begin
         core_rx_valid = 1'b0;

@@ -1,0 +1,6 @@
+read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv formal/lsc1_packet_frontend_arch_reset_idle.sv
+prep -top lsc1_packet_frontend_arch_reset_idle
+flatten
+opt
+select -module lsc1_packet_frontend_arch_reset_idle
+sat -seq 3 -prove-asserts -set-assumes -set-init-zero

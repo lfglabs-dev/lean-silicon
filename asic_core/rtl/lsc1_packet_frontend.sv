@@ -15,7 +15,59 @@ module lsc1_packet_frontend (
     input  wire       tx_ready,
     output wire       busy,
     output reg        fault,
-    output reg        done_pulse
+    output reg        done_pulse,
+
+    // Registered architectural-state observation interface.  These signals
+    // deliberately expose state at the clock boundary; they do not alter the
+    // packet protocol.  The field-level contract is in
+    // formal/lsc1_packet_frontend_arch_state_map.json.
+    output wire [3:0]   arch_phase,
+    output wire         arch_parser_busy,
+    output wire [2:0]   arch_parser_phase,
+    output wire [2:0]   arch_parser_header_index,
+    output wire [15:0]  arch_parser_body_index,
+    output wire [15:0]  arch_parser_declared_length,
+    output wire [7:0]   arch_parser_version,
+    output wire [7:0]   arch_parser_opcode,
+    output wire [7:0]   arch_parser_flags,
+    output wire [31:0]  arch_parser_crc,
+    output wire [31:0]  arch_parser_received_crc,
+    output wire         arch_frame_valid,
+    output wire [7:0]   arch_frame_opcode,
+    output wire [15:0]  arch_frame_length,
+    output wire [2047:0] arch_frame_payload,
+    output wire         arch_rx_fault_valid,
+    output wire [7:0]   arch_rx_fault_status,
+    output wire         arch_result_pending,
+    output wire [31:0]  arch_staged_txn_id,
+    output wire [31:0]  arch_staged_next_pc,
+    output wire [31:0]  arch_staged_next_fp,
+    output wire [31:0]  arch_staged_result_crc,
+    output wire         arch_state_valid,
+    output wire [31:0]  arch_committed_pc,
+    output wire [31:0]  arch_committed_fp,
+    output wire [31:0]  arch_retire_seq,
+    output wire [7:0]   arch_active_profile,
+    output wire [7:0]   arch_last_status,
+    output wire [7:0]   arch_last_fault,
+    output wire         arch_tx_busy,
+    output wire [15:0]  arch_tx_index,
+    output wire [15:0]  arch_tx_length,
+    output wire [7:0]   arch_tx_status,
+    output wire [543:0] arch_tx_payload,
+    output wire [31:0]  arch_tx_payload_crc,
+    output wire         arch_alu_busy,
+    output wire [2:0]   arch_alu_phase,
+    output wire [7:0]   arch_alu_operation,
+    output wire [5:0]   arch_alu_payload_index,
+    output wire [4:0]   arch_alu_result_index,
+    output wire [127:0] arch_alu_result,
+    output wire         arch_encoder_busy,
+    output wire [4:0]   arch_encoder_bit_index,
+    output wire [15:0]  arch_encoder_index,
+    output wire [127:0] arch_encoder_result,
+    output wire         arch_fault,
+    output wire         arch_done_pulse
 );
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03,
                      OP_DEREF_CELL = 8'h04, OP_DEREF_PC = 8'h05,
@@ -46,12 +98,19 @@ module lsc1_packet_frontend (
     wire frame_valid, rx_fault_valid;
     wire parser_rx_ready;
     wire rx_busy;
+    wire [2:0] parser_arch_state, parser_arch_header_index;
+    wire [15:0] parser_arch_body_index, parser_arch_declared_length;
+    wire [7:0] parser_arch_version, parser_arch_opcode, parser_arch_flags;
+    wire [31:0] parser_arch_crc, parser_arch_received_crc;
     wire [7:0] frame_opcode, rx_fault_status;
     wire [15:0] frame_length;
     wire [2047:0] frame_payload;
     wire tx_busy;
     wire tx_done;
     wire [31:0] tx_payload_crc;
+    wire [15:0] tx_arch_index, tx_arch_length;
+    wire [7:0] tx_arch_status;
+    wire [543:0] tx_arch_payload;
     reg tx_start;
     reg [7:0] tx_status;
     reg [15:0] tx_length;
@@ -63,10 +122,16 @@ module lsc1_packet_frontend (
     reg [127:0] alu_operand_a, alu_operand_b;
     wire alu_busy, alu_done, alu_fault;
     wire [127:0] alu_result;
+    wire [2:0] alu_arch_state;
+    wire [7:0] alu_arch_operation;
+    wire [5:0] alu_arch_payload_index;
+    wire [4:0] alu_arch_result_index;
     reg encoder_start;
     reg [15:0] encoder_index;
     wire encoder_busy, encoder_done, encoder_fault;
     wire [127:0] encoder_result;
+    wire [4:0] encoder_arch_bit_index;
+    wire [15:0] encoder_arch_saved_index;
     wire lane_enable = !tx_busy && !tx_start &&
                        compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
@@ -88,7 +153,11 @@ module lsc1_packet_frontend (
         .frame_opcode(frame_opcode), .frame_length(frame_length),
         .frame_payload(frame_payload),
         .fault_valid(rx_fault_valid), .fault_status(rx_fault_status),
-        .busy(rx_busy)
+        .busy(rx_busy), .arch_state(parser_arch_state),
+        .arch_header_index(parser_arch_header_index), .arch_body_index(parser_arch_body_index),
+        .arch_declared_length(parser_arch_declared_length), .arch_version(parser_arch_version),
+        .arch_opcode(parser_arch_opcode), .arch_flags(parser_arch_flags),
+        .arch_crc(parser_arch_crc), .arch_received_crc(parser_arch_received_crc)
     );
 
     lsc1_packet_tx transmitter (
@@ -96,25 +165,81 @@ module lsc1_packet_frontend (
         .start(tx_start), .status(tx_status), .payload_length(tx_length),
         .payload(tx_payload), .busy(tx_busy), .done_pulse(tx_done),
         .payload_crc(tx_payload_crc),
-        .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready)
+        .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready),
+        .arch_index(tx_arch_index), .arch_length(tx_arch_length),
+        .arch_status(tx_arch_status), .arch_payload(tx_arch_payload)
     );
 
     lsc1_stream_adapter adapter (
         .clk(clk), .rst_n(rst_n), .abort(abort), .start(alu_start),
         .operation(alu_operation), .operand_a(alu_operand_a),
         .operand_b(alu_operand_b), .busy(alu_busy),
-        .done_pulse(alu_done), .fault(alu_fault), .result(alu_result)
+        .done_pulse(alu_done), .fault(alu_fault), .result(alu_result),
+        .arch_state(alu_arch_state), .arch_operation(alu_arch_operation),
+        .arch_payload_index(alu_arch_payload_index), .arch_result_index(alu_arch_result_index)
     );
 
     lsc1_field_encoder field_encoder (
         .clk(clk), .rst_n(rst_n), .abort(abort), .start(encoder_start),
         .index(encoder_index), .busy(encoder_busy), .done_pulse(encoder_done),
-        .fault(encoder_fault), .result(encoder_result)
+        .fault(encoder_fault), .result(encoder_result),
+        .arch_bit_index(encoder_arch_bit_index), .arch_saved_index(encoder_arch_saved_index)
     );
 
     assign rx_ready = parser_rx_ready && lane_enable;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
+
+    // R(rtl_state, arch_state): every architectural field below is a direct
+    // observation of a registered RTL field (or a documented output function
+    // of such fields).  No symbolic bridge or assumed cutpoint is used.
+    assign arch_phase = compute_state;
+    assign arch_parser_busy = rx_busy;
+    assign arch_parser_phase = parser_arch_state;
+    assign arch_parser_header_index = parser_arch_header_index;
+    assign arch_parser_body_index = parser_arch_body_index;
+    assign arch_parser_declared_length = parser_arch_declared_length;
+    assign arch_parser_version = parser_arch_version;
+    assign arch_parser_opcode = parser_arch_opcode;
+    assign arch_parser_flags = parser_arch_flags;
+    assign arch_parser_crc = parser_arch_crc;
+    assign arch_parser_received_crc = parser_arch_received_crc;
+    assign arch_frame_valid = frame_valid;
+    assign arch_frame_opcode = frame_opcode;
+    assign arch_frame_length = frame_length;
+    assign arch_frame_payload = frame_payload;
+    assign arch_rx_fault_valid = rx_fault_valid;
+    assign arch_rx_fault_status = rx_fault_status;
+    assign arch_result_pending = result_pending;
+    assign arch_staged_txn_id = staged_txn_id;
+    assign arch_staged_next_pc = staged_next_pc;
+    assign arch_staged_next_fp = staged_next_fp;
+    assign arch_staged_result_crc = staged_result_crc;
+    assign arch_state_valid = state_valid;
+    assign arch_committed_pc = committed_pc;
+    assign arch_committed_fp = committed_fp;
+    assign arch_retire_seq = retire_seq;
+    assign arch_active_profile = active_profile;
+    assign arch_last_status = last_status;
+    assign arch_last_fault = last_fault;
+    assign arch_tx_busy = tx_busy;
+    assign arch_tx_index = tx_arch_index;
+    assign arch_tx_length = tx_arch_length;
+    assign arch_tx_status = tx_arch_status;
+    assign arch_tx_payload = tx_arch_payload;
+    assign arch_tx_payload_crc = tx_payload_crc;
+    assign arch_alu_busy = alu_busy;
+    assign arch_alu_phase = alu_arch_state;
+    assign arch_alu_operation = alu_arch_operation;
+    assign arch_alu_payload_index = alu_arch_payload_index;
+    assign arch_alu_result_index = alu_arch_result_index;
+    assign arch_alu_result = alu_result;
+    assign arch_encoder_busy = encoder_busy;
+    assign arch_encoder_bit_index = encoder_arch_bit_index;
+    assign arch_encoder_index = encoder_arch_saved_index;
+    assign arch_encoder_result = encoder_result;
+    assign arch_fault = fault;
+    assign arch_done_pulse = done_pulse;
 
     task automatic emit_fault;
         input [7:0] status;
