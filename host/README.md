@@ -11,11 +11,15 @@ the upstream comparison.
 | `memory.py` | write-once memory, pointer map, deferred state, inverse witnesses |
 | `lean_compiler_adapter.py` | loads and validates an exported program artifact |
 | `runtime.py` | prepares, drives, retires and applies one transaction per instruction |
+| `blake3_service.py` | transport-neutral schema, epoch guard and compression adapter |
 | `fixtures/` | a zkDSL source and the artifact compiled from it by the frozen upstream |
 
 This package consumes the transaction protocol. It does not define wire
 formats, opcodes, status codes or profiles, and must not change them.
 
 `SET_CONSTANT`, `XOR`, `MUL_NATIVE`, `DEREF` and `JUMP` are integrated in the
-host runtime. `BLAKE3` raises `UnsupportedCapability` naming the missing host
-service.
+host runtime. `BLAKE3` program execution still raises `UnsupportedCapability`
+naming the missing compiler/runtime integration. The transport-independent
+service codecs, official-library compression adapter, epoch binding, and model
+tests are available in `host/blake3_service.py`; they intentionally do not
+claim a production transport or RTL service path.
