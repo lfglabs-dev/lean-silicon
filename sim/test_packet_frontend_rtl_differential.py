@@ -76,7 +76,11 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
 
     def test_seeded_set_xor_mul_and_frame_faults(self) -> None:
         randomizer = random.Random(0x4C534331)
-        frames: list[protocol.RequestFrame] = [protocol.build_status_query()]
+        frames: list[protocol.RequestFrame] = [
+            protocol.build_status_query(),
+            # Phase-B's advertised profile.
+            protocol.build_negotiate(profile=protocol.Profile.INTERPRETER_COMPAT),
+        ]
         for txn_id in range(1, 7):
             left = randomizer.getrandbits(128)
             right = randomizer.getrandbits(128)

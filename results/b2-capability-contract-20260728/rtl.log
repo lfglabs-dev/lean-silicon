@@ -1,0 +1,31 @@
+make: Entering directory '/workspaces/mission-ce702ac6/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_lsc1_packet_frontend.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+tb_lsc1_packet_frontend.sv:234: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:234: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:264: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:264: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:309: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:309: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:325: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:325: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:389: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:389: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:399: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:399: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:417: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:417: warning: @* is sensitive to all 256 words in array 'response'.
+vvp tb_lsc1_packet_frontend.vvp
+PASS: LSC-1 Phase-3 packet frontend adversarial test
+tb_lsc1_packet_frontend.sv:426: $finish called at 44410000 (1ps)
+make: Leaving directory '/workspaces/mission-ce702ac6/lean-silicon/test/packet_frontend'

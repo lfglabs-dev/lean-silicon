@@ -6,7 +6,7 @@
 | MinCore arithmetic seed | historical/exercised seed | existing simulation/formal suites |
 | v1 transaction protocol | specified and executably modelled | `docs/LSC1_TRANSACTION_PROTOCOL.md`, `sim/lsc1_transaction.py` |
 | Lean v1 packet/transaction foundation | protocol-sized request/response round trips, request validation precedence, current-state index-range rejection, atomic staging, abort/reset, matching retirement and exactly-once behavior proved for a pure functional model | `lean/LeanVMBMinCore/{Packet,Transaction}.lean`; byte-stream/per-opcode decoding, instruction/next-state validation, CRC-32 instantiation, service states, and RTL/oracle refinement remain open |
-| v1 scalar packet executor | SET/XOR/MUL/DEREF/JUMP implemented in RTL; BLAKE3 service pending | `asic_core/rtl/lsc1_packet_frontend.sv`, RTL differential tests |
+| v1 scalar packet executor | Phase-B advertises interpreter-compatible only (`0x00000002`): SET/XOR/MUL/DEREF/JUMP implemented in RTL; FORWARD_ONLY and BLAKE3 service are not advertised | `asic_core/rtl/lsc1_packet_frontend.sv`, RTL differential tests |
 | Host runtime, SET/XOR/MUL/DEREF/JUMP transactions | driven against the executable endpoint; frozen fixture reaches full `MATCH` | `docs/HOST_RUNTIME.md`, `host/`, `sim/test_host_runtime.py` |
 | Host runtime, BLAKE3 | schema/model adapter prerequisites tested; compiler/runtime and production transport remain explicit unsupported paths | `host/blake3_service.py`, `sim/test_blake3_service.py` |
 | lean_compiler integration | artifact exported from the frozen compiler; `hints`/`main_frame`/`witness`/`trace` are `pub(crate)` upstream | `tools/lean_compiler_export.py`, `docs/HOST_RUNTIME.md` section 4 |

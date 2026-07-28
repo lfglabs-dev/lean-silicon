@@ -1,0 +1,1 @@
+timeout 900s yosys: read RTL; rename top gold; read generated netlist; rename top gate; proc; memory; opt; equiv_make gold gate equiv; hierarchy -top equiv; equiv_simple; equiv_induct -seq 4; equiv_status -assert

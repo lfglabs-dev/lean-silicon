@@ -183,7 +183,7 @@ module tb_lsc1_packet_frontend;
         rst_n = 1;
         repeat (2) @(posedge clk);
 
-        // Negotiate the only profile this integrated RTL currently advertises.
+        // Phase-B advertises and accepts interpreter-compatible only.
         clear_payload();
         payload[0] = 1; payload[1] = 1; payload[2] = 1;
         send_frame(1, 8'h10, 0, 7, 0);
@@ -197,6 +197,12 @@ module tb_lsc1_packet_frontend;
             response[17] !== 8'h53 || response[18] !== 8'h4c)
             $fatal(1, "NEGOTIATE capability payload mismatch");
         wait_response(8'h00);
+
+        // A recognized but unadvertised profile must not become active.
+        clear_payload();
+        payload[0] = 1; payload[1] = 1; payload[2] = 0;
+        send_frame(1, 8'h10, 0, 7, 0);
+        wait_response(8'h86);
 
         // STATUS_QUERY is a non-mutating packet response.
         clear_payload();

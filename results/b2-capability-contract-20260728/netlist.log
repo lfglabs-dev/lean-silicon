@@ -1,0 +1,1328 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Running command `read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv; hierarchy -check -top lsc1_packet_frontend; proc; memory; flatten; opt; check; write_verilog -noattr results/b2-capability-contract-20260728/lsc1_packet_frontend.netlist.v; stat' --
+
+1. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_rx.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_rx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_rx'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_tx.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_tx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_tx'.
+Successfully finished Verilog frontend.
+
+3. Executing Verilog-2005 frontend: asic_core/rtl/gf2n_mul_bitstream.sv
+Parsing SystemVerilog input from `asic_core/rtl/gf2n_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf2n_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+4. Executing Verilog-2005 frontend: asic_core/rtl/gf128_mul_bitstream.sv
+Parsing SystemVerilog input from `asic_core/rtl/gf128_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf128_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+5. Executing Verilog-2005 frontend: asic_core/rtl/leanvm_b_stream_alu.sv
+Parsing SystemVerilog input from `asic_core/rtl/leanvm_b_stream_alu.sv' to AST representation.
+Generating RTLIL representation for module `\leanvm_b_stream_alu'.
+Successfully finished Verilog frontend.
+
+6. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_stream_adapter.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_stream_adapter.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_stream_adapter'.
+Successfully finished Verilog frontend.
+
+7. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_field_encoder.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_field_encoder.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_field_encoder'.
+Successfully finished Verilog frontend.
+
+8. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_frontend.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_frontend.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_frontend'.
+Successfully finished Verilog frontend.
+
+9. Executing HIERARCHY pass (managing design hierarchy).
+
+9.1. Analyzing design hierarchy..
+Top module:  \lsc1_packet_frontend
+Used module:     \lsc1_field_encoder
+Used module:         \lsc1_stream_adapter
+Used module:             \leanvm_b_stream_alu
+Used module:                 \gf128_mul_bitstream
+Used module:                     \gf2n_mul_bitstream
+Used module:     \lsc1_packet_tx
+Used module:     \lsc1_packet_rx
+Parameter \WIDTH = 128
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000111
+
+9.2. Executing AST frontend in derive mode using pre-parsed AST for module `\gf2n_mul_bitstream'.
+Parameter \WIDTH = 128
+Parameter \BYTE_BITS = 8
+Parameter \MODULUS_LOW = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000111
+Generating RTLIL representation for module `$paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream'.
+
+9.3. Analyzing design hierarchy..
+Top module:  \lsc1_packet_frontend
+Used module:     \lsc1_field_encoder
+Used module:         \lsc1_stream_adapter
+Used module:             \leanvm_b_stream_alu
+Used module:                 \gf128_mul_bitstream
+Used module:                     $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+Used module:     \lsc1_packet_tx
+Used module:     \lsc1_packet_rx
+
+9.4. Analyzing design hierarchy..
+Top module:  \lsc1_packet_frontend
+Used module:     \lsc1_field_encoder
+Used module:         \lsc1_stream_adapter
+Used module:             \leanvm_b_stream_alu
+Used module:                 \gf128_mul_bitstream
+Used module:                     $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream
+Used module:     \lsc1_packet_tx
+Used module:     \lsc1_packet_rx
+Removing unused module `\gf2n_mul_bitstream'.
+Removed 1 unused modules.
+
+10. Executing PROC pass (convert processes to netlists).
+
+10.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 10 empty switches in `\lsc1_packet_frontend.$proc$asic_core/rtl/lsc1_packet_frontend.sv:269$855'.
+Cleaned up 10 empty switches.
+
+10.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 109 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_frontend.sv:269$855 in module lsc1_packet_frontend.
+Marked 5 switch rules as full_case in process $proc$asic_core/rtl/lsc1_field_encoder.sv:38$755 in module lsc1_field_encoder.
+Marked 10 switch rules as full_case in process $proc$asic_core/rtl/lsc1_stream_adapter.sv:83$671 in module lsc1_stream_adapter.
+Marked 6 switch rules as full_case in process $proc$asic_core/rtl/lsc1_stream_adapter.sv:54$646 in module lsc1_stream_adapter.
+Marked 12 switch rules as full_case in process $proc$asic_core/rtl/leanvm_b_stream_alu.sv:214$615 in module leanvm_b_stream_alu.
+Marked 3 switch rules as full_case in process $proc$asic_core/rtl/leanvm_b_stream_alu.sv:118$576 in module leanvm_b_stream_alu.
+Marked 5 switch rules as full_case in process $proc$asic_core/rtl/gf2n_mul_bitstream.sv:72$3172 in module $paramod$c8ea1368b9929af0c8d66661afb8ae1783e33452\gf2n_mul_bitstream.
+Marked 7 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_tx.sv:62$258 in module lsc1_packet_tx.
+Marked 7 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_tx.sv:44$244 in module lsc1_packet_tx.
+Marked 11 switch rules as full_case in process $proc$asic_core/rtl/lsc1_packet_rx.sv:62$23 in module lsc1_packet_rx.
+Removed a total of 0 dead cases.
+
+10.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 8 redundant assignments.
+Promoted 206 assignments to connections.
+
+10.4. Executing PROC_INIT pass (extract init attributes).
+
+10.5. Executing PROC_ARST pass (detect async resets in processes).
+
+10.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~196 debug messages>
+
+10.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\lsc1_packet_frontend.$proc$asic_core/rtl/lsc1_packet_frontend.sv:269$855'.
+     1/3417: $68\result_bytes[215:152] [63:32]
+     2/3417: $68\result_bytes[215:152] [31:0]
+     3/3417: $64\result_length[31:0]
+     4/3417: $67\result_bytes[279:104] [111:80]
+     5/3417: $67\result_bytes[279:104] [47:40]
+     6/3417: $67\result_bytes[279:104] [15:8]
+     7/3417: $67\result_bytes[279:104] [143:112]
+     8/3417: $63\result_length[31:0]
+     9/3417: $67\result_bytes[279:104] [79:72]
+    10/3417: $67\result_bytes[279:104] [71:48]
+    11/3417: $67\result_bytes[279:104] [39:16]
+    12/3417: $67\result_bytes[279:104] [175:144]
+    13/3417: $67\result_bytes[279:104] [7:0]
+    14/3417: $65\result_bytes[375:104] [175:168]
+    15/3417: $66\result_bytes[375:312] [31:0]
+    16/3417: $62\result_length[31:0]
+    17/3417: $65\result_bytes[375:104] [207:176]
+    18/3417: $61\result_length[31:0]
+    19/3417: $66\result_bytes[375:312] [63:32]
+    20/3417: $65\result_bytes[375:104] [167:160]
+    21/3417: $65\result_bytes[375:104] [159:32]
+    22/3417: $65\result_bytes[375:104] [31:0]
+    23/3417: $65\result_bytes[375:104] [271:208]
+    24/3417: $64\result_bytes[543:0] [375:104]
+    25/3417: $64\result_bytes[543:0] [103:96]
+    26/3417: $64\result_bytes[543:0] [95:64]
+    27/3417: $64\result_bytes[543:0] [63:32]
+    28/3417: $64\result_bytes[543:0] [31:0]
+    29/3417: $64\result_bytes[543:0] [543:376]
+    30/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$3160 [31:0]
+    31/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$3160 [39:32]
+    32/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$3159
+    33/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$3158
+    34/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$3157
+    35/3417: $29\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$3161
+    36/3417: $29\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$3160 [543:40]
+    37/3417: $60\result_length[31:0]
+    38/3417: $28\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$3155
+    39/3417: $28\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$3154
+    40/3417: $28\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$3153
+    41/3417: $28\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$3152
+    42/3417: $28\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$3151
+    43/3417: $63\result_bytes[543:0]
+    44/3417: $59\result_length[31:0]
+    45/3417: $50\decision_deferred[0:0]
+    46/3417: $49\decision_deferred[0:0]
+    47/3417: $48\decision_deferred[0:0]
+    48/3417: $58\decision_fault[7:0]
+    49/3417: $58\decision_ok[0:0]
+    50/3417: $47\decision_deferred[0:0]
+    51/3417: $57\decision_fault[7:0]
+    52/3417: $57\decision_ok[0:0]
+    53/3417: $46\decision_deferred[0:0]
+    54/3417: $45\decision_deferred[0:0]
+    55/3417: $56\decision_ok[0:0]
+    56/3417: $56\decision_fault[7:0]
+    57/3417: $44\decision_deferred[0:0]
+    58/3417: $55\decision_ok[0:0]
+    59/3417: $55\decision_fault[7:0]
+    60/3417: $54\decision_fault[7:0]
+    61/3417: $54\decision_ok[0:0]
+    62/3417: $53\decision_fault[7:0]
+    63/3417: $53\decision_ok[0:0]
+    64/3417: $38\addr_c[31:0]
+    65/3417: $38\addr_b[31:0]
+    66/3417: $42\addr_a[31:0]
+    67/3417: $52\decision_fault[7:0]
+    68/3417: $52\decision_ok[0:0]
+    69/3417: $37\addr_c[31:0]
+    70/3417: $37\addr_b[31:0]
+    71/3417: $41\addr_a[31:0]
+    72/3417: $43\decision_deferred[0:0]
+    73/3417: $51\decision_ok[0:0]
+    74/3417: $51\decision_fault[7:0]
+    75/3417: $33\solved_b[127:0]
+    76/3417: $33\solved_a[127:0]
+    77/3417: $36\addr_c[31:0]
+    78/3417: $36\addr_b[31:0]
+    79/3417: $40\addr_a[31:0]
+    80/3417: $31\inv_value[127:0]
+    81/3417: $31\inv_present[7:0]
+    82/3417: $31\val_c[127:0]
+    83/3417: $31\pres_c[7:0]
+    84/3417: $31\val_b[127:0]
+    85/3417: $31\pres_b[7:0]
+    86/3417: $31\val_a[127:0]
+    87/3417: $31\pres_a[7:0]
+    88/3417: $31\off_c[31:0]
+    89/3417: $31\off_b[31:0]
+    90/3417: $31\off_a[31:0]
+    91/3417: $38\decision_detail[7:0]
+    92/3417: $50\decision_fault[7:0]
+    93/3417: $50\decision_ok[0:0]
+    94/3417: $37\decision_detail[7:0]
+    95/3417: $49\decision_fault[7:0]
+    96/3417: $49\decision_ok[0:0]
+    97/3417: $48\decision_fault[7:0]
+    98/3417: $48\decision_ok[0:0]
+    99/3417: $42\decision_deferred[0:0]
+   100/3417: $47\decision_fault[7:0]
+   101/3417: $47\decision_ok[0:0]
+   102/3417: $41\decision_deferred[0:0]
+   103/3417: $40\decision_deferred[0:0]
+   104/3417: $46\decision_ok[0:0]
+   105/3417: $46\decision_fault[7:0]
+   106/3417: $36\decision_detail[7:0]
+   107/3417: $35\decision_detail[7:0]
+   108/3417: $45\decision_fault[7:0]
+   109/3417: $45\decision_ok[0:0]
+   110/3417: $39\decision_deferred[0:0]
+   111/3417: $34\decision_detail[7:0]
+   112/3417: $44\decision_fault[7:0]
+   113/3417: $44\decision_ok[0:0]
+   114/3417: $38\decision_deferred[0:0]
+   115/3417: $43\decision_fault[7:0]
+   116/3417: $43\decision_ok[0:0]
+   117/3417: $37\decision_deferred[0:0]
+   118/3417: $33\decision_detail[7:0]
+   119/3417: $42\decision_fault[7:0]
+   120/3417: $42\decision_ok[0:0]
+   121/3417: $36\decision_deferred[0:0]
+   122/3417: $32\decision_detail[7:0]
+   123/3417: $35\addr_c[31:0]
+   124/3417: $35\addr_b[31:0]
+   125/3417: $39\addr_a[31:0]
+   126/3417: $41\decision_fault[7:0]
+   127/3417: $41\decision_ok[0:0]
+   128/3417: $35\decision_deferred[0:0]
+   129/3417: $31\decision_detail[7:0]
+   130/3417: $34\addr_c[31:0]
+   131/3417: $34\addr_b[31:0]
+   132/3417: $38\addr_a[31:0]
+   133/3417: $34\decision_deferred[0:0]
+   134/3417: $40\decision_ok[0:0]
+   135/3417: $30\decision_detail[7:0]
+   136/3417: $40\decision_fault[7:0]
+   137/3417: $33\addr_c[31:0]
+   138/3417: $33\addr_b[31:0]
+   139/3417: $37\addr_a[31:0]
+   140/3417: $30\inv_value[127:0]
+   141/3417: $30\inv_present[7:0]
+   142/3417: $30\proposed_fp[31:0]
+   143/3417: $30\proposed_pc[31:0]
+   144/3417: $30\taken_proposal[7:0]
+   145/3417: $30\val_c[127:0]
+   146/3417: $30\pres_c[7:0]
+   147/3417: $30\val_b[127:0]
+   148/3417: $30\pres_b[7:0]
+   149/3417: $30\val_a[127:0]
+   150/3417: $30\pres_a[7:0]
+   151/3417: $30\off_c[31:0]
+   152/3417: $30\off_b[31:0]
+   153/3417: $30\off_a[31:0]
+   154/3417: $32\solved_b[127:0]
+   155/3417: $32\solved_a[127:0]
+   156/3417: $39\decision_fault[7:0]
+   157/3417: $39\decision_ok[0:0]
+   158/3417: $33\decision_deferred[0:0]
+   159/3417: $38\decision_fault[7:0]
+   160/3417: $38\decision_ok[0:0]
+   161/3417: $32\decision_deferred[0:0]
+   162/3417: $32\addr_c[31:0]
+   163/3417: $32\addr_b[31:0]
+   164/3417: $36\addr_a[31:0]
+   165/3417: $37\decision_fault[7:0]
+   166/3417: $37\decision_ok[0:0]
+   167/3417: $31\decision_deferred[0:0]
+   168/3417: $31\addr_c[31:0]
+   169/3417: $31\addr_b[31:0]
+   170/3417: $35\addr_a[31:0]
+   171/3417: $36\decision_fault[7:0]
+   172/3417: $36\decision_ok[0:0]
+   173/3417: $30\decision_deferred[0:0]
+   174/3417: $30\addr_c[31:0]
+   175/3417: $30\addr_b[31:0]
+   176/3417: $34\addr_a[31:0]
+   177/3417: $29\decision_deferred[0:0]
+   178/3417: $35\decision_ok[0:0]
+   179/3417: $35\decision_fault[7:0]
+   180/3417: $29\addr_c[31:0]
+   181/3417: $29\addr_b[31:0]
+   182/3417: $33\addr_a[31:0]
+   183/3417: $29\val_c[127:0]
+   184/3417: $29\pres_c[7:0]
+   185/3417: $29\val_b[127:0]
+   186/3417: $29\pres_b[7:0]
+   187/3417: $29\base_index[31:0]
+   188/3417: $29\val_a[127:0]
+   189/3417: $29\pres_a[7:0]
+   190/3417: $29\off_c[31:0]
+   191/3417: $29\off_b[31:0]
+   192/3417: $29\off_a[31:0]
+   193/3417: $29\decision_detail[7:0]
+   194/3417: $31\solved_b[127:0]
+   195/3417: $31\solved_a[127:0]
+   196/3417: $29\inv_value[127:0]
+   197/3417: $29\taken_proposal[7:0]
+   198/3417: $29\inv_present[7:0]
+   199/3417: $29\proposed_fp[31:0]
+   200/3417: $29\proposed_pc[31:0]
+   201/3417: $44\n_writes[31:0]
+   202/3417: $44\write_value[127:0]
+   203/3417: $44\write_address[31:0]
+   204/3417: $32\addr_a[31:0]
+   205/3417: $34\decision_fault[7:0]
+   206/3417: $34\decision_ok[0:0]
+   207/3417: $43\write_value[127:0]
+   208/3417: $43\write_address[31:0]
+   209/3417: $31\addr_a[31:0]
+   210/3417: $43\n_writes[31:0]
+   211/3417: $33\decision_fault[7:0]
+   212/3417: $33\decision_ok[0:0]
+   213/3417: $42\write_value[127:0]
+   214/3417: $42\write_address[31:0]
+   215/3417: $30\addr_a[31:0]
+   216/3417: $42\n_writes[31:0]
+   217/3417: $32\decision_fault[7:0]
+   218/3417: $32\decision_ok[0:0]
+   219/3417: $41\write_value[127:0]
+   220/3417: $41\write_address[31:0]
+   221/3417: $29\addr_a[31:0]
+   222/3417: $41\n_writes[31:0]
+   223/3417: $28\addr_c[31:0]
+   224/3417: $28\addr_b[31:0]
+   225/3417: $28\addr_a[31:0]
+   226/3417: $31\decision_ok[0:0]
+   227/3417: $31\decision_fault[7:0]
+   228/3417: $40\write_value[127:0]
+   229/3417: $40\write_address[31:0]
+   230/3417: $40\n_writes[31:0]
+   231/3417: $28\val_a[127:0]
+   232/3417: $28\pres_a[7:0]
+   233/3417: $28\result_value[127:0]
+   234/3417: $28\off_a[31:0]
+   235/3417: $28\decision_deferred[0:0]
+   236/3417: $28\decision_detail[7:0]
+   237/3417: $30\solved_b[127:0]
+   238/3417: $30\solved_a[127:0]
+   239/3417: $28\inv_value[127:0]
+   240/3417: $28\val_c[127:0]
+   241/3417: $28\val_b[127:0]
+   242/3417: $28\taken_proposal[7:0]
+   243/3417: $28\inv_present[7:0]
+   244/3417: $28\pres_c[7:0]
+   245/3417: $28\pres_b[7:0]
+   246/3417: $28\proposed_fp[31:0]
+   247/3417: $28\proposed_pc[31:0]
+   248/3417: $28\base_index[31:0]
+   249/3417: $28\off_c[31:0]
+   250/3417: $28\off_b[31:0]
+   251/3417: $30\decision_fault[7:0]
+   252/3417: $30\decision_ok[0:0]
+   253/3417: $29\decision_fault[7:0]
+   254/3417: $29\decision_ok[0:0]
+   255/3417: $28\decision_fault[7:0]
+   256/3417: $28\decision_ok[0:0]
+   257/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2917 [543:40]
+   258/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2917 [31:0]
+   259/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2917 [39:32]
+   260/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2916
+   261/3417: $27\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2922
+   262/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2921
+   263/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2920
+   264/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2919
+   265/3417: $27\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2918
+   266/3417: $27\decision_deferred[0:0]
+   267/3417: $27\decision_ok[0:0]
+   268/3417: $27\decision_detail[7:0]
+   269/3417: $27\decision_fault[7:0]
+   270/3417: $39\write_value[127:0]
+   271/3417: $39\write_address[31:0]
+   272/3417: $62\result_bytes[543:0]
+   273/3417: $29\solved_b[127:0]
+   274/3417: $29\solved_a[127:0]
+   275/3417: $27\result_value[127:0]
+   276/3417: $27\inv_value[127:0]
+   277/3417: $27\val_c[127:0]
+   278/3417: $27\val_b[127:0]
+   279/3417: $27\val_a[127:0]
+   280/3417: $27\taken_proposal[7:0]
+   281/3417: $27\inv_present[7:0]
+   282/3417: $27\pres_c[7:0]
+   283/3417: $27\pres_b[7:0]
+   284/3417: $27\pres_a[7:0]
+   285/3417: $27\profile[7:0]
+   286/3417: $34\deferred_local[31:0]
+   287/3417: $34\deferred_target[31:0]
+   288/3417: $29\next_fp_value[31:0]
+   289/3417: $29\next_pc_value[31:0]
+   290/3417: $27\proposed_fp[31:0]
+   291/3417: $27\proposed_pc[31:0]
+   292/3417: $27\base_index[31:0]
+   293/3417: $27\addr_c[31:0]
+   294/3417: $27\addr_b[31:0]
+   295/3417: $27\addr_a[31:0]
+   296/3417: $27\off_c[31:0]
+   297/3417: $27\off_b[31:0]
+   298/3417: $27\off_a[31:0]
+   299/3417: $27\fp[31:0]
+   300/3417: $27\pc[31:0]
+   301/3417: $27\txn_id[31:0]
+   302/3417: $58\result_length[31:0]
+   303/3417: $34\n_deferred[31:0]
+   304/3417: $39\n_writes[31:0]
+   305/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2908 [543:40]
+   306/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2908 [31:0]
+   307/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2908 [39:32]
+   308/3417: $26\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2915
+   309/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2914
+   310/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2913
+   311/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2912
+   312/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2911
+   313/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2910
+   314/3417: $26\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2909
+   315/3417: $26\decision_deferred[0:0]
+   316/3417: $26\decision_ok[0:0]
+   317/3417: $26\decision_detail[7:0]
+   318/3417: $26\decision_fault[7:0]
+   319/3417: $38\write_value[127:0]
+   320/3417: $38\write_address[31:0]
+   321/3417: $61\result_bytes[543:0]
+   322/3417: $28\solved_b[127:0]
+   323/3417: $28\solved_a[127:0]
+   324/3417: $26\result_value[127:0]
+   325/3417: $26\inv_value[127:0]
+   326/3417: $26\val_c[127:0]
+   327/3417: $26\val_b[127:0]
+   328/3417: $26\val_a[127:0]
+   329/3417: $26\taken_proposal[7:0]
+   330/3417: $26\inv_present[7:0]
+   331/3417: $26\pres_c[7:0]
+   332/3417: $26\pres_b[7:0]
+   333/3417: $26\pres_a[7:0]
+   334/3417: $26\profile[7:0]
+   335/3417: $33\deferred_local[31:0]
+   336/3417: $33\deferred_target[31:0]
+   337/3417: $28\next_fp_value[31:0]
+   338/3417: $28\next_pc_value[31:0]
+   339/3417: $26\proposed_fp[31:0]
+   340/3417: $26\proposed_pc[31:0]
+   341/3417: $26\base_index[31:0]
+   342/3417: $26\addr_c[31:0]
+   343/3417: $26\addr_b[31:0]
+   344/3417: $26\addr_a[31:0]
+   345/3417: $26\off_c[31:0]
+   346/3417: $26\off_b[31:0]
+   347/3417: $26\off_a[31:0]
+   348/3417: $26\fp[31:0]
+   349/3417: $26\pc[31:0]
+   350/3417: $26\txn_id[31:0]
+   351/3417: $57\result_length[31:0]
+   352/3417: $33\n_deferred[31:0]
+   353/3417: $38\n_writes[31:0]
+   354/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2858 [543:40]
+   355/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2858 [31:0]
+   356/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2858 [39:32]
+   357/3417: $25\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2878
+   358/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2877
+   359/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2876
+   360/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2875
+   361/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2874
+   362/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2873
+   363/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2872
+   364/3417: $25\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2871
+   365/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2870
+   366/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2869
+   367/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2868
+   368/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2867
+   369/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2866
+   370/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2865
+   371/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2864
+   372/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2863
+   373/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2862
+   374/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2861
+   375/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2860
+   376/3417: $25\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2859
+   377/3417: $25\decision_deferred[0:0]
+   378/3417: $25\decision_ok[0:0]
+   379/3417: $25\decision_detail[7:0]
+   380/3417: $25\decision_fault[7:0]
+   381/3417: $37\write_value[127:0]
+   382/3417: $37\write_address[31:0]
+   383/3417: $60\result_bytes[543:0]
+   384/3417: $27\solved_b[127:0]
+   385/3417: $27\solved_a[127:0]
+   386/3417: $25\result_value[127:0]
+   387/3417: $25\inv_value[127:0]
+   388/3417: $25\val_c[127:0]
+   389/3417: $25\val_b[127:0]
+   390/3417: $25\val_a[127:0]
+   391/3417: $25\taken_proposal[7:0]
+   392/3417: $25\inv_present[7:0]
+   393/3417: $25\pres_c[7:0]
+   394/3417: $25\pres_b[7:0]
+   395/3417: $25\pres_a[7:0]
+   396/3417: $25\profile[7:0]
+   397/3417: $32\deferred_local[31:0]
+   398/3417: $32\deferred_target[31:0]
+   399/3417: $27\next_fp_value[31:0]
+   400/3417: $27\next_pc_value[31:0]
+   401/3417: $25\proposed_fp[31:0]
+   402/3417: $25\proposed_pc[31:0]
+   403/3417: $25\base_index[31:0]
+   404/3417: $25\addr_c[31:0]
+   405/3417: $25\addr_b[31:0]
+   406/3417: $25\addr_a[31:0]
+   407/3417: $25\off_c[31:0]
+   408/3417: $25\off_b[31:0]
+   409/3417: $25\off_a[31:0]
+   410/3417: $25\fp[31:0]
+   411/3417: $25\pc[31:0]
+   412/3417: $25\txn_id[31:0]
+   413/3417: $56\result_length[31:0]
+   414/3417: $32\n_deferred[31:0]
+   415/3417: $37\n_writes[31:0]
+   416/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2833 [543:40]
+   417/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2833 [31:0]
+   418/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2833 [39:32]
+   419/3417: $24\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2854
+   420/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2853
+   421/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2852
+   422/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2851
+   423/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2850
+   424/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2849
+   425/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2848
+   426/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2847
+   427/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2846
+   428/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2845
+   429/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2844
+   430/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2843
+   431/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2842
+   432/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2841
+   433/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2840
+   434/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2839
+   435/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2838
+   436/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2837
+   437/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2836
+   438/3417: $24\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2835
+   439/3417: $24\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2834
+   440/3417: $24\decision_deferred[0:0]
+   441/3417: $24\decision_ok[0:0]
+   442/3417: $24\decision_detail[7:0]
+   443/3417: $24\decision_fault[7:0]
+   444/3417: $36\write_value[127:0]
+   445/3417: $36\write_address[31:0]
+   446/3417: $59\result_bytes[543:0]
+   447/3417: $26\solved_b[127:0]
+   448/3417: $26\solved_a[127:0]
+   449/3417: $24\result_value[127:0]
+   450/3417: $24\inv_value[127:0]
+   451/3417: $24\val_c[127:0]
+   452/3417: $24\val_b[127:0]
+   453/3417: $24\val_a[127:0]
+   454/3417: $24\taken_proposal[7:0]
+   455/3417: $24\inv_present[7:0]
+   456/3417: $24\pres_c[7:0]
+   457/3417: $24\pres_b[7:0]
+   458/3417: $24\pres_a[7:0]
+   459/3417: $24\profile[7:0]
+   460/3417: $31\deferred_local[31:0]
+   461/3417: $31\deferred_target[31:0]
+   462/3417: $26\next_fp_value[31:0]
+   463/3417: $26\next_pc_value[31:0]
+   464/3417: $24\proposed_fp[31:0]
+   465/3417: $24\proposed_pc[31:0]
+   466/3417: $24\base_index[31:0]
+   467/3417: $24\addr_c[31:0]
+   468/3417: $24\addr_b[31:0]
+   469/3417: $24\addr_a[31:0]
+   470/3417: $24\off_c[31:0]
+   471/3417: $24\off_b[31:0]
+   472/3417: $24\off_a[31:0]
+   473/3417: $24\fp[31:0]
+   474/3417: $24\pc[31:0]
+   475/3417: $24\txn_id[31:0]
+   476/3417: $55\result_length[31:0]
+   477/3417: $31\n_deferred[31:0]
+   478/3417: $36\n_writes[31:0]
+   479/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2773 [543:40]
+   480/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2773 [31:0]
+   481/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2773 [39:32]
+   482/3417: $23\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2807
+   483/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2806
+   484/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2805
+   485/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2804
+   486/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2803
+   487/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2802
+   488/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2801
+   489/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2800
+   490/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2799
+   491/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2798
+   492/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2797
+   493/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2796
+   494/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2795
+   495/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2794
+   496/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2793
+   497/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2792
+   498/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2791
+   499/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2790
+   500/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2789
+   501/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2788
+   502/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2787
+   503/3417: $23\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2786
+   504/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2785
+   505/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2784
+   506/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2783
+   507/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2782
+   508/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2781
+   509/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2780
+   510/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2779
+   511/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2778
+   512/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2777
+   513/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2776
+   514/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2775
+   515/3417: $23\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2774
+   516/3417: $23\decision_deferred[0:0]
+   517/3417: $23\decision_ok[0:0]
+   518/3417: $23\decision_detail[7:0]
+   519/3417: $23\decision_fault[7:0]
+   520/3417: $35\write_value[127:0]
+   521/3417: $35\write_address[31:0]
+   522/3417: $58\result_bytes[543:0]
+   523/3417: $25\solved_b[127:0]
+   524/3417: $25\solved_a[127:0]
+   525/3417: $23\result_value[127:0]
+   526/3417: $23\inv_value[127:0]
+   527/3417: $23\val_c[127:0]
+   528/3417: $23\val_b[127:0]
+   529/3417: $23\val_a[127:0]
+   530/3417: $23\taken_proposal[7:0]
+   531/3417: $23\inv_present[7:0]
+   532/3417: $23\pres_c[7:0]
+   533/3417: $23\pres_b[7:0]
+   534/3417: $23\pres_a[7:0]
+   535/3417: $23\profile[7:0]
+   536/3417: $30\deferred_local[31:0]
+   537/3417: $30\deferred_target[31:0]
+   538/3417: $25\next_fp_value[31:0]
+   539/3417: $25\next_pc_value[31:0]
+   540/3417: $23\proposed_fp[31:0]
+   541/3417: $23\proposed_pc[31:0]
+   542/3417: $23\base_index[31:0]
+   543/3417: $23\addr_c[31:0]
+   544/3417: $23\addr_b[31:0]
+   545/3417: $23\addr_a[31:0]
+   546/3417: $23\off_c[31:0]
+   547/3417: $23\off_b[31:0]
+   548/3417: $23\off_a[31:0]
+   549/3417: $23\fp[31:0]
+   550/3417: $23\pc[31:0]
+   551/3417: $23\txn_id[31:0]
+   552/3417: $54\result_length[31:0]
+   553/3417: $30\n_deferred[31:0]
+   554/3417: $35\n_writes[31:0]
+   555/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2705 [543:40]
+   556/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2705 [31:0]
+   557/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2705 [39:32]
+   558/3417: $22\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2749
+   559/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2748
+   560/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2747
+   561/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2746
+   562/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2745
+   563/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2744
+   564/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2743
+   565/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2742
+   566/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2741
+   567/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2740
+   568/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2739
+   569/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2738
+   570/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2737
+   571/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2736
+   572/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2735
+   573/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2734
+   574/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2733
+   575/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2732
+   576/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2731
+   577/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2730
+   578/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2729
+   579/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2728
+   580/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2727
+   581/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2726
+   582/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2725
+   583/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2724
+   584/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2723
+   585/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2722
+   586/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2721
+   587/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2720
+   588/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2719
+   589/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2718
+   590/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2717
+   591/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2716
+   592/3417: $22\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2715
+   593/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2714
+   594/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2713
+   595/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2712
+   596/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2711
+   597/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2710
+   598/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2709
+   599/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2708
+   600/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2707
+   601/3417: $22\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2706
+   602/3417: $22\decision_deferred[0:0]
+   603/3417: $22\decision_ok[0:0]
+   604/3417: $22\decision_detail[7:0]
+   605/3417: $22\decision_fault[7:0]
+   606/3417: $34\write_value[127:0]
+   607/3417: $34\write_address[31:0]
+   608/3417: $57\result_bytes[543:0]
+   609/3417: $24\solved_b[127:0]
+   610/3417: $24\solved_a[127:0]
+   611/3417: $22\result_value[127:0]
+   612/3417: $22\inv_value[127:0]
+   613/3417: $22\val_c[127:0]
+   614/3417: $22\val_b[127:0]
+   615/3417: $22\val_a[127:0]
+   616/3417: $22\taken_proposal[7:0]
+   617/3417: $22\inv_present[7:0]
+   618/3417: $22\pres_c[7:0]
+   619/3417: $22\pres_b[7:0]
+   620/3417: $22\pres_a[7:0]
+   621/3417: $22\profile[7:0]
+   622/3417: $29\deferred_local[31:0]
+   623/3417: $29\deferred_target[31:0]
+   624/3417: $24\next_fp_value[31:0]
+   625/3417: $24\next_pc_value[31:0]
+   626/3417: $22\proposed_fp[31:0]
+   627/3417: $22\proposed_pc[31:0]
+   628/3417: $22\base_index[31:0]
+   629/3417: $22\addr_c[31:0]
+   630/3417: $22\addr_b[31:0]
+   631/3417: $22\addr_a[31:0]
+   632/3417: $22\off_c[31:0]
+   633/3417: $22\off_b[31:0]
+   634/3417: $22\off_a[31:0]
+   635/3417: $22\fp[31:0]
+   636/3417: $22\pc[31:0]
+   637/3417: $22\txn_id[31:0]
+   638/3417: $53\result_length[31:0]
+   639/3417: $29\n_deferred[31:0]
+   640/3417: $34\n_writes[31:0]
+   641/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2649 [543:40]
+   642/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2649 [31:0]
+   643/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2649 [39:32]
+   644/3417: $21\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2697
+   645/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2696
+   646/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2695
+   647/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2694
+   648/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2693
+   649/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2692
+   650/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2691
+   651/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2690
+   652/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2689
+   653/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2688
+   654/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2687
+   655/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2686
+   656/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2685
+   657/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2684
+   658/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2683
+   659/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2682
+   660/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2681
+   661/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2680
+   662/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2679
+   663/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2678
+   664/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2677
+   665/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2676
+   666/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2675
+   667/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2674
+   668/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2673
+   669/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2672
+   670/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2671
+   671/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2670
+   672/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2669
+   673/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2668
+   674/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2667
+   675/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2666
+   676/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2665
+   677/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2664
+   678/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2663
+   679/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2662
+   680/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2661
+   681/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2660
+   682/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2659
+   683/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2658
+   684/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2657
+   685/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2656
+   686/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2655
+   687/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2654
+   688/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2653
+   689/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.value[127:0]$2652
+   690/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.present[7:0]$2651
+   691/3417: $21\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.$result[0:0]$2650
+   692/3417: $21\decision_deferred[0:0]
+   693/3417: $21\decision_ok[0:0]
+   694/3417: $21\decision_detail[7:0]
+   695/3417: $21\decision_fault[7:0]
+   696/3417: $33\write_value[127:0]
+   697/3417: $33\write_address[31:0]
+   698/3417: $56\result_bytes[543:0]
+   699/3417: $23\solved_b[127:0]
+   700/3417: $23\solved_a[127:0]
+   701/3417: $21\result_value[127:0]
+   702/3417: $21\inv_value[127:0]
+   703/3417: $21\val_c[127:0]
+   704/3417: $21\val_b[127:0]
+   705/3417: $21\val_a[127:0]
+   706/3417: $21\taken_proposal[7:0]
+   707/3417: $21\inv_present[7:0]
+   708/3417: $21\pres_c[7:0]
+   709/3417: $21\pres_b[7:0]
+   710/3417: $21\pres_a[7:0]
+   711/3417: $21\profile[7:0]
+   712/3417: $28\deferred_local[31:0]
+   713/3417: $28\deferred_target[31:0]
+   714/3417: $23\next_fp_value[31:0]
+   715/3417: $23\next_pc_value[31:0]
+   716/3417: $21\proposed_fp[31:0]
+   717/3417: $21\proposed_pc[31:0]
+   718/3417: $21\base_index[31:0]
+   719/3417: $21\addr_c[31:0]
+   720/3417: $21\addr_b[31:0]
+   721/3417: $21\addr_a[31:0]
+   722/3417: $21\off_c[31:0]
+   723/3417: $21\off_b[31:0]
+   724/3417: $21\off_a[31:0]
+   725/3417: $21\fp[31:0]
+   726/3417: $21\pc[31:0]
+   727/3417: $21\txn_id[31:0]
+   728/3417: $52\result_length[31:0]
+   729/3417: $28\n_deferred[31:0]
+   730/3417: $33\n_writes[31:0]
+   731/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2598 [543:40]
+   732/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2598 [31:0]
+   733/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2598 [39:32]
+   734/3417: $20\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2647
+   735/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2646
+   736/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2645
+   737/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2644
+   738/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2643
+   739/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2642
+   740/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2641
+   741/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2640
+   742/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2639
+   743/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2638
+   744/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2637
+   745/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2636
+   746/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2635
+   747/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2634
+   748/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2633
+   749/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2632
+   750/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2631
+   751/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2630
+   752/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2629
+   753/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2628
+   754/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2627
+   755/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2626
+   756/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2625
+   757/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2624
+   758/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2623
+   759/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2622
+   760/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2621
+   761/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2620
+   762/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2619
+   763/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2618
+   764/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2617
+   765/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2616
+   766/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2615
+   767/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2614
+   768/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2613
+   769/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2612
+   770/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2611
+   771/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2610
+   772/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2609
+   773/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2608
+   774/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2607
+   775/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2606
+   776/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2605
+   777/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2604
+   778/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2603
+   779/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.value[127:0]$2602
+   780/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.present[7:0]$2601
+   781/3417: $20\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.$result[0:0]$2600
+   782/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2599
+   783/3417: $20\decision_deferred[0:0]
+   784/3417: $20\decision_ok[0:0]
+   785/3417: $20\decision_detail[7:0]
+   786/3417: $20\decision_fault[7:0]
+   787/3417: $32\write_value[127:0]
+   788/3417: $32\write_address[31:0]
+   789/3417: $55\result_bytes[543:0]
+   790/3417: $22\solved_b[127:0]
+   791/3417: $22\solved_a[127:0]
+   792/3417: $20\result_value[127:0]
+   793/3417: $20\inv_value[127:0]
+   794/3417: $20\val_c[127:0]
+   795/3417: $20\val_b[127:0]
+   796/3417: $20\val_a[127:0]
+   797/3417: $20\taken_proposal[7:0]
+   798/3417: $20\inv_present[7:0]
+   799/3417: $20\pres_c[7:0]
+   800/3417: $20\pres_b[7:0]
+   801/3417: $20\pres_a[7:0]
+   802/3417: $20\profile[7:0]
+   803/3417: $27\deferred_local[31:0]
+   804/3417: $27\deferred_target[31:0]
+   805/3417: $22\next_fp_value[31:0]
+   806/3417: $22\next_pc_value[31:0]
+   807/3417: $20\proposed_fp[31:0]
+   808/3417: $20\proposed_pc[31:0]
+   809/3417: $20\base_index[31:0]
+   810/3417: $20\addr_c[31:0]
+   811/3417: $20\addr_b[31:0]
+   812/3417: $20\addr_a[31:0]
+   813/3417: $20\off_c[31:0]
+   814/3417: $20\off_b[31:0]
+   815/3417: $20\off_a[31:0]
+   816/3417: $20\fp[31:0]
+   817/3417: $20\pc[31:0]
+   818/3417: $20\txn_id[31:0]
+   819/3417: $51\result_length[31:0]
+   820/3417: $27\n_deferred[31:0]
+   821/3417: $32\n_writes[31:0]
+   822/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.bytes[543:0]$2546 [543:40]
+   823/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.bytes[543:0]$2546 [31:0]
+   824/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.bytes[543:0]$2546 [39:32]
+   825/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.txn[31:0]$2545
+   826/3417: $19\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2596
+   827/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2595
+   828/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2594
+   829/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2593
+   830/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2592
+   831/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2591
+   832/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2590
+   833/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2589
+   834/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2588
+   835/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2587
+   836/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2586
+   837/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2585
+   838/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2584
+   839/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2583
+   840/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2582
+   841/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2581
+   842/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2580
+   843/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2579
+   844/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2578
+   845/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2577
+   846/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2576
+   847/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2575
+   848/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2574
+   849/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2573
+   850/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2572
+   851/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2571
+   852/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2570
+   853/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2569
+   854/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2568
+   855/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2567
+   856/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2566
+   857/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2565
+   858/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2564
+   859/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2563
+   860/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2562
+   861/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2561
+   862/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2560
+   863/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2559
+   864/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2558
+   865/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2557
+   866/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2556
+   867/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2555
+   868/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2554
+   869/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2553
+   870/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2552
+   871/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.value[127:0]$2551
+   872/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.present[7:0]$2550
+   873/3417: $19\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.$result[0:0]$2549
+   874/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2548
+   875/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2547
+   876/3417: $19\decision_deferred[0:0]
+   877/3417: $19\decision_ok[0:0]
+   878/3417: $19\decision_detail[7:0]
+   879/3417: $19\decision_fault[7:0]
+   880/3417: $31\write_value[127:0]
+   881/3417: $31\write_address[31:0]
+   882/3417: $54\result_bytes[543:0]
+   883/3417: $21\solved_b[127:0]
+   884/3417: $21\solved_a[127:0]
+   885/3417: $19\result_value[127:0]
+   886/3417: $19\inv_value[127:0]
+   887/3417: $19\val_c[127:0]
+   888/3417: $19\val_b[127:0]
+   889/3417: $19\val_a[127:0]
+   890/3417: $19\taken_proposal[7:0]
+   891/3417: $19\inv_present[7:0]
+   892/3417: $19\pres_c[7:0]
+   893/3417: $19\pres_b[7:0]
+   894/3417: $19\pres_a[7:0]
+   895/3417: $19\profile[7:0]
+   896/3417: $26\deferred_local[31:0]
+   897/3417: $26\deferred_target[31:0]
+   898/3417: $21\next_fp_value[31:0]
+   899/3417: $21\next_pc_value[31:0]
+   900/3417: $19\proposed_fp[31:0]
+   901/3417: $19\proposed_pc[31:0]
+   902/3417: $19\base_index[31:0]
+   903/3417: $19\addr_c[31:0]
+   904/3417: $19\addr_b[31:0]
+   905/3417: $19\addr_a[31:0]
+   906/3417: $19\off_c[31:0]
+   907/3417: $19\off_b[31:0]
+   908/3417: $19\off_a[31:0]
+   909/3417: $19\fp[31:0]
+   910/3417: $19\pc[31:0]
+   911/3417: $19\txn_id[31:0]
+   912/3417: $50\result_length[31:0]
+   913/3417: $26\n_deferred[31:0]
+   914/3417: $31\n_writes[31:0]
+   915/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:506$806.bytes[543:0]$2469 [543:40]
+   916/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:506$806.bytes[543:0]$2469 [31:0]
+   917/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:506$806.bytes[543:0]$2469 [39:32]
+   918/3417: $18\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2521
+   919/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2520
+   920/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2519
+   921/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2518
+   922/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2517
+   923/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2516
+   924/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2515
+   925/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2514
+   926/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2513
+   927/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2512
+   928/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2511
+   929/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2510
+   930/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2509
+   931/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2508
+   932/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2507
+   933/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2506
+   934/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2505
+   935/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2504
+   936/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2503
+   937/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2502
+   938/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2501
+   939/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2500
+   940/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2499
+   941/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2498
+   942/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2497
+   943/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2496
+   944/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2495
+   945/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2494
+   946/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2493
+   947/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2492
+   948/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2491
+   949/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2490
+   950/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2489
+   951/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2488
+   952/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2487
+   953/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2486
+   954/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2485
+   955/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2484
+   956/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2483
+   957/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2482
+   958/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2481
+   959/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2480
+   960/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2479
+   961/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2478
+   962/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2477
+   963/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.value[127:0]$2476
+   964/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.present[7:0]$2475
+   965/3417: $18\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.$result[0:0]$2474
+   966/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2473
+   967/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2472
+   968/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.bytes[543:0]$2471
+   969/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.txn[31:0]$2470
+   970/3417: $18\decision_deferred[0:0]
+   971/3417: $18\decision_ok[0:0]
+   972/3417: $18\decision_detail[7:0]
+   973/3417: $18\decision_fault[7:0]
+   974/3417: $30\write_value[127:0]
+   975/3417: $30\write_address[31:0]
+   976/3417: $53\result_bytes[543:0]
+   977/3417: $20\solved_b[127:0]
+   978/3417: $20\solved_a[127:0]
+   979/3417: $18\result_value[127:0]
+   980/3417: $18\inv_value[127:0]
+   981/3417: $18\val_c[127:0]
+   982/3417: $18\val_b[127:0]
+   983/3417: $18\val_a[127:0]
+   984/3417: $18\taken_proposal[7:0]
+   985/3417: $18\inv_present[7:0]
+   986/3417: $18\pres_c[7:0]
+   987/3417: $18\pres_b[7:0]
+   988/3417: $18\pres_a[7:0]
+   989/3417: $18\profile[7:0]
+   990/3417: $25\deferred_local[31:0]
+   991/3417: $25\deferred_target[31:0]
+   992/3417: $20\next_fp_value[31:0]
+   993/3417: $20\next_pc_value[31:0]
+   994/3417: $18\proposed_fp[31:0]
+   995/3417: $18\proposed_pc[31:0]
+   996/3417: $18\base_index[31:0]
+   997/3417: $18\addr_c[31:0]
+   998/3417: $18\addr_b[31:0]
+   999/3417: $18\addr_a[31:0]
+  1000/3417: $18\off_c[31:0]
+  1001/3417: $18\off_b[31:0]
+  1002/3417: $18\off_a[31:0]
+  1003/3417: $18\fp[31:0]
+  1004/3417: $18\pc[31:0]
+  1005/3417: $18\txn_id[31:0]
+  1006/3417: $49\result_length[31:0]
+  1007/3417: $25\n_deferred[31:0]
+  1008/3417: $30\n_writes[31:0]
+  1009/3417: $20\retired_bytes[543:0] [127:96]
+  1010/3417: $20\retired_bytes[543:0] [95:64]
+  1011/3417: $20\retired_bytes[543:0] [63:32]
+  1012/3417: $20\retired_bytes[543:0] [31:0]
+  1013/3417: $20\retired_bytes[543:0] [543:128]
+  1014/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2451 [31:0]
+  1015/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2451 [39:32]
+  1016/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.detail[7:0]$2450
+  1017/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.txn[31:0]$2449
+  1018/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2451 [543:40]
+  1019/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.bytes[543:0]$2442 [543:40]
+  1020/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.bytes[543:0]$2442 [31:0]
+  1021/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.bytes[543:0]$2442 [39:32]
+  1022/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.txn[31:0]$2441
+  1023/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2445
+  1024/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.detail[7:0]$2444
+  1025/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.txn[31:0]$2443
+  1026/3417: $19\retired_bytes[543:0]
+  1027/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:472$803.bytes[543:0]$2434 [543:40]
+  1028/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:472$803.bytes[543:0]$2434 [31:0]
+  1029/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:472$803.bytes[543:0]$2434 [39:32]
+  1030/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2439
+  1031/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.detail[7:0]$2438
+  1032/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.txn[31:0]$2437
+  1033/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.bytes[543:0]$2436
+  1034/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.txn[31:0]$2435
+  1035/3417: $18\retired_bytes[543:0]
+  1036/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.bytes[543:0]$2379
+  1037/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.detail[7:0]$2378
+  1038/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:478$805.txn[31:0]$2377
+  1039/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.bytes[543:0]$2376
+  1040/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:474$804.txn[31:0]$2375
+  1041/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:472$803.bytes[543:0]$2374
+  1042/3417: $17\retired_bytes[543:0]
+  1043/3417: $17\txn_id[31:0]
+  1044/3417: $17\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2432
+  1045/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2431
+  1046/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2430
+  1047/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2429
+  1048/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2428
+  1049/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2427
+  1050/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2426
+  1051/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2425
+  1052/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.value[127:0]$2424
+  1053/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.present[7:0]$2423
+  1054/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:557$825.$result[0:0]$2422
+  1055/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.value[127:0]$2421
+  1056/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.present[7:0]$2420
+  1057/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:554$824.$result[0:0]$2419
+  1058/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.value[127:0]$2418
+  1059/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.present[7:0]$2417
+  1060/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:552$823.$result[0:0]$2416
+  1061/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.value[127:0]$2415
+  1062/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.present[7:0]$2414
+  1063/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:550$822.$result[0:0]$2413
+  1064/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:548$821.bytes[543:0]$2412
+  1065/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:545$820.bytes[543:0]$2411
+  1066/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.value[127:0]$2410
+  1067/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.present[7:0]$2409
+  1068/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:543$819.$result[0:0]$2408
+  1069/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.value[127:0]$2407
+  1070/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.present[7:0]$2406
+  1071/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:541$818.$result[0:0]$2405
+  1072/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.value[127:0]$2404
+  1073/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.present[7:0]$2403
+  1074/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:539$817.$result[0:0]$2402
+  1075/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.value[127:0]$2401
+  1076/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.present[7:0]$2400
+  1077/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:537$816.$result[0:0]$2399
+  1078/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:535$815.bytes[543:0]$2398
+  1079/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.value[127:0]$2397
+  1080/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.present[7:0]$2396
+  1081/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:533$814.$result[0:0]$2395
+  1082/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.value[127:0]$2394
+  1083/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.present[7:0]$2393
+  1084/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:531$813.$result[0:0]$2392
+  1085/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.value[127:0]$2391
+  1086/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.present[7:0]$2390
+  1087/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:529$812.$result[0:0]$2389
+  1088/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:525$811.bytes[543:0]$2388
+  1089/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.value[127:0]$2387
+  1090/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.present[7:0]$2386
+  1091/3417: $17\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:523$810.$result[0:0]$2385
+  1092/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:521$809.bytes[543:0]$2384
+  1093/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:519$808.bytes[543:0]$2383
+  1094/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.bytes[543:0]$2382
+  1095/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:514$807.txn[31:0]$2381
+  1096/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:506$806.bytes[543:0]$2380
+  1097/3417: $17\decision_deferred[0:0]
+  1098/3417: $17\decision_ok[0:0]
+  1099/3417: $17\decision_detail[7:0]
+  1100/3417: $17\decision_fault[7:0]
+  1101/3417: $29\write_value[127:0]
+  1102/3417: $29\write_address[31:0]
+  1103/3417: $52\result_bytes[543:0]
+  1104/3417: $19\solved_b[127:0]
+  1105/3417: $19\solved_a[127:0]
+  1106/3417: $17\result_value[127:0]
+  1107/3417: $17\inv_value[127:0]
+  1108/3417: $17\val_c[127:0]
+  1109/3417: $17\val_b[127:0]
+  1110/3417: $17\val_a[127:0]
+  1111/3417: $17\taken_proposal[7:0]
+  1112/3417: $17\inv_present[7:0]
+  1113/3417: $17\pres_c[7:0]
+  1114/3417: $17\pres_b[7:0]
+  1115/3417: $17\pres_a[7:0]
+  1116/3417: $17\profile[7:0]
+  1117/3417: $24\deferred_local[31:0]
+  1118/3417: $24\deferred_target[31:0]
+  1119/3417: $19\next_fp_value[31:0]
+  1120/3417: $19\next_pc_value[31:0]
+  1121/3417: $17\proposed_fp[31:0]
+  1122/3417: $17\proposed_pc[31:0]
+  1123/3417: $17\base_index[31:0]
+  1124/3417: $17\addr_c[31:0]
+  1125/3417: $17\addr_b[31:0]
+  1126/3417: $17\addr_a[31:0]
+  1127/3417: $17\off_c[31:0]
+  1128/3417: $17\off_b[31:0]
+  1129/3417: $17\off_a[31:0]
+  1130/3417: $17\fp[31:0]
+  1131/3417: $17\pc[31:0]
+  1132/3417: $48\result_length[31:0]
+  1133/3417: $24\n_deferred[31:0]
+  1134/3417: $29\n_writes[31:0]
+  1135/3417: $51\result_bytes[543:0] [111:80]
+  1136/3417: $51\result_bytes[543:0] [79:48]
+  1137/3417: $51\result_bytes[543:0] [47:40]
+  1138/3417: $51\result_bytes[543:0] [39:32]
+  1139/3417: $51\result_bytes[543:0] [31:16]
+  1140/3417: $51\result_bytes[543:0] [15:8]
+  1141/3417: $51\result_bytes[543:0] [7:0]
+  1142/3417: $51\result_bytes[543:0] [543:112]
+  1143/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2372 [31:0]
+  1144/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2372 [39:32]
+  1145/3417: $21\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2372 [543:40]
+  1146/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2369 [543:40]
+  1147/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2369 [31:0]
+  1148/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2369 [39:32]
+  1149/3417: $20\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2370
+  1150/3417: $50\result_bytes[543:0]
+  1151/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2362 [543:40]
+  1152/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2362 [31:0]
+  1153/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2362 [39:32]
+  1154/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2364
+  1155/3417: $19\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2363
+  1156/3417: $49\result_bytes[543:0]
+  1157/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:442$799.bytes[543:0]$2358 [543:40]
+  1158/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:442$799.bytes[543:0]$2358 [31:0]
+  1159/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:442$799.bytes[543:0]$2358 [39:32]
+  1160/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2361
+  1161/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2360
+  1162/3417: $18\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2359
+  1163/3417: $48\result_bytes[543:0]
+  1164/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:440$798.bytes[543:0]$2352 [543:40]
+  1165/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:440$798.bytes[543:0]$2352 [31:0]
+  1166/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:440$798.bytes[543:0]$2352 [39:32]
+  1167/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2356
+  1168/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2355
+  1169/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2354
+  1170/3417: $17\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:442$799.bytes[543:0]$2353
+  1171/3417: $47\result_bytes[543:0]
+  1172/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:451$802.bytes[543:0]$2291
+  1173/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:447$801.bytes[543:0]$2290
+  1174/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:444$800.bytes[543:0]$2289
+  1175/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:442$799.bytes[543:0]$2288
+  1176/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:440$798.bytes[543:0]$2287
+  1177/3417: $46\result_bytes[543:0]
+  1178/3417: $16\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:785$829.access_count[7:0]$2350
+  1179/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.bytes[543:0]$2349
+  1180/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.detail[7:0]$2348
+  1181/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.txn[31:0]$2347
+  1182/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:783$828.status[7:0]$2346
+  1183/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.bytes[543:0]$2345
+  1184/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:561$827.txn[31:0]$2344
+  1185/3417: $16\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:559$826.bytes[543:0]$2343
+  1186/3417: $16\cell_is_malformed$func$asic_core

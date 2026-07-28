@@ -57,7 +57,15 @@ mutation:
 	    echo "BAD_LENGTH-order mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
-	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  sed -i.bak 's/frame_payload\[16 +: 8\] != 1/1'"'"'b0/' "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/profile.vvp" \
+	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/profile.vvp" >"$$d/profile.out" 2>&1; then \
+	    echo "FORWARD_ONLY negotiation mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "status got=00 expected=86" "$$d/profile.out"; \
+	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, length-order, and profile mutations were detected"
 
 differential-mutation:
 	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \

@@ -586,7 +586,7 @@ class ProfileTests(unittest.TestCase):
     def test_default_profile_is_interpreter_compatible(self) -> None:
         self.assertIs(Lsc1Endpoint().profile, Profile.INTERPRETER_COMPAT)
 
-    def test_negotiate_reports_the_device_envelope(self) -> None:
+    def test_negotiate_reports_the_phase_b_device_envelope(self) -> None:
         endpoint = Lsc1Endpoint()
         reply = exchange(endpoint, lsc1.build_negotiate(profile=Profile.FORWARD_ONLY))
         self.assertIs(reply.status, Status.OK)
@@ -599,6 +599,7 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(reader.u32(), lsc1.DEVICE_FEATURES)
         self.assertEqual(reader.u32(), lsc1.DEVICE_ID)
         reader.done()
+        self.assertEqual(lsc1.DEVICE_FEATURES, 0b010)
         self.assertIs(endpoint.profile, Profile.FORWARD_ONLY)
 
     def test_negotiate_rejects_a_version_window_that_excludes_v1(self) -> None:

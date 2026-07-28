@@ -494,6 +494,13 @@ See [§11](#11-service-request-and-response-contract).
 Device feature bits: `0` forward-only profile, `1` interpreter-compatible
 profile, `2` BLAKE3 service offload.
 
+The Phase-B packet RTL advertises only `0x00000002`:
+`INTERPRETER_COMPAT`. It rejects `FORWARD_ONLY` negotiation and does not
+implement BLAKE3 service offload. The executable model remains the frozen
+semantic oracle for the broader profile and service contract, but reports this
+Phase-B device envelope so model/RTL negotiation responses agree for the
+supported interpreter-compatible profile. RTL rejects `FORWARD_ONLY`.
+
 ### 8.5 `INFO` (status query) — 20 bytes
 
 | Offset | Type | Field |

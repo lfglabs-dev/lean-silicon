@@ -1,0 +1,3 @@
+make: Entering directory '/workspaces/mission-ce702ac6/lean-silicon/test/packet_frontend'
+PASS: BUSY, SET value, RETIRE ID, ABORT, length-order, and profile mutations were detected
+make: Leaving directory '/workspaces/mission-ce702ac6/lean-silicon/test/packet_frontend'

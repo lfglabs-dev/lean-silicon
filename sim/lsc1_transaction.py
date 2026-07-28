@@ -47,7 +47,11 @@ RESPONSE_HEADER_BYTES = 5
 CRC_BYTES = 4
 MAX_PAYLOAD_BYTES = 256
 DEVICE_ID = 0x4C534331  # "LSC1"
-DEVICE_FEATURES = 0b111  # both profiles + BLAKE3 service offload
+# Phase-B's advertised device envelope is the interpreter-compatible scalar
+# packet subset.  The executable model remains a semantic oracle for the full
+# frozen protocol below; its negotiation reply deliberately reports only the
+# capability boundary implemented by the shipped packet RTL.
+DEVICE_FEATURES = 0b010
 
 CELL_BYTES = 17
 WRITE_BYTES = 20

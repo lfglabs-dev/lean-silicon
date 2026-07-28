@@ -1,0 +1,71 @@
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.33 (git sha1 2584903a060)
+
+
+-- Running command `read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv; rename lsc1_packet_frontend gold; read_verilog results/b2-capability-contract-20260728/lsc1_packet_frontend.netlist.v; rename lsc1_packet_frontend gate; equiv_make gold gate equiv; hierarchy -top equiv; proc; opt; equiv_simple; equiv_induct -seq 4; equiv_status -assert' --
+
+1. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_rx.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_rx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_rx'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_tx.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_tx.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_tx'.
+Successfully finished Verilog frontend.
+
+3. Executing Verilog-2005 frontend: asic_core/rtl/gf2n_mul_bitstream.sv
+Parsing SystemVerilog input from `asic_core/rtl/gf2n_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf2n_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+4. Executing Verilog-2005 frontend: asic_core/rtl/gf128_mul_bitstream.sv
+Parsing SystemVerilog input from `asic_core/rtl/gf128_mul_bitstream.sv' to AST representation.
+Generating RTLIL representation for module `\gf128_mul_bitstream'.
+Successfully finished Verilog frontend.
+
+5. Executing Verilog-2005 frontend: asic_core/rtl/leanvm_b_stream_alu.sv
+Parsing SystemVerilog input from `asic_core/rtl/leanvm_b_stream_alu.sv' to AST representation.
+Generating RTLIL representation for module `\leanvm_b_stream_alu'.
+Successfully finished Verilog frontend.
+
+6. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_stream_adapter.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_stream_adapter.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_stream_adapter'.
+Successfully finished Verilog frontend.
+
+7. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_field_encoder.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_field_encoder.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_field_encoder'.
+Successfully finished Verilog frontend.
+
+8. Executing Verilog-2005 frontend: asic_core/rtl/lsc1_packet_frontend.sv
+Parsing SystemVerilog input from `asic_core/rtl/lsc1_packet_frontend.sv' to AST representation.
+Generating RTLIL representation for module `\lsc1_packet_frontend'.
+Successfully finished Verilog frontend.
+Renaming module \lsc1_packet_frontend to \gold.
+
+9. Executing Verilog-2005 frontend: results/b2-capability-contract-20260728/lsc1_packet_frontend.netlist.v
+Parsing Verilog input from `results/b2-capability-contract-20260728/lsc1_packet_frontend.netlist.v' to AST representation.
+Warning: Encountered `parallel_case' comment! Such legacy hot comments are supported by Yosys, but are not part of any formal language specification. Using the Verilog `parallel_case' attribute or the SystemVerilog `unique' or `priority' keywords is recommended!
+ERROR: Gold module contains memories or processes. Run 'memory' or 'proc' respectively.
