@@ -48,6 +48,26 @@ precheck, DRC/LVS, gate-level simulation, timing, area/tile fit, and PPA all
 remain unresolved. A successful workflow still does not by itself establish
 production ASIC readiness.
 
+The workflow pins `TinyTapeout/tt-gds-action` (and its `precheck`, `gl_test`,
+and `viewer` subactions) to commit
+`30d38a7dfc6fda561d452b196fc822af0332ec23` (`ttsky26c`). Its documented GDS
+action invokes `tt_tool.py --create-user-config` followed by LibreLane; it
+does not document project inputs for `RUN_KLAYOUT_DRC`, `RUN_KLAYOUT_XOR`, or
+routing-congestion overrides. Therefore this repository does not add or alter
+such gates without a flow revision that documents their support and an
+appropriate project-level rationale.
+
+The reviewed external run at commit `7e30c885103024af1db6d3ef85051921fabd0cc0`
+did not harden: LibreLane 3.0.3 stopped at global placement with
+`[GPL-0301] Utilization 601.128 % exceeds ...`. Its `precheck` and `gl_test`
+jobs were skipped, so it supplies no routed congestion report, no precheck
+report, and no DRC or XOR result. Settlement requires a subsequent successful
+pinned GDS run with its routing/congestion summary and produced GDS, followed
+by a successful precheck report that explicitly records its DRC and XOR
+outcomes; those artifacts must be inspected before making any DRC/XOR,
+routeability, tile-fit, PPA, signoff, release-equivalence, or ASIC-readiness
+claim.
+
 The local support-tool metadata/config generation succeeds with
 `tt_tool.py --create-user-config`. A local hardening attempt stops before
 LibreLane with exit 1 and the exact blocker
