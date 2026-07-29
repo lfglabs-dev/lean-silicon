@@ -18,12 +18,16 @@ def files():
 
 def main():
     info = yaml.safe_load((ROOT / "info.yaml").read_text())
-    if info["project"]["top_module"] != "lean_silicon_lsc1":
-        raise SystemExit("info.yaml must name lean_silicon_lsc1")
+    if info["project"]["top_module"] != "tt_um_lfglabs_lean_silicon_lsc1":
+        raise SystemExit("info.yaml must name tt_um_lfglabs_lean_silicon_lsc1")
     for source in info["project"]["source_files"]:
-        path = ROOT / source
+        path = ROOT / "src" / source
         if not path.is_file():
             raise SystemExit(f"missing declared ASIC source: {source}")
+    wrapper = ROOT / "src/tt_um_lfglabs_lean_silicon_lsc1.sv"
+    if not re.search(r"module\s+tt_um_lfglabs_lean_silicon_lsc1\b",
+                     wrapper.read_text()):
+        raise SystemExit("Tiny Tapeout integration wrapper missing")
     top = ROOT / "asic_core/rtl/lean_silicon_lsc1.sv"
     if not re.search(r"module\s+lean_silicon_lsc1\b", top.read_text()):
         raise SystemExit("LSC-1 Tiny Tapeout top missing")
