@@ -35,8 +35,11 @@ integration.
 
 ## Evidence and limitations
 
-The initial `2x2` selection is a conservative candidate inherited from the
-repository design-space study, not a fit result. The study's 259-simple-gate
+The physical canary now uses the maximum published SKY130 `8x4` template. This
+is a measured follow-up to the failed `2x2` run, not a fit claim. Scaling the
+reported movable-cell area against the published template dimensions predicts
+roughly 63% logic utilization before routing overhead, so only the pinned GDS
+workflow can determine whether it is routeable. The study's 259-simple-gate
 number covers only the radix-1 multiplier transition; it excludes registers,
 packet/control logic, clocking, placement and routing overhead.
 
@@ -62,7 +65,7 @@ did not harden: LibreLane 3.0.3 stopped at global placement with
 `[GPL-0301] Utilization 601.128 % exceeds ...`. Its `precheck` and `gl_test`
 jobs were skipped, so it supplies no routed congestion report, no precheck
 report, and no DRC or XOR result. Settlement requires a subsequent successful
-pinned GDS run with its routing/congestion summary and produced GDS, followed
+pinned `8x4` GDS run with its routing/congestion summary and produced GDS, followed
 by a successful precheck report that explicitly records its DRC and XOR
 outcomes; those artifacts must be inspected before making any DRC/XOR,
 routeability, tile-fit, PPA, signoff, release-equivalence, or ASIC-readiness

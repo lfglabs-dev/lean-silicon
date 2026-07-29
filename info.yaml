@@ -6,9 +6,9 @@ project:
   description:  "Experimental packetized leanVM-b scalar coprocessor byte lane; physical validation pending."
   language:     "SystemVerilog"
   clock_hz:     25000000
-  # Conservative initial candidate from the repository design-space study.
-  # No routed tile-fit claim is made until the ttsky26c GDS job succeeds.
-  tiles:        "2x2"
+  # Maximum published SKY130 template, selected after the 2x2 canary reported
+  # 601.128% utilization. No routed tile-fit claim is made until GDS succeeds.
+  tiles:        "8x4"
   top_module:   "tt_um_lfglabs_lean_silicon_lsc1"
   # Paths are relative to src/. The ../asic_core paths deliberately compile the
   # canonical handwritten boundary in place rather than copying it into src/.
