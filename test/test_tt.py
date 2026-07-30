@@ -19,7 +19,9 @@ async def tick(dut, count=1):
     for _ in range(count):
         await RisingEdge(dut.clk)
         await ReadOnly()
-        await Timer(1, unit="ps")
+        # The GL build uses UNIT_DELAY=#1 (1 ns); sample after it settles while
+        # staying far inside the 40 ns clock period. RTL also uses this path.
+        await Timer(2, unit="ns")
 
 
 def bit(dut, mask):

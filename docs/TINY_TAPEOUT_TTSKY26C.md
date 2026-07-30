@@ -39,6 +39,9 @@ this is a testbench integration defect, not a circuit mismatch. The wrapper
 now uses `supply1`/`supply0` nets for that check. The optional viewer rendered
 and uploaded its artifact but could not deploy it because GitHub Pages is not
 enabled (HTTP 404); that repository setting is unrelated to physical signoff.
+The subsequent GL run elaborated but showed that the test helper's 1 ps
+post-edge sample preceded the netlist's configured 1 ns unit delays. The common
+sample guard is now 2 ns, still safely within the 40 ns clock period.
 
 ## Flow and claim boundary
 
