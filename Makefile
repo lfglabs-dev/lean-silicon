@@ -80,6 +80,7 @@ lean:
 
 formal:
 	cd formal && sby -f gf8_mul.sby
+	cd formal && sby -f lsc1u_protocol.sby
 
 clean:
 	$(MAKE) -C test clean

@@ -19,6 +19,11 @@ formal/gf128_serialize_cover/
 formal/stream_alu_mul_pulse/
 formal/stream_alu_mul_pulse_induction/
 formal/stream_alu_mul_pulse_cover/
+formal/lsc1u_protocol_bmc/
+formal/lsc1u_protocol_cover/
+test/results.xml
+test/sim_build/
+.venv/
 openlane/
 reports/
 tools/blake3_reference/target/

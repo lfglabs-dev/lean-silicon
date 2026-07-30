@@ -4,16 +4,10 @@ ROOT := $(abspath ..)
 ASIC := $(ROOT)/asic_core/rtl
 
 PROJECT_SOURCES := \
-  $(ROOT)/src/tt_um_lfglabs_lean_silicon_lsc1.sv \
+  $(ROOT)/src/tt_um_lfglabs_lsc1u.sv \
+  $(ROOT)/src/lsc1u_core.sv \
   $(ASIC)/gf2n_mul_bitstream.sv \
-  $(ASIC)/gf128_mul_bitstream.sv \
-  $(ASIC)/leanvm_b_stream_alu.sv \
-  $(ASIC)/lsc1_stream_adapter.sv \
-  $(ASIC)/lsc1_packet_rx.sv \
-  $(ASIC)/lsc1_packet_tx.sv \
-  $(ASIC)/lsc1_packet_frontend.sv \
-  $(ASIC)/lsc1_field_encoder.sv \
-  $(ASIC)/lean_silicon_lsc1.sv
+  $(ASIC)/gf128_mul_bitstream.sv
 
 ifeq ($(GATES),yes)
 SIM_BUILD := sim_build/tt_gl

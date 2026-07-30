@@ -77,6 +77,8 @@ jobs:
           select -assert-min 4 leanvm_b_mul_pulse_check*/t:$check'
       - name: Multiplier pulse mutual-exclusion proof on shipped RTL
         run: cd formal && sby -f stream_alu_mul_pulse.sby
+      - name: LSC-1u protocol and retained-boundary proofs
+        run: cd formal && sby -f lsc1u_protocol.sby
       - name: Yosys lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv

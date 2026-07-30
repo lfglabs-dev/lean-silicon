@@ -1,0 +1,25 @@
+[tasks]
+bmc
+cover
+
+[options]
+bmc: mode bmc
+bmc: depth 210
+cover: mode cover
+cover: depth 220
+
+[engines]
+smtbmc
+
+[script]
+read -formal -sv ../asic_core/rtl/gf2n_mul_bitstream.sv
+read -formal -sv ../asic_core/rtl/gf128_mul_bitstream.sv
+read -formal -sv ../src/lsc1u_core.sv
+read -formal -sv lsc1u_protocol_formal.sv
+prep -top lsc1u_protocol_formal
+
+[files]
+../asic_core/rtl/gf2n_mul_bitstream.sv
+../asic_core/rtl/gf128_mul_bitstream.sv
+../src/lsc1u_core.sv
+lsc1u_protocol_formal.sv

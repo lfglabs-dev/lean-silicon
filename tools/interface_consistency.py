@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RTL = (ROOT / "asic_core" / "rtl" / "leanvm_b_stream_alu.sv").read_text()
 PYMODEL = (ROOT / "sim" / "model.py").read_text()
 ASIC_TOP = (ROOT / "asic_core" / "rtl" / "lean_silicon_lsc1.sv").read_text()
-TT_WRAPPER = (ROOT / "src" / "tt_um_lfglabs_lean_silicon_lsc1.sv").read_text()
+TT_WRAPPER = (ROOT / "src" / "tt_um_lfglabs_lsc1u.sv").read_text()
 INFO = yaml.safe_load((ROOT / "info.yaml").read_text())
 
 EXPECTED = {
@@ -68,16 +68,10 @@ def main() -> None:
         if not (ROOT / "src" / source).is_file():
             raise SystemExit(f"missing Tiny Tapeout source file: {source}")
     required_sources = {
-        "tt_um_lfglabs_lean_silicon_lsc1.sv",
+        "tt_um_lfglabs_lsc1u.sv",
+        "lsc1u_core.sv",
         "../asic_core/rtl/gf2n_mul_bitstream.sv",
         "../asic_core/rtl/gf128_mul_bitstream.sv",
-        "../asic_core/rtl/leanvm_b_stream_alu.sv",
-        "../asic_core/rtl/lsc1_stream_adapter.sv",
-        "../asic_core/rtl/lsc1_field_encoder.sv",
-        "../asic_core/rtl/lsc1_packet_rx.sv",
-        "../asic_core/rtl/lsc1_packet_tx.sv",
-        "../asic_core/rtl/lsc1_packet_frontend.sv",
-        "../asic_core/rtl/lean_silicon_lsc1.sv",
     }
     configured_sources = set(project["source_files"])
     if configured_sources != required_sources:

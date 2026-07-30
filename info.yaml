@@ -1,28 +1,19 @@
 # Tiny Tapeout project information
 project:
-  title:        "leanSilicon LSC-1 byte lane"
+  title:        "leanSilicon LSC-1 Micro arithmetic kernel"
   author:       "LFG Labs"
   discord:      ""
-  description:  "Experimental packetized leanVM-b scalar coprocessor byte lane; physical validation pending."
+  description:  "LSC-1 Micro (LSC-1u): reduced Tiny Tapeout arithmetic sub-core of LSC-1, not LSC-2."
   language:     "SystemVerilog"
   clock_hz:     25000000
-  # Maximum published SKY130 template, selected after the 2x2 canary reported
-  # 601.128% utilization. No routed tile-fit claim is made until GDS succeeds.
-  tiles:        "8x4"
-  top_module:   "tt_um_lfglabs_lean_silicon_lsc1"
-  # Paths are relative to src/. The ../asic_core paths deliberately compile the
-  # canonical handwritten boundary in place rather than copying it into src/.
+  # Start with the smallest macro; retain serial MUL only if this routes.
+  tiles:        "1x1"
+  top_module:   "tt_um_lfglabs_lsc1u"
   source_files:
-    - "tt_um_lfglabs_lean_silicon_lsc1.sv"
+    - "tt_um_lfglabs_lsc1u.sv"
+    - "lsc1u_core.sv"
     - "../asic_core/rtl/gf2n_mul_bitstream.sv"
     - "../asic_core/rtl/gf128_mul_bitstream.sv"
-    - "../asic_core/rtl/leanvm_b_stream_alu.sv"
-    - "../asic_core/rtl/lsc1_stream_adapter.sv"
-    - "../asic_core/rtl/lsc1_packet_rx.sv"
-    - "../asic_core/rtl/lsc1_packet_tx.sv"
-    - "../asic_core/rtl/lsc1_packet_frontend.sv"
-    - "../asic_core/rtl/lsc1_field_encoder.sv"
-    - "../asic_core/rtl/lean_silicon_lsc1.sv"
 
 pinout:
   ui[0]: "REQUEST_BYTE[0]"
@@ -49,7 +40,7 @@ pinout:
   uio[3]: "TX_READY"
   uio[4]: "BUSY"
   uio[5]: "FAULT"
-  uio[6]: "ABORT"
+  uio[6]: "RESERVED"
   uio[7]: "DONE_PULSE"
 
 yaml_version: 6

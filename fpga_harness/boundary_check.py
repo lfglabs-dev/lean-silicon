@@ -6,8 +6,9 @@ script fails on the two ways that rule gets broken in practice: a harness port
 wider than the pin interface (a wide bypass), and an ASIC top that drives a pin
 the direction mask declares an input.
 
-Role names come from ``info.yaml`` and ``docs/LSC1_PROTOCOL.md``, which belong
-to other lanes.  This checker only reads them.  It hard-fails on objective,
+Role names for full LSC-1 come from ``docs/LSC1_PROTOCOL.md``. Tiny Tapeout's
+``info.yaml`` may describe the deliberately reduced LSC-1u profile instead.
+This checker hard-fails on objective,
 structural violations and reports unrecognised driven signals as observations,
 so that renaming an internal RTL signal in another lane cannot turn this into a
 false tripwire.
@@ -76,6 +77,10 @@ def _is_abbreviation(first: str, second: str) -> bool:
 
 def _uio_roles_from_info() -> dict[int, str]:
     info = yaml.safe_load(INFO_YAML.read_text())
+    if info["project"]["top_module"] == "tt_um_lfglabs_lsc1u":
+        # The FPGA harness remains full LSC-1; do not compare it to the
+        # profile-specific reserved LSC-1u input pin.
+        return _uio_roles_from_protocol()
     roles: dict[int, str] = {}
     for key, value in info["pinout"].items():
         match = re.fullmatch(r"uio\[(\d)\]", str(key))
