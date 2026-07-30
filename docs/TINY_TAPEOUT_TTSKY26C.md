@@ -32,6 +32,14 @@ the smallest evidence-based follow-up. MUL remains for that attempt. If 1×2
 still cannot route, the next candidate removes the measured multiplier block
 while leaving SET/XOR semantics intact.
 
+The first 1×2 run completed GDS and passed precheck with MUL retained. Its
+gate-level job stopped during testbench elaboration because Icarus 13 requires
+the bidirectional `VPWR`/`VGND` ports to connect to nets rather than literals;
+this is a testbench integration defect, not a circuit mismatch. The wrapper
+now uses `supply1`/`supply0` nets for that check. The optional viewer rendered
+and uploaded its artifact but could not deploy it because GitHub Pages is not
+enabled (HTTP 404); that repository setting is unrelated to physical signoff.
+
 ## Flow and claim boundary
 
 The workflow pins `TinyTapeout/tt-gds-action` to
