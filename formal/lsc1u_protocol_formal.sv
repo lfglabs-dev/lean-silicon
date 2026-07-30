@@ -17,10 +17,10 @@ module lsc1u_protocol_formal;
         .busy(busy), .fault(fault), .done_pulse(done_pulse)
     );
 
-    reg past_valid;
+    reg past_valid = 1'b0;
     reg txn_active;
     reg txn_completed;
-    reg [7:0] expected [0:15];
+    reg [127:0] expected;
     reg [4:0] expected_count;
     reg [4:0] output_count;
     reg [7:0] xor_a;
@@ -51,7 +51,7 @@ module lsc1u_protocol_formal;
                     else if (rx_data == 8'h02) op <= 2;
                     else if (rx_data == 8'h03) op <= 3;
                     else begin
-                        expected[0] <= 8'he0;
+                        expected[7:0] <= 8'he0;
                         expected_count <= 1;
                         op <= 0;
                     end
@@ -60,12 +60,12 @@ module lsc1u_protocol_formal;
                     if (!payload_count[0])
                         xor_a <= rx_data;
                     else begin
-                        expected[output_count] <= xor_a ^ rx_data;
+                        expected[output_count * 8 +: 8] <= xor_a ^ rx_data;
                         expected_count <= output_count + 1'b1;
                     end
                 end else if (op == 3) begin
                     payload_count <= payload_count + 1'b1;
-                    expected[output_count] <= rx_data;
+                    expected[output_count * 8 +: 8] <= rx_data;
                     expected_count <= output_count + 1'b1;
                 end else if (op == 2) begin
                     payload_count <= payload_count + 1'b1;
@@ -80,15 +80,15 @@ module lsc1u_protocol_formal;
                 // gf128_serialize.sby; this harness proves its 16-byte
                 // streamed framing and exactly-one-completion behavior.
                 if (op != 2)
-                    assert(tx_data == expected[output_count]);
+                    assert(tx_data == expected[output_count * 8 +: 8]);
                 output_count <= output_count + 1'b1;
             end
-            if (done_pulse)
+            if (done_pulse && !(rx_valid && rx_ready && !busy))
                 txn_completed <= 1'b1;
         end
 
         if (past_valid && $past(rst_n)) begin
-            if ($past(tx_valid && !tx_ready && ena && rst_n)) begin
+            if (ena && $past(tx_valid && !tx_ready && ena && rst_n)) begin
                 assert(tx_valid);
                 assert(tx_data == $past(tx_data));
             end

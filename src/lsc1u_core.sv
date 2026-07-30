@@ -79,7 +79,7 @@ module lsc1u_core (
     assign tx_valid = ena && out_valid;
     assign busy = ena && ((state != IDLE) || out_valid);
     assign fault = ena && fault_reg;
-    assign done_pulse = ena && done_reg;
+    assign done_pulse = ena && rst_n && done_reg;
 
     wire rx_fire = rx_valid && rx_ready;
     wire tx_fire = tx_valid && tx_ready;
@@ -93,7 +93,9 @@ module lsc1u_core (
             out_valid  <= 1'b0;
             fault_reg  <= 1'b0;
             done_reg   <= 1'b0;
-        end else if (ena) begin
+        end else if (!ena) begin
+            done_reg <= 1'b0;
+        end else begin
             done_reg <= 1'b0;
 
             if (tx_fire)
