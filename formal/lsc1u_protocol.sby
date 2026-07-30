@@ -12,9 +12,9 @@ cover: depth 220
 smtbmc
 
 [script]
-read -formal -sv ../asic_core/rtl/gf2n_mul_bitstream.sv
-read -formal -sv ../asic_core/rtl/gf128_mul_bitstream.sv
-read -formal -sv ../src/lsc1u_core.sv
+read -formal -sv gf2n_mul_bitstream.sv
+read -formal -sv gf128_mul_bitstream.sv
+read -formal -sv lsc1u_core.sv
 read -formal -sv lsc1u_protocol_formal.sv
 prep -top lsc1u_protocol_formal
 
