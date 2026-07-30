@@ -61,8 +61,9 @@ deselect/reselect resumes the same partial operation without duplicating it.
 
 ## Physical inclusion rule for MUL
 
-The first reduced implementation includes the existing serial multiplier, then
-measures it against a SET/XOR-only build. MUL remains only if real ttsky26c
-placement and routing succeeds. If it prevents routability it will be removed,
-with both area measurements recorded; SET/XOR semantics are never altered to
-make room.
+The real 1×1 ttsky26c attempt mapped to 1,616 cells / 17,583.1136 µm² and
+stopped at 128.237% global-placement utilization. Local hierarchy attributes
+1,027 of 1,433 generic cells and 256 of 283 flops to MUL. The smallest
+follow-up is therefore 1×2. MUL remains only if real placement and routing
+succeeds; if it still prevents routing it will be removed, and SET/XOR
+semantics will not be altered to make room.

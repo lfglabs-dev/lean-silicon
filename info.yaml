@@ -6,8 +6,9 @@ project:
   description:  "LSC-1 Micro (LSC-1u): reduced Tiny Tapeout arithmetic sub-core of LSC-1, not LSC-2."
   language:     "SystemVerilog"
   clock_hz:     25000000
-  # Start with the smallest macro; retain serial MUL only if this routes.
-  tiles:        "1x1"
+  # 1x1 measured 128.237% GPL utilization; 1x2 is the smallest evidence-based
+  # follow-up that can retain the serial multiplier.
+  tiles:        "1x2"
   top_module:   "tt_um_lfglabs_lsc1u"
   source_files:
     - "tt_um_lfglabs_lsc1u.sv"
