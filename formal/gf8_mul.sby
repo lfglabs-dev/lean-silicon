@@ -3,6 +3,7 @@ mode bmc
 depth 32
 multiclock on
 timeout 45
+vcd off
 
 [engines]
 abc bmc3

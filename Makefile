@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal clean package checksums
+.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal formal-mutations clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -81,6 +81,10 @@ lean:
 formal:
 	cd formal && sby -f gf8_mul.sby
 	cd formal && sby -f lsc1u_protocol.sby
+	cd formal && sby -f lsc1u_reachability.sby
+
+formal-mutations:
+	$(PYTHON) formal/check_mutations.py
 
 clean:
 	$(MAKE) -C test clean

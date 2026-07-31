@@ -79,6 +79,10 @@ jobs:
         run: cd formal && sby -f stream_alu_mul_pulse.sby
       - name: LSC-1u protocol and retained-boundary proofs
         run: cd formal && sby -f lsc1u_protocol.sby
+      - name: LSC-1u retained-operation reachability
+        run: cd formal && sby -f lsc1u_reachability.sby
+      - name: Mutation sensitivity of retained safety and arithmetic properties
+        run: make formal-mutations
       - name: Yosys lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv

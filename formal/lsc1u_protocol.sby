@@ -1,25 +1,26 @@
 [tasks]
-bmc
-cover
+protocol
 
 [options]
-bmc: mode bmc
-bmc: depth 190
-cover: mode cover
-cover: depth 200
+protocol: mode prove
+protocol: depth 32
+timeout 300
+vcd off
 
 [engines]
-smtbmc
+protocol: abc pdr
 
 [script]
-read -formal -sv gf2n_mul_bitstream.sv
-read -formal -sv gf128_mul_bitstream.sv
+read -formal -sv gf128_mul_boundary_formal.sv
 read -formal -sv lsc1u_core.sv
 read -formal -sv lsc1u_protocol_formal.sv
+# Protocol and retained-boundary properties do not depend on the multiplier's
+# internal arithmetic state.  Replace only that independently-proved boundary
+# with an unconstrained output: this is a conservative over-approximation, not
+# an assumption about its result.
 prep -top lsc1u_protocol_formal
 
 [files]
-../asic_core/rtl/gf2n_mul_bitstream.sv
-../asic_core/rtl/gf128_mul_bitstream.sv
+gf128_mul_boundary_formal.sv
 ../src/lsc1u_core.sv
 lsc1u_protocol_formal.sv

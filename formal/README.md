@@ -9,6 +9,38 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `gf8_mul.sby` | GF(2^8) product of the generic multiplier at WIDTH=8 | bounded BMC |
 | `gf128_serialize.sby` | WIDTH=128 16-beat little-endian byte load and result shift-out ordering | BMC + k-induction + cover |
 | `stream_alu_mul_pulse.sby` | `mul_a_valid`/`mul_bit_valid`/`mul_result_shift` are mutually exclusive in the shipped `leanvm_b_stream_alu` FSM | k-induction + cover |
+| `lsc1u_protocol.sby` | LSC-1u clamp/reset/stall/completion/framing plus retained XOR/SET bytes | unbounded PDR |
+| `lsc1u_reachability.sby` | Independent completion witnesses for XOR, MUL, SET, and fault response | bounded cover per opcode |
+
+## LSC-1u retained boundary
+
+`lsc1u_protocol.sby` deliberately does not elaborate the concrete 256-bit
+multiplier state.  It links `lsc1u_core` against
+`gf128_mul_boundary_formal.sv`, whose result is unconstrained.  This is a
+conservative over-approximation for these properties: the core never branches
+on the result, MUL data arithmetic is not asserted here, and every concrete
+multiplier output is among the values considered by the boundary model.
+Concrete arithmetic and serialization remain checked by `gf8_mul.sby` and
+`gf128_serialize.sby`.
+
+The safety run uses ABC PDR and proves all ten assertions for unbounded
+reachable execution.  Reachability is a separate four-task config so a deep
+MUL witness (completion at depth 178) cannot force every safety property
+through the same incremental SMT-BMC.  The reachability harness drives a legal,
+always-ready retained-boundary transaction; its constant multiplier result is
+only a witness choice because control is result-independent.
+
+Run:
+
+```sh
+sby -f lsc1u_protocol.sby
+sby -f lsc1u_reachability.sby
+python3 check_mutations.py
+```
+
+`check_mutations.py` works only in temporary copies.  It requires terminal
+counterexamples for broken stall stability, enable clamping, XOR data, SET
+data, generic multiplier arithmetic, and WIDTH=128 result serialization.
 
 ## GF(2^8) product check
 
@@ -137,8 +169,8 @@ the ALU's opcode decode, its result values, or the full controller.
 
 ## Non-vacuity
 
-All three new properties were mutation-tested; each mutation was reverted after
-the run and none is present in the tree:
+The earlier properties were mutation-tested as follows; each mutation was
+reverted after the run and none is present in the tree:
 
 | Mutation | Expected | Observed |
 |---|---|---|

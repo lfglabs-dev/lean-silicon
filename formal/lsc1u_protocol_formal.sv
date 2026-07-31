@@ -37,6 +37,8 @@ module lsc1u_protocol_formal;
             txn_completed <= 0;
             expected_count <= 0;
             output_count <= 0;
+            expected <= 0;
+            xor_a <= 0;
             op <= 0;
             payload_count <= 0;
         end else begin
@@ -60,12 +62,12 @@ module lsc1u_protocol_formal;
                     if (!payload_count[0])
                         xor_a <= rx_data;
                     else begin
-                        expected[output_count * 8 +: 8] <= xor_a ^ rx_data;
+                        expected[output_count[3:0] * 8 +: 8] <= xor_a ^ rx_data;
                         expected_count <= output_count + 1'b1;
                     end
                 end else if (op == 3) begin
                     payload_count <= payload_count + 1'b1;
-                    expected[output_count * 8 +: 8] <= rx_data;
+                    expected[output_count[3:0] * 8 +: 8] <= rx_data;
                     expected_count <= output_count + 1'b1;
                 end else if (op == 2) begin
                     payload_count <= payload_count + 1'b1;
@@ -80,7 +82,7 @@ module lsc1u_protocol_formal;
                 // gf128_serialize.sby; this harness proves its 16-byte
                 // streamed framing and exactly-one-completion behavior.
                 if (op != 2)
-                    assert(tx_data == expected[output_count * 8 +: 8]);
+                    assert(tx_data == expected[output_count[3:0] * 8 +: 8]);
                 output_count <= output_count + 1'b1;
             end
             if (done_pulse && !(rx_valid && rx_ready && !busy))
@@ -107,8 +109,6 @@ module lsc1u_protocol_formal;
                 assert(!done_pulse);
         end
 
-        cover(past_valid && txn_completed);
-        cover(past_valid && fault);
     end
 endmodule
 

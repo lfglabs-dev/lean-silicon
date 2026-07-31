@@ -1,0 +1,34 @@
+[tasks]
+xor
+mul
+set
+fault
+
+[options]
+xor: mode cover
+xor: depth 60
+mul: mode cover
+mul: depth 200
+set: mode cover
+set: depth 45
+fault: mode cover
+fault: depth 8
+timeout 120
+
+[engines]
+btor btormc
+
+[script]
+read -formal -sv gf128_mul_reachability_formal.sv
+read -formal -sv lsc1u_core.sv
+read -formal -sv lsc1u_reachability_formal.sv
+xor: chparam -set SELECTED_OP 0 lsc1u_reachability_formal
+mul: chparam -set SELECTED_OP 1 lsc1u_reachability_formal
+set: chparam -set SELECTED_OP 2 lsc1u_reachability_formal
+fault: chparam -set SELECTED_OP 3 lsc1u_reachability_formal
+prep -top lsc1u_reachability_formal
+
+[files]
+gf128_mul_reachability_formal.sv
+../src/lsc1u_core.sv
+lsc1u_reachability_formal.sv
