@@ -1,4 +1,5 @@
 PYTHON ?= python3
+.DEFAULT_GOAL := tt-test
 
 PROJECT_SOURCES = \
   ../asic_core/rtl/gf2n_mul_bitstream.sv \
@@ -17,7 +18,12 @@ BRIDGE_SOURCES = \
   ../fpga/ulx3s/uart_tx.sv \
   ../fpga/ulx3s/uart_bridge.sv
 
-.PHONY: sim stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation packet-rtl-differential clean
+.PHONY: tt-test sim stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation packet-rtl-differential clean
+
+# Default target used by TinyTapeout/tt-gds-action/gl_test@ttsky26c.
+# The legacy repository regression remains available explicitly as `make sim`.
+tt-test:
+	$(MAKE) -f Makefile.tt
 
 sim: stream-alu uart-bridge packet-uart-bridge packet-frontend-sim packet-frontend-mutation packet-rtl-differential
 
@@ -43,5 +49,6 @@ packet-rtl-differential:
 	cd .. && $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential -v
 
 clean:
+	$(MAKE) -f Makefile.tt clean
 	rm -f tb_stream_alu.vvp tb_uart_bridge.vvp tb_packet_uart_bridge.vvp
 	$(MAKE) -C packet_frontend clean

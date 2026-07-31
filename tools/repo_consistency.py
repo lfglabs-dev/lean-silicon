@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject stale active integration names and verify LSC-1 declared sources."""
+"""Verify the LSC-1u TT profile and the unchanged full LSC-1 source boundary."""
 from pathlib import Path
 import re
 import yaml
@@ -18,15 +18,19 @@ def files():
 
 def main():
     info = yaml.safe_load((ROOT / "info.yaml").read_text())
-    if info["project"]["top_module"] != "lean_silicon_lsc1":
-        raise SystemExit("info.yaml must name lean_silicon_lsc1")
+    if info["project"]["top_module"] != "tt_um_lfglabs_lsc1u":
+        raise SystemExit("info.yaml must name tt_um_lfglabs_lsc1u")
     for source in info["project"]["source_files"]:
-        path = ROOT / source
+        path = ROOT / "src" / source
         if not path.is_file():
             raise SystemExit(f"missing declared ASIC source: {source}")
+    wrapper = ROOT / "src/tt_um_lfglabs_lsc1u.sv"
+    if not re.search(r"module\s+tt_um_lfglabs_lsc1u\b",
+                     wrapper.read_text()):
+        raise SystemExit("LSC-1u Tiny Tapeout integration wrapper missing")
     top = ROOT / "asic_core/rtl/lean_silicon_lsc1.sv"
     if not re.search(r"module\s+lean_silicon_lsc1\b", top.read_text()):
-        raise SystemExit("LSC-1 Tiny Tapeout top missing")
+        raise SystemExit("full LSC-1 ASIC top missing")
     for path in files():
         if OLD_TOP in path.read_text(errors="ignore"):
             raise SystemExit(f"stale active top name in {path.relative_to(ROOT)}")
@@ -34,7 +38,7 @@ def main():
     for required in ("version=1", "seed-0", "0xa1", "0x5a"):
         if required not in protocol:
             raise SystemExit(f"packet protocol marker missing: {required}")
-    print("LSC-1 repository consistency: OK")
+    print("LSC-1u TT profile and full LSC-1 source boundary: OK")
 
 if __name__ == "__main__":
     main()

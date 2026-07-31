@@ -11,7 +11,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 RTL = (ROOT / "asic_core" / "rtl" / "leanvm_b_stream_alu.sv").read_text()
 PYMODEL = (ROOT / "sim" / "model.py").read_text()
-WRAPPER = (ROOT / "asic_core" / "rtl" / "lean_silicon_lsc1.sv").read_text()
+ASIC_TOP = (ROOT / "asic_core" / "rtl" / "lean_silicon_lsc1.sv").read_text()
+TT_WRAPPER = (ROOT / "src" / "tt_um_lfglabs_lsc1u.sv").read_text()
 INFO = yaml.safe_load((ROOT / "info.yaml").read_text())
 
 EXPECTED = {
@@ -57,23 +58,20 @@ def main() -> None:
 
     project = INFO["project"]
     top = project["top_module"]
-    if not re.search(rf"\bmodule\s+{re.escape(top)}\b", WRAPPER):
+    if not re.search(rf"\bmodule\s+{re.escape(top)}\b", TT_WRAPPER):
         raise SystemExit(f"info.yaml top module {top!r} is not present in wrapper")
+    if not re.search(r"\bmodule\s+lean_silicon_lsc1\b", ASIC_TOP):
+        raise SystemExit("canonical LSC-1 ASIC boundary is missing")
     if project["clock_hz"] != 25_000_000:
         raise SystemExit("unexpected clock_hz")
     for source in project["source_files"]:
-        if not (ROOT / source).is_file():
+        if not (ROOT / "src" / source).is_file():
             raise SystemExit(f"missing Tiny Tapeout source file: {source}")
     required_sources = {
-        "asic_core/rtl/gf2n_mul_bitstream.sv",
-        "asic_core/rtl/gf128_mul_bitstream.sv",
-        "asic_core/rtl/leanvm_b_stream_alu.sv",
-        "asic_core/rtl/lsc1_stream_adapter.sv",
-        "asic_core/rtl/lsc1_field_encoder.sv",
-        "asic_core/rtl/lsc1_packet_rx.sv",
-        "asic_core/rtl/lsc1_packet_tx.sv",
-        "asic_core/rtl/lsc1_packet_frontend.sv",
-        "asic_core/rtl/lean_silicon_lsc1.sv",
+        "tt_um_lfglabs_lsc1u.sv",
+        "lsc1u_core.sv",
+        "../asic_core/rtl/gf2n_mul_bitstream.sv",
+        "../asic_core/rtl/gf128_mul_bitstream.sv",
     }
     configured_sources = set(project["source_files"])
     if configured_sources != required_sources:

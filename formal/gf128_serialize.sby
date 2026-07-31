@@ -14,6 +14,7 @@ cover: mode cover
 cover: depth 80
 multiclock on
 timeout 900
+vcd off
 
 [engines]
 bmc: smtbmc yices

@@ -28,6 +28,13 @@ the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 Frozen leanVM-b evidence remains tied to
 `c308034ab78619b39a59d26f3dc60e7df5b52649` and is never relabeled.
 
+> [!IMPORTANT]
+> **LSC-1µ (LSC-1 Micro) is the deliberately reduced Tiny Tapeout
+> profile/sub-core of LSC-1. It is not “LSC-1/2”, LSC-2, or a second-generation
+> architecture.** ASCII identifiers use `LSC-1u` / `lsc1u`. Full LSC-1 remains
+> unchanged for FPGA and future larger ASIC targets. See the
+> [LSC-1µ architecture contract](docs/LSC1U_ARCHITECTURE.md).
+
 ## Layout
 
 - `asic_core/`: exact Tiny Tapeout LSC-1 RTL boundary.
@@ -41,6 +48,7 @@ Frozen leanVM-b evidence remains tied to
   frozen-upstream Rust differential adapter.
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
+- `src/lsc1u_core.sv`: profile-specific streamed LSC-1µ arithmetic kernel.
 
 Run `make check`, `make sim`, `make lean`, and `make formal` where the
 corresponding tools are installed. `make consistency` rejects stale active
