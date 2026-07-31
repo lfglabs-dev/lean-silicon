@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import shutil
 import subprocess
 import tempfile
@@ -30,7 +31,14 @@ MUTATIONS = [
         "src/lsc1u_core.sv",
         "out_byte <= saved_byte ^ rx_data;",
         "out_byte <= saved_byte + rx_data;",
-        ["lsc1u_protocol.sby"],
+        ["lsc1u_protocol.sby", "lsc1u_xor_refinement.sby"],
+    ),
+    (
+        "xor_retirement_lane",
+        "src/lsc1u_core.sv",
+        "if (tx_fire && (state != IDLE)) begin\n                if (byte_index == 4'd15)",
+        "if (tx_fire && (state != IDLE)) begin\n                if (byte_index == 4'd14)",
+        ["lsc1u_xor_refinement.sby"],
     ),
     (
         "set_result",
@@ -57,12 +65,22 @@ MUTATIONS = [
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--only",
+        action="append",
+        default=[],
+        help="run only the named mutation (repeatable)",
+    )
+    args = parser.parse_args()
     sby = shutil.which("sby")
     if not sby:
         raise SystemExit("sby is required")
 
     failures: list[str] = []
     for name, relative, old, new, configs in MUTATIONS:
+        if args.only and name not in args.only:
+            continue
         with tempfile.TemporaryDirectory(prefix=f"lsc1u-{name}-") as raw:
             work = Path(raw)
             shutil.copytree(ROOT / "formal", work / "formal")
