@@ -11,10 +11,10 @@ vcd off
 prove: abc pdr
 
 [script]
-read -formal -D FORMAL -sv gf128_mul_controller_boundary_formal.sv lsc1u_core.sv lsc1u_compositional_refinement_formal.sv
+read -formal -D FORMAL -sv gf128_mul_spec_formal.sv lsc1u_core.sv lsc1u_compositional_refinement_formal.sv
 prep -top lsc1u_compositional_refinement_formal
 
 [files]
-gf128_mul_controller_boundary_formal.sv
+gf128_mul_spec_formal.sv
 ../src/lsc1u_core.sv
 lsc1u_compositional_refinement_formal.sv
