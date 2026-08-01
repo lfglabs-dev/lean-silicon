@@ -83,6 +83,10 @@ jobs:
         run: cd formal && sby -f lsc1u_reachability.sby
       - name: LSC-1u XOR retained-boundary refinement
         run: cd formal && sby -f lsc1u_xor_refinement.sby
+      - name: GF(2^128) accepted-stream refinement
+        run: cd formal && sby -f gf128_mul_stream_refinement.sby
+      - name: LSC-1u compositional all-operation refinement
+        run: cd formal && sby -f lsc1u_compositional_refinement.sby
       - name: Mutation sensitivity of retained safety and arithmetic properties
         run: make formal-mutations
       - name: Yosys lint and synthesis

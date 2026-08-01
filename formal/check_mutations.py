@@ -61,6 +61,41 @@ MUTATIONS = [
         "assign result_byte = accumulator[WIDTH-1 -: BYTE_BITS];",
         ["gf128_serialize.sby"],
     ),
+    (
+        "lsc1u_mul_a_transition",
+        "src/lsc1u_core.sv",
+        "if (byte_index == 4'd15) begin\n                        byte_index <= 4'd0;\n                        state <= MUL_B;",
+        "if (byte_index == 4'd14) begin\n                        byte_index <= 4'd0;\n                        state <= MUL_B;",
+        ["lsc1u_compositional_refinement.sby"],
+    ),
+    (
+        "lsc1u_mul_bit_control",
+        "src/lsc1u_core.sv",
+        "(state == MUL_BITS));",
+        "(state == MUL_TX));",
+        ["lsc1u_compositional_refinement.sby"],
+    ),
+    (
+        "lsc1u_mul_shift_control",
+        "src/lsc1u_core.sv",
+        "ena && (state == MUL_TX) && !out_valid;",
+        "ena && (state == MUL_TX) && out_valid;",
+        ["lsc1u_compositional_refinement.sby"],
+    ),
+    (
+        "lsc1u_mul_output_mux",
+        "src/lsc1u_core.sv",
+        "out_byte <= mul_result_byte;",
+        "out_byte <= saved_byte;",
+        ["lsc1u_compositional_refinement.sby"],
+    ),
+    (
+        "gf128_mul_accumulate",
+        "src/gf2n_mul_bitstream.sv",
+        "wire [WIDTH-1:0] accumulator_next = accumulator ^ selected;",
+        "wire [WIDTH-1:0] accumulator_next = accumulator | selected;",
+        ["gf128_mul_stream_refinement.sby"],
+    ),
 ]
 
 

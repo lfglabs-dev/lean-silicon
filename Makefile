@@ -86,6 +86,8 @@ formal:
 	cd formal && sby -f lsc1u_protocol.sby
 	cd formal && sby -f lsc1u_reachability.sby
 	cd formal && sby -f lsc1u_xor_refinement.sby
+	cd formal && sby -f gf128_mul_stream_refinement.sby
+	cd formal && sby -f lsc1u_compositional_refinement.sby
 
 formal-mutations:
 	$(PYTHON) formal/check_mutations.py

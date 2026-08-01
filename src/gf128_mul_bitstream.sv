@@ -21,6 +21,10 @@ module gf128_mul_bitstream (
 
     input  wire         result_shift,
     output wire [7:0]   result_byte
+`ifdef FORMAL
+    , output wire [127:0] formal_a_shift
+    , output wire [127:0] formal_accumulator
+`endif
 );
 
     gf2n_mul_bitstream #(
@@ -39,6 +43,10 @@ module gf128_mul_bitstream (
         .bit_last     (bit_last),
         .result_shift (result_shift),
         .result_byte  (result_byte)
+`ifdef FORMAL
+        , .formal_a_shift (formal_a_shift)
+        , .formal_accumulator (formal_accumulator)
+`endif
     );
 
 endmodule

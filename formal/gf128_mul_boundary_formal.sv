@@ -21,9 +21,17 @@ module gf128_mul_bitstream (
     input  wire       bit_last,
     input  wire       result_shift,
     output wire [7:0] result_byte
+`ifdef FORMAL
+    , output wire [127:0] formal_a_shift
+    , output wire [127:0] formal_accumulator
+`endif
 );
     (* anyseq *) wire [7:0] unconstrained_result;
     assign result_byte = unconstrained_result;
+`ifdef FORMAL
+    assign formal_a_shift = 128'd0;
+    assign formal_accumulator = {120'd0, unconstrained_result};
+`endif
 endmodule
 
 `default_nettype wire
