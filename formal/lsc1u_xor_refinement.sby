@@ -1,0 +1,29 @@
+[tasks]
+prove
+cover
+
+[options]
+prove: mode prove
+prove: depth 32
+cover: mode cover
+cover: depth 80
+timeout 180
+vcd off
+
+[engines]
+prove: abc pdr
+cover: btor btormc
+
+[script]
+read -formal -sv gf128_mul_boundary_formal.sv
+read -formal -sv lsc1u_core.sv
+prove: read -formal -sv lsc1u_xor_refinement_formal.sv
+cover: read -formal -sv lsc1u_xor_refinement_cover.sv
+prove: prep -top lsc1u_xor_refinement_formal
+cover: prep -top lsc1u_xor_refinement_cover
+
+[files]
+gf128_mul_boundary_formal.sv
+../src/lsc1u_core.sv
+lsc1u_xor_refinement_formal.sv
+lsc1u_xor_refinement_cover.sv

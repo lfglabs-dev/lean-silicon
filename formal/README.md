@@ -11,6 +11,10 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `stream_alu_mul_pulse.sby` | `mul_a_valid`/`mul_bit_valid`/`mul_result_shift` are mutually exclusive in the shipped `leanvm_b_stream_alu` FSM | k-induction + cover |
 | `lsc1u_protocol.sby` | LSC-1u clamp/reset/stall/completion/framing plus retained XOR/SET bytes | unbounded PDR |
 | `lsc1u_reachability.sby` | Independent completion witnesses for XOR, MUL, SET, and fault response | bounded cover per opcode |
+| `lsc1u_xor_refinement.sby` | Cycle-accurate retained-state refinement from accepted XOR command through all arithmetic result beats and retirement | unbounded PDR + bounded covers |
+
+The XOR refinement's architectural state, invariants, assumptions, mutation
+falsifiers, and residual gaps are enumerated in `LSC1U_XOR_REFINEMENT.md`.
 
 ## LSC-1u retained boundary
 
