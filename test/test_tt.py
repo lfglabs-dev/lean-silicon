@@ -81,21 +81,33 @@ async def receive(dut, stall=0):
     return value, done
 
 
-async def transact(dut, opcode, payload, expected, rng):
-    await send(dut, opcode)
+async def transact(dut, opcode, payload, expected, rng, *, rx_stalls=None,
+                   tx_stalls=None):
+    rx_stalls = rx_stalls or ()
+    tx_stalls = tx_stalls or ()
+    await send(dut, opcode, rx_stalls[0] if rx_stalls else 0)
     assert bit(dut, BUSY)
     output = []
     done_count = 0
-    for byte in payload:
-        await send(dut, byte, rng.randrange(3))
+    receive_count = 0
+    for index, byte in enumerate(payload):
+        rx_stall = (rx_stalls[(index + 1) % len(rx_stalls)]
+                    if rx_stalls else rng.randrange(3))
+        await send(dut, byte, rx_stall)
         if bit(dut, TX_VALID):
-            value, done = await receive(dut, rng.randrange(5))
+            tx_stall = (tx_stalls[receive_count % len(tx_stalls)]
+                        if tx_stalls else rng.randrange(5))
+            value, done = await receive(dut, tx_stall)
             output.append(value)
             done_count += done
+            receive_count += 1
     while len(output) < len(expected):
-        value, done = await receive(dut, rng.randrange(5))
+        tx_stall = (tx_stalls[receive_count % len(tx_stalls)]
+                    if tx_stalls else rng.randrange(5))
+        value, done = await receive(dut, tx_stall)
         output.append(value)
         done_count += done
+        receive_count += 1
     assert bytes(output) == expected
     assert done_count == 1
     await tick(dut)
@@ -261,7 +273,9 @@ async def lsc1u_shared_mutation_corpus_and_latency(dut):
     for case in load_corpus():
         start = cocotb.utils.get_sim_time(unit="ns")
         await transact(dut, opcode[case["opcode"]], corpus_payload(case),
-                       corpus_expected(case), rng)
+                       corpus_expected(case), rng,
+                       rx_stalls=case["rx_stalls"],
+                       tx_stalls=case["tx_stalls"])
         elapsed_cycles = (cocotb.utils.get_sim_time(unit="ns") - start) // 40
         # Includes deterministic ready/valid stalls; catches stuck or radically
         # slower state machines while remaining safe for the serial multiplier.
