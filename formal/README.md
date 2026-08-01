@@ -12,9 +12,20 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `lsc1u_protocol.sby` | LSC-1u clamp/reset/stall/completion/framing plus retained XOR/SET bytes | unbounded PDR |
 | `lsc1u_reachability.sby` | Independent completion witnesses for XOR, MUL, SET, and fault response | bounded cover per opcode |
 | `lsc1u_xor_refinement.sby` | Cycle-accurate retained-state refinement from accepted XOR command through all arithmetic result beats and retirement | unbounded PDR + bounded covers |
+| `gf128_mul_stream_refinement.sby` | Production GF(2^128) datapath refines the accepted-event polynomial specification, including arbitrary pauses and reset/abort | unbounded PDR + bounded covers |
+| `lsc1u_compositional_refinement.sby` | Cycle-accurate all-op transition refinement, including MUL_A/B/BITS/TX, output stalls, enable pauses, reset, and retirement | unbounded PDR |
 
 The XOR refinement's architectural state, invariants, assumptions, mutation
 falsifiers, and residual gaps are enumerated in `LSC1U_XOR_REFINEMENT.md`.
+
+The compositional milestone partitions the 128-bit arithmetic from controller
+control.  The controller proof elaborates an executable polynomial
+specification at the multiplier boundary and checks every visible cycle.  The
+multiplier proof independently establishes that the production module refines
+that same accepted-event recurrence.  Neither proof assumes progress:
+`rx_valid`, `tx_ready`, `ena`, reset, and datapath event pauses may be delayed
+arbitrarily.  Consequently this is a safety/refinement claim, not liveness
+under an unfair environment.
 
 ## LSC-1u retained boundary
 

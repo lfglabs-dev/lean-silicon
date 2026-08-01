@@ -38,6 +38,10 @@ module gf2n_mul_bitstream #(
 
     input  wire                    result_shift,
     output wire [BYTE_BITS-1:0]    result_byte
+`ifdef FORMAL
+    , output wire [WIDTH-1:0] formal_a_shift
+    , output wire [WIDTH-1:0] formal_accumulator
+`endif
 );
 
     reg [WIDTH-1:0] a_shift;
@@ -68,6 +72,10 @@ module gf2n_mul_bitstream #(
     endfunction
 
     assign result_byte = accumulator[BYTE_BITS-1:0];
+`ifdef FORMAL
+    assign formal_a_shift = a_shift;
+    assign formal_accumulator = accumulator;
+`endif
 
     always @(posedge clk) begin
         if (!rst_n) begin

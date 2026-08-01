@@ -23,6 +23,22 @@ module lsc1u_core (
     output wire       busy,
     output wire       fault,
     output wire       done_pulse
+`ifdef FORMAL
+    , output wire [3:0] formal_state
+    , output wire [3:0] formal_byte_index
+    , output wire [7:0] formal_saved_byte
+    , output wire [7:0] formal_out_byte
+    , output wire formal_out_valid
+    , output wire formal_fault_reg
+    , output wire formal_done_reg
+    , output wire [127:0] formal_mul_power
+    , output wire [127:0] formal_mul_product
+    , output wire formal_mul_a_valid
+    , output wire formal_mul_bit_valid
+    , output wire formal_mul_bit_value
+    , output wire formal_mul_bit_last
+    , output wire formal_mul_result_shift
+`endif
 );
     localparam [7:0] CMD_XOR = 8'h01;
     localparam [7:0] CMD_MUL = 8'h02;
@@ -57,6 +73,9 @@ module lsc1u_core (
     wire mul_result_shift =
         ena && (state == MUL_TX) && !out_valid;
     wire [7:0] mul_result_byte;
+`ifdef FORMAL
+    wire [127:0] mul_formal_a_shift, mul_formal_accumulator;
+`endif
 
     gf128_mul_bitstream multiplier (
         .clk(clk),
@@ -70,6 +89,10 @@ module lsc1u_core (
         .bit_last(mul_bit_last),
         .result_shift(mul_result_shift),
         .result_byte(mul_result_byte)
+`ifdef FORMAL
+        , .formal_a_shift(mul_formal_a_shift)
+        , .formal_accumulator(mul_formal_accumulator)
+`endif
     );
 
     assign rx_ready = ena && !out_valid &&
@@ -80,6 +103,22 @@ module lsc1u_core (
     assign busy = ena && ((state != IDLE) || out_valid);
     assign fault = ena && fault_reg;
     assign done_pulse = ena && rst_n && done_reg;
+`ifdef FORMAL
+    assign formal_state = state;
+    assign formal_byte_index = byte_index;
+    assign formal_saved_byte = saved_byte;
+    assign formal_out_byte = out_byte;
+    assign formal_out_valid = out_valid;
+    assign formal_fault_reg = fault_reg;
+    assign formal_done_reg = done_reg;
+    assign formal_mul_power = mul_formal_a_shift;
+    assign formal_mul_product = mul_formal_accumulator;
+    assign formal_mul_a_valid = mul_a_valid;
+    assign formal_mul_bit_valid = mul_bit_valid;
+    assign formal_mul_bit_value = mul_bit_value;
+    assign formal_mul_bit_last = mul_bit_last;
+    assign formal_mul_result_shift = mul_result_shift;
+`endif
 
     wire rx_fire = rx_valid && rx_ready;
     wire tx_fire = tx_valid && tx_ready;

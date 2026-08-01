@@ -1,0 +1,20 @@
+[tasks]
+prove
+
+[options]
+prove: mode prove
+prove: depth 2
+timeout 300
+vcd off
+
+[engines]
+prove: abc pdr
+
+[script]
+read -formal -D FORMAL -sv gf128_mul_spec_formal.sv lsc1u_core.sv lsc1u_compositional_refinement_formal.sv
+prep -top lsc1u_compositional_refinement_formal
+
+[files]
+gf128_mul_spec_formal.sv
+../src/lsc1u_core.sv
+lsc1u_compositional_refinement_formal.sv

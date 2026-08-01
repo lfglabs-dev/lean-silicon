@@ -1,0 +1,25 @@
+[tasks]
+prove
+cover
+
+[options]
+prove: mode prove
+prove: depth 4
+cover: mode cover
+cover: depth 180
+timeout 300
+vcd off
+
+[engines]
+prove: abc pdr
+cover: smtbmc z3
+
+[script]
+prove: read -formal -D FORMAL -sv gf2n_mul_bitstream.sv gf128_mul_bitstream.sv gf128_mul_stream_refinement_formal.sv
+cover: read -formal -D FORMAL -D COVER -sv gf2n_mul_bitstream.sv gf128_mul_bitstream.sv gf128_mul_stream_refinement_formal.sv
+prep -top gf128_mul_stream_refinement_formal
+
+[files]
+../src/gf2n_mul_bitstream.sv
+../src/gf128_mul_bitstream.sv
+gf128_mul_stream_refinement_formal.sv
