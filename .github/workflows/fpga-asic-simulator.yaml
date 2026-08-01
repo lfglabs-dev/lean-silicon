@@ -20,6 +20,11 @@ jobs:
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
+        with:
+          # pull_request defaults to a synthetic merge ref. This lane records
+          # and builds the immutable candidate head itself; manual runs use the
+          # selected ref's github.sha.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Record immutable candidate identity
         shell: bash
         run: |
