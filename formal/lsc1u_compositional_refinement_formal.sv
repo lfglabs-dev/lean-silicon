@@ -1,8 +1,8 @@
 `default_nettype none
 
 // Cycle-exact architectural transition model for every accepted LSC-1u
-// micro-op.  The concrete multiplier is replaced by gf128_mul_spec_formal;
-// gf128_mul_stream_refinement.sby proves that production boundary separately.
+// micro-op.  Multiplier data is conservatively abstracted; the dedicated
+// stream-refinement proof establishes production arithmetic separately.
 module lsc1u_compositional_refinement_formal;
     (* gclk *) reg clk;
     (* anyseq *) reg rst_n, ena, rx_valid, tx_ready;

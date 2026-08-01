@@ -19,10 +19,10 @@ The XOR refinement's architectural state, invariants, assumptions, mutation
 falsifiers, and residual gaps are enumerated in `LSC1U_XOR_REFINEMENT.md`.
 
 The compositional milestone partitions the 128-bit arithmetic from controller
-control.  The controller proof elaborates an executable polynomial
-specification at the multiplier boundary and checks every visible cycle.  The
-multiplier proof independently establishes that the production module refines
-that same accepted-event recurrence.  Neither proof assumes progress:
+control.  The controller proof uses a conservative arbitrary-result boundary
+and checks every visible cycle, including multiplier control and output
+selection.  The multiplier proof independently establishes the production
+module's accepted-event polynomial recurrence.  Neither proof assumes progress:
 `rx_valid`, `tx_ready`, `ena`, reset, and datapath event pauses may be delayed
 arbitrarily.  Consequently this is a safety/refinement claim, not liveness
 under an unfair environment.

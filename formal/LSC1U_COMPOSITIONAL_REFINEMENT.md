@@ -10,7 +10,9 @@ induction problem.
 an independent cycle transition model.  It covers opcode decode/fault, XOR,
 SET, `MUL_A`, `MUL_B`, `MUL_BITS`, `MUL_TX`, each pending output beat, and
 final retirement.  At the multiplier module boundary it elaborates
-`gf128_mul_spec_formal.sv`, an executable GF(2^128) accepted-event contract.
+`gf128_mul_controller_boundary_formal.sv`, a conservative arbitrary-result
+contract.  Because control never branches on multiplier data, this retains
+the output-mux obligation while removing 384 irrelevant arithmetic state bits.
 
 `gf128_mul_stream_refinement.sby` then checks the production
 `src/gf128_mul_bitstream.sv` and `src/gf2n_mul_bitstream.sv` against the same
@@ -27,8 +29,9 @@ fan-in; they let PDR state the inductive composition relation directly.
 Both safety tasks are unbounded PDR proofs.  The multiplier cover reaches a
 complete accepted stream; the pre-existing LSC-1u reachability task reaches
 MUL retirement at depth 178. Partitioning is a solver-performance choice,
-not an assumption: the controller never observes multiplier internals, and
-the second proof establishes the exact contract used by the first.
+not an environment assumption: every concrete result is included by the
+controller boundary, while the second proof establishes the production
+multiplier's stronger arithmetic behavior.
 
 ## Environment and backpressure
 
