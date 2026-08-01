@@ -1,0 +1,22 @@
+{
+  "schema": "lsc1u-pin-corpus-v1",
+  "polynomial": "x^128+x^7+x^2+x+1",
+  "reduction_low": "0x87",
+  "byte_order": "little",
+  "cases": [
+    {"id":"set.zero", "opcode":"SET", "a":"00000000000000000000000000000000", "rx_stalls":[0,1,0,3], "tx_stalls":[0,2,0,5]},
+    {"id":"set.ones", "opcode":"SET", "a":"01000000000000000000000000000000", "rx_stalls":[2,0,1], "tx_stalls":[3,0,1]},
+    {"id":"set.all-ones", "opcode":"SET", "a":"ffffffffffffffffffffffffffffffff", "rx_stalls":[0,7,0,1], "tx_stalls":[0,11,0,2]},
+    {"id":"set.unit-top", "opcode":"SET", "a":"00000000000000000000000000000080", "rx_stalls":[5,0,2], "tx_stalls":[7,0,4]},
+    {"id":"xor.zero", "opcode":"XOR", "a":"00000000000000000000000000000000", "b":"ffffffffffffffffffffffffffffffff", "rx_stalls":[0,1,4,0], "tx_stalls":[2,0,9,0]},
+    {"id":"xor.cancel", "opcode":"XOR", "a":"ffffffffffffffffffffffffffffffff", "b":"ffffffffffffffffffffffffffffffff", "rx_stalls":[3,0,0,6], "tx_stalls":[0,5,0,13]},
+    {"id":"xor.units", "opcode":"XOR", "a":"01000000000000000000000000000080", "b":"00010000000000000000000000008000", "rx_stalls":[0,8,1,0], "tx_stalls":[6,0,1,0]},
+    {"id":"xor.random", "opcode":"XOR", "a":"d862c2e36b0a42f7827c67ebc8d44df7", "b":"7a5b95e4e83781234823c1189ecc40fc", "rx_stalls":[17,0,3,1,0], "tx_stalls":[19,2,0,4,1]},
+    {"id":"mul.zero", "opcode":"MUL", "a":"00000000000000000000000000000000", "b":"ffffffffffffffffffffffffffffffff", "rx_stalls":[0,3,1,0], "tx_stalls":[5,0,2]},
+    {"id":"mul.one", "opcode":"MUL", "a":"01000000000000000000000000000000", "b":"ffffffffffffffffffffffffffffffff", "rx_stalls":[1,0,4], "tx_stalls":[0,7,1]},
+    {"id":"mul.reduce-87", "opcode":"MUL", "a":"00000000000000000000000000000080", "b":"02000000000000000000000000000000", "rx_stalls":[0,11,0,2], "tx_stalls":[13,0,3]},
+    {"id":"mul.unit-bits", "opcode":"MUL", "a":"00000000000000002000000000000000", "b":"00000000000400000000000000000000", "rx_stalls":[9,0,1,5], "tx_stalls":[0,17,0,4]},
+    {"id":"mul.all-ones", "opcode":"MUL", "a":"ffffffffffffffffffffffffffffffff", "b":"ffffffffffffffffffffffffffffffff", "rx_stalls":[0,2,7,1], "tx_stalls":[23,0,5,1]},
+    {"id":"mul.random", "opcode":"MUL", "a":"e888fbb4cf9ae6254f19ba12e6d9af54", "b":"788f195a6f509ca3e934f78d7a71dd85", "rx_stalls":[31,0,4,1,8], "tx_stalls":[29,0,3,7,1]}
+  ]
+}

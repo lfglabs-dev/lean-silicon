@@ -4,6 +4,9 @@ import random
 import cocotb
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
 
+from fpga_harness.lsc1u_protocol import expected as corpus_expected
+from fpga_harness.lsc1u_protocol import load_corpus, payload as corpus_payload
+
 
 RX_VALID = 1 << 0
 RX_READY = 1 << 1
@@ -78,21 +81,33 @@ async def receive(dut, stall=0):
     return value, done
 
 
-async def transact(dut, opcode, payload, expected, rng):
-    await send(dut, opcode)
+async def transact(dut, opcode, payload, expected, rng, *, rx_stalls=None,
+                   tx_stalls=None):
+    rx_stalls = rx_stalls or ()
+    tx_stalls = tx_stalls or ()
+    await send(dut, opcode, rx_stalls[0] if rx_stalls else 0)
     assert bit(dut, BUSY)
     output = []
     done_count = 0
-    for byte in payload:
-        await send(dut, byte, rng.randrange(3))
+    receive_count = 0
+    for index, byte in enumerate(payload):
+        rx_stall = (rx_stalls[(index + 1) % len(rx_stalls)]
+                    if rx_stalls else rng.randrange(3))
+        await send(dut, byte, rx_stall)
         if bit(dut, TX_VALID):
-            value, done = await receive(dut, rng.randrange(5))
+            tx_stall = (tx_stalls[receive_count % len(tx_stalls)]
+                        if tx_stalls else rng.randrange(5))
+            value, done = await receive(dut, tx_stall)
             output.append(value)
             done_count += done
+            receive_count += 1
     while len(output) < len(expected):
-        value, done = await receive(dut, rng.randrange(5))
+        tx_stall = (tx_stalls[receive_count % len(tx_stalls)]
+                    if tx_stalls else rng.randrange(5))
+        value, done = await receive(dut, tx_stall)
         output.append(value)
         done_count += done
+        receive_count += 1
     assert bytes(output) == expected
     assert done_count == 1
     await tick(dut)
@@ -133,6 +148,8 @@ async def lsc1u_reset_ena_framing_and_backpressure(dut):
 
     # A payload byte without an accepted opcode is itself an unsupported opcode.
     await send(dut, 0x44)
+    assert bit(dut, FAULT | TX_VALID | BUSY)
+    assert int(dut.uo_out.value) == 0xE0
     value, done = await receive(dut, 3)
     assert (value, done) == (0xE0, True)
     assert not bit(dut, FAULT)
@@ -176,6 +193,67 @@ async def lsc1u_reset_ena_framing_and_backpressure(dut):
 
 
 @cocotb.test()
+async def lsc1u_reset_ena_every_state_and_consecutive_commands(dut):
+    rng = random.Random(0xE1A5E)
+    await reset(dut)
+
+    # ena freezes a partial SET receive and a MUL computation while tri-stating
+    # every TT output; re-selection resumes without accepting hidden beats.
+    await send(dut, 0x03)
+    await send(dut, 0x5A)
+    dut.ena.value = 0
+    dut.uio_in.value = RX_VALID | TX_READY
+    await tick(dut, 19)
+    assert int(dut.uo_out.value) == 0
+    assert int(dut.uio_out.value) == 0
+    assert int(dut.uio_oe.value) == 0
+    dut.ena.value = 1
+    dut.uio_in.value = 0
+    value, done = await receive(dut, 7)
+    assert (value, done) == (0x5A, False)
+
+    # Reset from SET receive, XOR A/B, output-stalled, MUL operand receive, and
+    # MUL compute/response all converge to the same clean command-ready state.
+    async def reset_now():
+        dut.rst_n.value = 0
+        dut.uio_in.value = RX_VALID | TX_READY
+        await tick(dut, 2)
+        assert not bit(dut, TX_VALID | BUSY | FAULT | DONE)
+        dut.rst_n.value = 1
+        dut.uio_in.value = 0
+        await tick(dut)
+        assert bit(dut, RX_READY)
+
+    await reset_now()                         # partial SET
+    await send(dut, 0x01); await send(dut, 1)
+    await reset_now()                         # XOR_B
+    await send(dut, 0x01); await send(dut, 1); await send(dut, 2)
+    assert bit(dut, TX_VALID)
+    await reset_now()                         # output stalled
+    await send(dut, 0x02)
+    for value in range(7):
+        await send(dut, value)
+    await reset_now()                         # MUL_A
+    await send(dut, 0x02)
+    for value in bytes(range(16)) + bytes([0xFF]):
+        await send(dut, value)
+    assert bit(dut, BUSY) and not bit(dut, RX_READY)
+    dut.ena.value = 0
+    await tick(dut, 23)
+    assert int(dut.uio_oe.value) == 0
+    dut.ena.value = 1
+    await tick(dut, 3)
+    await reset_now()                         # MUL_BITS
+
+    # Back-to-back commands without an idle padding cycle.
+    a = bytes(range(16))
+    await transact(dut, 0x03, a, a, rng)
+    await transact(dut, 0x01, b"".join(bytes((x, 0xFF)) for x in a),
+                   bytes(x ^ 0xFF for x in a), rng)
+    await transact(dut, 0x02, a + bytes([1]) + bytes(15), a, rng)
+
+
+@cocotb.test()
 async def lsc1u_little_endian_polynomial_vectors(dut):
     await reset(dut)
     rng = random.Random(1)
@@ -184,3 +262,22 @@ async def lsc1u_little_endian_polynomial_vectors(dut):
     two = (2).to_bytes(16, "little")
     await transact(dut, 0x02, one + top, top, rng)
     await transact(dut, 0x02, top + two, (0x87).to_bytes(16, "little"), rng)
+
+
+@cocotb.test()
+async def lsc1u_shared_mutation_corpus_and_latency(dut):
+    """Same arithmetic corpus consumed by the transport-neutral host harness."""
+    rng = random.Random(0x51C0_1A7E)
+    await reset(dut)
+    opcode = {"XOR": 0x01, "MUL": 0x02, "SET": 0x03}
+    for case in load_corpus():
+        start = cocotb.utils.get_sim_time(unit="ns")
+        await transact(dut, opcode[case["opcode"]], corpus_payload(case),
+                       corpus_expected(case), rng,
+                       rx_stalls=case["rx_stalls"],
+                       tx_stalls=case["tx_stalls"])
+        elapsed_cycles = (cocotb.utils.get_sim_time(unit="ns") - start) // 40
+        # Includes deterministic ready/valid stalls; catches stuck or radically
+        # slower state machines while remaining safe for the serial multiplier.
+        bound = 900 if case["opcode"] == "MUL" else 500
+        assert elapsed_cycles <= bound, (case["id"], elapsed_cycles, bound)

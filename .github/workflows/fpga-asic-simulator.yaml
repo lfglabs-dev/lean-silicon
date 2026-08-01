@@ -1,0 +1,51 @@
+name: Tiny Tapeout FPGA ASIC simulator
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/fpga-asic-simulator.yaml"
+      - "info.yaml"
+      - "src/**"
+      - "asic_core/rtl/gf2n_mul_bitstream.sv"
+      - "asic_core/rtl/gf128_mul_bitstream.sv"
+
+permissions:
+  contents: read
+
+jobs:
+  ice40up5k:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
+        with:
+          # pull_request defaults to a synthetic merge ref. This lane records
+          # and builds the immutable candidate head itself; manual runs use the
+          # selected ref's github.sha.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Record immutable candidate identity
+        shell: bash
+        run: |
+          mkdir -p evidence
+          git rev-parse HEAD | tee evidence/tested-commit.txt
+          git rev-parse HEAD^{tree} | tee evidence/tested-tree.txt
+      - name: Build ICE40UP5K ASIC-simulator image
+        uses: TinyTapeout/tt-gds-action/fpga/ice40up5k@651ea05e19e86a9c26d00307e8081ceb53d328d3 # ttsky26c, resolved 2026-08-01
+        with:
+          tools-ref: ff75e344cd8b65c744081e3719e0cb926203eb57
+      - name: Hash and inventory build outputs
+        if: always()
+        shell: bash
+        run: |
+          find build -maxdepth 1 -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum | tee evidence/build-SHA256SUMS
+          test -s evidence/build-SHA256SUMS
+          test -s build/tt_um_lfglabs_lsc1u.bin
+      - name: Upload immutable build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: lsc1u-fpga-build-evidence
+          if-no-files-found: error
+          path: evidence/
