@@ -31,6 +31,44 @@ driven or validated from this repository. The data path is **unvalidated**, and
 and JTAG — tool, USB, and JTAG visibility are not evidence that bytes cross the
 interface correctly.
 
+## Tiny Tapeout ICE40UP5K ASIC-simulator lane
+
+`lsc1u_protocol.py` is a transport-neutral driver for the active
+`tt_um_lfglabs_lsc1u` wrapper.  It drives only `ui_in`, `uio_in`, `ena`, and
+`rst_n`; samples `uo_out`, `uio_out`, and `uio_oe`; enforces the exact
+ready/valid handshakes and direction mask; and rejects values that cannot be
+represented as known eight-bit integers.  A future FPGA bridge or demoboard
+adapter implements its four-method `PinBackend` protocol without changing the
+arithmetic oracle or vectors.
+
+The shared `lsc1u_vectors.json` corpus covers SET/XOR/MUL identities, zero,
+one, all-ones, low/top/unit bits, deterministic random values, long stalls, and
+the little-endian `0x87` GF(2^128) reduction boundary.  RTL cocotb and the
+post-synthesis Tiny Tapeout `gl_test` consume that same corpus.  Protocol tests
+add reset and `ena` interruption, unsupported-opcode faulting, consecutive
+commands, stable output under backpressure, known outputs, and latency bounds.
+
+The `Tiny Tapeout FPGA ASIC simulator` workflow builds an ICE40UP5K `.bin` and
+records hashes.  This proves only that the image synthesized, placed, routed,
+and packed. It does **not** execute the image in an emulator, program an FPGA,
+or validate physical silicon. No hardware is accessed by that workflow or by
+the host-driver unit tests.
+
+Pinned upstream comparison and authoritative inputs (inspected 2026-08-01):
+
+- comparison: `Th0rgal/tt-myfirstchip@cc07d2c3e261231cfd6629d10db99fd3c9f9ba77`;
+- official action tag `ttsky26c` resolved to
+  `TinyTapeout/tt-gds-action@651ea05e19e86a9c26d00307e8081ceb53d328d3`;
+- support tools are overridden from the official mutable `main` default to
+  `TinyTapeout/tt-support-tools@ff75e344cd8b65c744081e3719e0cb926203eb57`.
+
+The official composite itself contains nested `actions/checkout@v6`,
+`actions/setup-python@v6`, `YosysHQ/setup-oss-cad-suite@v3`, and
+`actions/upload-artifact@v7` references. Those nested refs cannot be overridden
+by callers. The outer official action and every directly controlled workflow
+action/input are immutable; eliminating the nested mutable refs would require
+forking or vendoring the authoritative action.
+
 ```sh
 make fpga-boundary   # structural boundary check (gating)
 make fpga-harness    # deterministic unit tests, no board (gating)

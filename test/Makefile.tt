@@ -24,5 +24,7 @@ endif
 VERILOG_SOURCES += $(CURDIR)/tt_tb.sv
 TOPLEVEL := tt_tb
 COCOTB_TEST_MODULES := test_tt
+MODULE := test_tt
+export PYTHONPATH := $(ROOT):$(PYTHONPATH)
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

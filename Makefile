@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight mincore-state-count sim lean formal formal-mutations clean package checksums
+.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test mincore-state-count sim lean formal formal-mutations clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -61,6 +61,9 @@ fpga-boundary:
 
 fpga-harness:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s fpga_harness -v
+
+lsc1u-host-test:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest fpga_harness.test_lsc1u_protocol -v
 
 # Reporting only: absent tools or absent board must not fail a build.
 fpga-detect:
