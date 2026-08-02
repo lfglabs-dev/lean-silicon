@@ -80,7 +80,7 @@ module lsc1u_core (
     gf128_mul_bitstream multiplier (
         .clk(clk),
         .rst_n(rst_n),
-        .abort(1'b0),
+        .abort(!ena),
         .a_valid(mul_a_valid),
         .a_byte(rx_data),
         .a_last(byte_index == 4'd15),
@@ -133,7 +133,13 @@ module lsc1u_core (
             fault_reg  <= 1'b0;
             done_reg   <= 1'b0;
         end else if (!ena) begin
-            done_reg <= 1'b0;
+            state      <= IDLE;
+            byte_index <= 4'd0;
+            saved_byte <= 8'd0;
+            out_byte   <= 8'd0;
+            out_valid  <= 1'b0;
+            fault_reg  <= 1'b0;
+            done_reg   <= 1'b0;
         end else begin
             done_reg <= 1'b0;
 

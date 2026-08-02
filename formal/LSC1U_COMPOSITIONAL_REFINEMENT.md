@@ -40,8 +40,9 @@ The controller proof leaves `rx_valid`, `tx_ready`, `ena`, `rst_n`, and all
 input bytes free on every cycle after the required initial reset.  Therefore
 TX_READY may arrive immediately or after any finite delay.  A pending output
 remains stable and no subsequent input is accepted until the beat fires.
-`ena` may pause any receive, bit-processing, or transmit state.  Reset may
-occur in any state and cancels both controller and multiplier state.
+`ena` may fall in any receive, bit-processing, or transmit state.  Either
+`ena = 0` or reset cancels controller and multiplier state; the next enabled
+cycle is clean IDLE with no pending TX, fault, or DONE.
 
 The multiplier proof permits arbitrary pauses between accepted A bytes, B
 bits, and result shifts, and arbitrary reset/abort timing.  Its phase ordering
@@ -53,9 +54,10 @@ completion, not eventual completion when a peer stalls forever.
 
 `check_mutations.py` requires terminal counterexamples for a shortened
 `MUL_A` transition, misrouted `mul_bit_valid`, inverted result-shift control,
-the wrong MUL output mux input, and OR in place of XOR in the production
-accumulator.  These complement the existing retirement, stall, enable, XOR,
-SET, serialization, and generic arithmetic mutations.
+the wrong MUL output mux input, a disconnected enable-to-multiplier abort,
+and OR in place of XOR in the production accumulator. These complement the
+existing retirement, stall, enable, XOR, SET, serialization, and generic
+arithmetic mutations.
 
 ## Remaining release boundary
 

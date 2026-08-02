@@ -13,7 +13,7 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `lsc1u_reachability.sby` | Independent completion witnesses for XOR, MUL, SET, and fault response | bounded cover per opcode |
 | `lsc1u_xor_refinement.sby` | Cycle-accurate retained-state refinement from accepted XOR command through all arithmetic result beats and retirement | unbounded PDR + bounded covers |
 | `gf128_mul_stream_refinement.sby` | Production GF(2^128) datapath refines the accepted-event polynomial specification, including arbitrary pauses and reset/abort | unbounded PDR + bounded covers |
-| `lsc1u_compositional_refinement.sby` | Cycle-accurate all-op transition refinement, including MUL_A/B/BITS/TX, output stalls, enable pauses, reset, and retirement | unbounded PDR |
+| `lsc1u_compositional_refinement.sby` | Cycle-accurate all-op transition refinement, including MUL_A/B/BITS/TX, arbitrary output stalls, reset/enable abort, and retirement | unbounded PDR |
 
 The XOR refinement's architectural state, invariants, assumptions, mutation
 falsifiers, and residual gaps are enumerated in `LSC1U_XOR_REFINEMENT.md`.
@@ -24,9 +24,9 @@ specification at the multiplier boundary and checks every visible cycle,
 including multiplier control and output selection.  The multiplier proof
 independently establishes that the production module implements that same
 recurrence.  Neither proof assumes progress:
-`rx_valid`, `tx_ready`, `ena`, reset, and datapath event pauses may be delayed
-arbitrarily.  Consequently this is a safety/refinement claim, not liveness
-under an unfair environment.
+`rx_valid`, `tx_ready`, reset, and datapath event pauses may vary arbitrarily;
+`ena = 0` is a synchronous transaction abort. Consequently this is a
+safety/refinement claim, not liveness under an unfair environment.
 
 ## LSC-1u retained boundary
 
@@ -55,8 +55,9 @@ python3 check_mutations.py
 ```
 
 `check_mutations.py` works only in temporary copies.  It requires terminal
-counterexamples for broken stall stability, enable clamping, XOR data, SET
-data, generic multiplier arithmetic, and WIDTH=128 result serialization.
+counterexamples for broken stall stability, enable clamping/abort, FSM
+transitions, multiplier control, output selection, XOR/SET data, generic
+multiplier arithmetic, and WIDTH=128 result serialization.
 
 ## GF(2^8) product check
 

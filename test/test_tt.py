@@ -24,7 +24,7 @@ async def tick(dut, count=1):
         await ReadOnly()
         # The GL build uses UNIT_DELAY=#1 (1 ns); sample after it settles while
         # staying far inside the 40 ns clock period. RTL also uses this path.
-        await Timer(2, unit="ns")
+        await Timer(2, units="ns")
 
 
 def bit(dut, mask):
@@ -154,7 +154,7 @@ async def lsc1u_reset_ena_framing_and_backpressure(dut):
     assert (value, done) == (0xE0, True)
     assert not bit(dut, FAULT)
 
-    # Freeze a partial XOR while deselected; no pin is driven and no byte fires.
+    # Deselect aborts a partial XOR; no pin is driven and no byte fires.
     await send(dut, 0x01)
     await send(dut, 0xA5)
     dut.ui_in.value = 0x5A
@@ -164,12 +164,12 @@ async def lsc1u_reset_ena_framing_and_backpressure(dut):
     assert int(dut.uo_out.value) == 0
     assert int(dut.uio_out.value) == 0
     assert int(dut.uio_oe.value) == 0
+    dut.uio_in.value = 0
     dut.ena.value = 1
     await tick(dut)
     assert int(dut.uio_oe.value) == OUTPUT_ENABLES
-    dut.uio_in.value = 0
-    value, done = await receive(dut, 4)
-    assert value == 0xFF and not done
+    assert bit(dut, RX_READY)
+    assert not bit(dut, TX_VALID | BUSY | FAULT | DONE)
 
     # Reset cancels the remaining fixed-width frame and exposes command ready.
     dut.rst_n.value = 0
@@ -197,8 +197,8 @@ async def lsc1u_reset_ena_every_state_and_consecutive_commands(dut):
     rng = random.Random(0xE1A5E)
     await reset(dut)
 
-    # ena freezes a partial SET receive and a MUL computation while tri-stating
-    # every TT output; re-selection resumes without accepting hidden beats.
+    # ena aborts a partial SET receive while tri-stating every TT output;
+    # re-selection starts from a clean command boundary.
     await send(dut, 0x03)
     await send(dut, 0x5A)
     dut.ena.value = 0
@@ -209,8 +209,9 @@ async def lsc1u_reset_ena_every_state_and_consecutive_commands(dut):
     assert int(dut.uio_oe.value) == 0
     dut.ena.value = 1
     dut.uio_in.value = 0
-    value, done = await receive(dut, 7)
-    assert (value, done) == (0x5A, False)
+    await tick(dut)
+    assert bit(dut, RX_READY)
+    assert not bit(dut, TX_VALID | BUSY | FAULT | DONE)
 
     # Reset from SET receive, XOR A/B, output-stalled, MUL operand receive, and
     # MUL compute/response all converge to the same clean command-ready state.
@@ -245,6 +246,27 @@ async def lsc1u_reset_ena_every_state_and_consecutive_commands(dut):
     await tick(dut, 3)
     await reset_now()                         # MUL_BITS
 
+    async def reach_mul_tx():
+        await send(dut, 0x02)
+        for value in bytes(range(16)) + bytes([1]) + bytes(15):
+            await send(dut, value)
+        waits = 0
+        while not bit(dut, TX_VALID):
+            await tick(dut)
+            waits += 1
+            assert waits < 400
+
+    await reach_mul_tx()
+    dut.ena.value = 0
+    await tick(dut, 2)
+    dut.ena.value = 1
+    await tick(dut)
+    assert bit(dut, RX_READY)
+    assert not bit(dut, TX_VALID | BUSY | FAULT | DONE)  # ena abort in MUL_TX
+
+    await reach_mul_tx()
+    await reset_now()                         # reset in MUL_TX
+
     # Back-to-back commands without an idle padding cycle.
     a = bytes(range(16))
     await transact(dut, 0x03, a, a, rng)
@@ -271,12 +293,12 @@ async def lsc1u_shared_mutation_corpus_and_latency(dut):
     await reset(dut)
     opcode = {"XOR": 0x01, "MUL": 0x02, "SET": 0x03}
     for case in load_corpus():
-        start = cocotb.utils.get_sim_time(unit="ns")
+        start = cocotb.utils.get_sim_time(units="ns")
         await transact(dut, opcode[case["opcode"]], corpus_payload(case),
                        corpus_expected(case), rng,
                        rx_stalls=case["rx_stalls"],
                        tx_stalls=case["tx_stalls"])
-        elapsed_cycles = (cocotb.utils.get_sim_time(unit="ns") - start) // 40
+        elapsed_cycles = (cocotb.utils.get_sim_time(units="ns") - start) // 40
         # Includes deterministic ready/valid stalls; catches stuck or radically
         # slower state machines while remaining safe for the serial multiplier.
         bound = 900 if case["opcode"] == "MUL" else 500
