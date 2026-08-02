@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1785625102" />
+    <testcase name="lsc1u_all_retained_operations" classname="test_tt" file="/home/runner/work/lean-silicon/lean-silicon/test/test_tt.py" lineno="128" time="0.6557822227478027" sim_time_ns="136302.0" ratio_time="207846.43936958062" />
+    <testcase name="lsc1u_reset_ena_framing_and_backpressure" classname="test_tt" file="/home/runner/work/lean-silicon/lean-silicon/test/test_tt.py" lineno="145" time="0.0031790733337402344" sim_time_ns="1159.9990000000107" ratio_time="364885.8891327467" />
+    <testcase name="lsc1u_reset_ena_every_state_and_consecutive_commands" classname="test_tt" file="/home/runner/work/lean-silicon/lean-silicon/test/test_tt.py" lineno="195" time="0.06817436218261719" sim_time_ns="21079.99900000001" ratio_time="309207.13190588384" />
+    <testcase name="lsc1u_little_endian_polynomial_vectors" classname="test_tt" file="/home/runner/work/lean-silicon/lean-silicon/test/test_tt.py" lineno="256" time="0.05737113952636719" sim_time_ns="18479.99900000001" ratio_time="322113.159204495" />
+    <testcase name="lsc1u_shared_mutation_corpus_and_latency" classname="test_tt" file="/home/runner/work/lean-silicon/lean-silicon/test/test_tt.py" lineno="267" time="0.34706640243530273" sim_time_ns="130359.99900000001" ratio_time="375605.35414919816" />
+  </testsuite>
+</testsuites>

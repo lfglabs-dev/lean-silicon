@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<report-database>
+ <description>SKY130 DRC runset</description>
+ <original-file/>
+ <generator>drc: script='tech-files/nwell_urpm.drc'</generator>
+ <top-cell>tt_um_lfglabs_lsc1u</top-cell>
+ <tags>
+ </tags>
+ <categories>
+  <category>
+   <name>nwell space to urpm</name>
+   <description>nwell space to urpm: min. nwell spacing to urpm 0.7um</description>
+   <categories>
+   </categories>
+  </category>
+ </categories>
+ <cells>
+  <cell>
+   <name>tt_um_lfglabs_lsc1u</name>
+   <variant/>
+   <layout-name/>
+   <references>
+   </references>
+  </cell>
+ </cells>
+ <items>
+ </items>
+</report-database>

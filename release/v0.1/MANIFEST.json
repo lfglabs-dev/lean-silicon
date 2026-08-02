@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "release_candidate": "v0.1",
+  "source": {
+    "git_sha": "9f78b01c501b8cfd22760a35fe4cbd745865a31e",
+    "tree_sha": "6d053e117e3f5f036bbb43a410b2e86791939570",
+    "branch": "main"
+  },
+  "workflow_run": {
+    "id": 30722147803,
+    "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803",
+    "head_sha": "9f78b01c501b8cfd22760a35fe4cbd745865a31e",
+    "overall_conclusion": "failure",
+    "overall_conclusion_note": "GDS, precheck, and gate-level jobs passed; only the viewer job failed before GitHub Pages was enabled.",
+    "jobs": {
+      "gds": {
+        "id": 91427563037,
+        "conclusion": "success",
+        "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803/job/91427563037"
+      },
+      "precheck": {
+        "id": 91428129783,
+        "conclusion": "success",
+        "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803/job/91428129783"
+      },
+      "gl_test": {
+        "id": 91428129794,
+        "conclusion": "success",
+        "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803/job/91428129794"
+      },
+      "viewer": {
+        "id": 91428129792,
+        "conclusion": "failure",
+        "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803/job/91428129792"
+      }
+    }
+  },
+  "github_artifacts": [
+    {"id": 8825260295, "name": "GDS_logs", "sha256": "965c077a10de718350ef116894636f6f276a016962920af2657dffc57672834d"},
+    {"id": 8825260766, "name": "tt_submission", "sha256": "c5856f497c2e2446e786f3faef5d8aa5c7773cde0663e52e44449b0e6b7b996a"},
+    {"id": 8825261904, "name": "gds_render", "sha256": "d7751f4303a69c7f5eab3cdee43ba944256dae8b016b8d9250a51be3332d5c98"},
+    {"id": 8825264821, "name": "github-pages", "sha256": "68f3f7985b941ebe8c90feb84b748303441cf402b88203e5a00810bfba8c683b"},
+    {"id": 8825268417, "name": "gatelevel_test_results", "sha256": "bd1dc9c2762cf92da380c97622ac0b682d444843394541cd08ebc5f4c034f7ac"},
+    {"id": 8825284979, "name": "precheck_reports", "sha256": "73e2d5244af21b73e8c5a3a6a9febea2c29d9080fee27f5245e382a6c51c2032"}
+  ],
+  "included_artifacts": [
+    {"kind": "gate-level", "path": "artifacts/gatelevel-results.xml", "sha256": "849642e8ad5dbceb26ee9472fc02d7d70eccb544d3e975de8a73e3ee1381e82c"},
+    {"kind": "pdk-identity", "path": "artifacts/pdk.json", "sha256": "d551717008d61a63fef26471923ab841538583053fb5b0f238e8adef50542a39"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_beol.xml", "sha256": "e01e67c422b7c9beaf07c8739728535b25d254fc9c4c26ed14084b1e48eda4f3"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_feol.xml", "sha256": "81fc416069689790d6d6ed926a3cdd2e9c0ba310fa8ceb434ada5619f0da0337"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_nwell_urpm.xml", "sha256": "2ab8b15b716b31902620669b3b6359a952df86337360cc912e8fd270145bbc23"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_offgrid.xml", "sha256": "73f0d86b1a1197ce092f96dd49c9406e8fbab1199eb0ca9468ba07b12a3be7fb"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_pin_label_purposes_overlapping_drawing.xml", "sha256": "0ba647f3e03d7f8b451351d555dd5465f16940b2183f63b90a6ebdcd3a8acab4"},
+    {"kind": "precheck", "path": "artifacts/precheck/drc_zero_area.xml", "sha256": "c9c64f9da099b259e1fa8aee259e108fcd6eb674ea8c76079282e2aab622656a"},
+    {"kind": "precheck", "path": "artifacts/precheck/magic_drc.txt", "sha256": "82a56bff28dab01bc0fd8c64b3c2debaf8d4ca0769e6c30a812a4a76badd6f7c"},
+    {"kind": "precheck", "path": "artifacts/precheck/results.md", "sha256": "8ab1c8bc31ac259f4b23800945c005507f2bfa5377d84d4f7b2465d9d1aa7f87"},
+    {"kind": "precheck", "path": "artifacts/precheck/results.xml", "sha256": "c455cd3b117844c3094825bc675e151744b31b0cee700de91268e308b4d64801"},
+    {"kind": "gds", "path": "artifacts/tt_um_lfglabs_lsc1u.gds", "sha256": "101ab50a2dba5cb125776189caf729ac0a7b0c47d1eeafd132308aa40b2feaee"},
+    {"kind": "oas", "path": "artifacts/tt_um_lfglabs_lsc1u.oas", "sha256": "47e0f0e14ccd2a617061c7fc93f57f35408de23ca422f596280d93ffac454cdf"},
+    {"kind": "netlist", "path": "artifacts/tt_um_lfglabs_lsc1u.v", "sha256": "ad2c4d85b541bb4ab4f8751eb1fa86cc9d5ed520db3e7d681f608e1505f395a2"}
+  ]
+}

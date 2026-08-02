@@ -1,7 +1,22 @@
 # Status ledger
 
+The reduced **LSC-1u (LSC-1 Micro)** profile is on `main` at
+`9f78b01c501b8cfd22760a35fe4cbd745865a31e`. On that exact head, GDS,
+precheck, gate-level simulation, RTL simulation, and the FPGA ASIC-simulator
+build are green. Phase C1 multiply equivalence was settled by PR #35. Phase C2
+full-release equivalence is still open, and there is no silicon validation.
+These statements do not apply to the full **LSC-1** packet executor except
+where a row explicitly says so.
+
 | Item | Status | Evidence |
 |---|---|---|
+| LSC-1u RTL on `main` | implemented and RTL-simulated | exact head `9f78b01c501b8cfd22760a35fe4cbd745865a31e`; Tiny Tapeout RTL run `30722147810` |
+| LSC-1u hardening and precheck | GDS and precheck jobs passed | GDS run `30722147803`, jobs `91427563037` and `91428129783` |
+| LSC-1u gate-level simulation | passed | GDS run `30722147803`, job `91428129794` |
+| LSC-1u FPGA ASIC-simulator build | passed | checked-in evidence under `results/tt-fpga-asic-simulator-20260801/` |
+| Phase C1 multiply equivalence | settled | PR #35 |
+| Phase C2 full-release equivalence | in flight / not established | release blocker; no full-release equivalence claim |
+| LSC-1u silicon validation | pending | no fabricated-device test evidence |
 | LSC-1 boundary and pin top | established | `asic_core/rtl/lean_silicon_lsc1.sv` |
 | MinCore arithmetic seed | historical/exercised seed | existing simulation/formal suites |
 | v1 transaction protocol | specified and executably modelled | `docs/LSC1_TRANSACTION_PROTOCOL.md`, `sim/lsc1_transaction.py` |
