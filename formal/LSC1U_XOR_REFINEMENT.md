@@ -10,7 +10,7 @@ All 32 payload bytes per command are otherwise arbitrary.
 
 The environment may independently vary `rx_valid`, `tx_ready`, `ena`, and
 `rst_n` on every cycle.  Consequently the proof includes arbitrary finite or
-infinite input/output backpressure, enable pauses, reset during any partial or
+infinite input/output backpressure, enable aborts, reset during any partial or
 stalled operation, and back-to-back XOR transactions.  It is a safety proof:
 an environment that never supplies a beat or never accepts a result is not
 assumed to make progress.  Separate covers demonstrate concrete acceptance,
@@ -48,7 +48,7 @@ read it; this is a conservative cone cut, not a result assumption.
   acceptance until that exact retained byte is accepted.
 - The retained result after accepting a pair is exactly `A XOR B`.
 - Output data and validity remain unchanged through arbitrary `tx_ready = 0`
-  cycles and through `ena = 0` pauses.
+  cycles. `ena = 0` aborts the transaction and clears the pending output.
 - Retirement occurs only after acceptance of lane 15, returns to idle, clears
   the pending result, and is a single enabled cycle.
 - Reset restores all related retained state and cancels partial or stalled work.
@@ -57,9 +57,8 @@ read it; this is a conservative cone cut, not a result assumption.
 
 The only functional assumption is `rx_data == 8'h01` when a command handshake
 occurs in idle.  There is no fairness, ready/valid scheduling, payload-value,
-or reset-exclusion assumption.  LSC-1u exposes reset and enable but has no
-abort port, so abort refinement is outside this RTL interface rather than
-silently excluded.
+or reset-exclusion assumption. LSC-1u exposes no separate abort pin; the
+proved micro-op contract assigns synchronous abort semantics to `ena = 0`.
 
 This tranche does not prove opcode decode/fault responses, SET, MUL arithmetic,
 the Tiny Tapeout wrapper, packet LSC-1, Lean-to-RTL correspondence, liveness

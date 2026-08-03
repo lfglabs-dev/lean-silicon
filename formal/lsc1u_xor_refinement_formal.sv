@@ -68,7 +68,13 @@ module lsc1u_xor_refinement_formal;
             ref_fault        <= 1'b0;
             ref_retired      <= 1'b0;
         end else if (!ena) begin
-            ref_retired <= 1'b0;
+            ref_phase        <= R_IDLE;
+            ref_lane         <= 4'd0;
+            ref_a            <= 8'd0;
+            ref_result       <= 8'd0;
+            ref_result_valid <= 1'b0;
+            ref_fault        <= 1'b0;
+            ref_retired      <= 1'b0;
         end else begin
             ref_retired <= 1'b0;
 
