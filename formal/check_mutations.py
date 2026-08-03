@@ -90,6 +90,13 @@ MUTATIONS = [
         ["lsc1u_compositional_refinement.sby"],
     ),
     (
+        "lsc1u_enable_multiplier_abort",
+        "src/lsc1u_core.sv",
+        ".abort(!ena),",
+        ".abort(1'b0),",
+        ["lsc1u_compositional_refinement.sby"],
+    ),
+    (
         "gf128_mul_accumulate",
         "src/gf2n_mul_bitstream.sv",
         "wire [WIDTH-1:0] accumulator_next = accumulator ^ selected;",

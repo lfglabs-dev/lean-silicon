@@ -55,9 +55,10 @@ stable while stalled. TX data remains stable while `TX_VALID && !TX_READY`.
 Exactly one `DONE_PULSE` is emitted when the final response byte is accepted.
 
 `rst_n=0` synchronously cancels partial work, clears outputs/fault, and returns
-to command acceptance. When `ena=0`, all outputs and output-enables are zero,
-no transfer can be accepted, and internal state is frozen. Therefore
-deselect/reselect resumes the same partial operation without duplicating it.
+to command acceptance. `ena=0` has the same synchronous abort effect on the
+controller and multiplier while also forcing every output and output-enable
+low. No transfer can be accepted while deselected; re-selection begins at a
+clean command boundary and never resumes a partial operation.
 
 ## Physical inclusion rule for MUL
 

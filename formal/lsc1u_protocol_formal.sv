@@ -41,6 +41,15 @@ module lsc1u_protocol_formal;
             xor_a <= 0;
             op <= 0;
             payload_count <= 0;
+        end else if (!ena) begin
+            txn_active <= 0;
+            txn_completed <= 0;
+            expected_count <= 0;
+            output_count <= 0;
+            expected <= 0;
+            xor_a <= 0;
+            op <= 0;
+            payload_count <= 0;
         end else begin
             if (rx_valid && rx_ready) begin
                 if (!busy) begin
@@ -90,12 +99,17 @@ module lsc1u_protocol_formal;
         end
 
         if (past_valid && $past(rst_n)) begin
+            if (!ena)
+                assert(!rx_ready && !tx_valid && !busy && !fault && !done_pulse);
             if (ena && $past(tx_valid && !tx_ready && ena && rst_n)) begin
                 assert(tx_valid);
                 assert(tx_data == $past(tx_data));
             end
             if (!$past(ena) && ena && rst_n)
-                assert(!done_pulse);
+                assert(!rx_valid || rx_ready);
+            if ($past(rst_n && !ena)) begin
+                assert(!tx_valid && !done_pulse && !busy && !fault);
+            end
             if ($past(!ena) && !ena) begin
                 assert(!rx_ready && !tx_valid && !busy && !fault && !done_pulse);
             end

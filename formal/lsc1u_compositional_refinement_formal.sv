@@ -41,7 +41,8 @@ module lsc1u_compositional_refinement_formal;
             r_state<=IDLE; r_index<=0; r_saved<=0; r_out<=0;
             r_valid<=0; r_fault<=0; r_done<=0;
         end else if (!ena) begin
-            r_done <= 0;
+            r_state<=IDLE; r_index<=0; r_saved<=0; r_out<=0;
+            r_valid<=0; r_fault<=0; r_done<=0;
         end else begin
             r_done <= 0;
             if (r_tx_fire) r_valid <= 0;
@@ -120,6 +121,11 @@ module lsc1u_compositional_refinement_formal;
                    (ena && r_state==MUL_TX && !r_valid));
             assert(r_index < 16);
             if (r_tx_valid && !tx_ready) assert(r_out == tx_data);
+            if ($past(rst_n && !ena)) begin
+                assert(r_state == IDLE && r_index == 0);
+                assert(!r_valid && !r_fault && !r_done);
+                assert(formal_mul_power == 0 && formal_mul_product == 0);
+            end
         end
     end
 endmodule
