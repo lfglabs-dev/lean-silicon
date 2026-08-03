@@ -2,9 +2,9 @@
 
 ## Exact source and CI
 
-- Source commit: `9f78b01c501b8cfd22760a35fe4cbd745865a31e`
-- Source tree: `6d053e117e3f5f036bbb43a410b2e86791939570`
-- GDS run: <https://github.com/lfglabs-dev/lean-silicon/actions/runs/30722147803>
+- Source commit: `6f45fd663792f1329036829c1670cefd78d66630`
+- Source tree: `1ffca601b105272bdbda5edb51a6c076dc4c328b`
+- GDS run: <https://github.com/lfglabs-dev/lean-silicon/actions/runs/30822256296>
 - Runner for GDS, precheck, gate-level test, viewer, and release bundle:
   `ubuntu-24.04`
 - PDK: `sky130A` (the exact PDK source/version are also recorded in the
@@ -36,3 +36,7 @@ Run `python3 tools/prepare_release_bundle.py --source <download-directory>
 `gh run download RUN_ID`. The script admits only the named payload files,
 copies bytes without transformation, and writes a sorted `SHA256SUMS.txt`.
 Two runs from the same downloaded source must compare byte-for-byte.
+
+The 2026-08-03 refresh performed that assembly in two separate clean detached
+worktrees and obtained a byte-identical payload. Exact commands, versions,
+timestamps, hashes, and exclusions are recorded in `REFRESH_RECEIPT.md`.
