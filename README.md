@@ -19,10 +19,15 @@ assistance, BLAKE3, traces, and proofs. The ASIC validates and executes the
 non-BLAKE3 scalar transition, returning next pc/fp, writes, deferred events,
 service requests, retirement, or fault.
 
-The current RTL is an exercised MinCore arithmetic seed behind the final
-`lean_silicon_lsc1` Tiny Tapeout top. It is not yet the LSC-1 v1 packet
-executor. The project objective above is not a present-tense verification
-claim: the repository is not currently marketed as formally verified. See
+The reduced LSC-1u Tiny Tapeout RTL is now on `main`. At exact head
+`9f78b01c501b8cfd22760a35fe4cbd745865a31e`, GDS, precheck, gate-level
+Cocotb, RTL Cocotb, and the FPGA ASIC-simulator build pass. The GDS workflow's
+viewer job on that run predates Pages enablement and is not part of those
+engineering results. Phase C1 multiply equivalence was settled in PR #35;
+full-release equivalence remains open and silicon validation remains pending.
+
+The project objective above is not a present-tense verification claim: the
+repository is not currently marketed as formally verified. See
 the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 [ROADMAP](docs/ROADMAP.md), and [STATUS](docs/STATUS.md).
 Frozen leanVM-b evidence remains tied to
@@ -49,6 +54,8 @@ Frozen leanVM-b evidence remains tied to
 - `planning/`: machine-readable milestones and file-lane ownership.
 - `src/`: retained compatibility/historical MinCore and M2 sources.
 - `src/lsc1u_core.sv`: profile-specific streamed LSC-1µ arithmetic kernel.
+- `release/v0.1/`: immutable-source release-candidate manifest, pinout,
+  reproducibility record, claim boundary, and exact-main CI artifacts.
 
 Run `make check`, `make sim`, `make lean`, and `make formal` where the
 corresponding tools are installed. `make consistency` rejects stale active

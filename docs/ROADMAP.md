@@ -1,5 +1,27 @@
 # leanSilicon roadmap — LSC-1
 
+## Active SKY26c release track
+
+SKY26c is the active shuttle target. The immediate next deliverable is the
+LSC-1u v0.1 release bundle built from an immutable `main` head. Phase C1
+multiply equivalence is complete (PR #35); Phase C2 full-release equivalence
+is in flight and remains a release claim blocker.
+
+The pre-submission verification ladder is:
+
+1. Freeze source head/tree, tool/action refs, PDK identity, CI run, job IDs,
+   artifact hashes, pinout, and claim boundaries in bundle v0.1.
+2. Repeat Cocotb RTL and exact hardened-netlist gate-level tests as one-shot
+   release evidence and verify deterministic bundle regeneration.
+3. Complete and independently review Phase C2 full-release equivalence.
+4. Re-run GDS, precheck, gate-level, FPGA ASIC-simulator, and viewer lanes on
+   the final reviewed head; reconcile every artifact hash.
+5. Perform the remaining SKY26c submission checks and independent go/no-go
+   review. Shuttle submission is a separate, explicitly authorized action.
+
+Silicon validation necessarily remains after fabrication and is not a
+pre-submission claim.
+
 ## Direction
 
 leanSilicon's long-term objective is a formally verified physical scalar

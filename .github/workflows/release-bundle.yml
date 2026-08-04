@@ -1,0 +1,130 @@
+name: LSC-1u release bundle
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "release/**"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: source
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout bundle definition
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          path: bundle-spec
+          fetch-depth: 1
+
+      - name: Checkout exact main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
+        with:
+          ref: main
+          path: source
+          fetch-depth: 1
+
+      - name: Select latest successful GDS run on main
+        shell: bash
+        run: |
+          mkdir -p bundle/download bundle/evidence
+          run_json=$(gh run list --workflow gds.yaml --branch main --status completed \
+            --limit 1 --json databaseId,headSha,url,conclusion)
+          test "$(jq length <<<"$run_json")" -eq 1
+          run_id=$(jq -r '.[0].databaseId' <<<"$run_json")
+          run_head=$(jq -r '.[0].headSha' <<<"$run_json")
+          run_url=$(jq -r '.[0].url' <<<"$run_json")
+          test "$run_head" = "$(git rev-parse HEAD)"
+          jobs=$(gh run view "$run_id" --json jobs)
+          for required in gds precheck gl_test; do
+            test "$(jq -r --arg name "$required" '.jobs[] | select(.name == $name) | .conclusion' <<<"$jobs")" = success
+          done
+          printf '%s\n' "$run_id" > bundle/evidence/gds-run-id.txt
+          printf '%s\n' "$run_head" > bundle/evidence/tested-commit.txt
+          git rev-parse HEAD^{tree} > bundle/evidence/tested-tree.txt
+          printf '%s\n' "$run_url" > bundle/evidence/gds-run-url.txt
+          gh run download "$run_id" --dir bundle/download
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Cocotb and Icarus
+        shell: bash
+        run: |
+          python -m pip install -r test/requirements.txt
+          wget -q https://github.com/TinyTapeout/iverilog/releases/download/v13.0/iverilog_13.0-1_amd64.deb
+          sudo apt-get update -y
+          sudo apt-get install -y ./iverilog_13.0-1_amd64.deb
+
+      - name: Re-run Cocotb RTL evidence
+        shell: bash
+        run: |
+          start=$SECONDS
+          make -C test -f Makefile.tt clean
+          make -C test -f Makefile.tt 2>&1 | tee bundle/evidence/cocotb-rtl.log
+          test -f test/results.xml
+          ! grep -q failure test/results.xml
+          printf '%s\n' "$((SECONDS - start))" > bundle/evidence/cocotb-rtl-seconds.txt
+          cp test/results.xml bundle/evidence/cocotb-rtl-results.xml
+
+      - name: Read exact PDK identity
+        shell: bash
+        run: |
+          pdk_json=bundle/download/tt_submission/tt_submission/pdk.json
+          echo "PDK=$(jq -r '.PDK' "$pdk_json")" >> "$GITHUB_ENV"
+          echo "PDK_ROOT=/home/runner/pdk" >> "$GITHUB_ENV"
+          echo "PDK_VERSION=$(jq -r '.PDK_VERSION' "$pdk_json")" >> "$GITHUB_ENV"
+
+      - name: Install exact PDK
+        uses: TinyTapeout/ciel-action@b99510e18500019b919880a6d6d45714953dbc20 # v1
+        with:
+          pdk_name: ${{ env.PDK }}
+          pdk_version: ${{ env.PDK_VERSION }}
+          pdk_root: ${{ env.PDK_ROOT }}
+
+      - name: Re-run Cocotb gate-level evidence
+        shell: bash
+        run: |
+          cp bundle/download/tt_submission/tt_submission/tt_um_lfglabs_lsc1u.v test/gate_level_netlist.v
+          start=$SECONDS
+          make -C test -f Makefile.tt clean
+          GATES=yes make -C test -f Makefile.tt 2>&1 | tee bundle/evidence/cocotb-gate-level.log
+          test -f test/results.xml
+          ! grep -q failure test/results.xml
+          printf '%s\n' "$((SECONDS - start))" > bundle/evidence/cocotb-gate-level-seconds.txt
+          cp test/results.xml bundle/evidence/cocotb-gate-level-results.xml
+
+      - name: Assemble and hash release evidence
+        shell: bash
+        run: |
+          python ../bundle-spec/tools/prepare_release_bundle.py --source bundle/download --output bundle/payload
+          cp ../bundle-spec/release/v0.1/MANIFEST.json bundle/payload/
+          cp ../bundle-spec/release/v0.1/PINOUT.md bundle/payload/
+          cp ../bundle-spec/release/v0.1/REPRODUCIBILITY.md bundle/payload/
+          cp ../bundle-spec/release/v0.1/CLAIMS.md bundle/payload/
+          cp ../bundle-spec/release/v0.1/INFO.yaml.example bundle/payload/
+          cp -R bundle/evidence bundle/payload/evidence
+          find bundle/payload -type f ! -name SHA256SUMS.txt -print0 | sort -z | \
+            xargs -0 sha256sum | sed 's#  bundle/payload/#  #' > bundle/payload/SHA256SUMS.txt
+          sha256sum bundle/payload/artifacts/tt_um_lfglabs_lsc1u.gds | \
+            tee bundle/evidence/gds-SHA256.txt
+
+      - name: Upload single release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: lsc1u-release-bundle
+          if-no-files-found: error
+          path: source/bundle/payload/
