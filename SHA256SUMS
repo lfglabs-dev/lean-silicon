@@ -1,4 +1,4 @@
-678c766165cc5c5ee6ae33c53862eb60ed0b01d27dc0c3da2f9b85b31e04b300  ./.github/workflows/ci.yml
+27b8cfab91166face19da89b55fe4c2f7d19da1e3fe166a8d32a8b32e9f0c13e  ./.github/workflows/ci.yml
 91195d747b16476611be845bd50443536c12fa6c43d347f95e5c98df0cafeaf6  ./.github/workflows/fpga-asic-simulator.yaml
 5e6a29a5b46af46a1d8ebb9cb9ed4b4042d492b86c752e7aaa845dc73c164c2f  ./.github/workflows/gds.yaml
 02aaec17b225fbca77453ae4cd08184bc82b7e01342a84671f81a0a999b375d0  ./.github/workflows/release-bundle.yml
@@ -82,6 +82,8 @@ e098dda96308bf191d46ad58c8c6b9642372a6357e581270c7535bf75966e6de  ./formal/gf8_m
 44966e1d1d51be716e4158923f3e35a719c39c10837e5ecf63f5902af6439b77  ./formal/lsc1u_protocol_formal.sv
 c0847d7e066bf0e400d294fbaabb49717dbbb97efc5033daed2c9d9d1a18673c  ./formal/lsc1u_reachability.sby
 a73a0e8fb66e95d9df074bb7270f74c0b6e2136502152e7a0300960e7bd74dba  ./formal/lsc1u_reachability_formal.sv
+328de20109037235558c8134629487180a7ec3dd78d42a37a3656f48417c3b18  ./formal/lsc1u_wrapper_composition.sby
+e2eab20dc307e18c44f9211053079ba61225a1c44ce9ac4661503fc8d679ad62  ./formal/lsc1u_wrapper_composition_formal.sv
 6758b0ac70fd0b8d46b6ca7964bc573b4879c1f6a030f1b3da524e170b82a2aa  ./formal/lsc1u_xor_refinement.sby
 1109b38551b2286684f974521bb5a5808ac05811173c90884a05e1d5b9190e9c  ./formal/lsc1u_xor_refinement_cover.sv
 0ab43270f2139f8fc3201c58a1227b0cbef847a512bdc9988ac18b2230bf8b4a  ./formal/lsc1u_xor_refinement_formal.sv

@@ -1,0 +1,24 @@
+[tasks]
+prove
+
+[options]
+prove: mode prove
+prove: depth 2
+timeout 300
+vcd off
+
+[engines]
+prove: abc pdr
+
+[script]
+# Arithmetic is proved independently and composed with this controller in
+# lsc1u_compositional_refinement.sby.  A deterministic result boundary keeps
+# this wrapper-only miter from redundantly duplicating 384 multiplier flops.
+read -formal -D FORMAL -sv gf128_mul_reachability_formal.sv lsc1u_core.sv tt_um_lfglabs_lsc1u.sv lsc1u_wrapper_composition_formal.sv
+prep -top lsc1u_wrapper_composition_formal
+
+[files]
+gf128_mul_reachability_formal.sv
+../src/lsc1u_core.sv
+../src/tt_um_lfglabs_lsc1u.sv
+lsc1u_wrapper_composition_formal.sv
