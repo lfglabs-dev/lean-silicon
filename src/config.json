@@ -10,8 +10,8 @@
   "MAX_FANOUT_CONSTRAINT": 12,
   "DESIGN_REPAIR_MAX_SLEW_PCT": 40,
   "EXTRA_EXCLUDED_CELLS": [
-    "sky130_fd_sc_hd__clkdlybuf4s25_1",
-    "sky130_fd_sc_hd__clkdlybuf4s50_1"
+    "sky130_fd_sc_hd__clkdlybuf*",
+    "sky130_fd_sc_hd__dlygate*"
   ],
   "RUN_KLAYOUT_XOR": 0,
   "RUN_KLAYOUT_DRC": 0,
