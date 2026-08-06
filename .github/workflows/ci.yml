@@ -89,6 +89,8 @@ jobs:
         run: cd formal && sby -f lsc1u_compositional_refinement.sby
       - name: Tiny Tapeout wrapper/core composition proof
         run: cd formal && sby -f lsc1u_wrapper_composition.sby
+      - name: Fixed release netlist versus RTL bounded equivalence
+        run: cd formal && sby -f lsc1u_netlist_eq.sby short
       - name: Mutation sensitivity of retained safety and arithmetic properties
         run: make formal-mutations
       - name: Yosys lint and synthesis

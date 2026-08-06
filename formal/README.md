@@ -14,6 +14,49 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `lsc1u_xor_refinement.sby` | Cycle-accurate retained-state refinement from accepted XOR command through all arithmetic result beats and retirement | unbounded PDR + bounded covers |
 | `gf128_mul_stream_refinement.sby` | Production GF(2^128) datapath refines the accepted-event polynomial specification, including arbitrary pauses and reset/abort | unbounded PDR + bounded covers |
 | `lsc1u_compositional_refinement.sby` | Cycle-accurate all-op transition refinement, including MUL_A/B/BITS/TX, arbitrary output stalls, reset/enable abort, and retirement | unbounded PDR |
+| `lsc1u_netlist_eq.sby` (`short`) | Fixed v0.1 SKY130 gate netlist versus RTL at all Tiny Tapeout observable pins, for every input sequence through 55 cycles after reset | bounded ABC BMC |
+
+## Fixed release netlist equivalence
+
+`lsc1u_netlist_eq.sby` reads the checked-in 820,820-byte
+`release/v0.1/artifacts/tt_um_lfglabs_lsc1u.v` directly; it does not regenerate
+or rewrite that artifact.  The miter shares `ui_in`, `uio_in`, `ena`, `clk`, and
+`rst_n`, ties the gate design's power pins to their active values, and compares
+`uo_out`, `uio_out`, and `uio_oe`.  Those vectors include TX data, RX ready, TX
+valid, BUSY, FAULT, DONE, and the wrapper's output-enable handshake behavior.
+Reset is required on the initial edge; all later inputs, including stalls,
+aborts, commands, and payload bytes, are unconstrained.
+
+The formal-only `sky130_fd_sc_hd_netlist_eq_cells.v` contains zero-delay
+Boolean/DFF models for exactly the standard cells used by the artifact.
+Physical-only filler, decap, tap, and antenna instances are deleted from the
+formal design after reading.  These models check digital sequential behavior,
+not timing, power integrity, X propagation, or analog behavior.
+
+Run the CI-sized proof with:
+
+```sh
+sby -f lsc1u_netlist_eq.sby short
+```
+
+ABC `bmc3` passes all three observable-vector assertions through depth 55 in
+56 seconds on the development container. This bound admits every input
+sequence and covers minimum-latency complete SET and XOR transactions.  It is
+bounded evidence, not unbounded sequential equivalence.
+
+The same file includes the requested `mul300` task:
+
+```sh
+sby -f lsc1u_netlist_eq.sby mul300
+```
+
+That task targets depth 300, enough for a minimum-latency complete MUL
+transaction.  On the development container ABC reached frame 57 after 66
+seconds with no counterexample, but the projected runtime was unsuitable for
+per-commit CI and the run was stopped rather than reported as a pass.  The
+remaining proof obligation is to complete that depth-300 run (or obtain an
+unbounded sequential-equivalence result) on a larger or equivalence-specialized
+worker.  Timing and power-aware equivalence remain outside this digital model.
 
 The XOR refinement's architectural state, invariants, assumptions, mutation
 falsifiers, and residual gaps are enumerated in `LSC1U_XOR_REFINEMENT.md`.
