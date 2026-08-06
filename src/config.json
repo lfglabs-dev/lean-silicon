@@ -7,9 +7,17 @@
   "RUN_LINTER": 1,
   "LINTER_INCLUDE_PDK_MODELS": 1,
   "CLOCK_PORT": "clk",
+  "MAX_FANOUT_CONSTRAINT": 12,
+  "DESIGN_REPAIR_MAX_SLEW_PCT": 40,
+  "EXTRA_EXCLUDED_CELLS": [
+    "sky130_fd_sc_hd__buf_1",
+    "sky130_fd_sc_hd__buf_2",
+    "sky130_fd_sc_hd__clkdlybuf*",
+    "sky130_fd_sc_hd__dlygate*"
+  ],
   "RUN_KLAYOUT_XOR": 0,
   "RUN_KLAYOUT_DRC": 0,
-  "DESIGN_REPAIR_BUFFER_OUTPUT_PORTS": 0,
+  "DESIGN_REPAIR_BUFFER_OUTPUT_PORTS": 1,
   "TOP_MARGIN_MULT": 1,
   "BOTTOM_MARGIN_MULT": 1,
   "LEFT_MARGIN_MULT": 6,
