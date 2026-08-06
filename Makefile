@@ -1,12 +1,15 @@
 PYTHON ?= python3
 
-.PHONY: check python conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test mincore-state-count sim lean formal formal-mutations clean package checksums
+.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test mincore-state-count sim lean formal formal-mutations clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
 
 python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s sim -v
+
+workflow-check:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_select_exact_gds_run.py -v
 
 conformance-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/conformance_differential.py --validate-only
@@ -72,7 +75,7 @@ fpga-detect:
 fpga-preflight:
 	$(PYTHON) fpga_harness/hardware_preflight.py
 
-check: python conformance-check host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
+check: python workflow-check conformance-check host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim

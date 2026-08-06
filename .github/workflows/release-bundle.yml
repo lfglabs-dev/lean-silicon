@@ -13,7 +13,7 @@ permissions:
 jobs:
   bundle:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 75
     defaults:
       run:
         working-directory: source
@@ -35,17 +35,16 @@ jobs:
           path: source
           fetch-depth: 1
 
-      - name: Select latest successful GDS run on main
+      - name: Wait for successful exact-head GDS run on main
         shell: bash
         run: |
           mkdir -p bundle/download bundle/evidence
-          run_json=$(gh run list --workflow gds.yaml --branch main --status completed \
-            --limit 1 --json databaseId,headSha,url,conclusion)
-          test "$(jq length <<<"$run_json")" -eq 1
-          run_id=$(jq -r '.[0].databaseId' <<<"$run_json")
-          run_head=$(jq -r '.[0].headSha' <<<"$run_json")
-          run_url=$(jq -r '.[0].url' <<<"$run_json")
-          test "$run_head" = "$(git rev-parse HEAD)"
+          expected_head=$(git rev-parse HEAD)
+          tools/select_exact_gds_run.sh "$expected_head" bundle/evidence/gds-run.json
+          run_id=$(jq -r '.databaseId' bundle/evidence/gds-run.json)
+          run_head=$(jq -r '.headSha' bundle/evidence/gds-run.json)
+          run_url=$(jq -r '.url' bundle/evidence/gds-run.json)
+          test "$run_head" = "$expected_head"
           jobs=$(gh run view "$run_id" --json jobs)
           for required in gds precheck gl_test; do
             test "$(jq -r --arg name "$required" '.jobs[] | select(.name == $name) | .conclusion' <<<"$jobs")" = success
