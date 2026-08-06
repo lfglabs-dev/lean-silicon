@@ -24,7 +24,7 @@ select lsc1u_gate/ANTENNA_* lsc1u_gate/FILLER_* lsc1u_gate/PHY_* lsc1u_gate/TAP_
 delete
 select -clear
 prep -top lsc1u_netlist_eq_formal
-select -assert-count 3 t:$assert
+select -assert-count 3 t:$check r:FLAVOR=assert %i
 
 [files]
 ../src/gf2n_mul_bitstream.sv
