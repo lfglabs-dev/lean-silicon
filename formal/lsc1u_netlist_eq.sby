@@ -1,0 +1,36 @@
+[tasks]
+short
+mul300
+
+[options]
+short: mode bmc
+short: depth 55
+mul300: mode bmc
+mul300: depth 300
+timeout 1800
+vcd off
+
+[engines]
+short: abc bmc3
+mul300: abc bmc3
+
+[script]
+read_verilog -formal -sv gf2n_mul_bitstream.sv gf128_mul_bitstream.sv lsc1u_core.sv tt_um_lfglabs_lsc1u.sv
+rename tt_um_lfglabs_lsc1u lsc1u_rtl
+read_verilog -formal sky130_fd_sc_hd_netlist_eq_cells.v tt_um_lfglabs_lsc1u.v
+rename tt_um_lfglabs_lsc1u lsc1u_gate
+read_verilog -formal -sv lsc1u_netlist_eq_formal.sv
+select lsc1u_gate/ANTENNA_* lsc1u_gate/FILLER_* lsc1u_gate/PHY_* lsc1u_gate/TAP_*
+delete
+select -clear
+prep -top lsc1u_netlist_eq_formal
+select -assert-count 3 lsc1u_netlist_eq_formal/t:$assert
+
+[files]
+../src/gf2n_mul_bitstream.sv
+../src/gf128_mul_bitstream.sv
+../src/lsc1u_core.sv
+../src/tt_um_lfglabs_lsc1u.sv
+../release/v0.1/artifacts/tt_um_lfglabs_lsc1u.v
+sky130_fd_sc_hd_netlist_eq_cells.v
+lsc1u_netlist_eq_formal.sv
