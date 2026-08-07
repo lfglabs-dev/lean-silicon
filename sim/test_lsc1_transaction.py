@@ -358,6 +358,19 @@ class FramingFaultTests(unittest.TestCase):
             ref_crc32(encoded[:-CRC_BYTES]),
         )
 
+    def test_fixed_length_fault_only_echoes_transaction_bearing_opcodes(self) -> None:
+        txn_id = 0x10203040
+        cases = (
+            (lsc1.RequestFrame(Opcode.NEGOTIATE, txn_id.to_bytes(4, "little")), 0),
+            (lsc1.RequestFrame(Opcode.STATUS_QUERY, txn_id.to_bytes(4, "little")), 0),
+            (lsc1.RequestFrame(Opcode.RETIRE, txn_id.to_bytes(4, "little")), txn_id),
+        )
+        for frame, expected_txn_id in cases:
+            with self.subTest(opcode=frame.opcode):
+                response = exchange(Lsc1Endpoint(), frame)
+                self.assertIs(response.status, Status.BAD_LENGTH)
+                self.assertEqual(response.payload, expected_txn_id.to_bytes(4, "little") + b"\x02")
+
     def test_oversized_declared_length_faults_at_the_header(self) -> None:
         endpoint = Lsc1Endpoint()
         header = bytes([SOF_REQUEST, PROTOCOL_VERSION, int(Opcode.XOR), 0])

@@ -384,6 +384,13 @@ class PacketExecutorTests(unittest.TestCase):
             status, _ = decode_response(drive_request(PacketExecutor(), encoded))
             self.assertEqual(status, expected)
 
+    def test_bad_length_echoes_the_retire_transaction_id(self):
+        txn_id = 0x44332211
+        malformed_retire = frame(0x12, txn_id.to_bytes(4, "little"))
+        status, payload = decode_response(drive_request(PacketExecutor(), malformed_retire))
+        self.assertEqual(status, Status.BAD_LENGTH)
+        self.assertEqual(payload, txn_id.to_bytes(4, "little") + b"\x02")
+
     def test_seeded_single_byte_mutations_never_commit_state(self):
         rng = random.Random(0x5041434B4554)
         original = set_request(0x1234, 6, 0xDEADBEEF)

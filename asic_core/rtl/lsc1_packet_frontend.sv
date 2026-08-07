@@ -469,7 +469,11 @@ module lsc1_packet_frontend (
                 end else if (frame_opcode == OP_RETIRE) begin
                     txn_id = frame_payload[0 +: 32];
                     if (frame_length != 8) begin
-                        emit_fault(BAD_LENGTH, 0, 2);
+                        // RETIRE begins with txn_id.  A CRC-valid malformed
+                        // payload still carries it once four bytes arrived.
+                        emit_fault(BAD_LENGTH,
+                                   frame_length >= 4 ? frame_payload[0 +: 32] : 0,
+                                   2);
                     end else if (!result_pending) begin
                         emit_fault(BAD_STATE, txn_id, 0);
                     end else if (txn_id != staged_txn_id ||
@@ -511,7 +515,9 @@ module lsc1_packet_frontend (
                                frame_opcode == OP_DEREF_PC ||
                                frame_opcode == OP_DEREF_FP) && frame_length != 81) ||
                              (frame_opcode == OP_JUMP && frame_length != 103)) begin
-                    emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
+                    emit_fault(BAD_LENGTH,
+                               frame_length >= 4 ? frame_payload[0 +: 32] : 0,
+                               2);
                 // Match decode_request_payload: malformed payloads are rejected
                 // before dispatch sees the pending transaction, and decoder
                 // faults do not acquire the payload transaction ID.

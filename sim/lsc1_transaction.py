@@ -84,6 +84,11 @@ INSTRUCTION_OPCODES = (
     Opcode.BLAKE3_REQUEST,
 )
 
+# Only these request schemas begin with a u32le transaction ID.  A malformed
+# control request such as NEGOTIATE or STATUS_QUERY must not reinterpret its
+# arbitrary payload bytes as one when reporting BAD_LENGTH.
+TRANSACTION_ID_OPCODES = frozenset((*INSTRUCTION_OPCODES, Opcode.SERVICE_RESPONSE, Opcode.RETIRE))
+
 REQUEST_PAYLOAD_BYTES = {
     Opcode.XOR: 77,
     Opcode.MUL_NATIVE: 94,
@@ -1130,13 +1135,13 @@ class Lsc1Endpoint:
             return
         if length != REQUEST_PAYLOAD_BYTES[opcode]:
             # A fixed-length rejection still has the complete declared
-            # payload and valid CRC.  Echo its transaction ID whenever the
-            # payload is long enough to carry the u32 preamble field.
+            # payload and valid CRC.  Echo its transaction ID only for a
+            # transaction-bearing opcode once four payload bytes are present.
             txn_id = (
                 int.from_bytes(
                     body[REQUEST_HEADER_BYTES:REQUEST_HEADER_BYTES + 4], "little"
                 )
-                if length >= 4
+                if opcode in TRANSACTION_ID_OPCODES and length >= 4
                 else 0
             )
             self._fault(Status.BAD_LENGTH, txn_id, detail=2)
