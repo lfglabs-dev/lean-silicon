@@ -343,6 +343,21 @@ class FramingFaultTests(unittest.TestCase):
         long = lsc1.RequestFrame(frame.opcode, frame.payload + b"\x00")
         self.assertIs(exchange(endpoint, long).status, Status.BAD_LENGTH)
 
+    def test_fixed_length_fault_echoes_decoded_txn_id_with_valid_crc(self) -> None:
+        txn_id = 0x10203040
+        frame = simple_xor(txn_id=txn_id)
+        malformed = lsc1.RequestFrame(frame.opcode, frame.payload[:-1]).encode()
+
+        encoded, _ = lsc1.drive(Lsc1Endpoint(), malformed)
+        response = lsc1.decode_response(encoded)
+
+        self.assertIs(response.status, Status.BAD_LENGTH)
+        self.assertEqual(response.payload, txn_id.to_bytes(4, "little") + b"\x02")
+        self.assertEqual(
+            int.from_bytes(encoded[-CRC_BYTES:], "little"),
+            ref_crc32(encoded[:-CRC_BYTES]),
+        )
+
     def test_oversized_declared_length_faults_at_the_header(self) -> None:
         endpoint = Lsc1Endpoint()
         header = bytes([SOF_REQUEST, PROTOCOL_VERSION, int(Opcode.XOR), 0])

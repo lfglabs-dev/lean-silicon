@@ -1129,7 +1129,17 @@ class Lsc1Endpoint:
             self._fault(Status.BAD_OPCODE)
             return
         if length != REQUEST_PAYLOAD_BYTES[opcode]:
-            self._fault(Status.BAD_LENGTH, detail=2)
+            # A fixed-length rejection still has the complete declared
+            # payload and valid CRC.  Echo its transaction ID whenever the
+            # payload is long enough to carry the u32 preamble field.
+            txn_id = (
+                int.from_bytes(
+                    body[REQUEST_HEADER_BYTES:REQUEST_HEADER_BYTES + 4], "little"
+                )
+                if length >= 4
+                else 0
+            )
+            self._fault(Status.BAD_LENGTH, txn_id, detail=2)
             return
         payload = body[REQUEST_HEADER_BYTES:]
         decoded: _DecodedRequest | None = None
