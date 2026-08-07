@@ -14,6 +14,7 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+CORPUS_VERSION = 2
 CORPUS = ROOT / "conformance/corpus-v2.json"
 SCHEMA = ROOT / "conformance/schema-v2.json"
 ADAPTER = ROOT / "conformance/rust/frozen_adapter.rs"
@@ -72,7 +73,9 @@ def validate_corpus() -> dict:
     except (ImportError, OSError, json.JSONDecodeError) as error:
         raise InfrastructureFailure(f"cannot load corpus/schema: {error}") from error
     if corpus.get("schema") != schema.get("$id"):
-        raise SemanticFailure("corpus schema identifier does not match schema-v1.json")
+        raise SemanticFailure(
+            f"corpus schema identifier does not match schema-v{CORPUS_VERSION}.json"
+        )
     try:
         jsonschema.Draft202012Validator.check_schema(schema)
         errors = sorted(
@@ -80,7 +83,9 @@ def validate_corpus() -> dict:
             key=lambda error: list(error.absolute_path),
         )
     except jsonschema.SchemaError as error:
-        raise SemanticFailure(f"invalid schema-v1.json: {error.message}") from error
+        raise SemanticFailure(
+            f"invalid schema-v{CORPUS_VERSION}.json: {error.message}"
+        ) from error
     if errors:
         error = errors[0]
         location = ".".join(str(item) for item in error.absolute_path) or "<root>"
@@ -176,7 +181,10 @@ def main() -> int:
         corpus = validate_corpus()
         semantic = [case for case in corpus["cases"] if case["upstream"]["mode"] == "program_execute"]
         if args.validate_only:
-            print(f"PASS corpus cases={len(corpus['cases'])} fingerprints=verified schema=v1")
+            print(
+                f"PASS corpus cases={len(corpus['cases'])} "
+                f"fingerprints=verified schema=v{CORPUS_VERSION}"
+            )
             return 0
         if args.upstream is None:
             raise InfrastructureFailure("--upstream is required unless --validate-only is used")
