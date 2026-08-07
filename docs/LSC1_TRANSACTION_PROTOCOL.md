@@ -226,6 +226,14 @@ the value above for its opcode is rejected with `BAD_LENGTH`, even if its CRC is
 valid. Opcodes `0x01`–`0x08` are *instruction* opcodes; `0x10`–`0x13` are
 *control* opcodes.
 
+For an opcode whose payload begins with `txn_id`, a fixed-length rejection
+echoes the available little-endian prefix, zero-extended to four bytes. A frame
+with no transaction bytes therefore echoes zero. This rule applies only after
+the complete declared frame reaches dispatch; a truncated frame still waiting
+for its declared bytes emits no response and requires host timeout plus
+`ABORT`. `NEGOTIATE` and `STATUS_QUERY` never acquire a transaction binding
+from their payload bytes.
+
 ## 6. Primitive payload types
 
 | Type | Bytes | Encoding |

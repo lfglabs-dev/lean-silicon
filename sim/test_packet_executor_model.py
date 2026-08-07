@@ -127,6 +127,21 @@ class PacketExecutorTests(unittest.TestCase):
         self.assertEqual(candidate_response, reference_response)
         return candidate, candidate_response
 
+    def test_bad_fixed_length_echoes_the_available_transaction_id_prefix(self):
+        complete = preamble(0x44332228) + b"\x00" * 36
+        for payload, echoed in (
+            (complete, 0x44332228),
+            (b"\x28\x22\x33", 0x00332228),
+            (b"", 0),
+        ):
+            with self.subTest(payload_length=len(payload)):
+                request = frame(0x03, payload)
+                _, response = self.assert_differential(request)
+                status, fault_payload = decode_response(response)
+                self.assertEqual(status, Status.BAD_LENGTH)
+                self.assertEqual(int.from_bytes(fault_payload[:4], "little"), echoed)
+                self.assertEqual(fault_payload[4], 2)
+
     def test_source_located_future_gap_table_is_explicit_and_non_executable(self):
         self.assertEqual(
             [gap.feature for gap in FUTURE_GAPS],

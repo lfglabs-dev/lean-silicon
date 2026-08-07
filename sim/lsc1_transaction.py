@@ -967,6 +967,13 @@ def decode_request_payload(opcode: Opcode, payload: bytes) -> _DecodedRequest:
     return decoded
 
 
+def _available_txn_id(opcode: Opcode, payload: bytes) -> int:
+    """Return the zero-extended transaction prefix accumulated by the RTL."""
+    if opcode in (Opcode.NEGOTIATE, Opcode.STATUS_QUERY):
+        return 0
+    return int.from_bytes(payload[:4], "little")
+
+
 # --- Endpoint pins and byte lane. -------------------------------------------
 
 
@@ -1128,11 +1135,11 @@ class Lsc1Endpoint:
         except ValueError:
             self._fault(Status.BAD_OPCODE)
             return
-        if length != REQUEST_PAYLOAD_BYTES[opcode]:
-            self._fault(Status.BAD_LENGTH, detail=2)
-            return
         payload = body[REQUEST_HEADER_BYTES:]
-        decoded: _DecodedRequest | None = None
+        decoded = _DecodedRequest(opcode, txn_id=_available_txn_id(opcode, payload))
+        if length != REQUEST_PAYLOAD_BYTES[opcode]:
+            self._fault(Status.BAD_LENGTH, decoded.txn_id, detail=2)
+            return
         try:
             decoded = decode_request_payload(opcode, payload)
             self._handle(decoded)
@@ -1141,7 +1148,7 @@ class Lsc1Endpoint:
             # not disturb a transaction the endpoint already decided.  Handlers
             # that fault after touching a staged transition discard it
             # themselves, so there is nothing to unwind here.
-            self._fault(fault.status, decoded.txn_id if decoded is not None else 0, fault.detail)
+            self._fault(fault.status, decoded.txn_id, fault.detail)
 
     # -- transaction handling ---------------------------------------------
 

@@ -339,9 +339,33 @@ class FramingFaultTests(unittest.TestCase):
         endpoint = Lsc1Endpoint()
         frame = simple_xor()
         short = lsc1.RequestFrame(frame.opcode, frame.payload[:-1])
-        self.assertIs(exchange(endpoint, short).status, Status.BAD_LENGTH)
+        response = exchange(endpoint, short)
+        self.assertIs(response.status, Status.BAD_LENGTH)
+        self.assertEqual(response.payload[:4], frame.payload[:4])
         long = lsc1.RequestFrame(frame.opcode, frame.payload + b"\x00")
-        self.assertIs(exchange(endpoint, long).status, Status.BAD_LENGTH)
+        response = exchange(endpoint, long)
+        self.assertIs(response.status, Status.BAD_LENGTH)
+        self.assertEqual(response.payload[:4], frame.payload[:4])
+
+    def test_wrong_fixed_length_zero_extends_an_available_txn_id_prefix(self) -> None:
+        endpoint = Lsc1Endpoint()
+        for payload in (b"", b"\x28", b"\x28\x00", b"\x28\x00\x00"):
+            with self.subTest(payload=payload):
+                response = exchange(endpoint, lsc1.RequestFrame(Opcode.SET_CONSTANT, payload))
+                self.assertIs(response.status, Status.BAD_LENGTH)
+                self.assertEqual(response.payload[:4], payload.ljust(4, b"\x00"))
+                self.assertEqual(response.payload[4], 2)
+
+    def test_a_truncated_frame_never_dispatches_or_fabricates_a_txn_id(self) -> None:
+        endpoint = Lsc1Endpoint()
+        encoded = simple_xor().encode()
+        for byte in encoded[:-1]:
+            endpoint.step(rx_data=byte, rx_valid=True)
+        self.assertFalse(endpoint.pins().tx_valid)
+        self.assertTrue(endpoint.pins().busy)
+        self.assertIsNone(endpoint.staged)
+        endpoint.step(abort=True)
+        self.assertIs(endpoint.state, TxnState.IDLE)
 
     def test_oversized_declared_length_faults_at_the_header(self) -> None:
         endpoint = Lsc1Endpoint()
