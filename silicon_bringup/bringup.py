@@ -33,6 +33,23 @@ def payload(case: dict) -> bytes:
     return b"".join(bytes((x, y)) for x, y in zip(a, b)) if case["opcode"] == "XOR" else a + b
 
 
+def oracle(case: dict) -> bytes:
+    """Compute the result independently of the pin-model state machine."""
+    a = bytes.fromhex(case["a"])
+    if len(a) != 16:
+        raise ValueError("operand a must contain 16 bytes")
+    if case["opcode"] == "SET":
+        return a
+    b = bytes.fromhex(case["b"])
+    if len(b) != 16:
+        raise ValueError("operand b must contain 16 bytes")
+    if case["opcode"] == "XOR":
+        return bytes(x ^ y for x, y in zip(a, b))
+    if case["opcode"] == "MUL":
+        return gf128_mul(a, b)
+    raise ValueError(f"unsupported opcode {case['opcode']!r}")
+
+
 @dataclass(frozen=True)
 class Pins:
     uo_out: int
@@ -138,7 +155,9 @@ def run_case(case: dict) -> dict:
         if driver.backend.pins().uio_out & TX_VALID:
             part, retired = driver.receive_all(); received.extend(part); done |= retired
     part, retired = driver.receive_all(); received.extend(part); done |= retired
-    expected = bytes.fromhex(case["expected"])
+    expected = oracle(case)
+    if bytes.fromhex(case["expected"]) != expected:
+        raise ValueError(f"vector {case['id']!r} disagrees with independent oracle")
     return {"id": case["id"], "opcode": case["opcode"], "received": received.hex(), "expected": expected.hex(), "oracle_match": received == expected, "retire_done_pulse": done, "idle_after_retire": bool(driver.backend.pins().uio_out & RX_READY) and not bool(driver.backend.pins().uio_out & BUSY)}
 
 
@@ -146,7 +165,8 @@ def receipt() -> dict:
     vectors = json.loads((ROOT / "vectors.json").read_text())["cases"]
     observations = [run_case(case) for case in vectors]
     passed = all(x["oracle_match"] and x["retire_done_pulse"] and x["idle_after_retire"] for x in observations)
-    return {"schema": "lean-silicon.lsc1u-bringup-receipt.v1", "execution": {"kind": "dry-run", "real_silicon": False, "transport": "deterministic Python pin-model"}, "interface": {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}, "vectors": [x["id"] for x in vectors], "observations": observations, "oracle": {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": all(x["oracle_match"] for x in observations)}, "outcome": {"passed": passed, "failures": [] if passed else [x["id"] for x in observations if not x["oracle_match"]]}}
+    failures = [x["id"] for x in observations if not (x["oracle_match"] and x["retire_done_pulse"] and x["idle_after_retire"])]
+    return {"schema": "lean-silicon.lsc1u-bringup-receipt.v1", "execution": {"kind": "dry-run", "real_silicon": False, "transport": "deterministic Python pin-model"}, "interface": {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}, "vectors": [x["id"] for x in vectors], "observations": observations, "oracle": {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": all(x["oracle_match"] for x in observations)}, "outcome": {"passed": passed, "failures": failures}}
 
 
 def validate_receipt(document: dict) -> None:
@@ -155,9 +175,43 @@ def validate_receipt(document: dict) -> None:
     if set(document) != required or document["schema"] != "lean-silicon.lsc1u-bringup-receipt.v1":
         raise ValueError("not an LSC-1u bring-up receipt v1")
     execution, interface = document["execution"], document["interface"]
-    if execution.get("kind") not in {"dry-run", "simulation", "hardware"} or not isinstance(execution.get("transport"), str):
+    if (not isinstance(execution, dict) or set(execution) != {"kind", "real_silicon", "transport"} or
+            execution.get("kind") not in {"dry-run", "simulation", "hardware"} or
+            not isinstance(execution.get("transport"), str) or not execution["transport"]):
         raise ValueError("invalid execution record")
     if execution.get("real_silicon") != (execution["kind"] == "hardware"):
         raise ValueError("execution kind and real_silicon disagree")
     if interface != {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}:
         raise ValueError("receipt does not identify the implemented Tiny Tapeout pin contract")
+    vectors, observations = document["vectors"], document["observations"]
+    if (not isinstance(vectors, list) or not vectors or
+            any(not isinstance(item, str) or not item for item in vectors) or
+            len(vectors) != len(set(vectors))):
+        raise ValueError("invalid vector identifiers")
+    if not isinstance(observations, list) or len(observations) != len(vectors):
+        raise ValueError("observations do not cover the declared vectors")
+    cases = {case["id"]: case for case in json.loads((ROOT / "vectors.json").read_text())["cases"]}
+    required_observation = {"id", "opcode", "received", "expected", "oracle_match", "retire_done_pulse", "idle_after_retire"}
+    for vector_id, observation in zip(vectors, observations):
+        if (not isinstance(observation, dict) or set(observation) != required_observation or
+                observation["id"] != vector_id or observation["opcode"] not in OPCODES or
+                any(type(observation[key]) is not bool for key in ("oracle_match", "retire_done_pulse", "idle_after_retire"))):
+            raise ValueError("invalid observation record")
+        try:
+            received = bytes.fromhex(observation["received"])
+            expected = bytes.fromhex(observation["expected"])
+        except (TypeError, ValueError) as error:
+            raise ValueError("observation results must be hexadecimal") from error
+        if len(received) != 16 or len(expected) != 16 or observation["oracle_match"] != (received == expected):
+            raise ValueError("observation result or oracle verdict is inconsistent")
+        case = cases.get(vector_id)
+        if case is None or observation["opcode"] != case["opcode"] or expected != oracle(case):
+            raise ValueError("observation is not bound to the shipped deterministic vector")
+    matched = all(item["oracle_match"] for item in observations)
+    oracle_record = document["oracle"]
+    if oracle_record != {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": matched}:
+        raise ValueError("oracle summary is inconsistent")
+    passed = all(item["oracle_match"] and item["retire_done_pulse"] and item["idle_after_retire"] for item in observations)
+    failures = [] if passed else [item["id"] for item in observations if not (item["oracle_match"] and item["retire_done_pulse"] and item["idle_after_retire"])]
+    if document["outcome"] != {"passed": passed, "failures": failures}:
+        raise ValueError("outcome summary is inconsistent")

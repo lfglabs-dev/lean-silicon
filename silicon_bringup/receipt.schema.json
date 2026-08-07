@@ -26,10 +26,24 @@
         "reserved_input_bits": {"const": [6]}
       }
     },
-    "vectors": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-    "observations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
-    "oracle": {"type": "object", "required": ["algorithm", "matched"]},
-    "outcome": {"type": "object", "required": ["passed", "failures"]}
+    "vectors": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "observations": {"type": "array", "minItems": 1, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "opcode", "received", "expected", "oracle_match", "retire_done_pulse", "idle_after_retire"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1}, "opcode": {"enum": ["SET", "XOR", "MUL"]},
+        "received": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "expected": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "oracle_match": {"type": "boolean"}, "retire_done_pulse": {"type": "boolean"},
+        "idle_after_retire": {"type": "boolean"}
+      }
+    }},
+    "oracle": {"type": "object", "additionalProperties": false, "required": ["algorithm", "matched"], "properties": {
+      "algorithm": {"const": "independent GF(2^128), little-endian, low reduction 0x87"}, "matched": {"type": "boolean"}
+    }},
+    "outcome": {"type": "object", "additionalProperties": false, "required": ["passed", "failures"], "properties": {
+      "passed": {"type": "boolean"}, "failures": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+    }}
   },
   "allOf": [{"if": {"properties": {"execution": {"properties": {"kind": {"const": "hardware"}}}}}, "then": {"properties": {"execution": {"properties": {"real_silicon": {"const": true}}}}}, "else": {"properties": {"execution": {"properties": {"real_silicon": {"const": false}}}}}}]
 }

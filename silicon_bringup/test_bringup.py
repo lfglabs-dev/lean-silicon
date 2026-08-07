@@ -45,4 +45,16 @@ class BringupTest(unittest.TestCase):
         dishonest = receipt(); dishonest["execution"] = {"kind": "hardware", "real_silicon": False, "transport": "none"}
         with self.assertRaises(ValueError): validate_receipt(dishonest)
 
+    def test_schema_rejects_forged_or_incomplete_results(self):
+        for mutate in (
+            lambda value: value["observations"][0].update(received="ff" * 16),
+            lambda value: value["observations"][0].update(received="ff" * 16, expected="ff" * 16),
+            lambda value: value["observations"][0].update(retire_done_pulse=False),
+            lambda value: value.update(vectors=value["vectors"][:-1]),
+            lambda value: value["outcome"].update(passed=False),
+        ):
+            with self.subTest(mutate=mutate):
+                forged = receipt(); mutate(forged)
+                with self.assertRaises(ValueError): validate_receipt(forged)
+
 if __name__ == "__main__": unittest.main()
