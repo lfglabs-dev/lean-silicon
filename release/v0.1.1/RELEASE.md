@@ -39,8 +39,10 @@ compares RTL with the historical `release/v0.1` netlist (SHA-256
 `0c85d1afefddf1166e4b3047500f9c27a03ad7198c9c075f505c4536888c03c3`), not
 the selected exact-main physical-run netlist (SHA-256
 `97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc`).
-The manifest records this boundary explicitly; no formal-equivalence claim is
-made for the selected physical payload.
+The manifest records the historical boundary explicitly. The later
+`make release-netlist-equivalence` lane fetches and hash-checks the selected
+physical payload and provides the bounded 74-edge result described in
+`docs/LSC1U_RELEASE_EQUIVALENCE.md`; it does not establish unbounded equivalence.
 
 ## Explicit limitations
 

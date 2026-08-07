@@ -1,0 +1,34 @@
+[tasks]
+bounded
+
+[options]
+bounded: mode bmc
+bounded: depth 74
+timeout 1800
+vcd off
+
+[engines]
+bounded: abc bmc3
+
+[script]
+read_verilog -formal -sv gf2n_mul_bitstream.sv gf128_mul_bitstream.sv lsc1u_core.sv tt_um_lfglabs_lsc1u.sv
+rename tt_um_lfglabs_lsc1u lsc1u_rtl
+read_verilog -formal sky130_fd_sc_hd_netlist_eq_cells.v selected_tt_um_lfglabs_lsc1u.v
+rename tt_um_lfglabs_lsc1u lsc1u_gate_raw
+read_verilog -formal -sv lsc1u_release_gate_wrapper.sv
+read_verilog -formal -sv lsc1u_release_netlist_eq_formal.sv
+select lsc1u_gate_raw/ANTENNA_* lsc1u_gate_raw/FILLER_* lsc1u_gate_raw/PHY_* lsc1u_gate_raw/TAP_*
+delete
+select -clear
+bounded: select -assert-count 3 t:$assert
+prep -flatten -top lsc1u_release_netlist_eq_formal
+
+[files]
+../src/gf2n_mul_bitstream.sv
+../src/gf128_mul_bitstream.sv
+../src/lsc1u_core.sv
+../src/tt_um_lfglabs_lsc1u.sv
+selected_tt_um_lfglabs_lsc1u.v
+sky130_fd_sc_hd_netlist_eq_cells.v
+lsc1u_release_netlist_eq_formal.sv
+lsc1u_release_gate_wrapper.sv

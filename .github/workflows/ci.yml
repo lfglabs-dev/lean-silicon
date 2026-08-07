@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   executable-models:
@@ -91,6 +92,11 @@ jobs:
         run: cd formal && sby -f lsc1u_wrapper_composition.sby
       - name: Fixed release netlist versus RTL bounded equivalence
         run: cd formal && sby -f lsc1u_netlist_eq.sby short
+      - name: Pinned v0.1.1 physical netlist sequential equivalence lane
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LSC1_EQ_CACHE: ${{ runner.temp }}/lsc1-eq-cache
+        run: make release-netlist-equivalence
       - name: Mutation sensitivity of retained safety and arithmetic properties
         run: make formal-mutations
       - name: Yosys lint and synthesis
