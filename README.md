@@ -24,10 +24,9 @@ It is not yet an end-to-end proof.
 
 The [v0.1 release candidate](https://github.com/lfglabs-dev/lean-silicon/releases/tag/v0.1)
 exists. Core arithmetic and protocol work, plus LSC-1µ wrapper composition,
-have formal evidence within their stated boundaries. Historical physical ULX3S
-evidence covers the fixed-length MinCore arithmetic path, not the LSC-1 v1
-packet endpoint. These are important milestones, not an end-to-end proof; the
-release artifacts and their claim boundary are in [`release/v0.1/`](release/v0.1/).
+have formal evidence within their stated boundaries. These are important
+milestones, not an end-to-end proof; the release artifacts and their claim
+boundary are in [`release/v0.1/`](release/v0.1/).
 
 ## What is proven / What remains
 
@@ -35,7 +34,7 @@ release artifacts and their claim boundary are in [`release/v0.1/`](release/v0.1
 | --- | --- |
 | Core arithmetic/protocol and LSC-1µ wrapper composition have formal evidence within their stated boundaries. | Lean-to-RTL correspondence remains future work. |
 | The fixed v0.1 LSC-1µ netlist-to-RTL check is bounded. | Unbounded netlist equivalence is roadmap work. |
-| The fixed-length MinCore arithmetic path has historical physical-ULX3S evidence, and the release candidate includes RTL, gate-level, and physical-flow evidence within their stated scope. | Physical validation of the LSC-1 v1 packet endpoint, full LSC-1 equivalence, and fabricated-silicon bring-up are future work. |
+| The release candidate includes RTL, gate-level, and physical-flow evidence within its stated scope. | Physical FPGA validation, full LSC-1 equivalence, and fabricated-silicon bring-up are future work. |
 
 Read the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 [status ledger](docs/STATUS.md), [validation record](docs/VALIDATION.md), and
