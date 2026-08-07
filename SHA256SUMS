@@ -166,6 +166,9 @@ d1f2dfa6bf564b9cf248838630eb92efd55f03e9ab8bf5e7dfec3d318b9f0f29  ./lean/lakefil
 8e3538e0ab5f81a3ee04927d8838c8c674e0e112838b4b3ce87ec218143276af  ./lean/lean-toolchain
 d59a11f361717058c708574a6f41d9be99da29cfcc3b0c033045ce6f0e57a5d5  ./planning/OWNERSHIP.md
 a19467b08293daf14a67ccd8f0efbcddfeb3854c38525acd7fcfd98f01552587  ./planning/milestones.yaml
+fc8318210ab58c9ea0ece11fc54d3669e8a4e68fc2612368517ce05aa075b3cc  ./release/v0.1.1/MANIFEST.json
+99923221124b2c611c773e18135b8bd926250a6037ac6d0a1398a434dc366e57  ./release/v0.1.1/RELEASE.md
+3546276ccb8508ab885cdaf21b50448b23bfdd8fd5ea93bf83557cb7f6b22aa7  ./release/v0.1.1/SHA256SUMS.txt
 414cbe378a1f84a038b9db25081ba655aaff4d64a3c488c8302a083863f39d8e  ./release/v0.1/CLAIMS.md
 c59b11678b6c84ef9f8c5cca1922c13b3b7a01c908a7f2284fe81cc2dacfce4b  ./release/v0.1/INFO.yaml.example
 6cb975315099d368ccd8ff6a098d092a55119ffb1343d9f92ea78cd6ce155092  ./release/v0.1/MANIFEST.json
