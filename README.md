@@ -33,7 +33,7 @@ release artifacts and their claim boundary are in [`release/v0.1/`](release/v0.1
 
 | What is established | What remains |
 | --- | --- |
-| Core arithmetic/protocol and LSC-1µ wrapper composition have formal evidence within their stated boundaries. | Lean-to-RTL correspondence is bounded and transactional, not an arbitrary multi-transaction proof. |
+| Core arithmetic/protocol and LSC-1µ wrapper composition have formal evidence within their stated boundaries. | Lean-to-RTL correspondence remains future work. |
 | The fixed v0.1 LSC-1µ netlist-to-RTL check is bounded. | Unbounded netlist equivalence is roadmap work. |
 | The fixed-length MinCore arithmetic path has historical physical-ULX3S evidence, and the release candidate includes RTL, gate-level, and physical-flow evidence within their stated scope. | Physical validation of the LSC-1 v1 packet endpoint, full LSC-1 equivalence, and fabricated-silicon bring-up are future work. |
 
