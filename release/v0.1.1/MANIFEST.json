@@ -50,7 +50,7 @@
   },
   "physical_artifacts": [
     {"id": 9004115188, "name": "GDS_logs", "archive_sha256": "0de05d70b7ce83ca3b53a693c72dc4556af31d420c796c15ded4a9f4c8697694"},
-    {"id": 9004116698, "name": "tt_submission", "archive_sha256": "1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f"},
+    {"id": 9004116698, "name": "tt_submission", "archive_sha256": "1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f", "retained_path": "release/v0.1.1/evidence/tt_submission-9004116698.zip"},
     {"id": 9004120450, "name": "gds_render", "archive_sha256": "fc349af6cfcbee79ec85fc4e10c40c706a63ef3c3327ef2d4dca2f92f30cda96"},
     {"id": 9004129773, "name": "github-pages", "archive_sha256": "e1bc668b0f232ec260b15c1bd301ccffb299e9c8c2454878ea4d21773a32f38c"},
     {"id": 9004146486, "name": "gatelevel_test_results", "archive_sha256": "55c7bc93ce17407095f73e15de8f1bb3f5c2c38c2c048c3a2978d9851a7ebe30"},

@@ -2,8 +2,7 @@
 
 **Decision: NO-GO for submission as of 2026-08-07.** The selected, immutable
 v0.1.1 physical-flow payload has successful GDS, precheck, and gate-level jobs,
-but it is not retained in this repository as a submission bundle and has not
-been re-downloaded and independently checked during this documentation review.
+and its hash-pinned service-produced archive is retained in this repository.
 Submission, payment, shuttle acceptance, FPGA hardware validation, and silicon
 validation have not occurred. A GO requires the pre-submit steps below and a
 separately authorized submission decision; this dossier does not authorize one.
@@ -35,10 +34,9 @@ files independently of ZIP metadata:
 | `artifacts/tt_um_lfglabs_lsc1u.oas` | `a76516d3f84ade685a4b164908aaa57ab65ee5863914f10721c8b0fcde73093c` |
 | `artifacts/tt_um_lfglabs_lsc1u.v` | `97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc` |
 
-GitHub artifact archives are retained by the service rather than duplicated in
-the repository. Availability at submission time is therefore an operational
-unknown until artifact ID `9004116698` is downloaded again and both archive and
-payload hashes are verified.
+The exact service-produced archive is retained at
+`release/v0.1.1/evidence/tt_submission-9004116698.zip`; CI verifies its archive
+hash and the selected netlist hash before every bounded-equivalence run.
 
 ## Actual Tiny Tapeout pinout
 
@@ -91,8 +89,8 @@ building are pre-silicon evidence. None implies correct fabricated silicon.
 
 ## Residual risks and unknowns
 
-- Artifact retention and byte identity must be reconfirmed immediately before
-  submission; the binary bundle is not checked into Git.
+- The checked-in archive and selected payload identities must be reconfirmed
+  immediately before submission and matched to the live portal selection.
 - The selected physical netlist has exhaustive two-state equivalence to its
   pinned RTL at the 24 observable outputs through 74 rising edges. It lacks
   unbounded equivalence, and the bound does not span a complete 128-bit
@@ -140,7 +138,7 @@ for the current transaction price. No order, payment, or submission was made.
 
 ## Conditions to change NO-GO to GO
 
-1. Download artifact `9004116698`; verify the archive SHA-256 and the GDS, OAS,
+1. Verify the checked-in artifact `9004116698` archive SHA-256 and the GDS, OAS,
    and netlist payload hashes above, and preserve the verification receipt.
 2. Inspect the selected reports/render and the submission portal together;
    confirm SKY26c, sky130A, 1×2, the exact repository/revision/artifact, deadline,

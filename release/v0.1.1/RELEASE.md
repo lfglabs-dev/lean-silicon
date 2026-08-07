@@ -23,7 +23,8 @@ immutable.
 
 `MANIFEST.json` pins final main's exact commit/tree, toolchains, frozen oracle,
 exact-head CI, physical-flow jobs, GitHub artifact archive hashes, and selected
-payload hashes. `SHA256SUMS.txt` covers the two canonical package documents.
+payload hashes. `SHA256SUMS.txt` covers the canonical package documents and the
+durable copy of the selected service-produced archive.
 
 The exact-main GDS run `31203929606` completed successfully. Its GDS, precheck,
 gate-level test, and viewer jobs are identified in the manifest. The downloaded
@@ -58,9 +59,8 @@ physical payload and provides the bounded 74-edge result described in
 - No ULX3S board run is claimed. No FPGA hardware or fabricated ASIC was
   attached or physically validated for this package.
 - GitHub artifact archives are service-produced ZIPs; payload hashes identify
-  the release bytes independently of ZIP container metadata.
-- The package contains receipts and hashes, not duplicated large binary
-  artifacts. Reproduction requires downloading the retained artifacts from the
-  pinned run.
+  the release bytes independently of ZIP container metadata. The selected
+  `tt_submission` archive is retained verbatim under `evidence/` so the
+  historical proof does not depend on service retention.
 - No tag, GitHub release, submission, publication, merge, or branch deletion is
   part of this preparation PR.

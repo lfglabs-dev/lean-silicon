@@ -1,4 +1,4 @@
-b14f16d8e1a85bce779cceb259a63544573cb012879fde5f0b2100b6f73c358a  ./.github/workflows/ci.yml
+b4a45122a95a45e32f6e070b70c10bfaae1671e1db7ad8e1eee4056b320095e6  ./.github/workflows/ci.yml
 91195d747b16476611be845bd50443536c12fa6c43d347f95e5c98df0cafeaf6  ./.github/workflows/fpga-asic-simulator.yaml
 5e6a29a5b46af46a1d8ebb9cb9ed4b4042d492b86c752e7aaa845dc73c164c2f  ./.github/workflows/gds.yaml
 02aaec17b225fbca77453ae4cd08184bc82b7e01342a84671f81a0a999b375d0  ./.github/workflows/release-bundle.yml
@@ -36,7 +36,7 @@ ac44a1838e7da255ed93835cc0de01e1751efc05f78cf9f8b8145cc963d6836a  ./docs/DECISIO
 b989d03d5e6c7dd3c1c11bf40277da8d700463601f23c8c51787f8ac371bc596  ./docs/FULL_CORE_PROTOCOL.md
 42e5b0f0b0f98d2c7c89cbc5db737b1d1f2dd02685f4f07b98ea709a7f9e7690  ./docs/HOST_RUNTIME.md
 8175d6ddec6ba16b7b9313594d38cecadaac127e5a16066f3255859530fc975b  ./docs/LSC1U_ARCHITECTURE.md
-22394bd9ab34b1d119926267047b249cca7b04122532724a16acf0ab63c1fbe7  ./docs/LSC1U_RELEASE_EQUIVALENCE.md
+0b404526289c663809d0cbbacfef0def89ea7833710f5d015aefbbf39c50e973  ./docs/LSC1U_RELEASE_EQUIVALENCE.md
 59832e723e7c3e52b1e23ce70fb30760b6221b5e135c54ee5556775b7cf792f3  ./docs/LSC1_PROTOCOL.md
 826d59df3b9654a3c110fa7c18eb9fbea94c861e3f8a1718fd05f5a0352b0627  ./docs/LSC1_TRANSACTION_PROTOCOL.md
 c41da7c4e22cc809e471da2bfcce176505db234c3b48e9c01ff20b8bcaef4b29  ./docs/M0_MANAGER.md
@@ -49,7 +49,7 @@ b81b89574ed84c67b64ae7b56001bf9d03b9d66be2bed7977d8adc715481eafb  ./docs/PROTOCO
 8d4e8f702a4ab69e74a16148f2d90ed7ab3bc49cc5c3f317ff294d7a2fd1f01f  ./docs/ROADMAP.md
 0d787acfaa683bf07cedea98ba403d51079593b50f84b48ee199a479cc35b099  ./docs/SEMANTICS.md
 6ec7c4c80628391da706725be1a2361ae8eb2ee014fb4cde6dae31c53f13e9f0  ./docs/SEMANTIC_DIFFERENCES.md
-017bdc15bbe7f95805e725d8f9382c08bb9deee730bdc0b382d62bb94b3c58ee  ./docs/SKY26C_GO_NO_GO.md
+9b7ba68201579247ef35f332f20856a607965018a8f19c6d9eeaf9e15b403262  ./docs/SKY26C_GO_NO_GO.md
 02e8a5b52b341390f008ff8bc62f5d2d982b23adb8b26cb73ef3b07dddeed807  ./docs/SOURCE_AUDIT.md
 0117f12260366add2fde380ae5538e7ab4955b74ac231e81441d8cd2d8400530  ./docs/STATUS.md
 411ce696f6910099500a6af1e86d966200e4323467824c97a2518142525c5cb4  ./docs/TAPEOUT.md
@@ -171,9 +171,10 @@ d1f2dfa6bf564b9cf248838630eb92efd55f03e9ab8bf5e7dfec3d318b9f0f29  ./lean/lakefil
 8e3538e0ab5f81a3ee04927d8838c8c674e0e112838b4b3ce87ec218143276af  ./lean/lean-toolchain
 d59a11f361717058c708574a6f41d9be99da29cfcc3b0c033045ce6f0e57a5d5  ./planning/OWNERSHIP.md
 a19467b08293daf14a67ccd8f0efbcddfeb3854c38525acd7fcfd98f01552587  ./planning/milestones.yaml
-fc8318210ab58c9ea0ece11fc54d3669e8a4e68fc2612368517ce05aa075b3cc  ./release/v0.1.1/MANIFEST.json
-37b633c35501e4fe6dcbca9a61d6878fec981beccf41106ce81e64dbadc47b7c  ./release/v0.1.1/RELEASE.md
-3546276ccb8508ab885cdaf21b50448b23bfdd8fd5ea93bf83557cb7f6b22aa7  ./release/v0.1.1/SHA256SUMS.txt
+4294814c0ed6ba66705d9c44d8ea4181c9f48912b7418e48ad081167af658c53  ./release/v0.1.1/MANIFEST.json
+0977f3ae0082afdbbadf703cf2248bd026999a8b5ca9ae3f32bd80d6cfed858a  ./release/v0.1.1/RELEASE.md
+8014d1bd86f7d78e90cc8e0b1332aec96fe6b2bd6cd7a9627983a14d5d8f677d  ./release/v0.1.1/SHA256SUMS.txt
+1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f  ./release/v0.1.1/evidence/tt_submission-9004116698.zip
 414cbe378a1f84a038b9db25081ba655aaff4d64a3c488c8302a083863f39d8e  ./release/v0.1/CLAIMS.md
 c59b11678b6c84ef9f8c5cca1922c13b3b7a01c908a7f2284fe81cc2dacfce4b  ./release/v0.1/INFO.yaml.example
 6cb975315099d368ccd8ff6a098d092a55119ffb1343d9f92ea78cd6ce155092  ./release/v0.1/MANIFEST.json
@@ -439,4 +440,4 @@ d39b590b15a494a1e62ff7605ca3b8c8ffec122e0f10f6dce7f997fcecceef1b  ./tools/rtl_st
 094b637f6424fc3e941a139b75d952725c29ac59398de757005e824f496bb7e1  ./tools/select_exact_gds_run.sh
 a2b4b3a985df1ecde148745dcc94684c77364cf9a4fa22735f2f4754aa0489db  ./tools/source_provenance.py
 77760424b9ccaea9dfca5b3ac0412cce74db801bf583f4b7d32eb6d9b80b255d  ./tools/sv_smoke_check.py
-092ef33905e53c3693f0b43fff259f7b275cbe569f53dfc2c37193e7d14e0499  ./tools/verify_lsc1u_release_equivalence.py
+074ea45fa7978a4233d995278dd742668aec2ede0481af46818bb4e6342ecdb7  ./tools/verify_lsc1u_release_equivalence.py

@@ -36,14 +36,16 @@ nothing about edge 75 or later and does not span a complete 128-bit multiply.
   `YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde`;
   the command prints the actual Yosys build identity into the job log.
 
-The archive is a retained GitHub Actions artifact rather than a Git object. Its
-archive and payload hashes are therefore mandatory inputs, and a missing or
-mismatched artifact fails closed.
+The original archive is retained durably at
+`release/v0.1.1/evidence/tt_submission-9004116698.zip` as a Git object. Its
+archive and selected payload hashes are mandatory inputs, and a missing or
+mismatched archive fails closed.
 
 ## Non-vacuity and mutation sensitivity
 
-An explicit Yosys SAT query must witness reset asserted at edge 1, released at
-edge 2, and the driven `uio_oe == 8'hb6` output with `ena == 1`. The runner then
+An explicit Yosys SAT query must emit a parseable JSON model witnessing reset
+asserted at edge 1, released at edge 2, and the driven `uio_oe == 8'hb6` output
+with `ena == 1`; UNSAT or a missing/invalid model fails the lane. The runner then
 changes the first output comparison to demand a one-bit mismatch;
 the 74-edge task must produce SBY status `FAIL`, meaning a property
 counterexample. `ERROR`, timeout, missing status, and every other infrastructure
@@ -67,18 +69,16 @@ makes no unbounded or full-multiply claim.
 
 ## Reproduction
 
-Use an authenticated GitHub token that can read this repository's Actions
-artifacts and a private mutable cache outside the checkout:
+Use a private mutable cache outside the checkout:
 
 ```sh
-export GH_TOKEN=...                         # do not print or commit it
 export LSC1_EQ_CACHE="$(mktemp -d)"
 chmod 700 "$LSC1_EQ_CACHE"
 make release-netlist-equivalence
 ```
 
-CI runs exactly the last command with `${{ runner.temp }}/lsc1-eq-cache` and a
-read-only repository/Actions token. The runner downloads only artifact
-`9004116698`, verifies both fixed hashes and all RTL hashes, stages mutable SBY
-outputs in the private cache, runs the SAT witness and 74-edge proof, and requires
-the mutation to produce an actual property counterexample.
+CI runs exactly the last command with `${{ runner.temp }}/lsc1-eq-cache`. The
+runner reads the durable copy of artifact `9004116698`, verifies both fixed
+hashes and all RTL hashes, stages mutable SBY outputs in the private cache, runs
+the SAT witness and 74-edge proof, and requires the mutation to produce an
+actual property counterexample.
