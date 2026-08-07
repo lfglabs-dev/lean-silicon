@@ -31,6 +31,28 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(value, b"\xe0"); self.assertTrue(done)
         self.assertTrue(driver.backend.pins().uio_out & RX_READY)
 
+    def test_reused_backend_retires_each_transaction(self):
+        driver = Driver(DryRunBackend()); driver.reset()
+        for value in (0x12, 0x34):
+            driver.send(3)
+            received = bytearray(); done = False
+            for _ in range(16):
+                driver.send(value)
+                part, retired = driver.receive_all()
+                received.extend(part); done |= retired
+            self.assertEqual(received, bytes((value,)) * 16)
+            self.assertTrue(done)
+            self.assertTrue(driver.backend.pins().uio_out & RX_READY)
+
+    def test_final_tx_ack_cannot_accept_same_edge_input(self):
+        backend = DryRunBackend(); driver = Driver(backend); driver.reset(); driver.send(0x7F)
+        self.assertTrue(backend.pins().uio_out & TX_VALID)
+        driver._cycle(ui=3, uio=(1 << 3) | 1)
+        self.assertIsNone(backend.command)
+        self.assertTrue(backend.pins().uio_out & DONE)
+        driver._cycle()
+        self.assertTrue(backend.pins().uio_out & RX_READY)
+
     def test_reset_and_deselect_abort_partial_work_and_uio6_is_ignored(self):
         driver = Driver(DryRunBackend()); driver.reset(); driver.send(3); driver.send(0x12)
         self.assertTrue(driver.backend.pins().uio_out & BUSY)

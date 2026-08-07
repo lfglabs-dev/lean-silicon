@@ -87,13 +87,17 @@ class DryRunBackend:
             self.reset_state()
             return before
         self.done = False
-        if self.outgoing and self.uio_in & TX_READY:
+        tx_fire = bool(before.uio_out & TX_VALID and self.uio_in & TX_READY)
+        rx_fire = bool(before.uio_out & RX_READY and self.uio_in & RX_VALID)
+        if tx_fire:
             self.outgoing.pop(0)
             self.responses_acked += 1
             if self.responses_acked == self.response_total:
                 self.done, self.command, self.fault = True, None, False
-        if not self.outgoing and self.uio_in & RX_VALID:
+        if rx_fire:
             if self.command is None:
+                self.incoming.clear()
+                self.input_count = self.responses_acked = self.response_total = 0
                 self.command = self.ui_in
                 if self.command not in OPCODES.values():
                     self.outgoing, self.fault, self.response_total = bytearray((0xE0,)), True, 1
