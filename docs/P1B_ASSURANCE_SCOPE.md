@@ -15,8 +15,9 @@ was created).  The exact unchanged implementation/proof inputs are:
 | `formal/gf128_mul_stream_refinement_formal.sv` | `bb5df51df50233314d72eaa705fa5cdc809c472585522577b1cdd916f03c0c84` |
 | `lean/LeanVMBMinCore/RTLRefinement.lean` | `19c92b03aae729a778d27875943fea234fe6e0fb9c75b201d9065404c13bf16e` |
 
-`RTLTraceRefinement.lean` models acceptance, a collapsed execution phase, all
-sixteen least-significant-byte-first response transfers, stable per-byte
+`RTLTraceRefinement.lean` models acceptance, all sixteen logical receive lanes,
+the required SET/XOR receive/result-transfer interleaving, a collapsed MUL
+execution phase, all sixteen least-significant-byte-first response transfers, stable per-byte
 backpressure, exactly-once successful retirement to IDLE after transfer 16,
 invalid-opcode fault response, reset, disable, and ignored inputs while busy.
 Its invariant proves that retired commands form the accepted history in order
@@ -24,18 +25,19 @@ and that every output is the Lean mathematical result for the corresponding
 SET, XOR, or production-polynomial MUL.  Induction proves this for every finite
 interaction list, so it is not limited to a single transaction.
 
-Focused executable examples witness two successful transactions with a stalled
-first response byte and sixteen accepted transfers apiece, rejection of
-premature one-beat retirement, MUL acceptance, and the invalid-opcode
-fault/acknowledgement path.  The
+Focused executable examples witness streaming SET/XOR transactions with a
+stalled first response byte, a complete MUL receive/execute/transmit trace,
+rejection of premature one-beat retirement, and the invalid-opcode
+fault/acknowledgement path. The
 general `backpressure_stable`, `reset_clears`, and `disable_clears` theorems
 guard the most important stutter/abort regressions.
 
 ## Preserved boundary
 
 This is a sound composition at the existing retained boundary, not a new
-SystemVerilog importer.  Lean does not inspect the SV AST.  Byte counters and
-the 128 MUL bit cycles are collapsed into one `execute` transition; the exact
+SystemVerilog importer. Lean does not inspect the SV AST. Within each logical
+lane, SET's one receive byte and XOR's A/B receive pair are projected to one
+event. MUL's per-byte bit cycles are collapsed into one `execute` transition; the exact
 unchanged modules are checked separately by the pinned unbounded SBY lanes.
 Therefore this result does **not** prove the packet frontend, full LSC-1 ISA,
 fair-progress liveness, RTL-to-netlist equivalence, or that the two proof
