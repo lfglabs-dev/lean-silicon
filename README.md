@@ -23,23 +23,19 @@ It is not yet an end-to-end proof.
 ## Status
 
 The [v0.1 release candidate](https://github.com/lfglabs-dev/lean-silicon/releases/tag/v0.1)
-exists. Phase A/B/C foundations, RTL, physical-flow work, and bridge work are
-merged on `main`; the release artifacts and their claim boundary are in
-[`release/v0.1/`](release/v0.1/).
-
-[PR #44](https://github.com/lfglabs-dev/lean-silicon/pull/44) adds a 19-case
-LSC-1 v2 conformance corpus, including corrected complete and partial
-transaction-ID length-fault vectors. It is pending integration into `main`.
-The checked-in ULX3S artifacts are source-built and archived, not
-hardware-validated; see the [status ledger](docs/STATUS.md) for their scope.
+exists. Core arithmetic and protocol work, plus LSC-1µ wrapper composition,
+have formal evidence within their stated boundaries. The LSC-1 packet path has
+also been exercised on a physical ULX3S board against the host oracle. These
+are important milestones, not an end-to-end proof; the release artifacts and
+their claim boundary are in [`release/v0.1/`](release/v0.1/).
 
 ## What is proven / What remains
 
 | What is established | What remains |
 | --- | --- |
-| The LSC-1µ wrapper-to-core relationship is an unbounded PDR result. | Lean-to-RTL correspondence is bounded and transactional, not an arbitrary multi-transaction proof. |
-| The fixed v0.1 netlist-to-RTL check is bounded. | Unbounded netlist equivalence is roadmap work. |
-| The release candidate includes RTL, gate-level, and physical-flow evidence within their stated scope. | Full LSC-1 equivalence and fabricated-silicon bring-up are future work. |
+| Core arithmetic/protocol and LSC-1µ wrapper composition have formal evidence within their stated boundaries. | Lean-to-RTL correspondence is bounded and transactional, not an arbitrary multi-transaction proof. |
+| The fixed v0.1 LSC-1µ netlist-to-RTL check is bounded. | Unbounded netlist equivalence is roadmap work. |
+| The packet path has physical-ULX3S evidence, and the release candidate includes RTL, gate-level, and physical-flow evidence within their stated scope. | Full LSC-1 equivalence and fabricated-silicon bring-up are future work. |
 
 Read the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 [status ledger](docs/STATUS.md), [validation record](docs/VALIDATION.md), and

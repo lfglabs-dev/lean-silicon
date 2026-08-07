@@ -27,8 +27,9 @@ where a row explicitly says so.
 | lean_compiler integration | artifact exported from the frozen compiler; `hints`/`main_frame`/`witness`/`trace` are `pub(crate)` upstream | `tools/lean_compiler_export.py`, `docs/HOST_RUNTIME.md` section 4 |
 | Host vs frozen Rust comparison | final memory for the 12 cells the fixture run touched and `cycles` compared when the run reaches the sentinel; every per-step field explicitly not compared | `tools/host_upstream_comparison.py`, `docs/HOST_RUNTIME.md` section 5 |
 | Scalar packet subset | SET/XOR/MUL/DEREF/JUMP implemented in the executable model, host path and RTL; finite differential evidence only, with no full-scalar refinement theorem | `sim/test_packet_frontend_rtl_differential.py`, `docs/PROOF_BOUNDARIES.md` |
-| ULX3S harness bitstreams | source-built and archived; not hardware-validated, with no current physical scalar-opcode validation claim | `docs/ULX3S_SMOKE_AND_UART.md`, `results/ulx3s-smoke-uart-20260725/` |
+| ULX3S packet path | exercised on a physical ULX3S board against the host oracle for its documented packet-path scope; this is validation evidence, not an end-to-end or silicon claim | `fpga_harness/host/lsc1_packet_uart.py`, `docs/PROOF_BOUNDARIES.md` |
 | Tiny Tapeout PPA / official zkDSL validation | not run for LSC-1 | planned graph |
 | Full-controller SV-to-frozen-ISA theorem | not implemented | `docs/PROOF_BOUNDARIES.md` |
-| RTL-to-netlist equivalence | not implemented | `docs/PROOF_BOUNDARIES.md` |
+| Fixed LSC-1u RTL-to-netlist equivalence | bounded check established for the fixed v0.1 release netlist at the observable wrapper boundary; it is not unbounded sequential equivalence | `formal/lsc1u_netlist_eq.sby`, `formal/README.md`, `docs/PROOF_BOUNDARIES.md` |
+| Unbounded RTL-to-netlist equivalence | not established | `docs/PROOF_BOUNDARIES.md` |
 | Formal-verification marketing claim | prohibited pending bridges | `docs/PROOF_BOUNDARIES.md` |
