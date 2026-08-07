@@ -46,8 +46,8 @@ Modules:
   lower bounds, and the 273-bit state lower bound under stated requirements.
 - `RTLRefinement.lean` and `RTLTraceRefinement.lean` — the retained LSC-1u
   SET/XOR/MUL boundary, first for one transaction and then as an inductive
-  arbitrary-finite-trace invariant covering acceptance, sixteen logical
-  receive lanes with SET/XOR output interleaving, collapsed MUL execution, all
+  payload-valid arbitrary-finite-trace invariant covering acceptance, ordered
+  operand bytes with SET/XOR output interleaving, collapsed MUL execution, all
   sixteen response-byte handshakes with MUL refill bubbles, retirement,
   backpressure, faults,
   reset, and disable. Exact source hashes and

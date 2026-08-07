@@ -42,8 +42,9 @@ changing this lifecycle interface.
 
 | Declaration | Meaning |
 | --- | --- |
-| `invariant_step` | Acceptance, sixteen logical receive lanes with SET/XOR output interleaving, collapsed MUL execution, all sixteen response-byte transfers with mandatory MUL refill bubbles, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
-| `run_invariant` | The invariant holds for every finite multi-transaction input trace. Retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
+| `ValidInput`, `ValidTrace` | Every receive event is bound to the corresponding byte of the accepted transaction; validity is state-dependent across a finite trace. |
+| `invariant_step` | Acceptance, ordered byte receives with SET/XOR output interleaving, collapsed MUL execution, all sixteen response-byte transfers with mandatory MUL refill bubbles, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
+| `run_invariant` | For every finite payload-valid multi-transaction trace, retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
 | `txByte` | In a transmit phase, exposes the exact indexed byte of the 16-byte least-significant-byte-first response. |
 | `backpressure_stable` | A deasserted `tx_ready` is a true stutter: response byte, transfer index, and history are stable. |
 | `reset_clears`, `disable_clears` | Either abort mechanism restores the clean IDLE retained state from every phase. |

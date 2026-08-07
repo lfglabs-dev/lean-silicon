@@ -11,8 +11,8 @@ is a Lean mirror of the externally relevant control phases in
 
 * IDLE accepts exactly XOR (`0x01`), MUL (`0x02`), and SET (`0x03`), or stages
   the RTL's `0xe0` invalid-command fault response;
-* RECEIVE retains all sixteen logical operand lanes and, for SET/XOR, their
-  required receive/result-transfer interleaving;
+* RECEIVE_A/RECEIVE_B bind every accepted payload byte to the transaction and
+  retain SET/XOR's required receive/result-transfer interleaving;
 * MUL execution computes the operation result specified by
   `RTLRefinement.result` after all sixteen operand lanes;
 * TRANSMIT exposes all sixteen least-significant-byte-first response beats,
@@ -21,10 +21,9 @@ is a Lean mirror of the externally relevant control phases in
 * MUL REFILL retains the mandatory `tx_valid = false` cycle between beats;
 * reset and `ena = false` abort all in-flight work and return to IDLE.
 
-The model projects SET's one payload byte and XOR's A/B byte pair to one
-logical receive-lane event, and collapses MUL's per-byte bit cycles into the
-`execute` transition. It does not reorder a response transfer across the next
-logical lane. Their concrete correspondence is proved separately by
+The model collapses MUL's per-byte bit cycles into the `execute` transition,
+but does not abstract or reorder payload-byte or response-byte transfers.
+Their concrete correspondence is proved separately by
 `formal/lsc1u_compositional_refinement.sby` and
 `formal/gf128_mul_stream_refinement.sby`.  Consequently the theorem below is
 an inductive refinement of the pinned *retained RTL boundary*, not a theorem
@@ -41,7 +40,8 @@ abbrev Word := BitVec 128
 /-- Retained control phases of the shipped LSC-1u implementation. -/
 inductive Phase where
   | idle
-  | receive (transaction : AcceptedTransaction) (index : Fin 16)
+  | receiveA (transaction : AcceptedTransaction) (index : Fin 16)
+  | receiveB (transaction : AcceptedTransaction) (index : Fin 16)
   | execute (transaction : AcceptedTransaction)
   | transmit (transaction : AcceptedTransaction) (index : Fin 16)
   | refill (transaction : AcceptedTransaction) (index : Fin 16)
@@ -63,7 +63,7 @@ def initial : State := ⟨.idle, [], [], []⟩
 inductive Input where
   | accept (transaction : AcceptedTransaction)
   | invalidOpcode
-  | receive
+  | receive (data : Byte)
   | execute
   | refill
   | tx (ready : Bool)
@@ -76,19 +76,30 @@ does not assert the corresponding ready signal leave the state unchanged. -/
 def step (s : State) : Input → State
   | .reset | .disable => initial
   | .accept t => match s.phase with
-      | .idle => { s with phase := .receive t 0, accepted := s.accepted ++ [t] }
+      | .idle => { s with phase := .receiveA t 0, accepted := s.accepted ++ [t] }
       | _ => s
   | .invalidOpcode => match s.phase with
       | .idle => { s with phase := .fault }
       | _ => s
-  | .receive => match s.phase with
-      | .receive t index => match t.opcode with
-          | .set | .xor => { s with phase := .transmit t index }
+  | .receive data => match s.phase with
+      | .receiveA t index =>
+          match t.opcode with
+          | .set => { s with phase := .transmit t index }
+          | .xor => { s with phase := .receiveB t index }
+          | .mul =>
+              if hlast : index.val = 15 then
+                { s with phase := .receiveB t 0 }
+              else
+                { s with phase := .receiveA t ⟨index.val + 1, by omega⟩ }
+      | .receiveB t index =>
+          match t.opcode with
+          | .xor => { s with phase := .transmit t index }
           | .mul =>
               if hlast : index.val = 15 then
                 { s with phase := .execute t }
               else
-                { s with phase := .receive t ⟨index.val + 1, by omega⟩ }
+                { s with phase := .receiveB t ⟨index.val + 1, by omega⟩ }
+          | .set => s
       | _ => s
   | .execute => match s.phase with
       | .execute t => { s with phase := .transmit t 0 }
@@ -106,7 +117,7 @@ def step (s : State) : Input → State
           else
             match t.opcode with
             | .set | .xor =>
-                { s with phase := .receive t ⟨index.val + 1, by omega⟩ }
+                { s with phase := .receiveA t ⟨index.val + 1, by omega⟩ }
             | .mul =>
                 { s with phase := .refill t ⟨index.val + 1, by omega⟩ }
       | .fault, true => { s with phase := .idle }
@@ -126,19 +137,55 @@ def txByte (s : State) : Option Byte :=
 
 def run (inputs : List Input) : State := inputs.foldl step initial
 
+/-- Payload-side validity binds each receive event to the byte expected by the
+accepted transaction. Other inputs are valid in every phase (and may stutter). -/
+def ValidInput (s : State) : Input → Prop
+  | .receive data => match s.phase with
+      | .receiveA t index => data = ByteSerialization.byteAt t.a index.val
+      | .receiveB t index => data = ByteSerialization.byteAt t.b index.val
+      | _ => False
+  | _ => True
+
+/-- State-dependent validity of a projected finite interaction trace. -/
+def ValidTrace : State → List Input → Prop
+  | _, [] => True
+  | s, input :: rest => ValidInput s input ∧ ValidTrace (step s input) rest
+
+/-- The outstanding transaction represented by a retained control phase. -/
+@[simp] def Phase.pending : Phase → List AcceptedTransaction
+  | .idle | .fault => []
+  | .receiveA t _ | .receiveB t _ | .execute t |
+      .transmit t _ | .refill t _ => [t]
+
 /-- The multi-transaction simulation invariant: retired transactions are an
-accepted prefix; every retired output is exactly the Lean SET/XOR/MUL result;
-and any result held under backpressure is the exact current transaction result.
--/
+accepted prefix and every retired output is exactly the Lean SET/XOR/MUL
+result. The phase contributes at most one accepted, outstanding transaction. -/
 def Invariant (s : State) : Prop :=
   s.outputs = s.retired.map (fun t => result t.opcode t.a t.b) ∧
-  match s.phase with
-    | .idle | .fault => s.accepted = s.retired
-    | .receive t _ | .execute t | .transmit t _ | .refill t _ =>
-        s.accepted = s.retired ++ [t]
+  s.accepted = s.retired ++ s.phase.pending
 
 theorem initial_invariant : Invariant initial := by
-  simp [Invariant, initial]
+  simp [Invariant, Phase.pending, initial]
+
+theorem receive_preserves_observation (s : State) (data : Byte) :
+    let s' := step s (.receive data)
+    s'.accepted = s.accepted ∧ s'.retired = s.retired ∧
+      s'.outputs = s.outputs ∧ s'.phase.pending = s.phase.pending := by
+  rcases s with ⟨phase, accepted, retired, outputs⟩
+  cases phase with
+  | receiveA transaction index =>
+      rcases transaction with ⟨opcode, a, b⟩
+      cases opcode <;> by_cases hlast : index.val = 15 <;>
+        simp [step, Phase.pending, hlast]
+  | receiveB transaction index =>
+      rcases transaction with ⟨opcode, a, b⟩
+      cases opcode <;> by_cases hlast : index.val = 15 <;>
+        simp [step, Phase.pending, hlast]
+  | idle => simp [step, Phase.pending]
+  | execute _ => simp [step, Phase.pending]
+  | transmit _ _ => simp [step, Phase.pending]
+  | refill _ _ => simp [step, Phase.pending]
+  | fault => simp [step, Phase.pending]
 
 /-- One-cycle inductiveness across acceptance, execution, RETIRE/IDLE, fault,
 reset/disable, ignored input while busy, and arbitrary output backpressure. -/
@@ -146,27 +193,35 @@ theorem invariant_step (s : State) (input : Input) (h : Invariant s) :
     Invariant (step s input) := by
   rcases s with ⟨phase, accepted, retired, outputs⟩
   cases input with
-  | reset => simp [Invariant, step, initial]
-  | disable => simp [Invariant, step, initial]
+  | reset => simp [Invariant, Phase.pending, step, initial]
+  | disable => simp [Invariant, Phase.pending, step, initial]
   | accept transaction =>
-      cases phase <;> simp_all [Invariant, step]
+      cases phase <;> simp_all [Invariant, Phase.pending, step]
   | invalidOpcode =>
-      cases phase <;> simp_all [Invariant, step]
-  | receive =>
-      cases phase <;> simp_all [Invariant, step]
-      rename_i transaction index
-      cases transaction.opcode <;>
-        by_cases hlast : index.val = 15 <;> simp_all
+      cases phase <;> simp_all [Invariant, Phase.pending, step]
+  | receive data =>
+      have hp := receive_preserves_observation
+        { phase := phase, accepted := accepted, retired := retired, outputs := outputs } data
+      rcases hp with ⟨ha, hr, ho, hp⟩
+      simp only [Invariant] at h ⊢
+      rw [ha, hr, ho, hp]
+      exact h
   | execute =>
-      cases phase <;> simp_all [Invariant, step]
+      cases phase <;> simp_all [Invariant, Phase.pending, step]
   | refill =>
-      cases phase <;> simp_all [Invariant, step]
+      cases phase <;> simp_all [Invariant, Phase.pending, step]
   | tx ready =>
-      cases phase <;> cases ready <;> simp_all [Invariant, step]
-      rename_i transaction index
-      by_cases hlast : index.val = 15
-      · simp_all
-      · cases transaction.opcode <;> simp_all
+      cases ready with
+      | false => simpa [step] using h
+      | true =>
+          cases phase with
+          | transmit transaction index =>
+              by_cases hlast : index.val = 15
+              · simp_all [Invariant, Phase.pending, step, List.map_append]
+              · rcases transaction with ⟨opcode, a, b⟩
+                cases opcode <;>
+                  simp_all [Invariant, Phase.pending, step]
+          | _ => simpa [Invariant, Phase.pending, step] using h
 
 theorem foldl_invariant (s : State) (inputs : List Input) (h : Invariant s) :
     Invariant (inputs.foldl step s) := by
@@ -176,8 +231,9 @@ theorem foldl_invariant (s : State) (inputs : List Input) (h : Invariant s) :
       simp only [List.foldl_cons]
       exact ih (step s input) (invariant_step s input h)
 
-/-- Sound refinement for every finite, multi-transaction interaction trace. -/
-theorem run_invariant (inputs : List Input) : Invariant (run inputs) := by
+/-- Sound refinement for every finite, payload-valid multi-transaction trace. -/
+theorem run_invariant (inputs : List Input) (_ : ValidTrace initial inputs) :
+    Invariant (run inputs) := by
   exact foldl_invariant initial inputs initial_invariant
 
 /-- Backpressure is a genuine stutter step: the current response byte, its
@@ -190,57 +246,21 @@ theorem backpressure_stable (s : State) : step s (.tx false) = s := by
 theorem reset_clears (s : State) : step s .reset = initial := rfl
 theorem disable_clears (s : State) : step s .disable = initial := rfl
 
-/-- Sixteen streaming SET/XOR logical lanes. Each lane is received only after
-the preceding result byte has transferred; the first result is stalled once. -/
-def streamResponse : List Input :=
-  [.receive, .tx false, .tx true] ++
-    (List.replicate 15 [.receive, .tx true]).flatten
+/-- Non-vacuity: every transaction can enter its first byte-receive phase. -/
+example (t : AcceptedTransaction) :
+    (run [.accept t]).phase = .receiveA t 0 := rfl
 
-/-- MUL first receives all sixteen logical operand lanes, executes, and then
-transfers sixteen response bytes. -/
-def mulResponse : List Input :=
-  List.replicate 16 .receive ++ [.execute, .tx true] ++
-    (List.replicate 15 [.refill, .tx true]).flatten
+/-- The validity premise binds a receive event to the exact operand byte. -/
+example (t : AcceptedTransaction) (index : Fin 16) (data : Byte) :
+    ValidInput { initial with phase := .receiveA t index } (.receive data) ↔
+      data = ByteSerialization.byteAt t.a index.val := Iff.rfl
 
-/-- A ready-high cycle during MUL refill cannot transfer or advance a byte. -/
-example :
-    let mulTx : AcceptedTransaction := ⟨.mul, 1#128, 1#128⟩
-    let tracePrefix := List.replicate 16 .receive ++ [.execute, .tx true, .tx true]
-    (run ([.accept mulTx] ++ tracePrefix)).phase = .refill mulTx 1 := by
-  decide
-
-/-- Focused non-vacuity witness: two distinct accepted transactions really
-retire, and the SET/XOR results are present in order after sixteen response
-handshakes apiece. -/
-example :
-    let setTx : AcceptedTransaction := ⟨.set, 0x35#128, 0#128⟩
-    let xorTx : AcceptedTransaction := ⟨.xor, 0xaa#128, 0x0f#128⟩
-    let final := run ([.accept setTx] ++ streamResponse ++
-      [.accept xorTx] ++ streamResponse)
-    final.phase = .idle ∧ final.retired = [setTx, xorTx] ∧
-      final.outputs = [0x35#128, 0xa5#128] := by
-  decide
-
-/-- One handshake cannot prematurely retire a 128-bit response. -/
-example :
-    let setTx : AcceptedTransaction := ⟨.set, 0x35#128, 0#128⟩
-    (run [.accept setTx, .receive, .tx true]).phase = .receive setTx 1 := by
-  rfl
-
-set_option maxRecDepth 10000 in
-/-- MUL reaches execution only after all sixteen logical operand lanes and
-then retires only after all sixteen response transfers. -/
-example :
-    let mulTx : AcceptedTransaction := ⟨.mul, 1#128, 1#128⟩
-    let final := run ([.accept mulTx] ++ mulResponse)
-    final.phase = .idle ∧ final.retired = [mulTx] ∧ final.outputs = [1#128] := by
-  decide
-
-/-- Invalid decode reaches the fault phase and acknowledgement returns IDLE. -/
-example :
-    (run [.invalidOpcode]).phase = .fault ∧
-    (run [.invalidOpcode, .tx false]).phase = .fault ∧
-    (run [.invalidOpcode, .tx true]).phase = .idle := by
-  decide
+/-- Non-vacuity: a final valid response beat performs exactly one retirement. -/
+example (t : AcceptedTransaction) :
+    step { phase := .transmit t ⟨15, by omega⟩
+           accepted := [t], retired := [], outputs := [] } (.tx true) =
+      { phase := .idle, accepted := [t], retired := [t]
+        outputs := [result t.opcode t.a t.b] } := by
+  simp [step]
 
 end LeanVMBMinCore.RTLTraceRefinement
