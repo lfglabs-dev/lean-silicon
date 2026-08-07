@@ -20,8 +20,8 @@ read_verilog -formal -sv lsc1u_release_netlist_eq_formal.sv
 select lsc1u_gate_raw/ANTENNA_* lsc1u_gate_raw/FILLER_* lsc1u_gate_raw/PHY_* lsc1u_gate_raw/TAP_*
 delete
 select -clear
-bounded: select -assert-count 3 t:$assert
 prep -flatten -top lsc1u_release_netlist_eq_formal
+bounded: select -assert-count 3 t:$assert
 
 [files]
 ../src/gf2n_mul_bitstream.sv

@@ -17,6 +17,12 @@ def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def run(cmd, **kw):
     print("+", " ".join(map(str, cmd)), flush=True)
     return subprocess.run(cmd, check=True, **kw)
+def frozen_source(name):
+    result = run(
+        ["git", "show", f"{SOURCE_SHA}:src/{name}"],
+        cwd=ROOT, stdout=subprocess.PIPE,
+    )
+    return result.stdout
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--cache-dir", required=True, type=pathlib.Path)
     a=ap.parse_args(); cache=a.cache_dir.resolve(); cache.mkdir(parents=True, exist_ok=True)
@@ -25,14 +31,14 @@ def main():
     if not archive.exists():
         with archive.open("wb") as out: run(["gh","api",f"repos/lfglabs-dev/lean-silicon/actions/artifacts/{ARTIFACT_ID}/zip"],stdout=out)
     if sha(archive)!=ARCHIVE_SHA: raise SystemExit("artifact archive hash mismatch")
-    for name,want in RTL_HASHES.items():
-        if sha(ROOT/"src"/name)!=want: raise SystemExit(f"RTL identity mismatch: src/{name}")
     stage=cache/"lsc1u-v0.1.1-equivalence"; shutil.rmtree(stage,ignore_errors=True); stage.mkdir()
     with zipfile.ZipFile(archive) as z:
         data=z.read("tt_submission/tt_um_lfglabs_lsc1u.v")
     net=stage/"selected_tt_um_lfglabs_lsc1u.v"; net.write_bytes(data)
     if sha(net)!=NETLIST_SHA: raise SystemExit("selected netlist hash mismatch")
-    for p in (ROOT/"src").glob("*.sv"): shutil.copy2(p,stage/p.name)
+    for name,want in RTL_HASHES.items():
+        source=stage/name; source.write_bytes(frozen_source(name))
+        if sha(source)!=want: raise SystemExit(f"frozen RTL identity mismatch: {SOURCE_SHA}:src/{name}")
     for name in ["sky130_fd_sc_hd_netlist_eq_cells.v","lsc1u_release_gate_wrapper.sv","lsc1u_release_netlist_eq_formal.sv","lsc1u_release_netlist_eq.sby"]: shutil.copy2(ROOT/"formal"/name,stage/name)
     text=(stage/"lsc1u_release_netlist_eq.sby").read_text().replace("../src/","")
     (stage/"lsc1u_release_netlist_eq.sby").write_text(text)
@@ -47,6 +53,10 @@ def main():
     if mutated==harness.read_text(): raise SystemExit("mutation was not applied")
     harness.write_text(mutated)
     result=subprocess.run(["sby","-f","lsc1u_release_netlist_eq.sby","bounded"],cwd=stage)
-    if result.returncode==0: raise SystemExit("mutation unexpectedly passed")
-    print("PASS: pinned bounded equivalence, non-vacuity witness, and rejected mutation")
+    status_path=stage/"lsc1u_release_netlist_eq_bounded"/"status"
+    status=status_path.read_text().strip() if status_path.is_file() else "MISSING"
+    status_kind=status.split(maxsplit=1)[0]
+    if result.returncode==0 or status_kind!="FAIL":
+        raise SystemExit(f"mutation did not produce a property failure (status={status}, rc={result.returncode})")
+    print(f"PASS: pinned bounded equivalence, non-vacuity witness, and mutation counterexample (status={status})")
 if __name__ == "__main__": main()

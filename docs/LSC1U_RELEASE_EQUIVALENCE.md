@@ -26,9 +26,9 @@ nothing about edge 75 or later and does not span a complete 128-bit multiply.
   `1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f`.
 - Selected netlist SHA-256:
   `97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc`.
-- The four RTL hashes are embedded and enforced in
-  `tools/verify_lsc1u_release_equivalence.py`; they also match the source copies
-  embedded in the artifact archive.
+- The runner extracts the four RTL files from the pinned source commit rather
+  than the mutable checkout, then enforces their embedded hashes; those hashes
+  also match the source copies embedded in the artifact archive.
 - Physical build: LibreLane `3.0.3`, `sky130A`, open_pdks
   `8afc8346a57fe1ab7934ba5a6056ea8b43078e71`, as pinned in
   `release/v0.1.1/MANIFEST.json` and the downloaded `pdk.json`.
@@ -45,8 +45,11 @@ mismatched artifact fails closed.
 An explicit Yosys SAT query must witness reset asserted at edge 1, released at
 edge 2, and the driven `uio_oe == 8'hb6` output with `ena == 1`. The runner then
 changes the first output comparison to demand a one-bit mismatch;
-the 74-edge task must fail. The assertion cardinality guard prevents an
-unsupported frontend or optimization change from silently dropping checks.
+the 74-edge task must produce SBY status `FAIL`, meaning a property
+counterexample. `ERROR`, timeout, missing status, and every other infrastructure
+outcome fail the lane. The assertion cardinality guard runs after elaboration
+and prevents an unsupported frontend or optimization change from silently
+dropping checks.
 
 ## Why this does not claim unbounded equivalence
 
@@ -78,4 +81,4 @@ CI runs exactly the last command with `${{ runner.temp }}/lsc1-eq-cache` and a
 read-only repository/Actions token. The runner downloads only artifact
 `9004116698`, verifies both fixed hashes and all RTL hashes, stages mutable SBY
 outputs in the private cache, runs the SAT witness and 74-edge proof, and requires
-the mutation to fail.
+the mutation to produce an actual property counterexample.

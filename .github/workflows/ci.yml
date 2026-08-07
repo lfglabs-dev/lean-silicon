@@ -58,6 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # The release-equivalence lane reads its frozen RTL from SOURCE_SHA.
+          fetch-depth: 0
       - uses: YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde
       - name: Bounded GF(2^8) proof
         run: cd formal && sby -f gf8_mul.sby

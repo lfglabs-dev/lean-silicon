@@ -93,7 +93,10 @@ building are pre-silicon evidence. None implies correct fabricated silicon.
 
 - Artifact retention and byte identity must be reconfirmed immediately before
   submission; the binary bundle is not checked into Git.
-- The selected physical netlist lacks a formal-equivalence result to its RTL.
+- The selected physical netlist has exhaustive two-state equivalence to its
+  pinned RTL at the 24 observable outputs through 74 rising edges. It lacks
+  unbounded equivalence, and the bound does not span a complete 128-bit
+  multiply.
 - No independent review of the live submission form, selected revision, PDK,
   tile count, rendered layout, reports, or invoice has been recorded.
 - There is no physical FPGA or silicon validation, no full LSC-1 proof, and no
