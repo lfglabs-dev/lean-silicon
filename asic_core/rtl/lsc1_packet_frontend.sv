@@ -469,7 +469,7 @@ module lsc1_packet_frontend (
                 end else if (frame_opcode == OP_RETIRE) begin
                     txn_id = frame_payload[0 +: 32];
                     if (frame_length != 8) begin
-                        emit_fault(BAD_LENGTH, 0, 2);
+                        emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
                     end else if (!result_pending) begin
                         emit_fault(BAD_STATE, txn_id, 0);
                     end else if (txn_id != staged_txn_id ||

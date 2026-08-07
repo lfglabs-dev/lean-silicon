@@ -1136,10 +1136,10 @@ class Lsc1Endpoint:
             self._fault(Status.BAD_OPCODE)
             return
         payload = body[REQUEST_HEADER_BYTES:]
-        decoded = _DecodedRequest(opcode, txn_id=_available_txn_id(opcode, payload))
         if length != REQUEST_PAYLOAD_BYTES[opcode]:
-            self._fault(Status.BAD_LENGTH, decoded.txn_id, detail=2)
+            self._fault(Status.BAD_LENGTH, _available_txn_id(opcode, payload), detail=2)
             return
+        decoded: _DecodedRequest | None = None
         try:
             decoded = decode_request_payload(opcode, payload)
             self._handle(decoded)
@@ -1148,7 +1148,7 @@ class Lsc1Endpoint:
             # not disturb a transaction the endpoint already decided.  Handlers
             # that fault after touching a staged transition discard it
             # themselves, so there is nothing to unwind here.
-            self._fault(fault.status, decoded.txn_id, fault.detail)
+            self._fault(fault.status, decoded.txn_id if decoded is not None else 0, fault.detail)
 
     # -- transaction handling ---------------------------------------------
 

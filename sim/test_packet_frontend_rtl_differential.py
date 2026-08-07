@@ -97,6 +97,17 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             with self.subTest(opcode=int(frame.opcode), length=len(frame.payload)):
                 self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
 
+    def test_partial_transaction_prefix_length_faults_match_rtl(self) -> None:
+        frames = [
+            protocol.RequestFrame(opcode, payload)
+            for opcode in (protocol.Opcode.SET_CONSTANT, protocol.Opcode.RETIRE)
+            for payload in (b"", b"\x28", b"\x28\x22", b"\x28\x22\x33", b"\x28\x22\x33\x44")
+            if len(payload) != protocol.REQUEST_PAYLOAD_BYTES[opcode]
+        ]
+        for frame in frames:
+            with self.subTest(opcode=int(frame.opcode), payload=frame.payload.hex()):
+                self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+
     def test_deref_and_jump_match_the_executable_model(self) -> None:
         base = 40
         pointer = protocol.Cell(True, protocol.field_encode(base))

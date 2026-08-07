@@ -11,7 +11,7 @@ import unittest
 import lsc1_transaction as lsc1
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "conformance/corpus-v1.json"
+CORPUS = ROOT / "conformance/corpus-v2.json"
 
 
 def canonical(value: object) -> bytes:
@@ -30,7 +30,7 @@ class ConformanceCorpusTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         regenerated = {
-            "schema": "lean-silicon-conformance-v1",
+            "schema": "lean-silicon-conformance-v2",
             "frozen_upstream": self.corpus["frozen_upstream"],
             "cases": module.build_cases(),
         }

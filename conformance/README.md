@@ -1,8 +1,12 @@
 # Frozen conformance corpus
 
-`corpus-v1.json` is the unified, immutable LSC-1 conformance corpus for the
+`corpus-v2.json` is the current immutable LSC-1 conformance corpus for the
 first post-G1 lane. It binds protocol bytes and state transitions to frozen
 leanVM-b commit `c308034ab78619b39a59d26f3dc60e7df5b52649`.
+
+`corpus-v1.json` and `schema-v1.json` remain frozen for existing consumers.
+Version 2 adds the corrected complete and partial transaction-ID length-fault
+vectors; new consumers should use `corpus-v2.json` with `schema-v2.json`.
 
 Every case contains:
 

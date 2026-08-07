@@ -12,7 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "sim"))
 import lsc1_transaction as lsc1  # noqa: E402
 
-OUTPUT = ROOT / "conformance/corpus-v1.json"
+OUTPUT = ROOT / "conformance/corpus-v2.json"
 UPSTREAM_COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 P = lsc1.Profile.INTERPRETER_COMPAT
 A = lsc1.ABSENT
@@ -377,7 +377,7 @@ def build_cases() -> list[dict]:
 
 def main() -> None:
     corpus = {
-        "schema": "lean-silicon-conformance-v1",
+        "schema": "lean-silicon-conformance-v2",
         "frozen_upstream": {
             "repository": "https://github.com/leanEthereum/leanVM-b.git",
             "commit": UPSTREAM_COMMIT,

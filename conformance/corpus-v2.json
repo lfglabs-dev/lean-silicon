@@ -1167,14 +1167,16 @@
       }
     },
     {
-      "case_id": "malformed.length",
+      "case_id": "malformed.length.decoded_txn",
       "coverage": [
         "malformed",
-        "BAD_LENGTH"
+        "BAD_LENGTH",
+        "txn_id",
+        "decoded"
       ],
-      "description": "Fixed opcode payload length mismatch is rejected.",
+      "description": "A fixed-length mismatch preserves the complete decoded txn_id prefix.",
       "fault": {
-        "payload_hex": "0000000002",
+        "payload_hex": "2800000002",
         "status": "BAD_LENGTH"
       },
       "final_state": {
@@ -1188,7 +1190,7 @@
         "state_valid": false,
         "txn_state": "idle"
       },
-      "fingerprint": "sha256:d9d0b67a908fc5c582031609bc1d562ad16cf3287bd830222cb7244c94475e21",
+      "fingerprint": "sha256:85374eef4aba55c71b79e40462bc4f990eff969ed5f8012e5ba747b762877ff7",
       "initial_state": {
         "abort_count": 0,
         "committed_fp": 0,
@@ -1203,7 +1205,67 @@
       "raw": {
         "request_cycles": 74,
         "request_hex": "a1010300320028000000000000000000000001000200000001000000000000000000000000000000000000000000000000000000000000008c21d27d",
-        "response_hex": "5a01830500000000000206a6453b"
+        "response_hex": "5a018305002800000002c3c2f4ca"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "malformed.length.partial_txn",
+      "coverage": [
+        "malformed",
+        "BAD_LENGTH",
+        "txn_id",
+        "partial"
+      ],
+      "description": "A fixed-length mismatch zero-extends an available partial txn_id prefix.",
+      "fault": {
+        "payload_hex": "2800000002",
+        "status": "BAD_LENGTH"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_LENGTH",
+        "last_status": "BAD_LENGTH",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:696448129394917cf864615cd4f53beb4f5fc535b639636887790018dda8a963",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 27,
+        "request_hex": "a101030003002800008af56a99",
+        "response_hex": "5a018305002800000002c3c2f4ca"
       },
       "retire": {
         "attempted": false,
@@ -1487,5 +1549,5 @@
     "commit": "c308034ab78619b39a59d26f3dc60e7df5b52649",
     "repository": "https://github.com/leanEthereum/leanVM-b.git"
   },
-  "schema": "lean-silicon-conformance-v1"
+  "schema": "lean-silicon-conformance-v2"
 }

@@ -14,8 +14,8 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "conformance/corpus-v1.json"
-SCHEMA = ROOT / "conformance/schema-v1.json"
+CORPUS = ROOT / "conformance/corpus-v2.json"
+SCHEMA = ROOT / "conformance/schema-v2.json"
 ADAPTER = ROOT / "conformance/rust/frozen_adapter.rs"
 UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
 UPSTREAM_COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
