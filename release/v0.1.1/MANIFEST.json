@@ -23,7 +23,13 @@
     "main_run": {
       "id": 31203930126,
       "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/31203930126",
-      "head_sha": "741a2073e0d341a15bb130b1d75295bbceb138df"
+      "head_sha": "741a2073e0d341a15bb130b1d75295bbceb138df",
+      "formal_boundary": {
+        "harness": "formal/lsc1u_netlist_eq.sby",
+        "compared_netlist": "release/v0.1/artifacts/tt_um_lfglabs_lsc1u.v",
+        "compared_netlist_sha256": "0c85d1afefddf1166e4b3047500f9c27a03ad7198c9c075f505c4536888c03c3",
+        "selected_physical_payload_covered": false
+      }
     },
     "tiny_tapeout_rtl_run": {
       "id": 31203929947,

@@ -33,14 +33,22 @@ archive and selected payload checksums were reproduced locally.
 
 The exact-main Tiny Tapeout RTL run `31203929947` completed successfully. The
 exact-main CI run `31203930126` is the authoritative executable-model,
-SystemVerilog, Lean, formal/lint, mutation, and synthesis boundary.
+SystemVerilog, Lean, formal/lint, mutation, and synthesis receipt for the
+checked-in source and harnesses. Its `formal/lsc1u_netlist_eq.sby` harness
+compares RTL with the historical `release/v0.1` netlist (SHA-256
+`0c85d1afefddf1166e4b3047500f9c27a03ad7198c9c075f505c4536888c03c3`), not
+the selected exact-main physical-run netlist (SHA-256
+`97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc`).
+The manifest records this boundary explicitly; no formal-equivalence claim is
+made for the selected physical payload.
 
 ## Explicit limitations
 
 - These results apply to the reduced LSC-1u Tiny Tapeout profile where stated,
   not to full LSC-1 end-to-end behavior.
-- Formal results retain each harness's assumptions and bounds. The fixed
-  release netlist comparison is bounded, not unbounded sequential equivalence.
+- Formal results retain each harness's assumptions and bounds. The historical
+  v0.1 netlist comparison is bounded, not unbounded sequential equivalence, and
+  does not cover the selected v0.1.1 physical payload.
 - There is no completed Lean-to-RTL correspondence proof for the full design.
 - GDS/precheck, gate-level simulation, and rendering are physical-design-flow
   evidence; they do not prove timing, power, analog behavior, manufacturability,
