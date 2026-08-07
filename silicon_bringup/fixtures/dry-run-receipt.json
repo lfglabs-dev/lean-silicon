@@ -1,0 +1,14 @@
+{
+  "execution": {"kind": "dry-run", "real_silicon": false, "transport": "deterministic Python pin-model"},
+  "interface": {"abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6], "top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6"},
+  "observations": [
+    {"expected": "000102030405060708090a0b0c0d0e0f", "id": "set.incrementing", "idle_after_retire": true, "opcode": "SET", "oracle_match": true, "received": "000102030405060708090a0b0c0d0e0f", "retire_done_pulse": true},
+    {"expected": "ffffffffffffffffffffffffffffffff", "id": "xor.complement", "idle_after_retire": true, "opcode": "XOR", "oracle_match": true, "received": "ffffffffffffffffffffffffffffffff", "retire_done_pulse": true},
+    {"expected": "87000000000000000000000000000000", "id": "mul.reduction", "idle_after_retire": true, "opcode": "MUL", "oracle_match": true, "received": "87000000000000000000000000000000", "retire_done_pulse": true},
+    {"expected": "8690f8462423ed9b902fb8f81fc6d94f", "id": "mul.deterministic", "idle_after_retire": true, "opcode": "MUL", "oracle_match": true, "received": "8690f8462423ed9b902fb8f81fc6d94f", "retire_done_pulse": true}
+  ],
+  "oracle": {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": true},
+  "outcome": {"failures": [], "passed": true},
+  "schema": "lean-silicon.lsc1u-bringup-receipt.v1",
+  "vectors": ["set.incrementing", "xor.complement", "mul.reduction", "mul.deterministic"]
+}

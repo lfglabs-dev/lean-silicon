@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lfglabs.dev/schemas/lean-silicon/lsc1u-bringup-receipt-v1.json",
+  "title": "LSC-1u Tiny Tapeout bring-up receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "execution", "interface", "vectors", "observations", "oracle", "outcome"],
+  "properties": {
+    "schema": {"const": "lean-silicon.lsc1u-bringup-receipt.v1"},
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "real_silicon", "transport"],
+      "properties": {
+        "kind": {"enum": ["dry-run", "simulation", "hardware"]},
+        "real_silicon": {"type": "boolean"},
+        "transport": {"type": "string"}
+      }
+    },
+    "interface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["top", "uio_oe", "abort", "reserved_input_bits"],
+      "properties": {
+        "top": {"const": "tt_um_lfglabs_lsc1u"},
+        "uio_oe": {"const": "0xb6"},
+        "abort": {"const": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored"},
+        "reserved_input_bits": {"const": [6]}
+      }
+    },
+    "vectors": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "observations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "oracle": {"type": "object", "required": ["algorithm", "matched"]},
+    "outcome": {"type": "object", "required": ["passed", "failures"]}
+  },
+  "allOf": [{"if": {"properties": {"execution": {"properties": {"kind": {"const": "hardware"}}}}}, "then": {"properties": {"execution": {"properties": {"real_silicon": {"const": true}}}}}, "else": {"properties": {"execution": {"properties": {"real_silicon": {"const": false}}}}}}]
+}
