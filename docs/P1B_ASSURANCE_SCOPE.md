@@ -18,7 +18,8 @@ was created).  The exact unchanged implementation/proof inputs are:
 `RTLTraceRefinement.lean` models acceptance, all sixteen logical receive lanes,
 the required SET/XOR receive/result-transfer interleaving, a collapsed MUL
 execution phase, all sixteen least-significant-byte-first response transfers, stable per-byte
-backpressure, exactly-once successful retirement to IDLE after transfer 16,
+backpressure, the mandatory MUL not-valid refill cycle between output bytes,
+exactly-once successful retirement to IDLE after transfer 16,
 invalid-opcode fault response, reset, disable, and ignored inputs while busy.
 Its invariant proves that retired commands form the accepted history in order
 and that every output is the Lean mathematical result for the corresponding

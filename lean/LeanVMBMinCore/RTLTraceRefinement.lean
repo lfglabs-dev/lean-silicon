@@ -18,6 +18,7 @@ is a Lean mirror of the externally relevant control phases in
 * TRANSMIT exposes all sixteen least-significant-byte-first response beats,
   holds the current byte stable while `tx_ready = false`, and commits exactly
   once only after the sixteenth accepted transfer;
+* MUL REFILL retains the mandatory `tx_valid = false` cycle between beats;
 * reset and `ena = false` abort all in-flight work and return to IDLE.
 
 The model projects SET's one payload byte and XOR's A/B byte pair to one
@@ -43,6 +44,7 @@ inductive Phase where
   | receive (transaction : AcceptedTransaction) (index : Fin 16)
   | execute (transaction : AcceptedTransaction)
   | transmit (transaction : AcceptedTransaction) (index : Fin 16)
+  | refill (transaction : AcceptedTransaction) (index : Fin 16)
   | fault
   deriving DecidableEq, Repr
 
@@ -63,6 +65,7 @@ inductive Input where
   | invalidOpcode
   | receive
   | execute
+  | refill
   | tx (ready : Bool)
   | reset
   | disable
@@ -90,6 +93,9 @@ def step (s : State) : Input → State
   | .execute => match s.phase with
       | .execute t => { s with phase := .transmit t 0 }
       | _ => s
+  | .refill => match s.phase with
+      | .refill t index => { s with phase := .transmit t index }
+      | _ => s
   | .tx ready => match s.phase, ready with
       | .transmit t index, true =>
           if hlast : index.val = 15 then
@@ -102,7 +108,7 @@ def step (s : State) : Input → State
             | .set | .xor =>
                 { s with phase := .receive t ⟨index.val + 1, by omega⟩ }
             | .mul =>
-                { s with phase := .transmit t ⟨index.val + 1, by omega⟩ }
+                { s with phase := .refill t ⟨index.val + 1, by omega⟩ }
       | .fault, true => { s with phase := .idle }
       | _, _ => s
 
@@ -128,7 +134,7 @@ def Invariant (s : State) : Prop :=
   s.outputs = s.retired.map (fun t => result t.opcode t.a t.b) ∧
   match s.phase with
     | .idle | .fault => s.accepted = s.retired
-    | .receive t _ | .execute t | .transmit t _ =>
+    | .receive t _ | .execute t | .transmit t _ | .refill t _ =>
         s.accepted = s.retired ++ [t]
 
 theorem initial_invariant : Invariant initial := by
@@ -152,6 +158,8 @@ theorem invariant_step (s : State) (input : Input) (h : Invariant s) :
       cases transaction.opcode <;>
         by_cases hlast : index.val = 15 <;> simp_all
   | execute =>
+      cases phase <;> simp_all [Invariant, step]
+  | refill =>
       cases phase <;> simp_all [Invariant, step]
   | tx ready =>
       cases phase <;> cases ready <;> simp_all [Invariant, step]
@@ -191,7 +199,15 @@ def streamResponse : List Input :=
 /-- MUL first receives all sixteen logical operand lanes, executes, and then
 transfers sixteen response bytes. -/
 def mulResponse : List Input :=
-  List.replicate 16 .receive ++ [.execute] ++ List.replicate 16 (.tx true)
+  List.replicate 16 .receive ++ [.execute, .tx true] ++
+    (List.replicate 15 [.refill, .tx true]).flatten
+
+/-- A ready-high cycle during MUL refill cannot transfer or advance a byte. -/
+example :
+    let mulTx : AcceptedTransaction := ⟨.mul, 1#128, 1#128⟩
+    let tracePrefix := List.replicate 16 .receive ++ [.execute, .tx true, .tx true]
+    (run ([.accept mulTx] ++ tracePrefix)).phase = .refill mulTx 1 := by
+  decide
 
 /-- Focused non-vacuity witness: two distinct accepted transactions really
 retire, and the SET/XOR results are present in order after sixteen response
