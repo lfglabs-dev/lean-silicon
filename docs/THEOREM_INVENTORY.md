@@ -37,3 +37,17 @@ has already been proved correct.
 The module also contains executable stage/retire and stage/abort examples.
 Later arithmetic and DEREF/JUMP lanes can produce `Transition` values without
 changing this lifecycle interface.
+
+## `LeanVMBMinCore.RTLTraceRefinement`
+
+| Declaration | Meaning |
+| --- | --- |
+| `ValidInput`, `ValidTrace` | Every receive event is bound to the corresponding byte of the accepted transaction; validity is state-dependent across a finite trace. |
+| `invariant_step` | Acceptance, ordered byte receives with SET/XOR output interleaving, collapsed MUL execution, all sixteen response-byte transfers with mandatory MUL refill bubbles, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
+| `run_invariant` | For every finite payload-valid multi-transaction trace, retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
+| `txByte` | In a transmit phase, exposes the exact indexed byte of the 16-byte least-significant-byte-first response. |
+| `backpressure_stable` | A deasserted `tx_ready` is a true stutter: response byte, transfer index, and history are stable. |
+| `reset_aborts`, `disable_aborts` | Either abort mechanism drops the outstanding transaction and restores IDLE while preserving prior retired/output ghost history. |
+
+The exact implementation files/hashes and the deliberate collapsed-execution
+boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
