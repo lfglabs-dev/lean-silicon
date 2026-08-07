@@ -74,7 +74,9 @@ inductive Input where
 /-- Executable transition relation. Inputs presented in a phase where the RTL
 does not assert the corresponding ready signal leave the state unchanged. -/
 def step (s : State) : Input → State
-  | .reset | .disable => initial
+  | .reset | .disable =>
+      { phase := .idle, accepted := s.retired,
+        retired := s.retired, outputs := s.outputs }
   | .accept t => match s.phase with
       | .idle => { s with phase := .receiveA t 0, accepted := s.accepted ++ [t] }
       | _ => s
@@ -193,8 +195,8 @@ theorem invariant_step (s : State) (input : Input) (h : Invariant s) :
     Invariant (step s input) := by
   rcases s with ⟨phase, accepted, retired, outputs⟩
   cases input with
-  | reset => simp [Invariant, Phase.pending, step, initial]
-  | disable => simp [Invariant, Phase.pending, step, initial]
+  | reset => simp_all [Invariant, Phase.pending, step]
+  | disable => simp_all [Invariant, Phase.pending, step]
   | accept transaction =>
       cases phase <;> simp_all [Invariant, Phase.pending, step]
   | invalidOpcode =>
@@ -242,9 +244,12 @@ theorem backpressure_stable (s : State) : step s (.tx false) = s := by
   rcases s with ⟨phase, accepted, retired, outputs⟩
   cases phase <;> rfl
 
-/-- Reset and disable abort every phase to the same clean IDLE state. -/
-theorem reset_clears (s : State) : step s .reset = initial := rfl
-theorem disable_clears (s : State) : step s .disable = initial := rfl
+/-- Reset and disable abort the outstanding transaction and return to IDLE,
+while ghost history retains every response already observed in the trace. -/
+theorem reset_aborts (s : State) :
+    step s .reset = ⟨.idle, s.retired, s.retired, s.outputs⟩ := rfl
+theorem disable_aborts (s : State) :
+    step s .disable = ⟨.idle, s.retired, s.retired, s.outputs⟩ := rfl
 
 /-- Non-vacuity: every transaction can enter its first byte-receive phase. -/
 example (t : AcceptedTransaction) :

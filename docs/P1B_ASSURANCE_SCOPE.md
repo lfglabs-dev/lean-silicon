@@ -29,9 +29,10 @@ invariant for every finite payload-valid interaction list, so it is not limited
 to a single transaction.
 
 Focused examples witness transaction acceptance, the payload-byte validity
-binding, and an exactly-once final response retirement. The
-general `backpressure_stable`, `reset_clears`, and `disable_clears` theorems
-guard the most important stutter/abort regressions.
+binding, and an exactly-once final response retirement. The general
+`backpressure_stable`, `reset_aborts`, and `disable_aborts` theorems guard the
+most important stutter/abort regressions. Aborts drop only an outstanding
+transaction; already retired ghost history remains visible across epochs.
 
 ## Preserved boundary
 
@@ -42,8 +43,8 @@ collapsed into one `execute` transition. The exact
 unchanged modules are checked separately by the pinned unbounded SBY lanes.
 Therefore this result does **not** prove the packet frontend, full LSC-1 ISA,
 fair-progress liveness, RTL-to-netlist equivalence, or that the two proof
-checkers form one kernel theorem.  Reset/disable intentionally erase proof
-history because the shipped LSC-1u block has no architectural committed store.
+checkers form one kernel theorem. Ghost history is observational proof state,
+not architectural storage in the shipped block.
 
 No `sorry`, `admit`, new `axiom`, `native_decide`, or unsafe declaration is
 introduced by this lane.

@@ -47,7 +47,7 @@ changing this lifecycle interface.
 | `run_invariant` | For every finite payload-valid multi-transaction trace, retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
 | `txByte` | In a transmit phase, exposes the exact indexed byte of the 16-byte least-significant-byte-first response. |
 | `backpressure_stable` | A deasserted `tx_ready` is a true stutter: response byte, transfer index, and history are stable. |
-| `reset_clears`, `disable_clears` | Either abort mechanism restores the clean IDLE retained state from every phase. |
+| `reset_aborts`, `disable_aborts` | Either abort mechanism drops the outstanding transaction and restores IDLE while preserving prior retired/output ghost history. |
 
 The exact implementation files/hashes and the deliberate collapsed-execution
 boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
