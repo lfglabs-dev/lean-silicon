@@ -27,11 +27,11 @@ exists. Phase A/B/C foundations, RTL, physical-flow work, and bridge work are
 merged on `main`; the release artifacts and their claim boundary are in
 [`release/v0.1/`](release/v0.1/).
 
-The ULX3S packet corpus has 19 cases: 17 pass, 0 fail, and 2 are invalid for
-direct-pin testing because the UART top does not expose the ABORT/reset pins.
-RETIRE and IDLE were confirmed. This result is validated on
-[PR #44](https://github.com/lfglabs-dev/lean-silicon/pull/44) and is pending
-integration into `main`.
+[PR #44](https://github.com/lfglabs-dev/lean-silicon/pull/44) adds a 19-case
+LSC-1 v2 conformance corpus, including corrected complete and partial
+transaction-ID length-fault vectors. It is pending integration into `main`.
+The checked-in ULX3S artifacts are source-built and archived, not
+hardware-validated; see the [status ledger](docs/STATUS.md) for their scope.
 
 ## What is proven / What remains
 
