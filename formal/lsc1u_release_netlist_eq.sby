@@ -21,7 +21,7 @@ select lsc1u_gate_raw/ANTENNA_* lsc1u_gate_raw/FILLER_* lsc1u_gate_raw/PHY_* lsc
 delete
 select -clear
 prep -flatten -top lsc1u_release_netlist_eq_formal
-bounded: select -assert-count 3 t:$assert t:$check
+bounded: select -assert-count 3 c:$assert*
 
 [files]
 ../src/gf2n_mul_bitstream.sv
