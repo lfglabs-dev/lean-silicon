@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "release": "v0.1.1",
+  "status": "release-preparation-only",
+  "source": {
+    "git_sha": "741a2073e0d341a15bb130b1d75295bbceb138df",
+    "tree_sha": "6d0085cb016c7ce317ab91160c670b44d6fb51fd",
+    "branch": "main",
+    "merged_pr": 45
+  },
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.32.1",
+    "rust": "1.88.0",
+    "python_ci": "3.13",
+    "python_dependencies": "requirements.txt (all entries exact-version pinned)",
+    "cocotb": "2.0.1",
+    "pdk": "sky130A/open_pdks@8afc8346a57fe1ab7934ba5a6056ea8b43078e71",
+    "physical_flow": "LibreLane 3.0.3",
+    "oss_cad_suite_action": "YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde",
+    "frozen_upstream_oracle": "leanEthereum/leanVM-b@c308034ab78619b39a59d26f3dc60e7df5b52649"
+  },
+  "ci": {
+    "main_run": {
+      "id": 31203930126,
+      "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/31203930126",
+      "head_sha": "741a2073e0d341a15bb130b1d75295bbceb138df"
+    },
+    "tiny_tapeout_rtl_run": {
+      "id": 31203929947,
+      "conclusion": "success",
+      "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/31203929947"
+    },
+    "physical_run": {
+      "id": 31203929606,
+      "conclusion": "success",
+      "url": "https://github.com/lfglabs-dev/lean-silicon/actions/runs/31203929606",
+      "jobs": {
+        "gds": 92950273839,
+        "precheck": 92951964559,
+        "gate_level_test": 92951964637,
+        "viewer": 92951964648
+      }
+    }
+  },
+  "physical_artifacts": [
+    {"id": 9004115188, "name": "GDS_logs", "archive_sha256": "0de05d70b7ce83ca3b53a693c72dc4556af31d420c796c15ded4a9f4c8697694"},
+    {"id": 9004116698, "name": "tt_submission", "archive_sha256": "1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f"},
+    {"id": 9004120450, "name": "gds_render", "archive_sha256": "fc349af6cfcbee79ec85fc4e10c40c706a63ef3c3327ef2d4dca2f92f30cda96"},
+    {"id": 9004129773, "name": "github-pages", "archive_sha256": "e1bc668b0f232ec260b15c1bd301ccffb299e9c8c2454878ea4d21773a32f38c"},
+    {"id": 9004146486, "name": "gatelevel_test_results", "archive_sha256": "55c7bc93ce17407095f73e15de8f1bb3f5c2c38c2c048c3a2978d9851a7ebe30"},
+    {"id": 9004196423, "name": "precheck_reports", "archive_sha256": "f0d72e5a31826d03991dfac19273086c989b5c8ab24e06619b56f9f6ca17c3e9"}
+  ],
+  "payload_checksums": [
+    {"path": "artifacts/gatelevel-results.xml", "sha256": "a01c222fe71d091622a2dfda4e823fbe323826a1587d0eb530e68facb8cf6aa2"},
+    {"path": "artifacts/pdk.json", "sha256": "d551717008d61a63fef26471923ab841538583053fb5b0f238e8adef50542a39"},
+    {"path": "artifacts/precheck/magic_drc.txt", "sha256": "82a56bff28dab01bc0fd8c64b3c2debaf8d4ca0769e6c30a812a4a76badd6f7c"},
+    {"path": "artifacts/precheck/results.xml", "sha256": "d01553d955714a00e42d47b60700cc01e15e15b8b3ea1777b658603d4b3ad42d"},
+    {"path": "artifacts/tt_um_lfglabs_lsc1u.gds", "sha256": "52a10ef119b3cf435ad13041203f9b6200902df10f82b1e00890193abb2cc307"},
+    {"path": "artifacts/tt_um_lfglabs_lsc1u.oas", "sha256": "a76516d3f84ade685a4b164908aaa57ab65ee5863914f10721c8b0fcde73093c"},
+    {"path": "artifacts/tt_um_lfglabs_lsc1u.v", "sha256": "97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc"}
+  ]
+}
