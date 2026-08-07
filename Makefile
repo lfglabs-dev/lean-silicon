@@ -81,7 +81,7 @@ fpga-detect:
 fpga-preflight:
 	$(PYTHON) fpga_harness/hardware_preflight.py
 
-check: python workflow-check conformance-check host-comparison design-space exact-xor interface-check consistency checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
+check: python workflow-check conformance-check host-comparison design-space exact-xor interface-check consistency silicon-bringup-test checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim

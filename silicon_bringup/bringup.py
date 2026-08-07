@@ -137,16 +137,18 @@ class Driver:
         self._cycle()
         return bytes(answer), observed_done
     def run(self, case: dict) -> dict:
+        received = bytearray()
+        done = False
         self.send(OPCODES[case["opcode"]])
         for value in payload(case):
             self.send(value)
             if self.backend.pins().uio_out & TX_VALID:
                 # The RTL applies backpressure after every SET/XOR result byte.
-                self.receive_all()
-        answer, done = self.receive_all()
-        # Earlier progressive bytes have already been drained, so model record separately.
-        # Re-run response collection is accumulated by a wrapper below.
-        return {"answer": answer, "done": done}
+                part, retired = self.receive_all()
+                received.extend(part); done |= retired
+        part, retired = self.receive_all()
+        received.extend(part); done |= retired
+        return {"answer": bytes(received), "done": done}
 
 
 def run_case(case: dict) -> dict:
@@ -185,6 +187,8 @@ def validate_receipt(document: dict) -> None:
         raise ValueError("invalid execution record")
     if execution.get("real_silicon") != (execution["kind"] == "hardware"):
         raise ValueError("execution kind and real_silicon disagree")
+    if execution["transport"] == "deterministic Python pin-model" and execution["kind"] != "dry-run":
+        raise ValueError("deterministic pin-model transport is dry-run evidence only")
     if interface != {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}:
         raise ValueError("receipt does not identify the implemented Tiny Tapeout pin contract")
     vectors, observations = document["vectors"], document["observations"]

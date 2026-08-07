@@ -45,5 +45,8 @@
       "passed": {"type": "boolean"}, "failures": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
     }}
   },
-  "allOf": [{"if": {"properties": {"execution": {"properties": {"kind": {"const": "hardware"}}}}}, "then": {"properties": {"execution": {"properties": {"real_silicon": {"const": true}}}}}, "else": {"properties": {"execution": {"properties": {"real_silicon": {"const": false}}}}}}]
+  "allOf": [
+    {"if": {"properties": {"execution": {"properties": {"kind": {"const": "hardware"}}}}}, "then": {"properties": {"execution": {"properties": {"real_silicon": {"const": true}}}}}, "else": {"properties": {"execution": {"properties": {"real_silicon": {"const": false}}}}}},
+    {"if": {"properties": {"execution": {"properties": {"transport": {"const": "deterministic Python pin-model"}}}}}, "then": {"properties": {"execution": {"properties": {"kind": {"const": "dry-run"}, "real_silicon": {"const": false}}}}}}
+  ]
 }

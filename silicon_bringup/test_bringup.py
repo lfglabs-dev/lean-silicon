@@ -44,6 +44,15 @@ class BringupTest(unittest.TestCase):
             self.assertTrue(done)
             self.assertTrue(driver.backend.pins().uio_out & RX_READY)
 
+    def test_driver_run_preserves_progressive_responses(self):
+        cases = json.loads((Path(__file__).parent / "vectors.json").read_text())["cases"]
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                driver = Driver(DryRunBackend()); driver.reset()
+                result = driver.run(case)
+                self.assertEqual(result["answer"].hex(), case["expected"])
+                self.assertTrue(result["done"])
+
     def test_final_tx_ack_cannot_accept_same_edge_input(self):
         backend = DryRunBackend(); driver = Driver(backend); driver.reset(); driver.send(0x7F)
         self.assertTrue(backend.pins().uio_out & TX_VALID)
@@ -66,6 +75,8 @@ class BringupTest(unittest.TestCase):
         validate_receipt(receipt())
         dishonest = receipt(); dishonest["execution"] = {"kind": "hardware", "real_silicon": False, "transport": "none"}
         with self.assertRaises(ValueError): validate_receipt(dishonest)
+        relabelled = receipt(); relabelled["execution"].update(kind="hardware", real_silicon=True)
+        with self.assertRaises(ValueError): validate_receipt(relabelled)
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (
