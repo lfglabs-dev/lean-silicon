@@ -37,3 +37,15 @@ has already been proved correct.
 The module also contains executable stage/retire and stage/abort examples.
 Later arithmetic and DEREF/JUMP lanes can produce `Transition` values without
 changing this lifecycle interface.
+
+## `LeanVMBMinCore.RTLTraceRefinement`
+
+| Declaration | Meaning |
+| --- | --- |
+| `invariant_step` | Acceptance, collapsed execution, RETIRE/IDLE, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
+| `run_invariant` | The invariant holds for every finite multi-transaction input trace. Retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
+| `backpressure_stable` | A deasserted `tx_ready` is a true stutter: result and history are stable. |
+| `reset_clears`, `disable_clears` | Either abort mechanism restores the clean IDLE retained state from every phase. |
+
+The exact implementation files/hashes and the deliberate collapsed-execution
+boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
