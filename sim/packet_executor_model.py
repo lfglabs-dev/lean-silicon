@@ -388,11 +388,12 @@ class PacketExecutor:
         except ValueError:
             self._fault(Status.BAD_OPCODE)
             return
+        payload = body[REQUEST_HEADER:]
+        txn_id = int.from_bytes(payload[:4], "little")
         if length != PAYLOAD_LENGTH[opcode]:
-            self._fault(Status.BAD_LENGTH, detail=2)
+            self._fault(Status.BAD_LENGTH, txn_id, detail=2)
             return
-        reader = Reader(body[REQUEST_HEADER:])
-        txn_id = 0
+        reader = Reader(payload)
         try:
             if opcode is Opcode.RETIRE:
                 txn_id = reader.u32()

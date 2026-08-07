@@ -97,6 +97,29 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             with self.subTest(opcode=int(frame.opcode), length=len(frame.payload)):
                 self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
 
+    def test_partial_transaction_prefix_length_faults_match_rtl(self) -> None:
+        prefixes = (b"", b"\x28", b"\x28\x22", b"\x28\x22\x33", b"\x28\x22\x33\x44")
+        frames = [protocol.RequestFrame(opcode, payload)
+                  for opcode in (protocol.Opcode.SET_CONSTANT, protocol.Opcode.RETIRE)
+                  for payload in prefixes]
+        for frame in frames:
+            with self.subTest(opcode=int(frame.opcode), payload=frame.payload.hex()):
+                self.assertEqual(self.rtl_exchange(frame), model_exchange(frame))
+
+        # Independent literal wire vectors prevent a matching model/RTL bug from
+        # hiding RETIRE's zero-extended little-endian transaction-ID contract.
+        retire_responses = {
+            b"": "5a01830500000000000206a6453b",
+            b"\x28": "5a018305002800000002c3c2f4ca",
+            b"\x28\x22": "5a01830500282200000276a5cfc0",
+            b"\x28\x22\x33": "5a018305002822330002bffee2e6",
+            b"\x28\x22\x33\x44": "5a018305002822334402be74f772",
+        }
+        for payload, expected_hex in retire_responses.items():
+            with self.subTest(retire_wire_vector=payload.hex()):
+                frame = protocol.RequestFrame(protocol.Opcode.RETIRE, payload)
+                self.assertEqual(self.rtl_exchange(frame).hex(), expected_hex)
+
     def test_deref_and_jump_match_the_executable_model(self) -> None:
         base = 40
         pointer = protocol.Cell(True, protocol.field_encode(base))

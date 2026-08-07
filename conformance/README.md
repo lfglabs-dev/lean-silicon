@@ -1,8 +1,12 @@
 # Frozen conformance corpus
 
-`corpus-v1.json` is the unified, immutable LSC-1 conformance corpus for the
+`corpus-v2.json` is the current immutable LSC-1 conformance corpus for the
 first post-G1 lane. It binds protocol bytes and state transitions to frozen
 leanVM-b commit `c308034ab78619b39a59d26f3dc60e7df5b52649`.
+
+`corpus-v1.json` and `schema-v1.json` remain frozen for existing consumers.
+Version 2 adds the corrected complete and partial transaction-ID length-fault
+vectors; new consumers should use `corpus-v2.json` with `schema-v2.json`.
 
 Every case contains:
 
@@ -21,9 +25,10 @@ inside a disposable worktree of the exact frozen upstream source.
 `Program::execute` representation. Infrastructure failures (checkout,
 toolchain, Cargo, adapter I/O) exit 2; semantic mismatches exit 1.
 
-The corpus is immutable by version. Do not edit `corpus-v1.json` by hand. Change
-the generator and regenerate it; any semantic change requires a new schema and
-corpus version rather than rewriting v1 after release.
+The corpus is immutable by version. Do not edit a published corpus by hand.
+Change the generator and publish a new matching schema/corpus version for every
+semantic change. The regression suite pins the frozen v1 artifact digests as
+well as reproducing the current v2 corpus from the generator.
 
 ```sh
 python3 tools/generate_conformance_corpus.py

@@ -1,0 +1,1553 @@
+{
+  "cases": [
+    {
+      "case_id": "scalar.set.forward",
+      "coverage": [
+        "SET"
+      ],
+      "description": "SET writes one absent destination.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:880bdc296e2e636240a2f736c492945f04e13004463ced3f2f996a5d4bcff4a8",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 109,
+        "request_hex": "a101030033000100000000000000000000000100020000003412000000000000000000000000000000000000000000000000000000000000000a83b537",
+        "response_hex": "5a010027000100000001000000000000000102000000341200000000000000000000000000000001020000006ceaa1a0"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a10112000800010000004701a33fa32d26d4",
+        "response_hex": "5a0102100001000000010000000100000000000000522e20f9",
+        "response_payload_hex": "01000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "3fa30147",
+        "retire_seq": 1,
+        "txn_id": 1
+      },
+      "staged_transition": {
+        "accesses": [
+          2
+        ],
+        "deferred": [],
+        "execute_cycles": 0,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "SET_CONSTANT",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "3fa30147",
+        "result_payload_hex": "010000000100000000000000010200000034120000000000000000000000000000000102000000",
+        "txn_id": 1,
+        "writes": [
+          {
+            "address": 2,
+            "value": "00000000000000000000000000001234"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 3,
+          "memory": [
+            "00000000000000000000000000000005",
+            "00000000000000000000000000000006",
+            "00000000000000000000000000001234"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 2,
+              "value": "00000000000000000000000000001234"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.xor.forward",
+      "coverage": [
+        "XOR",
+        "forward"
+      ],
+      "description": "XOR computes an absent result.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:00c282551470d3e77822839ba28fc220f76710ea584aba1268d5d9c1bf68f578",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 143,
+        "request_hex": "a10101004d00020000000000000000000000010000000000010000000200000001adde000000000000000000000000000001efbe00000000000000000000000000000000000000000000000000000000000000552c904b",
+        "response_hex": "5a01002f000200000001000000000000000102000000426000000000000000000000000000000003000000000100000002000000c7b858f7"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a1011200080002000000fe489aed5da3c123",
+        "response_hex": "5a0102100002000000010000000100000000000000a09ae8d0",
+        "response_payload_hex": "02000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "ed9a48fe",
+        "retire_seq": 1,
+        "txn_id": 2
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          1,
+          2
+        ],
+        "deferred": [],
+        "execute_cycles": 1,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "XOR",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "ed9a48fe",
+        "result_payload_hex": "0200000001000000000000000102000000426000000000000000000000000000000003000000000100000002000000",
+        "txn_id": 2,
+        "writes": [
+          {
+            "address": 2,
+            "value": "00000000000000000000000000006042"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 3,
+          "memory": [
+            "0000000000000000000000000000dead",
+            "0000000000000000000000000000beef",
+            "00000000000000000000000000006042"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 2,
+              "value": "00000000000000000000000000006042"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.mul.forward",
+      "coverage": [
+        "MUL",
+        "forward"
+      ],
+      "description": "MUL_NATIVE computes an absent result.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:c1bf0bbfeaed71055f550c7ca6f2d6bcbb6f07f63033145a973253aa21cd212f",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 160,
+        "request_hex": "a10102005e000300000000000000000000000100000000000100000002000000015300000000000000000000000000000001ca000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008717383f",
+        "response_hex": "5a01002f0003000000010000000000000001020000007e3f00000000000000000000000000000003000000000100000002000000481a236a"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a101120008000300000071eae17064c3d8c2",
+        "response_hex": "5a0102100003000000010000000100000000000000310b807e",
+        "response_payload_hex": "03000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "70e1ea71",
+        "retire_seq": 1,
+        "txn_id": 3
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          1,
+          2
+        ],
+        "deferred": [],
+        "execute_cycles": 128,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "MUL_NATIVE",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "70e1ea71",
+        "result_payload_hex": "03000000010000000000000001020000007e3f00000000000000000000000000000003000000000100000002000000",
+        "txn_id": 3,
+        "writes": [
+          {
+            "address": 2,
+            "value": "00000000000000000000000000003f7e"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 3,
+          "memory": [
+            "00000000000000000000000000000053",
+            "000000000000000000000000000000ca",
+            "00000000000000000000000000003f7e"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 2,
+              "value": "00000000000000000000000000003f7e"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.xor.backsolve_a",
+      "coverage": [
+        "XOR",
+        "backsolve_a"
+      ],
+      "description": "XOR back-solves absent operand A.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:99f62e28b341beffe6aeff80034c4d56563c04b13531c10b79edf173168074b0",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 143,
+        "request_hex": "a10101004d0004000000000000000000000001000200000000000000010000000000000000000000000000000000000000011111000000000000000000000000000001333300000000000000000000000000004302ba45",
+        "response_hex": "5a01002f000400000001000000000000000102000000222200000000000000000000000000000003020000000000000001000000e5b6bc20"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a1011200080004000000dc467e3afa91aec7",
+        "response_hex": "5a010210000400000001000000010000000000000044f37983",
+        "response_payload_hex": "04000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "3a7e46dc",
+        "retire_seq": 1,
+        "txn_id": 4
+      },
+      "staged_transition": {
+        "accesses": [
+          2,
+          0,
+          1
+        ],
+        "deferred": [],
+        "execute_cycles": 2,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "XOR",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "3a7e46dc",
+        "result_payload_hex": "0400000001000000000000000102000000222200000000000000000000000000000003020000000000000001000000",
+        "txn_id": 4,
+        "writes": [
+          {
+            "address": 2,
+            "value": "00000000000000000000000000002222"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 3,
+          "memory": [
+            "00000000000000000000000000001111",
+            "00000000000000000000000000003333",
+            "00000000000000000000000000002222"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 2,
+              "value": "00000000000000000000000000002222"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.xor.backsolve_b",
+      "coverage": [
+        "XOR",
+        "backsolve_b"
+      ],
+      "description": "XOR back-solves absent operand B.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:bf16559257afd429495bf0b139adf70085266a51ef7adab106322d04c90e6510",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 143,
+        "request_hex": "a10101004d000500000000000000000000000100000000000200000001000000011111000000000000000000000000000000000000000000000000000000000000000133330000000000000000000000000000668157a7",
+        "response_hex": "5a01002f0005000000010000000000000001020000002222000000000000000000000000000000030000000002000000010000006224dbe7"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a10112000800050000005bd419fd0bd9a1aa",
+        "response_hex": "5a0102100005000000010000000100000000000000d562112d",
+        "response_payload_hex": "05000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "fd19d45b",
+        "retire_seq": 1,
+        "txn_id": 5
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          2,
+          1
+        ],
+        "deferred": [],
+        "execute_cycles": 2,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "XOR",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "fd19d45b",
+        "result_payload_hex": "0500000001000000000000000102000000222200000000000000000000000000000003000000000200000001000000",
+        "txn_id": 5,
+        "writes": [
+          {
+            "address": 2,
+            "value": "00000000000000000000000000002222"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 3,
+          "memory": [
+            "00000000000000000000000000001111",
+            "00000000000000000000000000003333",
+            "00000000000000000000000000002222"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 2,
+              "value": "00000000000000000000000000002222"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.deref.cell",
+      "coverage": [
+        "DEREF",
+        "Cell"
+      ],
+      "description": "DEREF Cell copies a present local into an absent target.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:e8684fd4453836952c5d9321cc727a99cd4e07e2234bf9183764645997018e22",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 147,
+        "request_hex": "a101040051000600000000000000000000000100000000000000000001000000010001000000000000000000000000000008000000000000000000000000000000000000000001770000000000000000000000000000005ad5d9c8",
+        "response_hex": "5a01002f000600000001000000000000000108000000770000000000000000000000000000000003000000000800000001000000f803d6ce"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a1011200080006000000c1f314d46c69cd3c",
+        "response_hex": "5a010210000600000001000000010000000000000027d6d904",
+        "response_payload_hex": "06000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "d414f3c1",
+        "retire_seq": 1,
+        "txn_id": 6
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          8,
+          1
+        ],
+        "deferred": [],
+        "execute_cycles": 2064,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "DEREF_CELL",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "d414f3c1",
+        "result_payload_hex": "0600000001000000000000000108000000770000000000000000000000000000000003000000000800000001000000",
+        "txn_id": 6,
+        "writes": [
+          {
+            "address": 8,
+            "value": "00000000000000000000000000000077"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 9,
+          "memory": [
+            "00000000000000000000000000000100",
+            "00000000000000000000000000000077",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000077"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 8,
+              "value": "00000000000000000000000000000077"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.deref.pc",
+      "coverage": [
+        "DEREF",
+        "Pc"
+      ],
+      "description": "DEREF Pc writes g^(pc+2).",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:e62b82542409d39abe3513184a5c71d70a57dc3f759a514dc660af111c0e8128",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 147,
+        "request_hex": "a10105005100070000000000000000000000010000000000000000000100000001000100000000000000000000000000000800000000000000000000000000000000000000000100000000000000000000000000000000c481068c",
+        "response_hex": "5a01002f000700000001000000000000000108000000040000000000000000000000000000000003000000000800000001000000ca9ffb6a"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a1011200080007000000f36f39705225ddaf",
+        "response_hex": "5a0102100007000000010000000100000000000000b647b1aa",
+        "response_payload_hex": "07000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "70396ff3",
+        "retire_seq": 1,
+        "txn_id": 7
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          8,
+          1
+        ],
+        "deferred": [],
+        "execute_cycles": 4128,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "DEREF_PC",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "70396ff3",
+        "result_payload_hex": "0700000001000000000000000108000000040000000000000000000000000000000003000000000800000001000000",
+        "txn_id": 7,
+        "writes": [
+          {
+            "address": 8,
+            "value": "00000000000000000000000000000004"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 9,
+          "memory": [
+            "00000000000000000000000000000100",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000004"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": [
+            {
+              "address": 8,
+              "value": "00000000000000000000000000000004"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.deref.fp",
+      "coverage": [
+        "DEREF",
+        "Fp"
+      ],
+      "description": "DEREF Fp writes g^fp for a nonzero frame.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 4,
+        "committed_pc": 5,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:9f1ad3c351297303946c389a7e4c9330dca66a97ff6ed70494e555a6731f9df4",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 147,
+        "request_hex": "a101060051000800000004000000040000000100000000000000000001000000010001000000000000000000000000000008000000000000000000000000000000000000000001010000000000000000000000000000008420b8e4",
+        "response_hex": "5a01002f0008000000050000000400000001080000001000000000000000000000000000000000030400000008000000050000005817af79"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 4,
+        "committed_pc": 5,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a101120008000800000061e76d63678dfbd4",
+        "response_hex": "5a010210000800000001000000050000000400000021b9732f",
+        "response_payload_hex": "08000000010000000500000004000000",
+        "response_status": "RETIRED",
+        "result_crc32": "636de761",
+        "retire_seq": 1,
+        "txn_id": 8
+      },
+      "staged_transition": {
+        "accesses": [
+          4,
+          8,
+          5
+        ],
+        "deferred": [],
+        "execute_cycles": 4128,
+        "fp": 4,
+        "next_fp": 4,
+        "next_pc": 5,
+        "opcode": "DEREF_FP",
+        "pc": 4,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "636de761",
+        "result_payload_hex": "0800000005000000040000000108000000100000000000000000000000000000000003040000000800000005000000",
+        "txn_id": 8,
+        "writes": [
+          {
+            "address": 8,
+            "value": "00000000000000000000000000000010"
+          }
+        ]
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 6,
+          "mem_used": 12,
+          "memory": [
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000100",
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000080",
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000010",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000",
+            "00000000000000000000000000000000"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 4,
+          "next_pc": 5,
+          "writes": [
+            {
+              "address": 8,
+              "value": "00000000000000000000000000000010"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "scalar.jump.not_taken",
+      "coverage": [
+        "JUMP",
+        "not_taken"
+      ],
+      "description": "Zero condition advances pc and pins the inverse proposal to zero.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:e295c9efce2ef877540912598106f7f4c4a3728999557f932c13e7d2d2616229",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 149,
+        "request_hex": "a1010700670009000000000000000000000001000100000000000000000000000100000000000000000000000000000000010100000000000000000000000000000001010000000000000000000000000000000000000000000000000000000000000000000000000000000000ca32433f",
+        "response_hex": "5a01001b0009000000010000000000000000000301000000000000000000000005750e38"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a10112000800090000000d55680b13f26591",
+        "response_hex": "5a01021000090000000100000001000000000000001db1338a",
+        "response_payload_hex": "09000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "0b68550d",
+        "retire_seq": 1,
+        "txn_id": 9
+      },
+      "staged_transition": {
+        "accesses": [
+          1,
+          0,
+          0
+        ],
+        "deferred": [],
+        "execute_cycles": 1,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "JUMP",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "0b68550d",
+        "result_payload_hex": "090000000100000000000000000003010000000000000000000000",
+        "txn_id": 9,
+        "writes": []
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 1,
+          "mem_used": 2,
+          "memory": [
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000000"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 1,
+          "writes": []
+        }
+      }
+    },
+    {
+      "case_id": "scalar.jump.taken_nontrivial_inverse",
+      "coverage": [
+        "JUMP",
+        "taken",
+        "inverse"
+      ],
+      "description": "Taken JUMP verifies a nontrivial condition inverse and g-power destinations.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 3,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:ae85e016cfe8fca2c2e0c6abc643eab3e2290a306408356a3fec10fed82e1ba5",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 149,
+        "request_hex": "a101070067000a000000010000000000000001000000000001000000020000000153000000000000000000000000000000010800000000000000000000000000000001010000000000000000000000000000000103000000000000000128eface09d15bcb3827756f0ce0ade59b541282c",
+        "response_hex": "5a01001b000a0000000300000000000000000003000000000100000002000000550f0a9b"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 3,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a101120008000a0000005d2f6ca8822032a6",
+        "response_hex": "5a010210000a0000000100000003000000000000009202dee1",
+        "response_payload_hex": "0a000000010000000300000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "a86c2f5d",
+        "retire_seq": 1,
+        "txn_id": 10
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          1,
+          2
+        ],
+        "deferred": [],
+        "execute_cycles": 4257,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 3,
+        "opcode": "JUMP",
+        "pc": 1,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "a86c2f5d",
+        "result_payload_hex": "0a0000000300000000000000000003000000000100000002000000",
+        "txn_id": 10,
+        "writes": []
+      },
+      "upstream": {
+        "adapter": "conformance/rust/frozen_adapter.rs",
+        "expected": {
+          "cycles": 2,
+          "mem_used": 4,
+          "memory": [
+            "00000000000000000000000000000053",
+            "00000000000000000000000000000008",
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000000"
+          ]
+        },
+        "mode": "program_execute",
+        "transition": {
+          "next_fp": 0,
+          "next_pc": 3,
+          "writes": []
+        }
+      }
+    },
+    {
+      "case_id": "protocol.deref.cell.deferred",
+      "coverage": [
+        "DEREF",
+        "Cell",
+        "deferred"
+      ],
+      "description": "DEREF Cell emits a deferred equality when both sides are absent.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "last_fault": "OK",
+        "last_status": "RETIRED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 1,
+        "state_valid": true,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:ace6408a2cfa29fd6beb047c2bc26044eaaa695ce32c176deda564ced9bc1856",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 135,
+        "request_hex": "a101040051000b0000000000000000000000010000000000000000000100000001000100000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000918abbb4",
+        "response_hex": "5a010023000b0000000100000000000000000108000000010000000300000000080000000100000090d2f07b"
+      },
+      "retire": {
+        "attempted": true,
+        "committed_fp": 0,
+        "committed_pc": 1,
+        "cycles": 43,
+        "done_pulse": true,
+        "request_hex": "a101120008000b0000001196662511153318",
+        "response_hex": "5a010210000b0000000100000001000000000000007e94930d",
+        "response_payload_hex": "0b000000010000000100000000000000",
+        "response_status": "RETIRED",
+        "result_crc32": "25669611",
+        "retire_seq": 1,
+        "txn_id": 11
+      },
+      "staged_transition": {
+        "accesses": [
+          0,
+          8,
+          1
+        ],
+        "deferred": [
+          {
+            "local": 1,
+            "target": 8
+          }
+        ],
+        "execute_cycles": 2064,
+        "fp": 0,
+        "next_fp": 0,
+        "next_pc": 1,
+        "opcode": "DEREF_CELL",
+        "pc": 0,
+        "profile": "INTERPRETER_COMPAT",
+        "result_crc32": "25669611",
+        "result_payload_hex": "0b00000001000000000000000001080000000100000003000000000800000001000000",
+        "txn_id": 11,
+        "writes": []
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "malformed.precedence.crc_before_version",
+      "coverage": [
+        "malformed",
+        "precedence",
+        "BAD_CRC"
+      ],
+      "description": "CRC failure precedes version validation.",
+      "fault": {
+        "payload_hex": "0000000000",
+        "status": "BAD_CRC"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_CRC",
+        "last_status": "BAD_CRC",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:11c7e00c5a450ddc2e08aaf13bddf850b15fe948aabc139b294c2c131446952a",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 75,
+        "request_hex": "a10903003300280000000000000000000000010002000000010000000000000000000000000000000000000000000000000000000000000000e642a9c8",
+        "response_hex": "5a01840500000000000033ce8edf"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "malformed.precedence.flags_before_opcode",
+      "coverage": [
+        "malformed",
+        "precedence",
+        "BAD_FLAGS"
+      ],
+      "description": "Envelope flags failure precedes opcode decoding.",
+      "fault": {
+        "payload_hex": "0000000000",
+        "status": "BAD_FLAGS"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_FLAGS",
+        "last_status": "BAD_FLAGS",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:ffb741ee474ebaebc0b8b0299c8d64eef22d9f93c27792d57b84dfae60276eae",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 75,
+        "request_hex": "a101ff01330028000000000000000000000001000200000001000000000000000000000000000000000000000000000000000000000000000002c89531",
+        "response_hex": "5a018505000000000000adce2413"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "malformed.length.decoded_txn",
+      "coverage": [
+        "malformed",
+        "BAD_LENGTH",
+        "txn_id",
+        "decoded"
+      ],
+      "description": "A fixed-length mismatch preserves the complete decoded txn_id prefix.",
+      "fault": {
+        "payload_hex": "2800000002",
+        "status": "BAD_LENGTH"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_LENGTH",
+        "last_status": "BAD_LENGTH",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:85374eef4aba55c71b79e40462bc4f990eff969ed5f8012e5ba747b762877ff7",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 74,
+        "request_hex": "a1010300320028000000000000000000000001000200000001000000000000000000000000000000000000000000000000000000000000008c21d27d",
+        "response_hex": "5a018305002800000002c3c2f4ca"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "malformed.length.partial_txn",
+      "coverage": [
+        "malformed",
+        "BAD_LENGTH",
+        "txn_id",
+        "partial"
+      ],
+      "description": "A fixed-length mismatch zero-extends an available partial txn_id prefix.",
+      "fault": {
+        "payload_hex": "2800000002",
+        "status": "BAD_LENGTH"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_LENGTH",
+        "last_status": "BAD_LENGTH",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:696448129394917cf864615cd4f53beb4f5fc535b639636887790018dda8a963",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 27,
+        "request_hex": "a101030003002800008af56a99",
+        "response_hex": "5a018305002800000002c3c2f4ca"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "error.precedence.pointer_before_write_conflict",
+      "coverage": [
+        "error",
+        "precedence",
+        "BAD_POINTER"
+      ],
+      "description": "Pointer validation precedes a conflicting target write.",
+      "fault": {
+        "payload_hex": "2b00000000",
+        "status": "BAD_POINTER"
+      },
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "BAD_POINTER",
+        "last_status": "BAD_POINTER",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:5e8812a40743cdeb3c9815d8f430af1ab836ef6224807eb10b0ff7261faf3450",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_cycles": 105,
+        "request_hex": "a101050051002b00000000000000000000000100000000000000000001000000010700000000000000000000000000000008000000010100000000000000000000000000000000000000000000000000000000000000007c2bb802",
+        "response_hex": "5a018a05002b0000000014c2157c"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "lane.abort.priority",
+      "coverage": [
+        "abort",
+        "priority",
+        "partial_frame"
+      ],
+      "description": "ABORT cancels a same-edge transfer and discards partial receive state.",
+      "final_state": {
+        "abort_count": 1,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "ABORTED",
+        "last_status": "ABORTED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:cac414e4e6daeb41219ca04783ddf877d56ca99f5aeb8d462efe6e6badc1eb15",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "lane": {
+        "action": "abort",
+        "rx_committed": false,
+        "same_edge_rx_valid": true
+      },
+      "pre_action_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "raw": {
+        "request_hex": "a101030033005a0000000000",
+        "response_hex": ""
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "lane.reset.priority",
+      "coverage": [
+        "reset",
+        "abort",
+        "priority"
+      ],
+      "description": "Active-low reset has priority over ABORT and a candidate transfer.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "fingerprint": "sha256:eee2fb89e2203e970e4e163d9ca4602477b443c1baa38336a8ece691a04587d7",
+      "initial_state": {
+        "abort_count": 1,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "ABORTED",
+        "last_status": "ABORTED",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "lane": {
+        "action": "reset",
+        "rx_committed": false,
+        "same_edge_abort": true,
+        "same_edge_rx_valid": true
+      },
+      "raw": {
+        "request_hex": "a1",
+        "response_hex": ""
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": null
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    },
+    {
+      "case_id": "lane.stall_backpressure.invariant",
+      "coverage": [
+        "stall",
+        "backpressure",
+        "ready_valid"
+      ],
+      "description": "Input stalls and output backpressure preserve response bytes exactly.",
+      "final_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "result_pending"
+      },
+      "fingerprint": "sha256:a168e785328be3863151fe95daa5693b3b2646a385278c2c91ae55fe1a6ee277",
+      "initial_state": {
+        "abort_count": 0,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "last_fault": "OK",
+        "last_status": "OK",
+        "profile": "INTERPRETER_COMPAT",
+        "retire_seq": 0,
+        "state_valid": false,
+        "txn_state": "idle"
+      },
+      "lane": {
+        "baseline_cycles": 109,
+        "response_matches_baseline": true,
+        "rx_gaps": [
+          1,
+          0,
+          2
+        ],
+        "stalled_cycles": 216,
+        "tx_gaps": [
+          2,
+          1,
+          0
+        ]
+      },
+      "raw": {
+        "request_hex": "a101030033005a000000000000000000000001000200000055000000000000000000000000000000000000000000000000000000000000000054e4a6bd",
+        "response_hex": "5a010027005a00000001000000000000000102000000550000000000000000000000000000000001020000000774546d"
+      },
+      "retire": {
+        "attempted": false,
+        "committed_fp": 0,
+        "committed_pc": 0,
+        "cycles": 0,
+        "done_pulse": false,
+        "request_hex": "",
+        "response_hex": "",
+        "response_payload_hex": "",
+        "response_status": null,
+        "result_crc32": null,
+        "retire_seq": 0,
+        "txn_id": 90
+      },
+      "upstream": {
+        "mode": "protocol_only",
+        "reason": "wire/lifecycle behavior has no Program::execute representation"
+      }
+    }
+  ],
+  "frozen_upstream": {
+    "commit": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+    "repository": "https://github.com/leanEthereum/leanVM-b.git"
+  },
+  "schema": "lean-silicon-conformance-v2"
+}

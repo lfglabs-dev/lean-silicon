@@ -11,7 +11,11 @@ import unittest
 import lsc1_transaction as lsc1
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "conformance/corpus-v1.json"
+CORPUS = ROOT / "conformance/corpus-v2.json"
+FROZEN_V1_DIGESTS = {
+    "corpus-v1.json": "76ba2ea25dd2f20ea3e50c6d25c774d1fbf45b2960b65d233680c284c0c111d7",
+    "schema-v1.json": "69e83e18dac54c6271758a759e28ed60697aa5db906a1f51f2c2bc310ba33876",
+}
 
 
 def canonical(value: object) -> bytes:
@@ -30,12 +34,18 @@ class ConformanceCorpusTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         regenerated = {
-            "schema": "lean-silicon-conformance-v1",
+            "schema": "lean-silicon-conformance-v2",
             "frozen_upstream": self.corpus["frozen_upstream"],
             "cases": module.build_cases(),
         }
         expected = json.dumps(regenerated, indent=2, sort_keys=True) + "\n"
         self.assertEqual(CORPUS.read_text(), expected)
+
+    def test_published_v1_artifacts_remain_frozen(self) -> None:
+        for name, expected in FROZEN_V1_DIGESTS.items():
+            with self.subTest(artifact=name):
+                actual = hashlib.sha256((ROOT / "conformance" / name).read_bytes()).hexdigest()
+                self.assertEqual(actual, expected)
 
     def test_ids_fingerprints_and_required_records(self) -> None:
         self.assertEqual(

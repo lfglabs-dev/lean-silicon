@@ -967,6 +967,13 @@ def decode_request_payload(opcode: Opcode, payload: bytes) -> _DecodedRequest:
     return decoded
 
 
+def _available_txn_id(opcode: Opcode, payload: bytes) -> int:
+    """Return the zero-extended transaction prefix accumulated by the RTL."""
+    if opcode in (Opcode.NEGOTIATE, Opcode.STATUS_QUERY):
+        return 0
+    return int.from_bytes(payload[:4], "little")
+
+
 # --- Endpoint pins and byte lane. -------------------------------------------
 
 
@@ -1128,10 +1135,10 @@ class Lsc1Endpoint:
         except ValueError:
             self._fault(Status.BAD_OPCODE)
             return
-        if length != REQUEST_PAYLOAD_BYTES[opcode]:
-            self._fault(Status.BAD_LENGTH, detail=2)
-            return
         payload = body[REQUEST_HEADER_BYTES:]
+        if length != REQUEST_PAYLOAD_BYTES[opcode]:
+            self._fault(Status.BAD_LENGTH, _available_txn_id(opcode, payload), detail=2)
+            return
         decoded: _DecodedRequest | None = None
         try:
             decoded = decode_request_payload(opcode, payload)

@@ -12,7 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "sim"))
 import lsc1_transaction as lsc1  # noqa: E402
 
-OUTPUT = ROOT / "conformance/corpus-v1.json"
+OUTPUT = ROOT / "conformance/corpus-v2.json"
 UPSTREAM_COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 P = lsc1.Profile.INTERPRETER_COMPAT
 A = lsc1.ABSENT
@@ -346,7 +346,24 @@ def build_cases() -> list[dict]:
     bad_length[4:6] = lsc1.u16le(len(good) - lsc1.REQUEST_HEADER_BYTES - lsc1.CRC_BYTES - 1)
     shortened = bytes(bad_length[:-1])
     shortened = shortened[:-4] + lsc1.u32le(lsc1.crc32(shortened[:-4]))
-    cases.append(fault("malformed.length", "Fixed opcode payload length mismatch is rejected.", ["malformed", "BAD_LENGTH"], shortened))
+    cases.append(fault(
+        "malformed.length.decoded_txn",
+        "A fixed-length mismatch preserves the complete decoded txn_id prefix.",
+        ["malformed", "BAD_LENGTH", "txn_id", "decoded"], shortened,
+    ))
+    truncated_payload = (
+        good[:lsc1.REQUEST_HEADER_BYTES]
+        + good[lsc1.REQUEST_HEADER_BYTES:lsc1.REQUEST_HEADER_BYTES + 3]
+    )
+    truncated_payload = (
+        truncated_payload[:4] + lsc1.u16le(3) + truncated_payload[6:]
+    )
+    truncated_payload += lsc1.u32le(lsc1.crc32(truncated_payload))
+    cases.append(fault(
+        "malformed.length.partial_txn",
+        "A fixed-length mismatch zero-extends an available partial txn_id prefix.",
+        ["malformed", "BAD_LENGTH", "txn_id", "partial"], truncated_payload,
+    ))
     bad_pointer = lsc1.build_deref(
         lsc1.Opcode.DEREF_PC, txn_id=43, pc=0, fp=0, profile=P, alpha=0, beta=0,
         gamma=1, pointer=C(True, 7), base=8, target=C(True, 1), local=A,
@@ -360,7 +377,7 @@ def build_cases() -> list[dict]:
 
 def main() -> None:
     corpus = {
-        "schema": "lean-silicon-conformance-v1",
+        "schema": "lean-silicon-conformance-v2",
         "frozen_upstream": {
             "repository": "https://github.com/leanEthereum/leanVM-b.git",
             "commit": UPSTREAM_COMMIT,
