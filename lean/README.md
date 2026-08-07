@@ -47,7 +47,8 @@ Modules:
 - `RTLRefinement.lean` and `RTLTraceRefinement.lean` — the retained LSC-1u
   SET/XOR/MUL boundary, first for one transaction and then as an inductive
   arbitrary-finite-trace invariant covering acceptance, collapsed execution,
-  retirement, backpressure, faults, reset, and disable. Exact source hashes and
+  all sixteen response-byte handshakes, retirement, backpressure, faults,
+  reset, and disable. Exact source hashes and
   the non-SV-import boundary are in `docs/P1B_ASSURANCE_SCOPE.md`.
 
 Both commands build the same root module. The project gate rejects source

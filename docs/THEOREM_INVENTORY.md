@@ -42,9 +42,10 @@ changing this lifecycle interface.
 
 | Declaration | Meaning |
 | --- | --- |
-| `invariant_step` | Acceptance, collapsed execution, RETIRE/IDLE, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
+| `invariant_step` | Acceptance, collapsed execution, all sixteen response-byte transfers, fault, reset/disable, ignored busy input, and either backpressure choice preserve the retained-boundary simulation invariant. |
 | `run_invariant` | The invariant holds for every finite multi-transaction input trace. Retired outputs are exactly the ordered Lean SET/XOR/MUL results. |
-| `backpressure_stable` | A deasserted `tx_ready` is a true stutter: result and history are stable. |
+| `txByte` | In a transmit phase, exposes the exact indexed byte of the 16-byte least-significant-byte-first response. |
+| `backpressure_stable` | A deasserted `tx_ready` is a true stutter: response byte, transfer index, and history are stable. |
 | `reset_clears`, `disable_clears` | Either abort mechanism restores the clean IDLE retained state from every phase. |
 
 The exact implementation files/hashes and the deliberate collapsed-execution
