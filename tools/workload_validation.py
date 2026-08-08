@@ -167,6 +167,7 @@ def pinned_worktree(repository: Path, commit: str):
                 require_clean_worktree(checkout)
                 set_worktree_writable(checkout, writable=False)
                 set_worktree_immutable(pinned_root, immutable=True)
+                require_clean_worktree(checkout)
                 yield checkout
             finally:
                 set_worktree_immutable(pinned_root, immutable=False)

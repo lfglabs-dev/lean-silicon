@@ -342,6 +342,51 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 ]
             )
 
+    def test_pinned_worktree_rechecks_ignored_imports_after_freeze(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            host = repo / "host"
+            host.mkdir()
+            (repo / ".gitignore").write_text("*.so\n")
+            (host / "runtime.py").write_text("TRUSTED = True\n")
+            subprocess.run(
+                ["git", "add", ".gitignore", "host/runtime.py"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "commit", "-qm", "initial"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            yielded = False
+
+            def inject_during_freeze(snapshot_root, immutable):
+                if not immutable:
+                    return
+                snapshot_host = snapshot_root / "checkout" / "host"
+                snapshot_host.chmod(snapshot_host.stat().st_mode | 0o200)
+                (snapshot_host / "runtime.so").write_bytes(b"hostile extension")
+
+            with mock.patch.object(
+                workload_validation,
+                "set_worktree_immutable",
+                side_effect=inject_during_freeze,
+            ):
+                with self.assertRaisesRegex(SystemExit, "ignored importable paths"):
+                    with workload_validation.pinned_worktree(repo, head):
+                        yielded = True
+
+            self.assertFalse(yielded)
+
     def test_untracked_package_shadow_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)
