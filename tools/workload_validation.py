@@ -70,12 +70,17 @@ def require_clean_worktree(root: Path = ROOT) -> None:
         ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
         cwd=root,
     ).split(b"\0")
-    if any(
-        Path(name.decode()).suffix.lower() in IMPORTABLE_FILE_SUFFIXES
-        for name in ignored
-        if name
-    ):
-        raise SystemExit("workload checkout must not contain ignored importable files")
+    for name in ignored:
+        if not name:
+            continue
+        relative = Path(name.decode())
+        if (
+            relative.suffix.lower() in IMPORTABLE_FILE_SUFFIXES
+            or (root / relative).is_symlink()
+        ):
+            raise SystemExit(
+                "workload checkout must not contain ignored importable paths"
+            )
 
 
 def clean_head() -> tuple[str, str]:
