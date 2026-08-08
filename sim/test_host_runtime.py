@@ -1342,7 +1342,6 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             self.skipTest("runner forbids the privileged mount broker required by the lane")
         with tempfile.TemporaryDirectory() as directory:
             base = pathlib.Path(directory)
-            base.chmod(0o755)
             repo = base / "upstream"
             repo.mkdir()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)

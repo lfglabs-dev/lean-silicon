@@ -227,10 +227,22 @@ tar -xf - -C "$PRIVATE_ROOT"
 example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
 mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
+mkdir -p "$PRIVATE_ROOT/tool-bin" "$PRIVATE_ROOT/rustup-home" \
+  "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp"
 chown -R 65534:65534 "$PRIVATE_ROOT"
+mount --bind "$HOST_CARGO_BIN" "$PRIVATE_ROOT/tool-bin"
+mount -o remount,bind,ro "$PRIVATE_ROOT/tool-bin"
+if [ -n "$HOST_RUSTUP_HOME" ]; then
+  mount --bind "$HOST_RUSTUP_HOME" "$PRIVATE_ROOT/rustup-home"
+  mount -o remount,bind,ro "$PRIVATE_ROOT/rustup-home"
+fi
+cd "$PRIVATE_ROOT"
 setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
-  --bounding-set=-all sh -ceu '
-    cd "$PRIVATE_ROOT"
+  --bounding-set=-all env \
+  PATH="$PRIVATE_ROOT/tool-bin:/usr/bin:/bin" \
+  CARGO_HOME="$PRIVATE_ROOT/cargo-home" \
+  RUSTUP_HOME="$PRIVATE_ROOT/rustup-home" \
+  TMPDIR="$PRIVATE_ROOT/tmp" sh -ceu '
     printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
       -p lean_compiler --example leansilicon_export
   '
@@ -242,9 +254,14 @@ setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
             stderr=subprocess.PIPE,
         )
         assert archive.stdout is not None
+        cargo_path = shutil.which("cargo")
+        if cargo_path is None:
+            raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
         completed = subprocess.run(
             ["sudo", "-n", "unshare", "--mount", "--fork", "env",
              f"PATH={os.environ['PATH']}",
+             f"HOST_CARGO_BIN={pathlib.Path(cargo_path).resolve().parent}",
+             f"HOST_RUSTUP_HOME={os.environ.get('RUSTUP_HOME', '')}",
              f"PRIVATE_ROOT={private_root}",
              f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
              f"LEAN_SOURCE={source}",
