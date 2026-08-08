@@ -2,10 +2,11 @@
 
 ## Result and boundary
 
-This lane establishes **bounded**, not unbounded, sequential equivalence between
+This lane establishes **unbounded two-state sequential equivalence** between
 the LSC-1u RTL used by final-main physical run `31203929606` and that run's
-selected gate netlist. For every `ui_in`, `uio_in`, and `ena` sequence, it checks
-all bits of `uo_out`, `uio_out`, and `uio_oe` for 74 rising edges. The sole
+selected gate netlist. For every `ui_in`, `uio_in`, `ena`, and post-initial
+`rst_n` sequence, it checks all bits of `uo_out`, `uio_out`, and `uio_oe` at
+every rising edge. The sole
 environment constraint is `rst_n == 0` on the first modeled rising edge; reset
 and every other input are unconstrained afterward. `VPWR` is tied high and
 `VGND` low. Filler, antenna, physical-only, and tap cells are removed; the
@@ -14,8 +15,8 @@ checked-in SKY130 cell models express digital Boolean/DFF behavior only.
 This proves neither four-state/X behavior, delays, SDF/SPEF timing, power,
 analog or physical behavior, clock-quality assumptions, metastability,
 manufacturability, nor equivalence of GDS/OAS geometry. It is not a full LSC-1
-or Lean-to-RTL proof. A 74-edge BMC is exhaustive within that prefix but says
-nothing about edge 75 or later and does not span a complete 128-bit multiply.
+or Lean-to-RTL proof. The independently retained 74-edge ABC BMC remains a
+bounded cross-check; it is not the basis of the unbounded claim.
 
 ## Exact identity
 
@@ -46,26 +47,49 @@ mismatched archive fails closed.
 An explicit Yosys SAT query must emit a parseable JSON model witnessing reset
 asserted at edge 1, released at edge 2, and the driven `uio_oe == 8'hb6` output
 with `ena == 1`; UNSAT or a missing/invalid model fails the lane. The runner then
-changes the first output comparison to demand a one-bit mismatch;
-the 74-edge task must produce SBY status `FAIL`, meaning a property
+requires covers for one complete multiply and two consecutive transaction
+retirements. It then changes the first output comparison to demand a
+one-bit mismatch; the induction task must produce SBY status `FAIL`, meaning a
+property
 counterexample. `ERROR`, timeout, missing status, and every other infrastructure
 outcome fail the lane. The assertion cardinality guard runs after elaboration
 and prevents an unsupported frontend or optimization change from silently
 dropping checks.
 
-## Why this does not claim unbounded equivalence
+## Unbounded proof construction
 
-ABC PDR was attempted on the same miter and constraint. It did not converge:
-after about 203 seconds it had reached frame 86, with 319 flops in the active
-cone and a maximum obligation queue of 1,387. Terminating a growing proof search
-is not a counterexample and does not show inequivalence, but it supplies no
-inductive invariant. Direct Yosys `equiv_induct -seq 20` likewise left 13 of 24
-observable `$equiv` cells unproved because arbitrary internal initial states do
-not encode the harness's reset-reachable-state restriction. Consequently the
-300-edge BMC cost grew sharply after frame 55 and had not completed after frame
-74 (about 229 seconds), so it is not used as a passing receipt. The strongest
-reproducible sound result reported here is the 74-edge BMC; the PR deliberately
-makes no unbounded or full-multiply claim.
+The physical netlist retains a name on every one of its 283 state flops. The
+proof exposes those nets as formal-only output ports without changing their
+drivers. They correspond to the RTL controller state, byte index, saved/output
+bytes and flags, plus the multiplier's 128-bit power and product registers.
+Synthesis renamed the product's low byte to `core.mul_result_byte[7:0]`; the
+wrapper records that explicit mapping. A single 283-bit assertion states the
+complete relational invariant, while three separate assertions continue to
+check all 24 external output bits.
+
+Boolector k-induction proves the base case from the required initial reset and
+the inductive step for arbitrary inputs; ABC PDR independently proves the same
+four assertions. Since the asserted relation contains the complete state of
+both sequential designs, the successful induction is an
+unbounded reachable-state proof, not an extrapolation from a finite trace.
+The compositional state correspondence closes the earlier monolithic solver
+gap.
+
+## Reproduced results
+
+On the host OSS CAD Suite (`sby` 0.68, Yosys 0.68+40, Boolector 3.2.4,
+ABC 1.01), the final miter produced:
+
+- Boolector depth-4 k-induction: `PASS` (base and induction, 23 seconds);
+- ABC PDR: `PASS` (all four assertions, 176 seconds);
+- cover: two transaction retirements at step 7 and a complete MUL retirement
+  at step 179;
+- one-bit output mutation: `FAIL` at step 2, as required.
+
+The unchanged merged 74-edge lane was also started from current `main`; this
+host reached frame 57 without a counterexample before that redundant
+superlinear run was stopped. The merged release receipt retains the completed
+74-edge result. This interrupted rerun is not represented as a new BMC pass.
 
 ## Reproduction
 
@@ -80,5 +104,6 @@ make release-netlist-equivalence
 CI runs exactly the last command with `${{ runner.temp }}/lsc1-eq-cache`. The
 runner reads the durable copy of artifact `9004116698`, verifies both fixed
 hashes and all RTL hashes, stages mutable SBY outputs in the private cache, runs
-the SAT witness and 74-edge proof, and requires the mutation to produce an
+the SAT witness, retained 74-edge BMC, unbounded induction and PDR, and
+full-MUL/repeated-transaction covers, and requires the mutation to produce an
 actual property counterexample.
