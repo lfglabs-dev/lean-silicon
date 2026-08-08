@@ -49,7 +49,8 @@ NOT_OBSERVABLE_UPSTREAM = {
 }
 
 
-def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, toolchain: str):
+def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream,
+                       toolchain: str, toolchain_sha256: str = _export.PINNED_TOOLCHAIN_SHA256):
     """Recorded upstream output, or a live re-run that must reproduce it.
 
     In live mode, the fresh probe execution block (mem prefix, mem_used, cycles,
@@ -61,10 +62,22 @@ def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, to
         return recorded, "recorded_artifact", None
     _export.candidate_head()
     _export.require_checkout(upstream)
-    probe, command = _export.run_probe(upstream, artifact["source"]["text"], toolchain)
+    probe, command = _export.run_probe(
+        upstream, artifact["source"]["text"], toolchain,
+        toolchain_sha256=toolchain_sha256,
+    )
     if probe["bytecode"] != artifact["program"]["bytecode"]:
         raise SystemExit(
             f"live compile of {artifact_path} does not reproduce the recorded bytecode"
+        )
+    entry_mismatches = [
+        field for field in ("pc0", "fp0")
+        if probe[field] != artifact["program"][field]
+    ]
+    if entry_mismatches:
+        raise SystemExit(
+            f"live compile of {artifact_path} does not reproduce recorded entry "
+            f"metadata: {', '.join(entry_mismatches)}"
         )
     live_exec = probe["execution"]
     # Compare fresh probe against recorded to refuse stale/tampered evidence
@@ -202,6 +215,9 @@ def main() -> None:
                         help="clean detached frozen checkout; re-runs the compiler live")
     parser.add_argument("--out", type=pathlib.Path, help="write the comparison JSON")
     parser.add_argument("--rust-toolchain", default="1.88.0")
+    parser.add_argument(
+        "--rust-toolchain-sha256", default=_export.PINNED_TOOLCHAIN_SHA256
+    )
     args = parser.parse_args()
     args.artifact = args.artifact.resolve()
 
@@ -213,7 +229,8 @@ def main() -> None:
     artifact = json.loads(args.artifact.read_text())
     program = lean_compiler_adapter.load(args.artifact)
     upstream, source, command = upstream_execution(
-        args.artifact, artifact, args.upstream, args.rust_toolchain
+        args.artifact, artifact, args.upstream, args.rust_toolchain,
+        args.rust_toolchain_sha256,
     )
 
     runtime = HostRuntime(program, memory=HostMemory.with_public_input(1, 0))
@@ -246,13 +263,16 @@ def main() -> None:
         },
         "comparison": comparison,
     }
-    if args.out:
+    if str(args.out) == "-":
+        sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+    elif args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
     print(
         f"{comparison['result']} upstream={_export.COMMIT} source={source} "
         f"steps={len(run.records)} terminal={run.terminal} "
-        f"cells={len(comparison['compared']['final_memory_addresses'])}"
+        f"cells={len(comparison['compared']['final_memory_addresses'])}",
+        file=sys.stderr if str(args.out) == "-" else sys.stdout,
     )
     if comparison["result"] == "MISMATCH":
         raise SystemExit(json.dumps(comparison["mismatches"], indent=2))

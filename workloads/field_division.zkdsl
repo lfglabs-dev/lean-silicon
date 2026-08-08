@@ -1,0 +1,6 @@
+def main():
+    a = GEN ** 20
+    b = GEN ** 7
+    q = a / b
+    assert q * b == a
+    return
