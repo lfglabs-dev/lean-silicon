@@ -51,3 +51,17 @@ changing this lifecycle interface.
 
 The exact implementation files/hashes and the deliberate collapsed-execution
 boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
+
+## `LeanVMBMinCore.RTLTransactionRefinement`
+
+| Declaration | Meaning |
+| --- | --- |
+| `decode_opcode_byte`, `decoder_fault_precedence` | The raw implemented opcode bytes decode distinctly; every other byte takes the retained fault path without a functional stage. |
+| `executeOne_refines` | An admissible decoded command stages its translated transition, retires once with the arithmetic checksum, advances PC/retire sequence, preserves FP, and returns IDLE. |
+| `execute_sequence_idle` | Every arbitrary finite state-dependently admissible command sequence ends with no pending transaction. |
+| `finite_sequence_refines` | A payload-valid retained RTL trace and the functional command sequence naming exactly its retirements have identical ordered SET/XOR/MUL results and an IDLE functional lifecycle. |
+| `tx_backpressure_preserves_relation` | Deasserted TX ready preserves the common trace/transaction relation. |
+| `reset_disable_abort_pending` | Reset and enable-disable abort clear a pending functional transaction. |
+
+The exact source and two-checker composition boundary are recorded in
+`docs/P1C_TRANSACTION_BRIDGE.md`.
