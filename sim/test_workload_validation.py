@@ -531,8 +531,10 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             expected = {"comparison": {"result": "MISMATCH"}}
 
             def write_fresh_receipt(*_args, **_kwargs):
-                out.write_text(json.dumps(expected))
-                return subprocess.CompletedProcess([], 1, stdout="expected mismatch\n")
+                out.write_text(json.dumps({"forged_cache_file": True}))
+                return subprocess.CompletedProcess(
+                    [], 1, stdout=json.dumps(expected)
+                )
 
             with mock.patch.object(workload_validation.subprocess, "run", side_effect=write_fresh_receipt):
                 run, receipt = workload_validation.run_comparison(
@@ -543,6 +545,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             self.assertEqual(run.returncode, 1)
             self.assertEqual(receipt, expected)
+            self.assertEqual(json.loads(out.read_text()), expected)
 
     def test_comparison_uses_fresh_isolated_bytecode_cache(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -558,8 +561,11 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 observed_cache = Path(prefix_option.split("=", 1)[1])
                 self.assertTrue(observed_cache.is_dir())
                 self.assertEqual(command[1:3], ["-I", "-X"])
-                out.write_text(json.dumps({"comparison": {"result": "MATCH"}}))
-                return subprocess.CompletedProcess([], 0, stdout="")
+                return subprocess.CompletedProcess(
+                    [],
+                    0,
+                    stdout=json.dumps({"comparison": {"result": "MATCH"}}),
+                )
 
             with mock.patch.object(
                 workload_validation.subprocess,

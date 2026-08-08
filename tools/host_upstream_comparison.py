@@ -255,13 +255,16 @@ def main() -> None:
         },
         "comparison": comparison,
     }
-    if args.out:
+    if str(args.out) == "-":
+        sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+    elif args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
     print(
         f"{comparison['result']} upstream={_export.COMMIT} source={source} "
         f"steps={len(run.records)} terminal={run.terminal} "
-        f"cells={len(comparison['compared']['final_memory_addresses'])}"
+        f"cells={len(comparison['compared']['final_memory_addresses'])}",
+        file=sys.stderr if str(args.out) == "-" else sys.stdout,
     )
     if comparison["result"] == "MISMATCH":
         raise SystemExit(json.dumps(comparison["mismatches"], indent=2))

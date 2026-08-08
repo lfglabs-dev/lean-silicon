@@ -1439,6 +1439,24 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
         self.assertIn("artifact path must be inside the repo", completed.stderr)
         self.assertNotIn("Traceback", completed.stderr)
 
+    def test_comparison_receipt_can_be_consumed_from_stdout_pipe(self):
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-I",
+                str(ROOT / "tools" / "host_upstream_comparison.py"),
+                "--artifact",
+                str(ARTIFACT),
+                "--out",
+                "-",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        receipt = json.loads(completed.stdout)
+        self.assertEqual(receipt["schema"], comparison_tool.SCHEMA)
+        self.assertIn(receipt["comparison"]["result"], {"MATCH", "MISMATCH"})
+
 
 if __name__ == "__main__":
     unittest.main()

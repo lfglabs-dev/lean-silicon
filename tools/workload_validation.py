@@ -150,8 +150,10 @@ def pinned_worktree(repository: Path, commit: str):
         try:
             require_clean_worktree(checkout)
             set_worktree_writable(checkout, writable=False)
+            set_worktree_immutable(checkout, immutable=True)
             yield checkout
         finally:
+            set_worktree_immutable(checkout, immutable=False)
             set_worktree_writable(checkout, writable=True)
             subprocess.run(
                 ["git", "worktree", "remove", "--force", str(checkout)],
@@ -179,6 +181,17 @@ def set_worktree_writable(checkout: Path, writable: bool) -> None:
         path.chmod(mode | 0o200 if writable else mode & ~0o222)
 
 
+def set_worktree_immutable(checkout: Path, immutable: bool) -> None:
+    """Use the kernel immutable bit so the invoking UID cannot thaw snapshots."""
+    operation = "+i" if immutable else "-i"
+    subprocess.run(
+        ["/usr/bin/sudo", "-n", "/usr/bin/chattr", "-R", operation, str(checkout)],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def run_comparison(command: list[str], out: Path, workload_id: str,
                    cwd: Path = ROOT) -> tuple[subprocess.CompletedProcess[str], dict]:
     """Run one comparison and return only a receipt created by this invocation."""
@@ -195,10 +208,13 @@ def run_comparison(command: list[str], out: Path, workload_id: str,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-    if not out.exists():
+    try:
+        receipt = json.loads(run.stdout)
+    except json.JSONDecodeError:
         sys.stderr.write(run.stdout)
         raise SystemExit(f"comparison produced no receipt: {workload_id}")
-    return run, json.loads(out.read_text())
+    out.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    return run, receipt
 
 
 def prepare_receipt_path(cache: Path) -> Path:
@@ -361,7 +377,7 @@ def collect_evidence(plan: dict, cache: Path, receipt: dict, upstream: Path,
             out = cache / f"{workload['id']}.comparison.json"
             command = [sys.executable, "-I", "tools/host_upstream_comparison.py", "--artifact",
                        workload["artifact"], "--upstream", str(upstream_snapshot), "--rust-toolchain",
-                       plan["upstream"]["rust_toolchain"], "--out", str(out)]
+                       plan["upstream"]["rust_toolchain"], "--out", "-"]
             run, comparison = run_comparison(
                 command, out, workload["id"], cwd=candidate_snapshot
             )

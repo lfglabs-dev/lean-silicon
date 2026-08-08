@@ -255,7 +255,15 @@ def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
         ]
         script = """
 PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
-trap '/usr/bin/umount "$PRIVATE_ROOT" 2>/dev/null || true; /usr/bin/rmdir "$PRIVATE_ROOT" 2>/dev/null || true' EXIT
+TOOLCHAIN_FROZEN=0
+cleanup() {
+  if [ "$TOOLCHAIN_FROZEN" = 1 ]; then
+    /usr/bin/chattr -R -i "$HOST_TOOLCHAIN_ROOT" 2>/dev/null || true
+  fi
+  /usr/bin/umount "$PRIVATE_ROOT" 2>/dev/null || true
+  /usr/bin/rmdir "$PRIVATE_ROOT" 2>/dev/null || true
+}
+trap cleanup EXIT
 mount -t tmpfs -o mode=0700 tmpfs "$PRIVATE_ROOT"
 tar -xf - -C "$PRIVATE_ROOT"
 example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
@@ -263,7 +271,11 @@ mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
 mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
   "$PRIVATE_ROOT/toolchain"
+/usr/bin/chattr -R +i "$HOST_TOOLCHAIN_ROOT"
+TOOLCHAIN_FROZEN=1
 cp -a "$HOST_TOOLCHAIN_ROOT/." "$PRIVATE_ROOT/toolchain/"
+/usr/bin/chattr -R -i "$HOST_TOOLCHAIN_ROOT"
+TOOLCHAIN_FROZEN=0
 RUN_UID=$((200000 + $$))
 while /usr/bin/ps -eo uid= | /bin/grep -qx " *$RUN_UID"; do
   RUN_UID=$((RUN_UID + 1))
