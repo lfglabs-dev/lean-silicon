@@ -95,6 +95,18 @@ for name, (old, new) in mutations.items():
 packet_source = source.with_name("FullProfilePacket.lean")
 packet_text = packet_source.read_text()
 packet_mutations = {
+    "set-skips-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.outputOffset with",
+        "match some (packet.common.control.fp + packet.outputOffset) with",
+    ),
+    "set-drops-supplied-cell": (
+        ".set packet.common (putCell Memory.empty output packet.outputCell)",
+        ".set packet.common Memory.empty",
+    ),
+    "set-bypasses-canonical-decision": (
+        "| .ok instruction => decide instruction",
+        "| .ok instruction => .fault .badInverse",
+    ),
     "packet-skips-left-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.leftOffset with",
         "match some (packet.common.control.fp + packet.leftOffset) with",

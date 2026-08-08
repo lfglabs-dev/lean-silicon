@@ -26,6 +26,12 @@ structure BinaryPacket where
   outputCell : Cell
   proposedInverse : Cell
 
+structure SetPacket where
+  common : Common
+  outputOffset : Index
+  constant : Word
+  outputCell : Cell
+
 def aliasConflict (left right output : Index)
     (leftCell rightCell outputCell : Cell) : Bool :=
   (left == right && leftCell != rightCell) ||
@@ -38,6 +44,18 @@ def putCell (memory : Mem) (address : Index) (cell : Cell) : Mem :=
 def suppliedMemory (packet : BinaryPacket) (left right output : Index) : Mem :=
   putCell (putCell (putCell Memory.empty left packet.leftCell)
     right packet.rightCell) output packet.outputCell
+
+def prepareSet (packet : SetPacket) : Except Fault Instruction :=
+  match CheckedIndex.add packet.common.control.fp packet.outputOffset with
+  | none => .error .address
+  | some output =>
+      .ok (.set packet.common (putCell Memory.empty output packet.outputCell)
+        output packet.constant)
+
+def preparedSetDecision (packet : SetPacket) : Decision :=
+  match prepareSet packet with
+  | .error fault => .fault fault
+  | .ok instruction => decide instruction
 
 /--
 All address arithmetic precedes alias reconciliation.  Thus any overflowing
@@ -76,6 +94,38 @@ theorem left_address_overflow_precedes_alias (packet : BinaryPacket)
     (hoverflow : CheckedIndex.add packet.common.control.fp packet.leftOffset = none) :
     prepareBinary packet = .error .address := by
   simp [prepareBinary, hoverflow]
+
+theorem set_address_overflow_is_rejected (packet : SetPacket)
+    (hoverflow : CheckedIndex.add packet.common.control.fp packet.outputOffset = none) :
+    prepareSet packet = .error .address := by
+  simp [prepareSet, hoverflow]
+
+theorem prepare_set_success (packet : SetPacket) (output : Index)
+    (houtput : CheckedIndex.add packet.common.control.fp packet.outputOffset = some output) :
+    prepareSet packet = .ok
+      (.set packet.common (putCell Memory.empty output packet.outputCell)
+        output packet.constant) := by
+  simp [prepareSet, houtput]
+
+theorem prepared_set_refines_decide (packet : SetPacket) (instruction : Instruction)
+    (hprepare : prepareSet packet = .ok instruction) :
+    preparedSetDecision packet = decide instruction := by
+  simp [preparedSetDecision, hprepare]
+
+theorem prepared_set_result_stages (packet : SetPacket) (instruction : Instruction)
+    (effect : Effect) (model : Transaction.Model)
+    (hprepare : prepareSet packet = .ok instruction)
+    (hresult : preparedSetDecision packet = .result effect)
+    (hrepresentable : Representable effect)
+    (hidle : model.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
+    stages model instruction
+      (Transaction.step model (.stage (transitionOf effect))) := by
+  have hdecide : decide instruction = .result effect := by
+    simpa [preparedSetDecision, hprepare] using hresult
+  exact decided_result_stages model instruction effect hdecide hrepresentable
+    hidle hrange hmatch
 
 theorem output_address_overflow_precedes_alias (packet : BinaryPacket)
     (left right : Index)
@@ -151,6 +201,24 @@ def witnessPacket : BinaryPacket := {
   outputCell := { written := false, value := 0#128 }
   proposedInverse := { written := false, value := 0#128 } }
 
+def witnessSetPacket : SetPacket := {
+  common := witnessCommon
+  outputOffset := 3
+  constant := 0x2a#128
+  outputCell := { written := false, value := 0#128 } }
+
+example : prepareSet witnessSetPacket =
+    .ok (.set witnessCommon (putCell Memory.empty 12 witnessSetPacket.outputCell)
+      12 (0x2a#128)) := by
+  exact prepare_set_success witnessSetPacket 12 (by decide)
+
+example : exists effect, preparedSetDecision witnessSetPacket = .result effect := by
+  refine ⟨{
+    common := witnessCommon
+    nextControl := { pc := 4, fp := 9 }
+    memory := writeRaw Memory.empty 12 (0x2a#128) }, ?_⟩
+  rfl
+
 example : exists input, prepareBinary witnessPacket = .ok input := by
   let input : BinaryInput := {
     common := witnessCommon
@@ -169,6 +237,10 @@ example : exists effect, preparedDecision true witnessPacket = .result effect :=
   rfl
 
 #print axioms left_address_overflow_precedes_alias
+#print axioms set_address_overflow_is_rejected
+#print axioms prepare_set_success
+#print axioms prepared_set_refines_decide
+#print axioms prepared_set_result_stages
 #print axioms output_address_overflow_precedes_alias
 #print axioms inconsistent_left_right_alias_is_rejected
 #print axioms any_binary_alias_conflict_is_rejected
