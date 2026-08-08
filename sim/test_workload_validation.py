@@ -11,6 +11,11 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_duplicate_workload_ids_are_rejected_before_comparison(self):
+        plan = {"workloads": [{"id": "same"}, {"id": "same"}]}
+        with self.assertRaisesRegex(SystemExit, "ids must be unique"):
+            workload_validation.validate_unique_workload_ids(plan)
+
     def test_hidden_tracked_change_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

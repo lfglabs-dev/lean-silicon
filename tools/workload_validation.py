@@ -90,6 +90,13 @@ def selected_workload_count(plan: dict) -> int:
     return len(plan["workloads"])
 
 
+def validate_unique_workload_ids(plan: dict) -> None:
+    """Ensure each evidence entry has a distinct comparison-receipt path."""
+    ids = [workload["id"] for workload in plan["workloads"]]
+    if len(ids) != len(set(ids)):
+        raise SystemExit("workload ids must be unique")
+
+
 def comparison_outcome(comparison: dict) -> dict:
     """Return every boundary value that the workload plan pins."""
     return {
@@ -137,6 +144,7 @@ def main() -> None:
 
     plan = json.loads(PLAN_PATH.read_text())
     validate_runtime(plan["runtime"])
+    validate_unique_workload_ids(plan)
     head, tree = clean_head()
     base = plan["source_commit"]
     if capture(["git", "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
