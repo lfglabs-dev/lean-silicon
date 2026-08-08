@@ -56,8 +56,17 @@ def require_clean_tracked_worktree(root: Path = ROOT) -> None:
         raise SystemExit("tracked workload checkout must match HEAD")
 
 
+def require_clean_worktree(root: Path = ROOT) -> None:
+    """Reject changed tracked bytes and non-ignored untracked import shadows."""
+    require_clean_tracked_worktree(root)
+    if capture(
+        ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root
+    ):
+        raise SystemExit("workload checkout must not contain untracked files")
+
+
 def clean_head() -> tuple[str, str]:
-    require_clean_tracked_worktree()
+    require_clean_worktree()
     return capture(["git", "rev-parse", "HEAD"]), capture(["git", "rev-parse", "HEAD^{tree}"])
 
 
@@ -127,9 +136,7 @@ def validate_upstream_checkout(upstream: Path, plan: dict) -> None:
     """Revalidate the pinned upstream state and every consumed origin file."""
     if capture(["git", "rev-parse", "HEAD"], cwd=upstream) != plan["upstream"]["commit"]:
         raise SystemExit("upstream checkout is not at the pinned commit")
-    require_clean_tracked_worktree(upstream)
-    if capture(["git", "status", "--porcelain"], cwd=upstream):
-        raise SystemExit("upstream checkout must be clean")
+    require_clean_worktree(upstream)
     if sha(upstream / "Cargo.lock") != plan["upstream"]["cargo_lock_sha256"]:
         raise SystemExit("upstream Cargo.lock hash mismatch")
     for workload in plan["workloads"]:
