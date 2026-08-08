@@ -87,22 +87,18 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                     )
 
     def test_required_ids_are_bound_to_documented_input_tuples(self):
-        plan = {
-            "workloads": [
-                {
-                    "id": workload_id,
-                    "source": inputs[0],
-                    "artifact": inputs[1],
-                    "origin": inputs[2],
-                }
-                for workload_id, inputs in
-                workload_validation.REQUIRED_WORKLOAD_INPUTS.items()
-            ]
-        }
+        plan = json.loads(workload_validation.PLAN_PATH.read_text())
         workload_validation.validate_workload_identities(plan)
 
         plan["workloads"][1]["artifact"] = plan["workloads"][0]["artifact"]
         with self.assertRaisesRegex(SystemExit, "documented identity"):
+            workload_validation.validate_workload_identities(plan)
+
+        plan["workloads"][1]["artifact"] = (
+            workload_validation.REQUIRED_WORKLOAD_INPUTS["heap_recurrence"][1]
+        )
+        plan["workloads"][1]["expected"]["cycles"] += 1
+        with self.assertRaisesRegex(SystemExit, "canonical contents"):
             workload_validation.validate_workload_identities(plan)
 
     def test_upstream_repository_attribution_is_pinned(self):
@@ -174,6 +170,44 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 check=True,
             )
             tracked.write_text("hidden change\n")
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "status", "--porcelain"], cwd=repo, text=True
+                ),
+                "",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "must match HEAD"):
+                workload_validation.require_clean_tracked_worktree(repo)
+
+    def test_clean_filter_cannot_hide_different_executed_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "config", "filter.mask.clean", "sed s/EVIL/GOOD/"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "filter.mask.smudge", "cat"],
+                cwd=repo,
+                check=True,
+            )
+            (repo / ".gitattributes").write_text("model.py filter=mask\n")
+            model = repo / "model.py"
+            model.write_text("MODEL = 'GOOD'\n")
+            subprocess.run(["git", "add", ".gitattributes", "model.py"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "canonical"], cwd=repo, check=True)
+            model.write_text("MODEL = 'EVIL'\n")
             self.assertEqual(
                 subprocess.check_output(
                     ["git", "status", "--porcelain"], cwd=repo, text=True

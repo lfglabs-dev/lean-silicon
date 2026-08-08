@@ -46,6 +46,14 @@ REQUIRED_WORKLOAD_INPUTS = {
     ),
 }
 REQUIRED_WORKLOAD_IDS = frozenset(REQUIRED_WORKLOAD_INPUTS)
+REQUIRED_WORKLOAD_CLAIM_DIGESTS = {
+    "field_division": "0dc1ce05f79073b6bfe6f3137bbc2c561c8db16429dcea09aca1380ec45a90b7",
+    "heap_recurrence": "c551f7b25229a9c97cf01603428f540cdfe6586a6ebba8227384fcd79bde8af3",
+    "blake3_stack": "c38c09b27718ab365feaaedfa17eeb61e766b5b6c8289362b7805955f3a1d9a8",
+}
+WORKLOAD_CLAIM_KEYS = (
+    "source_sha256", "artifact_sha256", "origin_sha256", "expected",
+)
 IMPORTABLE_FILE_SUFFIXES = frozenset({
     ".py", ".pyw", ".pyc", ".pyo", ".so", ".pyd", ".dll", ".dylib",
 })
@@ -60,20 +68,39 @@ def capture(argv: list[str], cwd: Path = ROOT) -> str:
 
 
 def require_clean_tracked_worktree(root: Path = ROOT) -> None:
-    """Compare actual tracked files to HEAD without trusting index flags."""
-    index_fd, index_name = tempfile.mkstemp(prefix="workload-validation-index-")
-    os.close(index_fd)
-    os.unlink(index_name)
-    try:
-        env = os.environ | {"GIT_INDEX_FILE": index_name}
-        subprocess.run(["git", "read-tree", "HEAD"], cwd=root, env=env, check=True)
-        clean = subprocess.run(
-            ["git", "update-index", "--really-refresh", "-q"], cwd=root, env=env
-        ).returncode == 0
-    finally:
-        Path(index_name).unlink(missing_ok=True)
-    if not clean:
-        raise SystemExit("tracked workload checkout must match HEAD")
+    """Compare filesystem bytes and modes directly to canonical HEAD objects."""
+    entries = subprocess.check_output(
+        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=root
+    ).split(b"\0")
+    for entry in entries:
+        if not entry:
+            continue
+        metadata, encoded_name = entry.split(b"\t", 1)
+        mode, object_type, oid = metadata.decode().split()
+        relative = encoded_name.decode(errors="surrogateescape")
+        path = root / relative
+        try:
+            if object_type == "blob" and mode == "120000":
+                actual = os.readlink(path).encode(errors="surrogateescape")
+            elif object_type == "blob":
+                actual = path.read_bytes()
+                expected_executable = mode == "100755"
+                actual_executable = bool(path.stat().st_mode & 0o111)
+                if actual_executable != expected_executable:
+                    raise SystemExit("tracked workload checkout must match HEAD")
+            elif object_type == "commit":
+                actual = capture(["git", "rev-parse", "HEAD"], cwd=path).encode()
+            else:
+                raise SystemExit("tracked workload checkout contains unsupported Git objects")
+        except OSError as error:
+            raise SystemExit("tracked workload checkout must match HEAD") from error
+        expected = subprocess.check_output(
+            ["git", "cat-file", object_type, oid], cwd=root
+        )
+        if object_type == "commit":
+            expected = oid.encode()
+        if actual != expected:
+            raise SystemExit("tracked workload checkout must match HEAD")
 
 
 def require_clean_worktree(root: Path = ROOT) -> None:
@@ -195,6 +222,14 @@ def validate_workload_identities(plan: dict) -> None:
         if actual != REQUIRED_WORKLOAD_INPUTS[workload["id"]]:
             raise SystemExit(
                 f"workload inputs differ from documented identity: {workload['id']}"
+            )
+        claim = {key: workload[key] for key in WORKLOAD_CLAIM_KEYS}
+        digest = hashlib.sha256(
+            json.dumps(claim, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        if digest != REQUIRED_WORKLOAD_CLAIM_DIGESTS[workload["id"]]:
+            raise SystemExit(
+                f"workload claims differ from canonical contents: {workload['id']}"
             )
 
 

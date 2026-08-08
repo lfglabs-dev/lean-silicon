@@ -112,22 +112,45 @@ fn serde_json_string(text: &str) -> String {
 
 
 def require_actual_tracked_bytes(worktree: pathlib.Path) -> None:
-    """Compare populated worktree bytes to HEAD without trusting index flags."""
-    index_fd, index_name = tempfile.mkstemp(prefix="leanvm-probe-index-")
-    os.close(index_fd)
-    os.unlink(index_name)
-    try:
-        env = os.environ | {"GIT_INDEX_FILE": index_name}
-        subprocess.run(["git", "read-tree", "HEAD"], cwd=worktree, env=env, check=True)
-        clean = subprocess.run(
-            ["git", "update-index", "--really-refresh", "-q"],
-            cwd=worktree,
-            env=env,
-        ).returncode == 0
-    finally:
-        pathlib.Path(index_name).unlink(missing_ok=True)
-    if not clean:
-        raise SystemExit("compiler probe worktree must match its captured HEAD")
+    """Compare filesystem bytes and modes directly to canonical HEAD objects."""
+    entries = subprocess.check_output(
+        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=worktree
+    ).split(b"\0")
+    for entry in entries:
+        if not entry:
+            continue
+        metadata, encoded_name = entry.split(b"\t", 1)
+        mode, object_type, oid = metadata.decode().split()
+        relative = encoded_name.decode(errors="surrogateescape")
+        path = worktree / relative
+        try:
+            if object_type == "blob" and mode == "120000":
+                actual = os.readlink(path).encode(errors="surrogateescape")
+            elif object_type == "blob":
+                actual = path.read_bytes()
+                if bool(path.stat().st_mode & 0o111) != (mode == "100755"):
+                    raise SystemExit(
+                        "compiler probe worktree must match its captured HEAD"
+                    )
+            elif object_type == "commit":
+                actual = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=path
+                ).strip()
+            else:
+                raise SystemExit("compiler probe worktree contains unsupported Git objects")
+        except OSError as error:
+            raise SystemExit(
+                "compiler probe worktree must match its captured HEAD"
+            ) from error
+        expected = (
+            oid.encode()
+            if object_type == "commit"
+            else subprocess.check_output(
+                ["git", "cat-file", object_type, oid], cwd=worktree
+            )
+        )
+        if actual != expected:
+            raise SystemExit("compiler probe worktree must match its captured HEAD")
 
 
 def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
