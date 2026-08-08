@@ -46,7 +46,10 @@ back-solving when the destination is present, including verified host-proposed
 MUL inverses and the zero-known-operand fault, before applying the canonical
 forward XOR or GHASH multiplication through write-once memory. Effective
 addresses, the packet's inconsistent-alias rejection, DEREF pointer resolution,
-and result CRC still arrive below this boundary; they remain explicit edges,
+and result CRC still arrive below this boundary. `DEREF_CELL` does carry the
+profile at the functional boundary and proves that `FORWARD_ONLY` rejects a
+missing local operand instead of applying interpreter reconciliation. The
+remaining preparation obligations remain explicit edges,
 not assumptions promoted to a full-profile equivalence claim.
 
 ## Remaining theorem graph

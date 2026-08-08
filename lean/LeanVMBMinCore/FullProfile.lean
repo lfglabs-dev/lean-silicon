@@ -49,6 +49,7 @@ structure BinaryInput where
 
 structure DerefInput where
   common : Common
+  profile : Profile
   memory : Mem
   prepared : PreparedDeref
 
@@ -170,6 +171,9 @@ def decide : Instruction -> Decision
   | .deref mode input =>
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if mode == .cell && input.profile == .forwardOnly &&
+          !(input.memory input.prepared.localAddress).written then
+        .fault .unsupportedInProfile
       else
         match executeDeref encodeIndex mode input.memory input.prepared with
         | .ok control memory => .result {
@@ -475,6 +479,9 @@ theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
     decide (.deref mode input) =
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if mode == .cell && input.profile == .forwardOnly &&
+          !(input.memory input.prepared.localAddress).written then
+        .fault .unsupportedInProfile
       else
         match executeDeref encodeIndex mode input.memory input.prepared with
         | .ok control memory => .result {
@@ -490,6 +497,13 @@ theorem deref_rejects_prepared_control_mismatch (mode : DerefMode)
     (h : input.prepared.control != input.common.control) :
     decide (.deref mode input) = .fault .stateMismatch := by
   simp [decide, h]
+
+theorem forward_only_deref_cell_requires_local (input : DerefInput)
+    (hprofile : input.profile = .forwardOnly)
+    (hlocal : (input.memory input.prepared.localAddress).written = false)
+    (hcontrol : input.prepared.control = input.common.control) :
+    decide (.deref .cell input) = .fault .unsupportedInProfile := by
+  simp [decide, hprofile, hlocal, hcontrol]
 
 theorem jump_uses_canonical_control (input : JumpInput) :
     decide (.jump input) =
@@ -609,6 +623,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms mul_backsolve_rejects_unverified_inverse
 #print axioms deref_uses_canonical_control
 #print axioms deref_rejects_prepared_control_mismatch
+#print axioms forward_only_deref_cell_requires_local
 #print axioms jump_uses_canonical_control
 #print axioms jump_success_preserves_memory
 

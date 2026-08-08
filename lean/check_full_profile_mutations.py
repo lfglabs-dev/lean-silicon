@@ -58,6 +58,10 @@ mutations = {
         "| .pending pending, .respond response => {\n      state := .idle, decision := some (finishBlake3 pending response) }",
         "| .pending pending, .respond response => {\n      state := .pending pending, decision := some (finishBlake3 pending response) }",
     ),
+    "forward-only-deref-copies-missing-local": (
+        "else if mode == .cell && input.profile == .forwardOnly &&",
+        "else if false && input.profile == .forwardOnly &&",
+    ),
 }
 
 for name, (old, new) in mutations.items():
