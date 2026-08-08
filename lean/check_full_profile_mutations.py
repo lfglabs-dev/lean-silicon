@@ -18,6 +18,10 @@ mutations = {
         "| .blake3 request => .serviceRequired request",
         "| .blake3 request => .fault .badService",
     ),
+    "stages-accepts-rejection": (
+        "outcome.model.state = .resultPending (transitionOf effect)",
+        "outcome.model.state = .idle",
+    ),
 }
 
 for name, (old, new) in mutations.items():

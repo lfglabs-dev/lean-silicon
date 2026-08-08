@@ -151,21 +151,41 @@ def transitionOf (effect : Effect) : Transaction.Transition := {
   resultChecksum := effect.common.resultChecksum
 }
 
-/-- Non-vacuous bridge: a functional result is exactly what enters retirement staging. -/
+/-- Every canonical control index survives the packet lifecycle's `UInt32` boundary. -/
+def Representable (effect : Effect) : Prop :=
+  CheckedIndex.valid effect.common.control.pc /\
+    CheckedIndex.valid effect.common.control.fp /\
+    CheckedIndex.valid effect.nextControl.pc /\
+    CheckedIndex.valid effect.nextControl.fp
+
+/--
+Non-vacuous bridge: a representable functional result is accepted into the
+actual pending state, rather than merely being presented to a rejecting stage.
+-/
 def stages (model : Transaction.Model) (instruction : Instruction)
     (outcome : Transaction.Outcome) : Prop :=
   exists effect, decide instruction = .result effect /\
-    outcome = Transaction.step model (.stage (transitionOf effect))
+    Representable effect /\
+    outcome = Transaction.step model (.stage (transitionOf effect)) /\
+    outcome.model.state = .resultPending (transitionOf effect)
 
 theorem decided_result_stages (model : Transaction.Model) (instruction : Instruction)
-    (effect : Effect) (h : decide instruction = .result effect) :
+    (effect : Effect) (hdecide : decide instruction = .result effect)
+    (hrepresentable : Representable effect)
+    (hidle : model.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
     stages model instruction
       (Transaction.step model (.stage (transitionOf effect))) := by
-  exact Exists.intro effect ⟨h, rfl⟩
+  have hstage := Transaction.stage_is_atomic model (transitionOf effect)
+    hidle hrange hmatch
+  refine ⟨effect, hdecide, hrepresentable, rfl, ?_⟩
+  rw [hstage]
 
 theorem staged_result_matching_retire_commits (model : Transaction.Model)
     (instruction : Instruction) (effect : Effect)
     (hdecide : decide instruction = .result effect)
+    (hrepresentable : Representable effect)
     (hidle : model.state = .idle)
     (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
     (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
@@ -180,19 +200,25 @@ theorem staged_result_matching_retire_commits (model : Transaction.Model)
     hidle hrange hmatch
   dsimp
   constructor
-  · exact decided_result_stages model instruction effect hdecide
+  · exact decided_result_stages model instruction effect hdecide hrepresentable
+      hidle hrange hmatch
   · rw [hstage]
     simp [Transaction.step, transitionOf]
 
 theorem staged_result_abort_never_commits (model : Transaction.Model)
     (instruction : Instruction) (effect : Effect)
-    (hdecide : decide instruction = .result effect) :
+    (hdecide : decide instruction = .result effect)
+    (hrepresentable : Representable effect)
+    (hidle : model.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
     stages model instruction (Transaction.step model (.stage (transitionOf effect))) /\
       (Transaction.step
         (Transaction.step model (.stage (transitionOf effect))).model .abort).model.committed =
         (Transaction.step model (.stage (transitionOf effect))).model.committed := by
   constructor
-  · exact decided_result_stages model instruction effect hdecide
+  · exact decided_result_stages model instruction effect hdecide hrepresentable
+      hidle hrange hmatch
   · exact Transaction.abort_preserves_committed _
 
 theorem blake3_never_decides_digest (request : Blake3Request) :
@@ -251,6 +277,14 @@ def witnessSetEffect : Effect where
 example : exists effect, decide (.set witnessCommon Memory.empty 12 (0x2a#128)) = .result effect := by
   refine ⟨witnessSetEffect, ?_⟩
   rfl
+
+example : stages Transaction.initial
+    (.set witnessCommon Memory.empty 12 (0x2a#128))
+    (Transaction.step Transaction.initial (.stage (transitionOf witnessSetEffect))) := by
+  exact decided_result_stages Transaction.initial
+    (.set witnessCommon Memory.empty 12 (0x2a#128)) witnessSetEffect rfl
+    (by simp [Representable, CheckedIndex.valid, witnessSetEffect, witnessCommon,
+      CheckedIndex.max]) rfl (by decide) (by decide)
 
 example : exists request, decide (.blake3 request) = .serviceRequired request := by
   let request : Blake3Request := {

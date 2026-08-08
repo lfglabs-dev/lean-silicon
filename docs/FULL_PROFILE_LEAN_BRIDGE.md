@@ -14,6 +14,12 @@ matching RETIRE, and discarded without commit by ABORT. Existing `Packet`
 theorems establish envelope round trips and validation precedence. This PR does
 not claim that SystemVerilog implements this Lean function.
 
+The relation requires all canonical control indices to be losslessly
+representable at the `UInt32` transaction boundary and requires the stage
+outcome to contain the exact pending transition. A rejected stage therefore
+cannot satisfy the relation. The reachability witness constructs a concrete SET
+that reaches this pending state from `Transaction.initial`.
+
 This foundation does not yet encode the complete packet-profile guard surface.
 In particular XOR/MUL currently express the forward decision over supplied
 cells, not interpreter-compatible missing-operand back-solving; effective
