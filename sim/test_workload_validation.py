@@ -41,6 +41,31 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "safe filename components"):
             workload_validation.validate_unique_workload_ids(plan)
 
+    def test_plan_must_contain_the_complete_required_workload_set(self):
+        complete = {
+            "workloads": [
+                {"id": workload_id}
+                for workload_id in workload_validation.REQUIRED_WORKLOAD_IDS
+            ]
+        }
+        workload_validation.validate_unique_workload_ids(complete)
+
+        invalid_sets = [
+            [],
+            [{"id": "field_division"}],
+            [
+                {"id": "field_division"},
+                {"id": "heap_recurrence"},
+                {"id": "substituted_case"},
+            ],
+        ]
+        for workloads in invalid_sets:
+            with self.subTest(workloads=workloads):
+                with self.assertRaisesRegex(SystemExit, "required workload ids"):
+                    workload_validation.validate_unique_workload_ids(
+                        {"workloads": workloads}
+                    )
+
     def test_upstream_repository_attribution_is_pinned(self):
         upstream = {
             "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY

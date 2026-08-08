@@ -24,6 +24,11 @@ SUPPORTED_RUNTIME = {
 }
 SUPPORTED_UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
 SAFE_WORKLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
+REQUIRED_WORKLOAD_IDS = frozenset({
+    "field_division",
+    "heap_recurrence",
+    "blake3_stack",
+})
 
 
 def sha(path: Path) -> str:
@@ -102,12 +107,14 @@ def selected_workload_count(plan: dict) -> int:
 
 
 def validate_unique_workload_ids(plan: dict) -> None:
-    """Ensure each evidence entry has a distinct safe cache filename."""
+    """Require the documented workload set and distinct safe cache filenames."""
     ids = [workload["id"] for workload in plan["workloads"]]
     if len(ids) != len(set(ids)):
         raise SystemExit("workload ids must be unique")
     if any(SAFE_WORKLOAD_ID.fullmatch(workload_id) is None for workload_id in ids):
         raise SystemExit("workload ids must be safe filename components")
+    if set(ids) != REQUIRED_WORKLOAD_IDS:
+        raise SystemExit("plan must contain exactly the required workload ids")
 
 
 def validate_upstream_repository(upstream: dict) -> None:
