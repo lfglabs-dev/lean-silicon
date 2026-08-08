@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -116,7 +117,10 @@ def main() -> None:
     run("cycle_non_vacuity", ["make", "-C", "test/packet_frontend", "sim"], receipt)
     run("cycle_mutations", ["make", "-C", "test/packet_frontend", "mutation"], receipt)
     receipt["mutations"].append({"boundary": "cycle/runtime", "killed": True, "count": 5})
-    run("differential_mutations", ["make", "-C", "test/packet_frontend", "differential-mutation"], receipt)
+    mutation_env = os.environ.copy()
+    mutation_env["PYTHONPATH"] = str(ROOT) + os.pathsep + mutation_env.get("PYTHONPATH", "")
+    run("differential_mutations", ["make", "-C", "test/packet_frontend", "differential-mutation"],
+        receipt, env=mutation_env)
     receipt["mutations"].append({"boundary": "model/RTL", "killed": True, "count": 2})
     snapshot = cache / "lsc1_packet_frontend.elaborated.v"
     script_prefix = "read_verilog -sv " + " ".join(RTL) + "; hierarchy -check -top lsc1_packet_frontend; write_verilog -noattr "
