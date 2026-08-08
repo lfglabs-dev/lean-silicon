@@ -50,9 +50,9 @@ UNEXPOSED = {
 
 
 def private_namespace_available() -> bool:
-    """Return whether this runner permits the required user/mount namespace."""
+    """Return whether this runner permits the privileged mount broker."""
     return subprocess.run(
-        ["unshare", "--user", "--map-root-user", "--mount", "--fork", "true"],
+        ["sudo", "-n", "unshare", "--mount", "--fork", "true"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     ).returncode == 0
@@ -214,6 +214,7 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
               commit: str = COMMIT) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
+        pathlib.Path(directory).chmod(0o711)
         private_root = pathlib.Path(directory) / "private-root"
         private_root.mkdir(mode=0o700)
         command = [
@@ -226,9 +227,13 @@ tar -xf - -C "$PRIVATE_ROOT"
 example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
 mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
-cd "$PRIVATE_ROOT"
-printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
-  -p lean_compiler --example leansilicon_export
+chown -R 65534:65534 "$PRIVATE_ROOT"
+setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
+  --bounding-set=-all sh -ceu '
+    cd "$PRIVATE_ROOT"
+    printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
+      -p lean_compiler --example leansilicon_export
+  '
 """
         archive = subprocess.Popen(
             ["git", "archive", "--format=tar", commit],
@@ -238,18 +243,17 @@ printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
         )
         assert archive.stdout is not None
         completed = subprocess.run(
-            ["unshare", "--user", "--map-root-user", "--mount", "--fork",
-             "sh", "-ceu", script],
+            ["sudo", "-n", "unshare", "--mount", "--fork", "env",
+             f"PATH={os.environ['PATH']}",
+             f"PRIVATE_ROOT={private_root}",
+             f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
+             f"LEAN_SOURCE={source}",
+             f"RUST_TOOLCHAIN={toolchain}",
+             "CARGO_INCREMENTAL=0", "sh", "-ceu", script],
             stdin=archive.stdout,
             text=False,
             capture_output=True,
-            env=os.environ | {
-                "PRIVATE_ROOT": str(private_root),
-                "PROBE_BASE64": base64.b64encode(PROBE.encode()).decode(),
-                "LEAN_SOURCE": source,
-                "RUST_TOOLCHAIN": toolchain,
-                "CARGO_INCREMENTAL": "0",
-            },
+            env=os.environ,
         )
         archive.stdout.close()
         archive_stderr = archive.communicate()[1]

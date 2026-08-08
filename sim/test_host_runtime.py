@@ -1339,9 +1339,10 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
 
     def test_compiler_probe_executes_from_namespace_private_archive(self):
         if not comparison_tool._export.private_namespace_available():
-            self.skipTest("runner forbids the user/mount namespace required by the lane")
+            self.skipTest("runner forbids the privileged mount broker required by the lane")
         with tempfile.TemporaryDirectory() as directory:
             base = pathlib.Path(directory)
+            base.chmod(0o755)
             repo = base / "upstream"
             repo.mkdir()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
