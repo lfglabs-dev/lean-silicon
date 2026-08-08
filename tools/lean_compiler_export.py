@@ -57,6 +57,15 @@ def private_namespace_available() -> bool:
         stderr=subprocess.DEVNULL,
     ).returncode == 0
 
+
+def resolved_rustup_home() -> pathlib.Path:
+    """Resolve Rustup's explicit home or its documented HOME-relative default."""
+    configured = os.environ.get("RUSTUP_HOME")
+    if configured:
+        return pathlib.Path(configured).expanduser().resolve()
+    home = pathlib.Path(os.environ.get("HOME", pathlib.Path.home()))
+    return (home / ".rustup").resolve()
+
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
 use primitives::field::F128;
@@ -229,13 +238,11 @@ mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
 mkdir -p "$PRIVATE_ROOT/tool-bin" "$PRIVATE_ROOT/rustup-home" \
   "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp"
-chown -R 65534:65534 "$PRIVATE_ROOT"
-mount --bind "$HOST_CARGO_BIN" "$PRIVATE_ROOT/tool-bin"
-mount -o remount,bind,ro "$PRIVATE_ROOT/tool-bin"
-if [ -n "$HOST_RUSTUP_HOME" ]; then
-  mount --bind "$HOST_RUSTUP_HOME" "$PRIVATE_ROOT/rustup-home"
-  mount -o remount,bind,ro "$PRIVATE_ROOT/rustup-home"
+cp -a "$HOST_CARGO_BIN/." "$PRIVATE_ROOT/tool-bin/"
+if [ -d "$HOST_RUSTUP_HOME" ]; then
+  cp -a "$HOST_RUSTUP_HOME/." "$PRIVATE_ROOT/rustup-home/"
 fi
+chown -R 65534:65534 "$PRIVATE_ROOT"
 cd "$PRIVATE_ROOT"
 setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
   --bounding-set=-all env \
@@ -261,7 +268,7 @@ setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
             ["sudo", "-n", "unshare", "--mount", "--fork", "env",
              f"PATH={os.environ['PATH']}",
              f"HOST_CARGO_BIN={pathlib.Path(cargo_path).resolve().parent}",
-             f"HOST_RUSTUP_HOME={os.environ.get('RUSTUP_HOME', '')}",
+             f"HOST_RUSTUP_HOME={resolved_rustup_home()}",
              f"PRIVATE_ROOT={private_root}",
              f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
              f"LEAN_SOURCE={source}",

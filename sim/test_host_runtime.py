@@ -1379,6 +1379,17 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             self.assertEqual(result, {"private_archive": True})
             self.assertEqual(command[0:2], ["cargo", "+test-toolchain"])
 
+    def test_default_rustup_home_is_resolved_from_home(self):
+        with tempfile.TemporaryDirectory() as directory:
+            environment = dict(os.environ)
+            environment.pop("RUSTUP_HOME", None)
+            environment["HOME"] = directory
+            with mock.patch.dict(os.environ, environment, clear=True):
+                self.assertEqual(
+                    comparison_tool._export.resolved_rustup_home(),
+                    pathlib.Path(directory) / ".rustup",
+                )
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
