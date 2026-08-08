@@ -11,6 +11,26 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_plan_paths_cannot_escape_or_use_untracked_inputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp) / "repo"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            tracked = repo / "tracked.txt"
+            tracked.write_text("tracked\n")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+            self.assertEqual(
+                workload_validation.resolve_tracked_path(repo, "tracked.txt"), tracked
+            )
+
+            (repo / "untracked.txt").write_text("untracked\n")
+            with self.assertRaisesRegex(SystemExit, "not tracked"):
+                workload_validation.resolve_tracked_path(repo, "untracked.txt")
+            with self.assertRaisesRegex(SystemExit, "escapes its checkout"):
+                workload_validation.resolve_tracked_path(repo, "../outside.txt")
+            with self.assertRaisesRegex(SystemExit, "checkout-relative"):
+                workload_validation.resolve_tracked_path(repo, "/tmp/outside.txt")
+
     def test_duplicate_workload_ids_are_rejected_before_comparison(self):
         plan = {"workloads": [{"id": "same"}, {"id": "same"}]}
         with self.assertRaisesRegex(SystemExit, "ids must be unique"):

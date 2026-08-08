@@ -108,6 +108,28 @@ def validate_upstream_repository(upstream: dict) -> None:
         raise SystemExit("plan upstream repository is unsupported")
 
 
+def resolve_tracked_path(root: Path, relative: str) -> Path:
+    """Resolve a plan input inside its checkout and require Git tracking."""
+    root = root.resolve()
+    candidate = Path(relative)
+    if candidate.is_absolute():
+        raise SystemExit(f"plan path must be checkout-relative: {relative}")
+    path = (root / candidate).resolve()
+    try:
+        canonical_relative = path.relative_to(root)
+    except ValueError as error:
+        raise SystemExit(f"plan path escapes its checkout: {relative}") from error
+    tracked = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "--", str(canonical_relative)],
+        cwd=root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    if not tracked:
+        raise SystemExit(f"plan path is not tracked: {relative}")
+    return path
+
+
 def comparison_outcome(comparison: dict) -> dict:
     """Return every boundary value that the workload plan pins."""
     return {
@@ -195,8 +217,9 @@ def main() -> None:
         ],
     }
     for workload in plan["workloads"]:
-        source, artifact = ROOT / workload["source"], ROOT / workload["artifact"]
-        origin = upstream / workload["origin"]
+        source = resolve_tracked_path(ROOT, workload["source"])
+        artifact = resolve_tracked_path(ROOT, workload["artifact"])
+        origin = resolve_tracked_path(upstream, workload["origin"])
         for path, expected in ((source, workload["source_sha256"]),
                                (artifact, workload["artifact_sha256"]),
                                (origin, workload["origin_sha256"])):
