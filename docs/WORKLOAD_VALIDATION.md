@@ -10,6 +10,7 @@ Check out the exact candidate head and the pinned upstream leanVM-b commit, then
 use private mutable caches outside either checkout:
 
 ```sh
+private=$(mktemp -d /tmp/lean-silicon-workload.XXXXXX)
 mkdir -p "$private/receipt" "$private/tmp"
 chmod 700 "$private" "$private/receipt" "$private/tmp"
 git clone https://github.com/leanEthereum/leanVM-b.git "$private/leanVM-b"

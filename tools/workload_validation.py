@@ -69,6 +69,11 @@ def validate_runtime(runtime: dict) -> None:
         raise SystemExit("plan runtime differs from the comparator's supported runtime")
 
 
+def selected_workload_count(plan: dict) -> int:
+    """Report the number of workloads this invocation will actually validate."""
+    return len(plan["workloads"])
+
+
 def comparison_outcome(comparison: dict) -> dict:
     """Return every boundary value that the workload plan pins."""
     return {
@@ -140,7 +145,8 @@ def main() -> None:
             "rustc": capture(["rustc", f"+{plan['upstream']['rust_toolchain']}", "--version"]),
         },
         "evidence": {"functional_model": [], "rtl_fpga": [], "asic": []},
-        "coverage": {"selected": 3, "matched": 0, "expected_failures": 0},
+        "coverage": {"selected": selected_workload_count(plan),
+                     "matched": 0, "expected_failures": 0},
         "limitations": [
             "finite three-program sample is not representative of all zkDSL or leanVM-b programs",
             "host/model comparison is not Lean-to-RTL equivalence or a proof",

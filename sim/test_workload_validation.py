@@ -11,6 +11,10 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_selected_count_is_derived_from_validated_plan(self):
+        plan = {"workloads": [{"id": "one"}, {"id": "two"}]}
+        self.assertEqual(workload_validation.selected_workload_count(plan), 2)
+
     def test_plan_runtime_must_match_fixed_comparator_runtime(self):
         changed = dict(workload_validation.SUPPORTED_RUNTIME)
         changed["public_input"] = ["0x2", "0x0"]
