@@ -49,7 +49,7 @@ def require_clean_tracked_worktree() -> None:
     try:
         env = os.environ | {"GIT_INDEX_FILE": index_name}
         subprocess.run(["git", "read-tree", "HEAD"], cwd=ROOT, env=env, check=True)
-        clean = subprocess.run(["git", "update-index", "--really-refresh", "--quiet"],
+        clean = subprocess.run(["git", "update-index", "--really-refresh", "-q"],
                                cwd=ROOT, env=env).returncode == 0
     finally:
         Path(index_name).unlink(missing_ok=True)
