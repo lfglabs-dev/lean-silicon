@@ -1,0 +1,10 @@
+{
+  "schema": "lean-silicon.lsc1u-bringup-vectors.v1",
+  "byte_order": "little",
+  "cases": [
+    {"id": "set.incrementing", "opcode": "SET", "a": "000102030405060708090a0b0c0d0e0f", "expected": "000102030405060708090a0b0c0d0e0f"},
+    {"id": "xor.complement", "opcode": "XOR", "a": "00112233445566778899aabbccddeeff", "b": "ffeeddccbbaa99887766554433221100", "expected": "ffffffffffffffffffffffffffffffff"},
+    {"id": "mul.reduction", "opcode": "MUL", "a": "00000000000000000000000000000080", "b": "02000000000000000000000000000000", "expected": "87000000000000000000000000000000"},
+    {"id": "mul.deterministic", "opcode": "MUL", "a": "e888fbb4cf9ae6254f19ba12e6d9af54", "b": "788f195a6f509ca3e934f78d7a71dd85", "expected": "8690f8462423ed9b902fb8f81fc6d94f"}
+  ]
+}

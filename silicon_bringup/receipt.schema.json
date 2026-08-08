@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lfglabs.dev/schemas/lean-silicon/lsc1u-bringup-receipt-v1.json",
+  "title": "LSC-1u Tiny Tapeout bring-up receipt",
+  "type": "object",
+  "$defs": {
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "opcode", "received", "expected", "oracle_match", "retire_done_pulse", "idle_after_retire"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1}, "opcode": {"enum": ["SET", "XOR", "MUL"]},
+        "received": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "expected": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "oracle_match": {"type": "boolean"}, "retire_done_pulse": {"type": "boolean"},
+        "idle_after_retire": {"type": "boolean"}
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["schema", "execution", "interface", "vectors", "observations", "oracle", "outcome"],
+  "properties": {
+    "schema": {"const": "lean-silicon.lsc1u-bringup-receipt.v1"},
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "real_silicon", "transport"],
+      "properties": {
+        "kind": {"enum": ["dry-run", "simulation"]},
+        "real_silicon": {"const": false},
+        "transport": {"type": "string", "minLength": 1}
+      }
+    },
+    "interface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["top", "uio_oe", "abort", "reserved_input_bits"],
+      "properties": {
+        "top": {"const": "tt_um_lfglabs_lsc1u"},
+        "uio_oe": {"const": "0xb6"},
+        "abort": {"const": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored"},
+        "reserved_input_bits": {"const": [6]}
+      }
+    },
+    "vectors": {"const": ["set.incrementing", "xor.complement", "mul.reduction", "mul.deterministic"]},
+    "observations": {
+      "type": "array", "minItems": 4, "maxItems": 4, "items": false,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/observation"}, {"properties": {"id": {"const": "set.incrementing"}, "opcode": {"const": "SET"}, "expected": {"const": "000102030405060708090a0b0c0d0e0f"}}}, {"if": {"properties": {"received": {"const": "000102030405060708090a0b0c0d0e0f"}}}, "then": {"properties": {"oracle_match": {"const": true}}}, "else": {"properties": {"oracle_match": {"const": false}}}}]},
+        {"allOf": [{"$ref": "#/$defs/observation"}, {"properties": {"id": {"const": "xor.complement"}, "opcode": {"const": "XOR"}, "expected": {"const": "ffffffffffffffffffffffffffffffff"}}}, {"if": {"properties": {"received": {"const": "ffffffffffffffffffffffffffffffff"}}}, "then": {"properties": {"oracle_match": {"const": true}}}, "else": {"properties": {"oracle_match": {"const": false}}}}]},
+        {"allOf": [{"$ref": "#/$defs/observation"}, {"properties": {"id": {"const": "mul.reduction"}, "opcode": {"const": "MUL"}, "expected": {"const": "87000000000000000000000000000000"}}}, {"if": {"properties": {"received": {"const": "87000000000000000000000000000000"}}}, "then": {"properties": {"oracle_match": {"const": true}}}, "else": {"properties": {"oracle_match": {"const": false}}}}]},
+        {"allOf": [{"$ref": "#/$defs/observation"}, {"properties": {"id": {"const": "mul.deterministic"}, "opcode": {"const": "MUL"}, "expected": {"const": "8690f8462423ed9b902fb8f81fc6d94f"}}}, {"if": {"properties": {"received": {"const": "8690f8462423ed9b902fb8f81fc6d94f"}}}, "then": {"properties": {"oracle_match": {"const": true}}}, "else": {"properties": {"oracle_match": {"const": false}}}}]}
+      ]
+    },
+    "oracle": {"type": "object", "additionalProperties": false, "required": ["algorithm", "matched"], "properties": {
+      "algorithm": {"const": "independent GF(2^128), little-endian, low reduction 0x87"}, "matched": {"type": "boolean"}
+    }},
+    "outcome": {"type": "object", "additionalProperties": false, "required": ["passed", "failures"], "properties": {
+      "passed": {"type": "boolean"}, "failures": {"type": "array", "maxItems": 4, "uniqueItems": true, "items": {"enum": ["set.incrementing", "xor.complement", "mul.reduction", "mul.deterministic"]}}
+    }}
+  },
+  "allOf": [
+    {"if": {"properties": {"execution": {"properties": {"transport": {"const": "deterministic Python pin-model"}}}}}, "then": {"properties": {"execution": {"properties": {"kind": {"const": "dry-run"}, "real_silicon": {"const": false}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"oracle_match": {"const": true}}, "required": ["oracle_match"]}, "minContains": 4}}}, "then": {"properties": {"oracle": {"properties": {"matched": {"const": true}}}}}, "else": {"properties": {"oracle": {"properties": {"matched": {"const": false}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"oracle_match": {"const": true}, "retire_done_pulse": {"const": true}, "idle_after_retire": {"const": true}}, "required": ["oracle_match", "retire_done_pulse", "idle_after_retire"]}, "minContains": 4}}}, "then": {"properties": {"outcome": {"properties": {"passed": {"const": true}, "failures": {"const": []}}}}}, "else": {"properties": {"outcome": {"properties": {"passed": {"const": false}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"id": {"const": "set.incrementing"}, "oracle_match": {"const": true}, "retire_done_pulse": {"const": true}, "idle_after_retire": {"const": true}}, "required": ["id", "oracle_match", "retire_done_pulse", "idle_after_retire"]}}}}, "then": {"properties": {"outcome": {"properties": {"failures": {"not": {"contains": {"const": "set.incrementing"}}}}}}}, "else": {"properties": {"outcome": {"properties": {"failures": {"contains": {"const": "set.incrementing"}}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"id": {"const": "xor.complement"}, "oracle_match": {"const": true}, "retire_done_pulse": {"const": true}, "idle_after_retire": {"const": true}}, "required": ["id", "oracle_match", "retire_done_pulse", "idle_after_retire"]}}}}, "then": {"properties": {"outcome": {"properties": {"failures": {"not": {"contains": {"const": "xor.complement"}}}}}}}, "else": {"properties": {"outcome": {"properties": {"failures": {"contains": {"const": "xor.complement"}}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"id": {"const": "mul.reduction"}, "oracle_match": {"const": true}, "retire_done_pulse": {"const": true}, "idle_after_retire": {"const": true}}, "required": ["id", "oracle_match", "retire_done_pulse", "idle_after_retire"]}}}}, "then": {"properties": {"outcome": {"properties": {"failures": {"not": {"contains": {"const": "mul.reduction"}}}}}}}, "else": {"properties": {"outcome": {"properties": {"failures": {"contains": {"const": "mul.reduction"}}}}}}},
+    {"if": {"properties": {"observations": {"contains": {"properties": {"id": {"const": "mul.deterministic"}, "oracle_match": {"const": true}, "retire_done_pulse": {"const": true}, "idle_after_retire": {"const": true}}, "required": ["id", "oracle_match", "retire_done_pulse", "idle_after_retire"]}}}}, "then": {"properties": {"outcome": {"properties": {"failures": {"not": {"contains": {"const": "mul.deterministic"}}}}}}}, "else": {"properties": {"outcome": {"properties": {"failures": {"contains": {"const": "mul.deterministic"}}}}}}}
+  ]
+}
