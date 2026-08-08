@@ -31,9 +31,25 @@ def capture(argv: list[str], cwd: Path = ROOT) -> str:
     return subprocess.check_output(argv, cwd=cwd, text=True, stderr=subprocess.STDOUT).strip()
 
 
+def require_clean_tracked_worktree(root: Path = ROOT) -> None:
+    """Compare actual tracked files to HEAD without trusting index flags."""
+    index_fd, index_name = tempfile.mkstemp(prefix="workload-validation-index-")
+    os.close(index_fd)
+    os.unlink(index_name)
+    try:
+        env = os.environ | {"GIT_INDEX_FILE": index_name}
+        subprocess.run(["git", "read-tree", "HEAD"], cwd=root, env=env, check=True)
+        clean = subprocess.run(
+            ["git", "update-index", "--really-refresh", "-q"], cwd=root, env=env
+        ).returncode == 0
+    finally:
+        Path(index_name).unlink(missing_ok=True)
+    if not clean:
+        raise SystemExit("tracked workload checkout must match HEAD")
+
+
 def clean_head() -> tuple[str, str]:
-    if capture(["git", "status", "--porcelain"]):
-        raise SystemExit("tracked workload checkout must be clean")
+    require_clean_tracked_worktree()
     return capture(["git", "rev-parse", "HEAD"]), capture(["git", "rev-parse", "HEAD^{tree}"])
 
 

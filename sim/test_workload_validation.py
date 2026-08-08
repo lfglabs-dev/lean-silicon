@@ -11,6 +11,38 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_hidden_tracked_change_is_not_accepted_as_clean(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            tracked = repo / "tracked.txt"
+            tracked.write_text("committed\n")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "initial"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "update-index", "--assume-unchanged", "tracked.txt"],
+                cwd=repo,
+                check=True,
+            )
+            tracked.write_text("hidden change\n")
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "status", "--porcelain"], cwd=repo, text=True
+                ),
+                "",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "must match HEAD"):
+                workload_validation.require_clean_tracked_worktree(repo)
+
     def test_selected_count_is_derived_from_validated_plan(self):
         plan = {"workloads": [{"id": "one"}, {"id": "two"}]}
         self.assertEqual(workload_validation.selected_workload_count(plan), 2)
