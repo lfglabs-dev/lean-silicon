@@ -3,7 +3,8 @@ bounded
 
 [options]
 bounded: mode bmc
-bounded: depth 74
+# Frame 0 establishes the initial reset; frames 1..74 are assertion-active.
+bounded: depth 75
 timeout 1800
 vcd off
 
