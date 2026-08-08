@@ -67,6 +67,7 @@ class DryRunBackend:
     def reset_state(self):
         self.command = None; self.incoming = bytearray(); self.outgoing = bytearray()
         self.input_count = self.responses_acked = self.response_total = 0
+        self.mul_bits_remaining = 0; self.pending_mul_result = None
         self.fault = False; self.done = False
 
     def drive(self, *, ui_in: int, uio_in: int, ena: bool, rst_n: bool):
@@ -75,7 +76,7 @@ class DryRunBackend:
     def pins(self) -> Pins:
         if not self.ena:
             return Pins(0, 0, 0)
-        status = (RX_READY if not self.outgoing else 0) | (TX_VALID if self.outgoing else 0)
+        status = (RX_READY if not self.outgoing and not self.mul_bits_remaining and self.pending_mul_result is None else 0) | (TX_VALID if self.outgoing else 0)
         status |= BUSY if self.command is not None or self.outgoing else 0
         status |= FAULT if self.fault else 0
         status |= DONE if self.done and self.rst_n else 0
@@ -89,6 +90,11 @@ class DryRunBackend:
         self.done = False
         tx_fire = bool(before.uio_out & TX_VALID and self.uio_in & TX_READY)
         rx_fire = bool(before.uio_out & RX_READY and self.uio_in & RX_VALID)
+        if self.mul_bits_remaining:
+            self.mul_bits_remaining -= 1
+        elif self.pending_mul_result is not None:
+            self.outgoing = bytearray(self.pending_mul_result)
+            self.pending_mul_result = None
         if tx_fire:
             self.outgoing.pop(0)
             self.responses_acked += 1
@@ -109,10 +115,12 @@ class DryRunBackend:
                     self.outgoing, self.response_total = bytearray((self.ui_in,)), 16
                 elif self.command == OPCODES["XOR"] and self.input_count % 2 == 0:
                     self.outgoing, self.response_total = bytearray((self.incoming[-2] ^ self.incoming[-1],)), 16
-                elif self.command == OPCODES["MUL"] and len(self.incoming) == size:
-                    data = bytes(self.incoming)
-                    self.outgoing, self.incoming = bytearray(gf128_mul(data[:16], data[16:])), bytearray()
-                    self.response_total = 16
+                elif self.command == OPCODES["MUL"] and self.input_count > 16:
+                    self.mul_bits_remaining = 7
+                    if len(self.incoming) == size:
+                        data = bytes(self.incoming)
+                        self.pending_mul_result, self.incoming = gf128_mul(data[:16], data[16:]), bytearray()
+                        self.response_total = 16
         return before
 
 
@@ -126,7 +134,8 @@ class Driver:
     def reset(self): self._cycle(rst_n=False); return self.idle()
     def deselect_abort(self): self._cycle(ena=False); self._cycle(ena=False); return self.idle()
     def send(self, byte: int):
-        assert self.backend.pins().uio_out & RX_READY
+        while not self.backend.pins().uio_out & RX_READY:
+            self._cycle()
         self._cycle(byte, RX_VALID); self._cycle()
     def receive_all(self) -> tuple[bytes, bool]:
         answer = bytearray()
@@ -146,6 +155,9 @@ class Driver:
                 # The RTL applies backpressure after every SET/XOR result byte.
                 part, retired = self.receive_all()
                 received.extend(part); done |= retired
+        while (self.backend.command is not None and
+               not self.backend.pins().uio_out & (RX_READY | TX_VALID)):
+            self._cycle()
         part, retired = self.receive_all()
         received.extend(part); done |= retired
         return {"answer": bytes(received), "done": done}
@@ -160,6 +172,9 @@ def run_case(case: dict) -> dict:
         driver.send(value)
         if driver.backend.pins().uio_out & TX_VALID:
             part, retired = driver.receive_all(); received.extend(part); done |= retired
+    while (driver.backend.command is not None and
+           not driver.backend.pins().uio_out & (RX_READY | TX_VALID)):
+        driver._cycle()
     part, retired = driver.receive_all(); received.extend(part); done |= retired
     expected = oracle(case)
     if bytes.fromhex(case["expected"]) != expected:

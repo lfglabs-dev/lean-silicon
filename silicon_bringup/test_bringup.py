@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from silicon_bringup.bringup import BUSY, DONE, FAULT, RX_READY, TX_VALID, Driver, DryRunBackend, receipt, validate_receipt
+from silicon_bringup.bringup import BUSY, DONE, FAULT, RX_READY, RX_VALID, TX_VALID, Driver, DryRunBackend, receipt, validate_receipt
 
 
 class BringupTest(unittest.TestCase):
@@ -53,6 +53,29 @@ class BringupTest(unittest.TestCase):
                 self.assertEqual(result["answer"].hex(), case["expected"])
                 self.assertTrue(result["done"])
 
+    def test_mul_b_bytes_observe_rtl_backpressure(self):
+        driver = Driver(DryRunBackend()); driver.reset(); driver.send(2)
+        for _ in range(16): driver.send(0)
+        driver._cycle(ui=0, uio=1)
+        self.assertFalse(driver.backend.pins().uio_out & RX_READY)
+        for _ in range(6):
+            driver._cycle()
+            self.assertFalse(driver.backend.pins().uio_out & RX_READY)
+        driver._cycle()
+        self.assertTrue(driver.backend.pins().uio_out & RX_READY)
+
+    def test_mul_result_waits_for_tail_bits_and_transmit_edge(self):
+        driver = Driver(DryRunBackend()); driver.reset(); driver.send(2)
+        for _ in range(31): driver.send(0)
+        while not driver.backend.pins().uio_out & RX_READY: driver._cycle()
+        driver._cycle(ui=0, uio=RX_VALID)
+        for _ in range(7):
+            self.assertFalse(driver.backend.pins().uio_out & (RX_READY | TX_VALID))
+            driver._cycle()
+        self.assertFalse(driver.backend.pins().uio_out & (RX_READY | TX_VALID))
+        driver._cycle()
+        self.assertTrue(driver.backend.pins().uio_out & TX_VALID)
+
     def test_final_tx_ack_cannot_accept_same_edge_input(self):
         backend = DryRunBackend(); driver = Driver(backend); driver.reset(); driver.send(0x7F)
         self.assertTrue(backend.pins().uio_out & TX_VALID)
@@ -87,6 +110,10 @@ class BringupTest(unittest.TestCase):
         with self.assertRaises(ValueError): validate_receipt(relabelled)
         disguised = receipt(); disguised["execution"].update(kind="hardware", real_silicon=True, transport="deterministic Python pin-model ")
         with self.assertRaises(ValueError): validate_receipt(disguised)
+        schema = json.loads((Path(__file__).parent / "receipt.schema.json").read_text())
+        execution = schema["properties"]["execution"]["properties"]
+        self.assertNotIn("hardware", execution["kind"]["enum"])
+        self.assertEqual(execution["real_silicon"], {"const": False})
         numeric = receipt(); numeric["execution"]["real_silicon"] = 0
         with self.assertRaises(ValueError): validate_receipt(numeric)
 

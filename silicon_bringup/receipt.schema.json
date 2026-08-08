@@ -11,8 +11,8 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "real_silicon", "transport"],
       "properties": {
-        "kind": {"enum": ["dry-run", "simulation", "hardware"]},
-        "real_silicon": {"type": "boolean"},
+        "kind": {"enum": ["dry-run", "simulation"]},
+        "real_silicon": {"const": false},
         "transport": {"type": "string"}
       }
     },
@@ -46,7 +46,6 @@
     }}
   },
   "allOf": [
-    {"if": {"properties": {"execution": {"properties": {"kind": {"const": "hardware"}}}}}, "then": {"properties": {"execution": {"properties": {"real_silicon": {"const": true}}}}}, "else": {"properties": {"execution": {"properties": {"real_silicon": {"const": false}}}}}},
     {"if": {"properties": {"execution": {"properties": {"transport": {"const": "deterministic Python pin-model"}}}}}, "then": {"properties": {"execution": {"properties": {"kind": {"const": "dry-run"}, "real_silicon": {"const": false}}}}}}
   ]
 }
