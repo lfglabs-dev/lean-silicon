@@ -63,6 +63,12 @@ def require_clean_worktree(root: Path = ROOT) -> None:
         ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root
     ):
         raise SystemExit("workload checkout must not contain untracked files")
+    ignored = subprocess.check_output(
+        ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+        cwd=root,
+    ).split(b"\0")
+    if any(Path(name.decode()).suffix in {".pyc", ".pyo"} for name in ignored if name):
+        raise SystemExit("workload checkout must not contain ignored Python bytecode")
 
 
 def clean_head() -> tuple[str, str]:
