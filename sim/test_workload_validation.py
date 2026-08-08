@@ -51,6 +51,43 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "repository is unsupported"):
             workload_validation.validate_upstream_repository(upstream)
 
+    def test_changed_upstream_origin_cannot_survive_postflight_validation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            cargo_lock = repo / "Cargo.lock"
+            origin = repo / "case.json"
+            cargo_lock.write_text("pinned lock\n")
+            origin.write_text("pinned origin\n")
+            subprocess.run(["git", "add", "Cargo.lock", "case.json"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "initial"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            plan = {
+                "upstream": {
+                    "commit": head,
+                    "cargo_lock_sha256": workload_validation.sha(cargo_lock),
+                },
+                "workloads": [{
+                    "origin": "case.json",
+                    "origin_sha256": workload_validation.sha(origin),
+                }],
+            }
+            workload_validation.validate_upstream_checkout(repo, plan)
+
+            origin.write_text("changed during comparison\n")
+            with self.assertRaisesRegex(SystemExit, "must match HEAD"):
+                workload_validation.validate_upstream_checkout(repo, plan)
+
     def test_hidden_tracked_change_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

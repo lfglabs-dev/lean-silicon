@@ -108,6 +108,21 @@ def validate_upstream_repository(upstream: dict) -> None:
         raise SystemExit("plan upstream repository is unsupported")
 
 
+def validate_upstream_checkout(upstream: Path, plan: dict) -> None:
+    """Revalidate the pinned upstream state and every consumed origin file."""
+    if capture(["git", "rev-parse", "HEAD"], cwd=upstream) != plan["upstream"]["commit"]:
+        raise SystemExit("upstream checkout is not at the pinned commit")
+    require_clean_tracked_worktree(upstream)
+    if capture(["git", "status", "--porcelain"], cwd=upstream):
+        raise SystemExit("upstream checkout must be clean")
+    if sha(upstream / "Cargo.lock") != plan["upstream"]["cargo_lock_sha256"]:
+        raise SystemExit("upstream Cargo.lock hash mismatch")
+    for workload in plan["workloads"]:
+        origin = resolve_tracked_path(upstream, workload["origin"])
+        if sha(origin) != workload["origin_sha256"]:
+            raise SystemExit(f"hash mismatch: {origin}")
+
+
 def resolve_tracked_path(root: Path, relative: str) -> Path:
     """Resolve a plan input inside its checkout and require Git tracking."""
     root = root.resolve()
@@ -185,12 +200,7 @@ def main() -> None:
     if capture(["git", "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
         raise SystemExit("pinned main commit/tree mismatch")
     subprocess.run(["git", "merge-base", "--is-ancestor", base, head], cwd=ROOT, check=True)
-    if capture(["git", "-C", str(upstream), "rev-parse", "HEAD"]) != plan["upstream"]["commit"]:
-        raise SystemExit("upstream checkout is not at the pinned commit")
-    if capture(["git", "-C", str(upstream), "status", "--porcelain"]):
-        raise SystemExit("upstream checkout must be clean")
-    if sha(upstream / "Cargo.lock") != plan["upstream"]["cargo_lock_sha256"]:
-        raise SystemExit("upstream Cargo.lock hash mismatch")
+    validate_upstream_checkout(upstream, plan)
 
     receipt = {
         "schema": "lean-silicon/workload-validation-receipt/v1",
@@ -242,7 +252,8 @@ def main() -> None:
         receipt["coverage"]["matched" if is_match else "expected_failures"] += 1
         receipt["evidence"]["functional_model"].append({
             "id": workload["id"], "source_sha256": sha(source),
-            "artifact_sha256": sha(artifact), "origin_sha256": sha(origin),
+            "artifact_sha256": sha(artifact),
+            "origin_sha256": workload["origin_sha256"],
             "bytecode_slots": len(artifact_doc["program"]["bytecode"]),
             "upstream_cycles": comparison["upstream"]["cycles"],
             "upstream_mem_used": comparison["upstream"]["mem_used"],
@@ -252,6 +263,7 @@ def main() -> None:
             "comparison_receipt": out.name, "comparison_sha256": sha(out),
             "command_exit_code": run.returncode,
         })
+    validate_upstream_checkout(upstream, plan)
     publish_receipt(receipt_path, receipt, (head, tree))
     print(json.dumps({"status": "pass", "receipt": str(receipt_path),
                       "checkout_head": head, "coverage": receipt["coverage"]}, sort_keys=True))
