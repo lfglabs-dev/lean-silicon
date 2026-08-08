@@ -296,23 +296,33 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             )
             hook.chmod(0o755)
 
-            with workload_validation.pinned_worktree(repo, head) as snapshot:
-                self.assertEqual(
-                    (snapshot / "model.py").stat().st_mode & 0o222,
-                    0,
-                )
-                self.assertEqual(snapshot.stat().st_mode & 0o222, 0)
-                tracked.write_text("MODEL = 'temporary mutation'\n")
-                self.assertEqual(
-                    (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
-                )
-                self.assertEqual(
-                    subprocess.check_output(
-                        ["git", "rev-parse", "HEAD"], cwd=snapshot, text=True
-                    ).strip(),
-                    head,
-                )
-                tracked.write_text("MODEL = 'captured'\n")
+            with mock.patch.object(
+                workload_validation, "set_worktree_immutable"
+            ) as set_immutable:
+                with workload_validation.pinned_worktree(repo, head) as snapshot:
+                    self.assertEqual(
+                        (snapshot / "model.py").stat().st_mode & 0o222,
+                        0,
+                    )
+                    self.assertEqual(snapshot.stat().st_mode & 0o222, 0)
+                    tracked.write_text("MODEL = 'temporary mutation'\n")
+                    self.assertEqual(
+                        (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
+                    )
+                    self.assertEqual(
+                        subprocess.check_output(
+                            ["git", "rev-parse", "HEAD"], cwd=snapshot, text=True
+                        ).strip(),
+                        head,
+                    )
+                    tracked.write_text("MODEL = 'captured'\n")
+
+            set_immutable.assert_has_calls(
+                [
+                    mock.call(mock.ANY, immutable=True),
+                    mock.call(mock.ANY, immutable=False),
+                ]
+            )
 
     def test_untracked_package_shadow_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
