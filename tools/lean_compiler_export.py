@@ -13,9 +13,13 @@ probe cannot read them.  Every artifact records that limit instead of guessing
 around it.
 """
 import argparse
+import base64
 import datetime
+import hashlib
 import json
+import os
 import pathlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -37,6 +41,11 @@ COMMIT, REPOSITORY = _gate.COMMIT, _gate.REPOSITORY
 require_checkout, candidate_head, sha256 = _gate.require_checkout, _gate.candidate_head, _gate.sha256
 
 SCHEMA = "leansilicon.host.program/1"
+PRIVILEGED_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
+SUDO = "/usr/bin/sudo"
+UNSHARE = "/usr/bin/unshare"
+GIT = "/usr/bin/git"
+PINNED_TOOLCHAIN_SHA256 = "51ed91eab1f530bc88d68a25cf129f6e10f683c1f5594183e06af7d763f2fa8c"
 
 #: Public-only fields.  Anything `pub(crate)` upstream is reported as absent.
 UNEXPOSED = {
@@ -45,6 +54,129 @@ UNEXPOSED = {
     "Program::witness": "pub(crate): named prover witness streams",
     "Execution::trace": "pub(crate): per-step trace rows and access counts",
 }
+
+
+def private_namespace_available() -> bool:
+    """Return whether this runner permits the privileged mount broker."""
+    try:
+        return subprocess.run(
+            [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/true"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+def resolved_toolchain_snapshot(toolchain: str) -> tuple[pathlib.Path, str]:
+    """Resolve only the requested Rustup toolchain and its Cargo-relative path."""
+    cargo_proxy = shutil.which("cargo")
+    if cargo_proxy is None:
+        raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
+    rustup = pathlib.Path(cargo_proxy).resolve().parent / "rustup"
+    if not rustup.exists():
+        rustup_path = shutil.which("rustup")
+        if rustup_path is None:
+            raise SystemExit("rustup is required to resolve the pinned Rust toolchain")
+        rustup = pathlib.Path(rustup_path).resolve()
+    try:
+        cargo = pathlib.Path(subprocess.check_output(
+            [str(rustup), "which", "--toolchain", toolchain, "cargo"],
+            text=True,
+            stderr=subprocess.STDOUT,
+        ).strip()).resolve()
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(
+            f"rustup could not resolve toolchain {toolchain}:\n{error.output}"
+        ) from error
+    root = cargo.parent.parent
+    return root, str(cargo.relative_to(root))
+
+
+def open_resolved_toolchain_snapshot(toolchain: str) -> tuple[int, str]:
+    """Pin the selected toolchain inode before the privileged broker starts."""
+    root, cargo_relative = resolved_toolchain_snapshot(toolchain)
+    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+    return descriptor, cargo_relative
+
+
+def require_readonly_toolchain_mount(descriptor: int) -> None:
+    """Require the pinned toolchain to be the root of a read-only filesystem."""
+    fdinfo = pathlib.Path(f"/proc/self/fdinfo/{descriptor}").read_text()
+    mount_id = next(
+        (line.split(":", 1)[1].strip() for line in fdinfo.splitlines()
+         if line.startswith("mnt_id:")),
+        None,
+    )
+    if mount_id is None:
+        raise SystemExit("cannot identify selected Rust toolchain mount")
+    mount = next(
+        (line.split() for line in pathlib.Path("/proc/self/mountinfo").read_text().splitlines()
+         if line.split()[0] == mount_id),
+        None,
+    )
+    if mount is None:
+        raise SystemExit("cannot identify selected Rust toolchain mount")
+    mount_root = mount[3]
+    mountpoint = pathlib.Path(
+        mount[4].replace("\\040", " ").replace("\\011", "\t")
+        .replace("\\012", "\n").replace("\\134", "\\")
+    )
+    pinned = pathlib.Path(f"/proc/self/fd/{descriptor}")
+    if (
+        mount_root != "/"
+        or "ro" not in mount[5].split(",")
+        or not os.path.samefile(pinned, mountpoint)
+    ):
+        raise SystemExit(
+            "selected Rust toolchain must be a dedicated read-only filesystem mount"
+        )
+
+
+def toolchain_tree_sha256(root: pathlib.Path) -> str:
+    """Hash every toolchain path, type, mode, link target, and regular-file byte."""
+    digest = hashlib.sha256()
+    paths = sorted(root.rglob("*"), key=lambda path: path.relative_to(root).as_posix())
+    for path in paths:
+        relative = path.relative_to(root).as_posix().encode()
+        metadata = path.lstat()
+        mode = metadata.st_mode & 0o7777
+        if path.is_symlink():
+            kind, payload = b"link", os.readlink(path).encode()
+        elif path.is_dir():
+            kind, payload = b"dir", b""
+        elif path.is_file():
+            kind, payload = b"file", path.read_bytes()
+        else:
+            raise SystemExit(f"unsupported entry in selected Rust toolchain: {relative!r}")
+        digest.update(kind + b"\0" + relative + b"\0" + f"{mode:o}".encode() + b"\0")
+        digest.update(len(payload).to_bytes(8, "big") + payload)
+    return digest.hexdigest()
+
+
+def require_authenticated_toolchain(descriptor: int, expected_sha256: str) -> None:
+    actual = toolchain_tree_sha256(pathlib.Path(f"/proc/self/fd/{descriptor}"))
+    if actual != expected_sha256:
+        raise SystemExit(
+            f"selected Rust toolchain identity mismatch: expected {expected_sha256}, got {actual}"
+        )
+
+
+def require_safe_archive_tree(upstream: pathlib.Path, commit: str) -> None:
+    """Reject Git entries that could redirect privileged archive extraction."""
+    listing = subprocess.check_output(
+        [GIT, "--no-replace-objects", "ls-tree", "-r", "-z", commit],
+        cwd=upstream,
+    )
+    reserved = {"cargo-home", "host-toolchain", "tmp", "toolchain"}
+    for entry in listing.rstrip(b"\0").split(b"\0") if listing else ():
+        metadata, raw_path = entry.split(b"\t", 1)
+        mode, object_type, _object_id = metadata.split(b" ", 2)
+        path = raw_path.decode("utf-8", errors="surrogateescape")
+        if mode not in {b"100644", b"100755"} or object_type != b"blob":
+            raise SystemExit(f"unsafe entry in canonical upstream archive: {path}")
+        if pathlib.PurePosixPath(path).parts[0] in reserved:
+            raise SystemExit(f"reserved path in canonical upstream archive: {path}")
 
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
@@ -110,31 +242,217 @@ fn serde_json_string(text: &str) -> String {
 '''
 
 
-def run_probe(upstream: pathlib.Path, source: str, toolchain: str) -> tuple[dict, list[str]]:
-    with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
-        worktree = pathlib.Path(directory) / "upstream-worktree"
-        subprocess.run(
-            ["git", "-C", str(upstream), "worktree", "add", "--detach", str(worktree), COMMIT],
-            check=True, capture_output=True,
-        )
+def require_actual_tracked_bytes(
+    worktree: pathlib.Path, allowed_extra_paths: frozenset[str] = frozenset()
+) -> None:
+    """Compare filesystem bytes and modes directly to canonical HEAD objects."""
+    entries = subprocess.check_output(
+        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=worktree
+    ).split(b"\0")
+    for entry in entries:
+        if not entry:
+            continue
+        metadata, encoded_name = entry.split(b"\t", 1)
+        mode, object_type, oid = metadata.decode().split()
+        relative = encoded_name.decode(errors="surrogateescape")
+        path = worktree / relative
         try:
-            example = worktree / "crates/lean_compiler/examples/leansilicon_export.rs"
-            example.parent.mkdir(parents=True, exist_ok=True)
-            example.write_text(PROBE)
-            command = [
-                "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
-                "-p", "lean_compiler", "--example", "leansilicon_export",
-            ]
+            if object_type == "blob" and mode == "120000":
+                actual = os.readlink(path).encode(errors="surrogateescape")
+            elif object_type == "blob":
+                actual = path.read_bytes()
+                if bool(path.stat().st_mode & 0o111) != (mode == "100755"):
+                    raise SystemExit(
+                        "compiler probe worktree must match its captured HEAD"
+                    )
+            elif object_type == "commit":
+                actual = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=path
+                ).strip()
+            else:
+                raise SystemExit("compiler probe worktree contains unsupported Git objects")
+        except OSError as error:
+            raise SystemExit(
+                "compiler probe worktree must match its captured HEAD"
+            ) from error
+        expected = (
+            oid.encode()
+            if object_type == "commit"
+            else subprocess.check_output(
+                ["git", "cat-file", object_type, oid], cwd=worktree
+            )
+        )
+        if actual != expected:
+            raise SystemExit("compiler probe worktree must match its captured HEAD")
+
+    status = subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=all", "--ignored"],
+        cwd=worktree,
+        text=True,
+    ).splitlines()
+    extras = {line[3:] for line in status if line[:2] in {"??", "!!"}}
+    if extras != allowed_extra_paths or any(
+        line[:2] not in {"??", "!!"} for line in status
+    ):
+        raise SystemExit("compiler probe worktree must not contain extra paths")
+
+
+def set_worktree_writable(worktree: pathlib.Path, writable: bool) -> None:
+    """Freeze compiler/probe inputs for Cargo, or thaw them for removal."""
+    paths = [worktree]
+    for directory, directories, files in os.walk(worktree):
+        root = pathlib.Path(directory)
+        paths.extend(root / name for name in directories)
+        paths.extend(root / name for name in files)
+    paths.sort(key=lambda path: len(path.parts), reverse=not writable)
+    for path in paths:
+        if path.is_symlink():
+            continue
+        mode = path.stat().st_mode
+        path.chmod(mode | 0o200 if writable else mode & ~0o222)
+
+
+def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
+                          commit: str = COMMIT) -> None:
+    """Populate a hook-free detached worktree and validate its actual bytes."""
+    subprocess.run(
+        ["git", "-c", "core.hooksPath=/dev/null", "-C", str(upstream),
+         "worktree", "add", "--detach", str(worktree), commit],
+        check=True,
+        capture_output=True,
+    )
+    try:
+        require_actual_tracked_bytes(worktree)
+    except BaseException:
+        subprocess.run(
+            ["git", "-C", str(upstream), "worktree", "remove", "--force", str(worktree)],
+            check=True,
+            capture_output=True,
+        )
+        raise
+
+
+def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
+              commit: str = COMMIT,
+              toolchain_sha256: str = PINNED_TOOLCHAIN_SHA256) -> tuple[dict, list[str]]:
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "x86_64", "amd64"
+    }:
+        raise SystemExit("live compiler probe requires x86_64 Linux")
+    if not private_namespace_available():
+        raise SystemExit(
+            "live compiler probe requires Linux mount namespaces and passwordless sudo"
+        )
+    with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
+        command = [
+            "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
+            "-p", "lean_compiler", "--example", "leansilicon_export",
+        ]
+        script = r"""
+PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
+TOOLCHAIN_MOUNTED=0
+cleanup() {
+  if [ "$TOOLCHAIN_MOUNTED" = 1 ]; then
+    /usr/bin/umount "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
+  fi
+  /usr/bin/umount "$PRIVATE_ROOT" 2>/dev/null || true
+  /usr/bin/rmdir "$PRIVATE_ROOT" 2>/dev/null || true
+}
+trap cleanup EXIT
+mount -t tmpfs -o mode=0700 tmpfs "$PRIVATE_ROOT"
+tar -xf - -C "$PRIVATE_ROOT"
+example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
+mkdir -p "$(dirname "$example")"
+printf %s "$PROBE_BASE64" | base64 -d > "$example"
+mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
+  "$PRIVATE_ROOT/toolchain" "$PRIVATE_ROOT/host-toolchain"
+/usr/bin/mount --bind "$HOST_TOOLCHAIN_FD" "$PRIVATE_ROOT/host-toolchain"
+TOOLCHAIN_MOUNTED=1
+cp -a "$PRIVATE_ROOT/host-toolchain/." "$PRIVATE_ROOT/toolchain/"
+/usr/bin/python3 - "$PRIVATE_ROOT/toolchain" "$TOOLCHAIN_SHA256" <<'PY'
+import hashlib, os, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+digest = hashlib.sha256()
+for path in sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix()):
+    relative = path.relative_to(root).as_posix().encode()
+    mode = path.lstat().st_mode & 0o7777
+    if path.is_symlink():
+        kind, payload = b"link", os.readlink(path).encode()
+    elif path.is_dir():
+        kind, payload = b"dir", b""
+    elif path.is_file():
+        kind, payload = b"file", path.read_bytes()
+    else:
+        raise SystemExit(f"unsupported private toolchain entry: {relative!r}")
+    digest.update(kind + b"\0" + relative + b"\0" + f"{mode:o}".encode() + b"\0")
+    digest.update(len(payload).to_bytes(8, "big") + payload)
+if digest.hexdigest() != sys.argv[2]:
+    raise SystemExit("private Rust toolchain identity mismatch")
+PY
+/usr/bin/umount "$PRIVATE_ROOT/host-toolchain"
+TOOLCHAIN_MOUNTED=0
+RUN_UID=$((200000 + $$))
+while /usr/bin/ps -eo uid= | /bin/grep -qx " *$RUN_UID"; do
+  RUN_UID=$((RUN_UID + 1))
+done
+chown -R "$RUN_UID:$RUN_UID" "$PRIVATE_ROOT"
+cd "$PRIVATE_ROOT"
+/usr/bin/setpriv --reuid "$RUN_UID" --regid "$RUN_UID" --clear-groups --inh-caps=-all \
+  --bounding-set=-all /usr/bin/env \
+  PRIVATE_ROOT="$PRIVATE_ROOT" \
+  PATH="$PRIVATE_ROOT/toolchain/bin:/usr/bin:/bin" \
+  CARGO_HOME="$PRIVATE_ROOT/cargo-home" \
+  TMPDIR="$PRIVATE_ROOT/tmp" /bin/sh -ceu '
+    printf %s "$LEAN_SOURCE" | "$PRIVATE_ROOT/toolchain/$CARGO_RELATIVE" \
+      run --quiet --locked \
+      -p lean_compiler --example leansilicon_export
+  '
+"""
+        require_safe_archive_tree(upstream, commit)
+        toolchain_descriptor, cargo_relative = open_resolved_toolchain_snapshot(toolchain)
+        try:
+            require_readonly_toolchain_mount(toolchain_descriptor)
+            require_authenticated_toolchain(toolchain_descriptor, toolchain_sha256)
+        except BaseException:
+            os.close(toolchain_descriptor)
+            raise
+        archive = subprocess.Popen(
+            [GIT, "--no-replace-objects", "archive", "--format=tar", commit],
+            cwd=upstream,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        assert archive.stdout is not None
+        try:
             completed = subprocess.run(
-                command, cwd=worktree, input=source, text=True, capture_output=True
+                [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",
+                 f"PATH={PRIVILEGED_PATH}",
+                 f"HOST_TOOLCHAIN_FD=/proc/{os.getpid()}/fd/{toolchain_descriptor}",
+                 f"CARGO_RELATIVE={cargo_relative}",
+                 f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
+                 f"LEAN_SOURCE={source}",
+                 f"RUST_TOOLCHAIN={toolchain}",
+                 f"TOOLCHAIN_SHA256={toolchain_sha256}",
+                 "CARGO_INCREMENTAL=0", "/bin/sh", "-ceu", script],
+                stdin=archive.stdout,
+                text=False,
+                capture_output=True,
+                env=os.environ,
             )
         finally:
-            subprocess.run(
-                ["git", "-C", str(upstream), "worktree", "remove", "--force", str(worktree)],
-                check=True, capture_output=True,
+            os.close(toolchain_descriptor)
+        archive.stdout.close()
+        archive_stderr = archive.communicate()[1]
+        if archive.returncode:
+            raise SystemExit(
+                f"canonical upstream archive failed ({archive.returncode}):\n"
+                + archive_stderr.decode(errors="replace")
             )
     if completed.returncode:
-        raise SystemExit(f"lean_compiler probe failed ({completed.returncode}):\n{completed.stderr}")
+        raise SystemExit(
+            f"lean_compiler probe failed ({completed.returncode}):\n"
+            + completed.stderr.decode(errors="replace")
+        )
     return json.loads(completed.stdout), command
 
 
@@ -145,6 +463,7 @@ def main() -> None:
     parser.add_argument("--source", required=True, type=pathlib.Path, help="zkDSL source file")
     parser.add_argument("--out", required=True, type=pathlib.Path, help="artifact JSON to write")
     parser.add_argument("--rust-toolchain", default="1.88.0")
+    parser.add_argument("--rust-toolchain-sha256", default=PINNED_TOOLCHAIN_SHA256)
     args = parser.parse_args()
     args.source = args.source.resolve()
 
@@ -154,7 +473,10 @@ def main() -> None:
         raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
 
     source = args.source.read_text()
-    probe, command = run_probe(args.upstream, source, args.rust_toolchain)
+    probe, command = run_probe(
+        args.upstream, source, args.rust_toolchain,
+        toolchain_sha256=args.rust_toolchain_sha256,
+    )
     postflight = require_checkout(args.upstream)
     if candidate_head() != tested_head:
         raise SystemExit("candidate checkout rejected: HEAD changed during export")

@@ -40,6 +40,10 @@ Read the [proof-boundary matrix](docs/PROOF_BOUNDARIES.md),
 [status ledger](docs/STATUS.md), [validation record](docs/VALIDATION.md), and
 [roadmap](docs/ROADMAP.md) before relying on any result.
 
+The [realistic workload-validation lane](docs/WORKLOAD_VALIDATION.md) records a
+separate, bounded leanVM-b/zkDSL functional study with explicit failures. It is
+not a release or SKY26c gate and contains no RTL/FPGA or ASIC workload evidence.
+
 ## Build and check
 
 ```sh

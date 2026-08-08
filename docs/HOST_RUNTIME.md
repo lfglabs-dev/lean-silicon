@@ -130,11 +130,33 @@ the claim because `Execution::trace` is not public at the frozen revision.
 
 ## 6. Reproducing
 
+Live compiler export/comparison requires x86_64 Linux, mount namespaces, and
+non-interactive passwordless `sudo` for the fixed privileged broker commands,
+plus a selected Rust toolchain provisioned as the root of its own read-only
+filesystem mount. The live probe fails closed when a prerequisite is unavailable.
+
 ```sh
-git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanvm-b
-git -C /tmp/leanvm-b checkout c308034ab78619b39a59d26f3dc60e7df5b52649
-make host-export LEANVM_B_UPSTREAM=/tmp/leanvm-b
-make host-comparison LEANVM_B_UPSTREAM=/tmp/leanvm-b
+private=$(mktemp -d /tmp/lean-silicon-host.XXXXXX)
+export CARGO_HOME="$private/cargo" RUSTUP_HOME="$private/rustup"
+export PATH="$CARGO_HOME/bin:$PATH"
+rustup toolchain install 1.88.0-x86_64-unknown-linux-gnu --profile minimal
+installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0-x86_64-unknown-linux-gnu cargo)")")
+toolchain_mb=$(du -sm "$installed_toolchain" | awk '{print $1}')
+truncate -s "$((toolchain_mb + 256))M" "$private/rust-toolchain.ext4"
+/usr/sbin/mkfs.ext4 -q "$private/rust-toolchain.ext4"
+mkdir "$private/rust-toolchain-ro"
+sudo mount -o loop "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
+sudo cp -a "$installed_toolchain/." "$private/rust-toolchain-ro/"
+sudo umount "$private/rust-toolchain-ro"
+rustup toolchain uninstall 1.88.0-x86_64-unknown-linux-gnu
+sudo mount -o loop,ro "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
+rustup toolchain link leanvm-validation-1.88.0 "$private/rust-toolchain-ro"
+git clone https://github.com/leanEthereum/leanVM-b.git "$private/leanvm-b"
+git -C "$private/leanvm-b" checkout --detach c308034ab78619b39a59d26f3dc60e7df5b52649
+make host-export LEANVM_B_UPSTREAM="$private/leanvm-b"
+make host-comparison LEANVM_B_UPSTREAM="$private/leanvm-b"
+rustup toolchain uninstall leanvm-validation-1.88.0
+sudo umount "$private/rust-toolchain-ro"
 ```
 
 `make host-export` requires `cargo`, and both targets reject an upstream

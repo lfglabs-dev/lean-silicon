@@ -5,6 +5,7 @@ artifact is checked in, and ``tools/host_upstream_comparison.py`` is what
 re-derives it live from ``leanEthereum/leanVM-b`` when a checkout is supplied.
 """
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -1198,6 +1199,8 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
     def test_live_probe_must_reproduce_recorded_execution(self):
         artifact = json.loads(ARTIFACT.read_text())
         probe = {
+            "pc0": artifact["program"]["pc0"],
+            "fp0": artifact["program"]["fp0"],
             "bytecode": artifact["program"]["bytecode"],
             "execution": dict(artifact["upstream_execution"]),
         }
@@ -1213,6 +1216,329 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(SystemExit, "does not match recorded"):
                 comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
+
+    def test_live_probe_must_reproduce_recorded_entry_metadata(self):
+        artifact = json.loads(ARTIFACT.read_text())
+        probe = {
+            "pc0": artifact["program"]["pc0"],
+            "fp0": artifact["program"]["fp0"],
+            "bytecode": artifact["program"]["bytecode"],
+            "execution": dict(artifact["upstream_execution"]),
+        }
+        artifact["program"]["fp0"] += 1
+        with (
+            mock.patch.object(comparison_tool._export, "candidate_head"),
+            mock.patch.object(comparison_tool._export, "require_checkout"),
+            mock.patch.object(
+                comparison_tool._export,
+                "run_probe",
+                return_value=(probe, ["cargo", "run"]),
+            ),
+        ):
+            with self.assertRaisesRegex(SystemExit, "recorded entry metadata: fp0"):
+                comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
+
+    def test_compiler_probe_worktree_disables_post_checkout_hook(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory) / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            tracked = repo / "compiler.rs"
+            tracked.write_text("const TRUSTED: bool = true;\n")
+            subprocess.run(["git", "add", "compiler.rs"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            hook = repo / ".git" / "hooks" / "post-checkout"
+            hook.write_text(
+                "#!/bin/sh\n"
+                "printf 'const TRUSTED: bool = false;\\n' > compiler.rs\n"
+                "git update-index --assume-unchanged compiler.rs\n"
+            )
+            hook.chmod(0o755)
+            worktree = pathlib.Path(directory) / "probe"
+
+            comparison_tool._export.add_verified_worktree(repo, worktree, head)
+            try:
+                self.assertEqual(
+                    (worktree / "compiler.rs").read_text(),
+                    "const TRUSTED: bool = true;\n",
+                )
+                probe = worktree / "probe.rs"
+                probe.write_text("fn main() {}\n")
+                comparison_tool._export.set_worktree_writable(
+                    worktree, writable=False
+                )
+                self.assertEqual((worktree / "compiler.rs").stat().st_mode & 0o222, 0)
+                self.assertEqual(probe.stat().st_mode & 0o222, 0)
+                comparison_tool._export.require_actual_tracked_bytes(
+                    worktree, frozenset({"probe.rs"})
+                )
+            finally:
+                comparison_tool._export.set_worktree_writable(
+                    worktree, writable=True
+                )
+                subprocess.run(
+                    ["git", "worktree", "remove", "--force", str(worktree)],
+                    cwd=repo,
+                    check=True,
+                )
+
+    def test_compiler_probe_rejects_smudge_created_cargo_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory) / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "config", "filter.inject.clean", "cat"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git", "config", "filter.inject.smudge",
+                    "mkdir -p .cargo && printf '[build]\\nrustc-wrapper=\"evil\"\\n' "
+                    "> .cargo/config.toml && cat",
+                ],
+                cwd=repo,
+                check=True,
+            )
+            (repo / ".gitignore").write_text(".cargo/\n")
+            (repo / ".gitattributes").write_text("compiler.rs filter=inject\n")
+            (repo / "compiler.rs").write_text("const TRUSTED: bool = true;\n")
+            subprocess.run(
+                ["git", "add", ".gitignore", ".gitattributes", "compiler.rs"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            worktree = pathlib.Path(directory) / "probe"
+
+            with self.assertRaisesRegex(SystemExit, "extra paths"):
+                comparison_tool._export.add_verified_worktree(repo, worktree, head)
+
+    def test_compiler_probe_executes_from_namespace_private_archive(self):
+        if not comparison_tool._export.private_namespace_available():
+            self.skipTest("runner forbids the privileged mount broker required by the lane")
+        with tempfile.TemporaryDirectory() as directory:
+            base = pathlib.Path(directory)
+            repo = base / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            (repo / "README").write_text("canonical archive\n")
+            subprocess.run(["git", "add", "README"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            fake_bin = base / "bin"
+            fake_bin.mkdir()
+            cargo = fake_bin / "cargo"
+            cargo.write_text(
+                "#!/bin/sh\n"
+                "test -f crates/lean_compiler/examples/leansilicon_export.rs\n"
+                "printf '{\"private_archive\":true,\"uid\":%s}\\n' \"$(id -u)\"\n"
+            )
+            cargo.chmod(0o755)
+            marker = base / "privileged-path-was-used"
+            fake_shell = fake_bin / "sh"
+            fake_shell.write_text(
+                f"#!/bin/sh\ntouch {marker}\nexec /bin/sh \"$@\"\n"
+            )
+            fake_shell.chmod(0o755)
+            fake_git = fake_bin / "git"
+            fake_git.write_text(
+                f"#!/bin/sh\ntouch {marker}\nexit 99\n"
+            )
+            fake_git.chmod(0o755)
+
+            with mock.patch.dict(
+                os.environ, {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            ), mock.patch.object(
+                comparison_tool._export,
+                "resolved_toolchain_snapshot",
+                return_value=(fake_bin, "cargo"),
+            ):
+                try:
+                    result, command = comparison_tool._export.run_probe(
+                        repo, "source input", "test-toolchain", head
+                    )
+                except SystemExit as error:
+                    if "dedicated read-only filesystem mount" in str(error):
+                        self.skipTest(
+                            "fake toolchain is not on a dedicated read-only mount"
+                        )
+                    raise
+
+            self.assertTrue(result["private_archive"])
+            self.assertGreaterEqual(result["uid"], 200000)
+            self.assertNotEqual(result["uid"], 65534)
+            self.assertEqual(command[0:2], ["cargo", "+test-toolchain"])
+            self.assertFalse(marker.exists())
+
+    def test_only_selected_rustup_toolchain_is_resolved_for_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory) / "toolchains" / "1.88.0-target"
+            (root / "bin").mkdir(parents=True)
+            actual_cargo = root / "bin" / "cargo"
+            actual_cargo.touch()
+            proxy_bin = pathlib.Path(directory) / "proxy-bin"
+            proxy_bin.mkdir()
+            (proxy_bin / "cargo").touch()
+            (proxy_bin / "rustup").touch()
+            with (
+                mock.patch.object(
+                    comparison_tool._export.shutil,
+                    "which",
+                    return_value=str(proxy_bin / "cargo"),
+                ),
+                mock.patch.object(
+                    comparison_tool._export.subprocess,
+                    "check_output",
+                    return_value=str(actual_cargo),
+                ),
+            ):
+                selected_root, relative = (
+                    comparison_tool._export.resolved_toolchain_snapshot("1.88.0")
+                )
+
+            self.assertEqual(selected_root, root)
+            self.assertEqual(relative, "bin/cargo")
+
+    def test_privileged_archive_rejects_symlink_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            (repo / "redirect").symlink_to("/tmp")
+            subprocess.run(["git", "add", "redirect"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "symlink"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            (repo / "redirect").unlink()
+            (repo / "redirect").write_text("replacement hides unsafe entry\n")
+            subprocess.run(["git", "add", "redirect"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "replacement"], cwd=repo, check=True
+            )
+            replacement = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            subprocess.run(
+                ["git", "replace", head, replacement], cwd=repo, check=True
+            )
+
+            with self.assertRaisesRegex(SystemExit, "unsafe entry.*redirect"):
+                comparison_tool._export.require_safe_archive_tree(repo, head)
+
+    def test_open_toolchain_snapshot_survives_mutable_parent_path_swap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = pathlib.Path(directory) / "toolchains"
+            selected = parent / "selected"
+            (selected / "bin").mkdir(parents=True)
+            (selected / "bin" / "cargo").write_text("selected")
+
+            with mock.patch.object(
+                comparison_tool._export,
+                "resolved_toolchain_snapshot",
+                return_value=(selected, "bin/cargo"),
+            ):
+                descriptor, relative = (
+                    comparison_tool._export.open_resolved_toolchain_snapshot("1.88.0")
+                )
+
+            try:
+                original = parent / "original"
+                selected.rename(original)
+                (selected / "bin").mkdir(parents=True)
+                (selected / "bin" / "cargo").write_text("forged")
+
+                pinned = pathlib.Path(f"/proc/self/fd/{descriptor}")
+                self.assertTrue(os.path.samefile(pinned, original))
+                self.assertEqual((pinned / relative).read_text(), "selected")
+            finally:
+                os.close(descriptor)
+
+    def test_mutable_host_toolchain_mount_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                with self.assertRaisesRegex(
+                    SystemExit, "dedicated read-only filesystem mount"
+                ):
+                    comparison_tool._export.require_readonly_toolchain_mount(
+                        descriptor
+                    )
+            finally:
+                os.close(descriptor)
+
+    def test_toolchain_manifest_authenticates_all_consumed_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "bin").mkdir()
+            cargo = root / "bin" / "cargo"
+            cargo.write_bytes(b"canonical cargo")
+            expected = comparison_tool._export.toolchain_tree_sha256(root)
+            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                comparison_tool._export.require_authenticated_toolchain(
+                    descriptor, expected
+                )
+                cargo.write_bytes(b"forged cargo")
+                with self.assertRaisesRegex(SystemExit, "identity mismatch"):
+                    comparison_tool._export.require_authenticated_toolchain(
+                        descriptor, expected
+                    )
+            finally:
+                os.close(descriptor)
+
+    def test_live_probe_rejects_non_x86_64_hosts_before_privilege(self):
+        with mock.patch.object(
+            comparison_tool._export.platform, "machine", return_value="aarch64"
+        ), mock.patch.object(
+            comparison_tool._export, "private_namespace_available"
+        ) as namespace_available:
+            with self.assertRaisesRegex(SystemExit, "requires x86_64 Linux"):
+                comparison_tool._export.run_probe(
+                    pathlib.Path("unused"), "source", "toolchain"
+                )
+        namespace_available.assert_not_called()
 
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1231,6 +1557,24 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("artifact path must be inside the repo", completed.stderr)
         self.assertNotIn("Traceback", completed.stderr)
+
+    def test_comparison_receipt_can_be_consumed_from_stdout_pipe(self):
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-I",
+                str(ROOT / "tools" / "host_upstream_comparison.py"),
+                "--artifact",
+                str(ARTIFACT),
+                "--out",
+                "-",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        receipt = json.loads(completed.stdout)
+        self.assertEqual(receipt["schema"], comparison_tool.SCHEMA)
+        self.assertIn(receipt["comparison"]["result"], {"MATCH", "MISMATCH"})
 
 
 if __name__ == "__main__":

@@ -1,0 +1,50 @@
+{
+  "schema": "lean-silicon/workload-validation-plan/v1",
+  "issue": 51,
+  "release_critical_path": false,
+  "source_commit": "b4713ae3ebdabff34dcf2495ade937e8cca85c09",
+  "source_tree": "bf1479d6ce15e85725cdfd98b5c0480a74ef4d29",
+  "upstream": {
+    "repository": "https://github.com/leanEthereum/leanVM-b.git",
+    "commit": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+    "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
+    "rust_toolchain": "leanvm-validation-1.88.0",
+    "rust_toolchain_sha256": "51ed91eab1f530bc88d68a25cf129f6e10f683c1f5594183e06af7d763f2fa8c"
+  },
+  "runtime": {"public_input": ["0x00000000000000000000000000000001", "0x00000000000000000000000000000000"], "profile": "INTERPRETER_COMPAT"},
+  "workloads": [
+    {
+      "id": "field_division",
+      "source": "workloads/field_division.zkdsl",
+      "source_sha256": "593992ba9955a62dbdf766b652ffb8b53241f84dc45a2e5c6c8ca13eef16559a",
+      "artifact": "workloads/field_division.program.json",
+      "artifact_sha256": "4a59e022207ce6d5300ccfd8a27c467564ef698056fad90cedb05c131a572ff3",
+      "origin": "crates/lean_compiler/tests/field_div.rs",
+      "origin_sha256": "ac930c6885d87fbb8d5df35e53ee299476340e5bdb3698cf6eb3d4128cf944d1",
+      "derivation": "field_div_end_to_end reduced to its runtime division invariant",
+      "expected": {"comparison": "MATCH", "terminal": "halted", "cycles": 9, "model_steps": 9, "reason": "reached sentinel pc 15", "mismatches": [], "model_written": [0, 1, 2, 3, 4, 5, 6, 7, 8], "bytecode_slots": 16}
+    },
+    {
+      "id": "heap_recurrence",
+      "source": "workloads/heap_recurrence.zkdsl",
+      "source_sha256": "02d99a3ef37f392e2ec2092bbba7860b6cbd1aa1eabcc651e71bc3e7d5ee4658",
+      "artifact": "workloads/heap_recurrence.program.json",
+      "artifact_sha256": "9f757e26ffcf3f06ec18a18f54a403f2452da6f21e41a49cb768b80b8e9c5d45",
+      "origin": "crates/rec_aggregation/src/fibonacci.rs",
+      "origin_sha256": "f3ecbc292e3362062192893729836977f3d58e662cb75594d3e376d8f0ff0028",
+      "derivation": "fibonacci_program scaled to two recurrence blocks while preserving HeapBuf, mul_range, MUL and DEREF structure",
+      "expected": {"comparison": "MISMATCH", "terminal": "fault", "cycles": 58, "model_steps": 1, "reason": "pc 1 raised bad_pointer preparing the transaction", "mismatches": [{"field": "terminal", "host": "fault", "reason": "pc 1 raised bad_pointer preparing the transaction"}], "model_written": [0, 1, 3], "bytecode_slots": 64}
+    },
+    {
+      "id": "blake3_stack",
+      "source": "workloads/blake3_stack.zkdsl",
+      "source_sha256": "70fea8357535296dfd027a21a6926dd6e7d9d60dcd4c032912c75aed4bbe1686",
+      "artifact": "workloads/blake3_stack.program.json",
+      "artifact_sha256": "d930b3a00795450bad3cfa1941fcc3028e03b5cf9724dab32c7f07d0678f38b4",
+      "origin": "crates/lean_compiler/tests/stack_buf.rs",
+      "origin_sha256": "a0f42f1944af4d079de7db02b0b30243db27fd9c42732f88f1fd86326a0cf1d1",
+      "derivation": "stack_buf_blake3_self_hash with publication replaced by a local identity assertion",
+      "expected": {"comparison": "MISMATCH", "terminal": "unsupported", "cycles": 10, "model_steps": 4, "reason": "pc 4: Blake3 is not integrated. BLAKE3 is a host service (D-004) and this scaffold has no BLAKE3 compression implementation to answer SERVICE_REQUIRED with", "mismatches": [{"field": "coverage", "reason": "host run did not cover all upstream cells; gaps recorded in not_compared"}], "model_written": [0, 1, 6, 7, 8, 9], "bytecode_slots": 16}
+    }
+  ]
+}

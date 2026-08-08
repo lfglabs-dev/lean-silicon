@@ -1,0 +1,198 @@
+{
+  "generated_at_utc": "2026-08-08T08:22:50.312285+00:00",
+  "generated_from_repo_head": "72e38a99c91fa73ed9b4eb8875e27d1c3e381850",
+  "program": {
+    "bytecode": [
+      {
+        "index": 0,
+        "k": "0x00000000000000000000000000000005",
+        "o": 6,
+        "op": "Set"
+      },
+      {
+        "index": 1,
+        "k": "0x00000000000000000000000000000007",
+        "o": 7,
+        "op": "Set"
+      },
+      {
+        "index": 2,
+        "k": "0xa54ff53a3c6ef372bb67ae856a09e667",
+        "o": 8,
+        "op": "Set"
+      },
+      {
+        "index": 3,
+        "k": "0x5be0cd191f83d9ab9b05688c510e527f",
+        "o": 9,
+        "op": "Set"
+      },
+      {
+        "cv": 8,
+        "index": 4,
+        "ins": [
+          6,
+          7,
+          6,
+          7
+        ],
+        "metadata": "0x0000000b000000400000000000000000",
+        "op": "Blake3",
+        "out": 4
+      },
+      {
+        "a": 4,
+        "b": 4,
+        "c": 10,
+        "index": 5,
+        "op": "Xor"
+      },
+      {
+        "index": 6,
+        "k": "0x00000000000000000000000000000000",
+        "o": 10,
+        "op": "Set"
+      },
+      {
+        "index": 7,
+        "k": "0x00000000000000000000000000000001",
+        "o": 11,
+        "op": "Set"
+      },
+      {
+        "index": 8,
+        "k": "0x00000000000000000000000000008000",
+        "o": 12,
+        "op": "Set"
+      },
+      {
+        "index": 9,
+        "oc": 11,
+        "od": 12,
+        "of": 11,
+        "op": "Jump"
+      },
+      {
+        "index": 10,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 11,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 12,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 13,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 14,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      },
+      {
+        "index": 15,
+        "k": "0x00000000000000000000000000000000",
+        "o": 0,
+        "op": "Set"
+      }
+    ],
+    "disassembly": "     0  SET    fp[6] = 0x00000000000000000000000000000005\n     1  SET    fp[7] = 0x00000000000000000000000000000007\n     2  SET    fp[8] = 0xa54ff53a3c6ef372bb67ae856a09e667\n     3  SET    fp[9] = 0x5be0cd191f83d9ab9b05688c510e527f\n     4  BLAKE3 fp[4..]= compress(cv=fp[8..], m=fp[6],fp[7],fp[6],fp[7], meta=0x0000000b000000400000000000000000)\n     5  XOR    fp[10] = fp[4] ^ fp[4]\n     6  SET    fp[10] = 0x00000000000000000000000000000000\n     7  SET    fp[11] = g^0\n     8  SET    fp[12] = g^15\n     9  JUMP   if fp[11]\u22600: pc=fp[12], fp=fp[11]\n    10  SET    fp[0] = 0x00000000000000000000000000000000\n    11  SET    fp[0] = 0x00000000000000000000000000000000\n    12  SET    fp[0] = 0x00000000000000000000000000000000\n    13  SET    fp[0] = 0x00000000000000000000000000000000\n    14  SET    fp[0] = 0x00000000000000000000000000000000\n    15  SET    fp[0] = 0x00000000000000000000000000000000\n",
+    "fn_ranges": [
+      [
+        "main",
+        0,
+        10
+      ]
+    ],
+    "fp0": 0,
+    "pc0": 0
+  },
+  "provenance": {
+    "exporter_sha256": "87bf0131d197add11cab19ba34e9278a16dddcc066e254ca77b3c28d46b9da4b"
+  },
+  "schema": "leansilicon.host.program/1",
+  "source": {
+    "language": "zkDSL",
+    "path": "workloads/blake3_stack.zkdsl",
+    "sha256": "70fea8357535296dfd027a21a6926dd6e7d9d60dcd4c032912c75aed4bbe1686",
+    "text": "def main():\n    a = StackBuf(2)\n    a[0] = 5\n    a[1] = 7\n    c = StackBuf(2)\n    blake3(a, a, c)\n    assert c[0] == c[0]\n    return\n"
+  },
+  "upstream": {
+    "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
+    "command": [
+      "cargo",
+      "+1.88.0",
+      "run",
+      "--quiet",
+      "--locked",
+      "-p",
+      "lean_compiler",
+      "--example",
+      "leansilicon_export"
+    ],
+    "interface": [
+      "lean_compiler::parse(&str) -> Result<Ast, String>",
+      "lean_compiler::compile(&Ast) -> lean_vm::cpu::Program",
+      "lean_compiler::disassemble(&[Op]) -> String",
+      "lean_vm::cpu::Program::execute([F128; 2]) -> Execution"
+    ],
+    "not_exposed_by_public_interface": {
+      "Execution::trace": "pub(crate): per-step trace rows and access counts",
+      "Program::hints": "pub(crate): prover frame/buffer allocation hints",
+      "Program::main_frame": "pub(crate): size of main's frame",
+      "Program::witness": "pub(crate): named prover witness streams"
+    },
+    "postflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "preflight": {
+      "detached": "true",
+      "head": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+      "origin": "https://github.com/leanEthereum/leanVM-b.git",
+      "status": ""
+    },
+    "repository": "https://github.com/leanEthereum/leanVM-b.git",
+    "rust_toolchain": "1.88.0",
+    "sha": "c308034ab78619b39a59d26f3dc60e7df5b52649"
+  },
+  "upstream_execution": {
+    "cycles": 10,
+    "mem": [
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000000000",
+      "0x00000000000000000000000000000000",
+      "0x00000000000000000000000000000000",
+      "0x355382ad11dff7d12bf3570b00401862",
+      "0x307a2143fd376a57901fbb3956894417",
+      "0x00000000000000000000000000000005",
+      "0x00000000000000000000000000000007",
+      "0xa54ff53a3c6ef372bb67ae856a09e667",
+      "0x5be0cd191f83d9ab9b05688c510e527f",
+      "0x00000000000000000000000000000000",
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000008000"
+    ],
+    "mem_len": 65536,
+    "mem_used": 13,
+    "public_input": [
+      "0x00000000000000000000000000000001",
+      "0x00000000000000000000000000000000"
+    ]
+  }
+}
