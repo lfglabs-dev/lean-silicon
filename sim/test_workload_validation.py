@@ -165,6 +165,49 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "must match HEAD"):
                 workload_validation.require_clean_tracked_worktree(repo)
 
+    def test_git_replacement_objects_are_rejected_and_disabled(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            tracked = repo / "tracked.txt"
+            tracked.write_text("canonical\n")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "canonical"], cwd=repo, check=True)
+            original = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            tracked.write_text("replacement\n")
+            subprocess.run(["git", "commit", "-qam", "replacement"], cwd=repo, check=True)
+            replacement = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            subprocess.run(["git", "checkout", "-q", original], cwd=repo, check=True)
+            replacement_env = dict(workload_validation.os.environ)
+            replacement_env.pop("GIT_NO_REPLACE_OBJECTS")
+            subprocess.run(
+                ["git", "replace", original, replacement],
+                cwd=repo,
+                env=replacement_env,
+                check=True,
+            )
+
+            self.assertEqual(
+                workload_validation.capture(
+                    ["git", "show", "HEAD:tracked.txt"], cwd=repo
+                ),
+                "canonical",
+            )
+            with self.assertRaisesRegex(SystemExit, "replacement refs"):
+                workload_validation.require_clean_worktree(repo)
+
     def test_untracked_package_shadow_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

@@ -13,6 +13,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Never allow repository-local replacement refs to rewrite pinned Git objects.
+os.environ["GIT_NO_REPLACE_OBJECTS"] = "1"
+
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = ROOT / "workloads/plan.json"
 SUPPORTED_RUNTIME = {
@@ -61,6 +64,8 @@ def require_clean_tracked_worktree(root: Path = ROOT) -> None:
 
 def require_clean_worktree(root: Path = ROOT) -> None:
     """Reject changed tracked bytes and non-ignored untracked import shadows."""
+    if capture(["git", "for-each-ref", "--format=%(refname)", "refs/replace"], cwd=root):
+        raise SystemExit("workload checkout must not contain Git replacement refs")
     require_clean_tracked_worktree(root)
     if capture(
         ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root
