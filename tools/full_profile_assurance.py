@@ -110,14 +110,20 @@ def main() -> None:
             "no synthesized or pinned physical full-profile netlist", "finite corpus is not exhaustive",
         ],
     }
-    run("rtl_model_differential", ["python3", "-m", "unittest", "sim.test_packet_frontend_rtl_differential", "-v"], receipt)
+    baseline_env = os.environ.copy()
+    baseline_env.pop("LSC1_RTL_DIR", None)
+    run("rtl_model_differential", [sys.executable, "-m", "unittest",
+                                    "sim.test_packet_frontend_rtl_differential", "-v"],
+        receipt, env=baseline_env,
+        recorded_argv=["$PYTHON", "-m", "unittest",
+                       "sim.test_packet_frontend_rtl_differential", "-v"])
     run("cycle_non_vacuity", ["make", "-C", "test/packet_frontend", "sim"], receipt)
     run("cycle_mutations", ["make", "-C", "test/packet_frontend", "mutation"], receipt)
     receipt["mutations"].append({"boundary": "cycle/runtime", "killed": True, "count": 5})
     mutation_env = os.environ.copy()
     mutation_env["PYTHONPATH"] = str(ROOT) + os.pathsep + mutation_env.get("PYTHONPATH", "")
     run("differential_mutations", ["make", "-C", "test/packet_frontend", "differential-mutation"],
-        receipt, env=mutation_env)
+        receipt, env=mutation_env | {"PYTHON": sys.executable})
     receipt["mutations"].append({"boundary": "model/RTL", "killed": True, "count": 2})
     snapshot = cache / "lsc1_packet_frontend.elaborated.v"
     script_prefix = "read_verilog -sv " + " ".join(RTL) + "; hierarchy -check -top lsc1_packet_frontend; write_verilog -noattr "
