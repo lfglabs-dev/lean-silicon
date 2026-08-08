@@ -13,6 +13,7 @@ probe cannot read them.  Every artifact records that limit instead of guessing
 around it.
 """
 import argparse
+import base64
 import datetime
 import json
 import os
@@ -201,48 +202,58 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
         raise
 
 
-def run_probe(upstream: pathlib.Path, source: str, toolchain: str) -> tuple[dict, list[str]]:
+def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
+              commit: str = COMMIT) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
-        worktree = pathlib.Path(directory) / "upstream-worktree"
-        target = pathlib.Path(directory) / "cargo-target"
-        add_verified_worktree(upstream, worktree)
-        frozen = False
-        try:
-            example = worktree / "crates/lean_compiler/examples/leansilicon_export.rs"
-            example.parent.mkdir(parents=True, exist_ok=True)
-            example.write_text(PROBE)
-            set_worktree_writable(worktree, writable=False)
-            frozen = True
-            command = [
-                "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
-                "-p", "lean_compiler", "--example", "leansilicon_export",
-            ]
-            completed = subprocess.run(
-                command,
-                cwd=worktree,
-                env=os.environ | {
-                    "CARGO_TARGET_DIR": str(target),
-                    "CARGO_INCREMENTAL": "0",
-                },
-                input=source,
-                text=True,
-                capture_output=True,
-            )
-            if example.read_text() != PROBE:
-                raise SystemExit("compiler probe source changed during execution")
-            require_actual_tracked_bytes(
-                worktree,
-                frozenset({"crates/lean_compiler/examples/leansilicon_export.rs"}),
-            )
-        finally:
-            if frozen:
-                set_worktree_writable(worktree, writable=True)
-            subprocess.run(
-                ["git", "-C", str(upstream), "worktree", "remove", "--force", str(worktree)],
-                check=True, capture_output=True,
+        private_root = pathlib.Path(directory) / "private-root"
+        private_root.mkdir(mode=0o700)
+        command = [
+            "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
+            "-p", "lean_compiler", "--example", "leansilicon_export",
+        ]
+        script = """
+mount -t tmpfs -o mode=0700 tmpfs "$PRIVATE_ROOT"
+tar -xf - -C "$PRIVATE_ROOT"
+example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
+mkdir -p "$(dirname "$example")"
+printf %s "$PROBE_BASE64" | base64 -d > "$example"
+cd "$PRIVATE_ROOT"
+printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
+  -p lean_compiler --example leansilicon_export
+"""
+        archive = subprocess.Popen(
+            ["git", "archive", "--format=tar", commit],
+            cwd=upstream,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        assert archive.stdout is not None
+        completed = subprocess.run(
+            ["unshare", "--user", "--map-root-user", "--mount", "--fork",
+             "sh", "-ceu", script],
+            stdin=archive.stdout,
+            text=False,
+            capture_output=True,
+            env=os.environ | {
+                "PRIVATE_ROOT": str(private_root),
+                "PROBE_BASE64": base64.b64encode(PROBE.encode()).decode(),
+                "LEAN_SOURCE": source,
+                "RUST_TOOLCHAIN": toolchain,
+                "CARGO_INCREMENTAL": "0",
+            },
+        )
+        archive.stdout.close()
+        archive_stderr = archive.communicate()[1]
+        if archive.returncode:
+            raise SystemExit(
+                f"canonical upstream archive failed ({archive.returncode}):\n"
+                + archive_stderr.decode(errors="replace")
             )
     if completed.returncode:
-        raise SystemExit(f"lean_compiler probe failed ({completed.returncode}):\n{completed.stderr}")
+        raise SystemExit(
+            f"lean_compiler probe failed ({completed.returncode}):\n"
+            + completed.stderr.decode(errors="replace")
+        )
     return json.loads(completed.stdout), command
 
 

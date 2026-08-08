@@ -103,12 +103,20 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
     def test_upstream_repository_attribution_is_pinned(self):
         upstream = {
-            "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY
+            "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY,
+            "commit": workload_validation.SUPPORTED_UPSTREAM_COMMIT,
         }
         workload_validation.validate_upstream_repository(upstream)
 
         upstream["repository"] = "https://example.invalid/not-the-oracle.git"
         with self.assertRaisesRegex(SystemExit, "repository is unsupported"):
+            workload_validation.validate_upstream_repository(upstream)
+
+        upstream = {
+            "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY,
+            "commit": "0" * 40,
+        }
+        with self.assertRaisesRegex(SystemExit, "commit is unsupported"):
             workload_validation.validate_upstream_repository(upstream)
 
     def test_changed_upstream_origin_cannot_survive_postflight_validation(self):

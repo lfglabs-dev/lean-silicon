@@ -27,6 +27,7 @@ SUPPORTED_RUNTIME = {
     "profile": "INTERPRETER_COMPAT",
 }
 SUPPORTED_UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
+SUPPORTED_UPSTREAM_COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 SAFE_WORKLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 REQUIRED_WORKLOAD_INPUTS = {
     "field_division": (
@@ -259,6 +260,8 @@ def validate_upstream_repository(upstream: dict) -> None:
     """Bind the plan attribution to the repository supported by the comparator."""
     if upstream["repository"] != SUPPORTED_UPSTREAM_REPOSITORY:
         raise SystemExit("plan upstream repository is unsupported")
+    if upstream["commit"] != SUPPORTED_UPSTREAM_COMMIT:
+        raise SystemExit("plan upstream commit is unsupported")
 
 
 def validate_upstream_checkout(upstream: Path, plan: dict) -> None:

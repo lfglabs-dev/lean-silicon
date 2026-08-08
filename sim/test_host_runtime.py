@@ -5,6 +5,7 @@ artifact is checked in, and ``tools/host_upstream_comparison.py`` is what
 re-derives it live from ``leanEthereum/leanVM-b`` when a checkout is supplied.
 """
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -1335,6 +1336,46 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
 
             with self.assertRaisesRegex(SystemExit, "extra paths"):
                 comparison_tool._export.add_verified_worktree(repo, worktree, head)
+
+    def test_compiler_probe_executes_from_namespace_private_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = pathlib.Path(directory)
+            repo = base / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            (repo / "README").write_text("canonical archive\n")
+            subprocess.run(["git", "add", "README"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            fake_bin = base / "bin"
+            fake_bin.mkdir()
+            cargo = fake_bin / "cargo"
+            cargo.write_text(
+                "#!/bin/sh\n"
+                "test -f crates/lean_compiler/examples/leansilicon_export.rs\n"
+                "printf '{\"private_archive\":true}\\n'\n"
+            )
+            cargo.chmod(0o755)
+
+            with mock.patch.dict(
+                os.environ, {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            ):
+                result, command = comparison_tool._export.run_probe(
+                    repo, "source input", "test-toolchain", head
+                )
+
+            self.assertEqual(result, {"private_archive": True})
+            self.assertEqual(command[0:2], ["cargo", "+test-toolchain"])
 
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
