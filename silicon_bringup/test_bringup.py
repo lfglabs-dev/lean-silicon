@@ -142,6 +142,11 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(observations["maxItems"], len(vector_ids))
         constrained_ids = [item["allOf"][1]["properties"]["id"]["const"] for item in observations["prefixItems"]]
         self.assertEqual(constrained_ids, vector_ids)
+        expected = [case["expected"] for case in json.loads((Path(__file__).parent / "vectors.json").read_text())["cases"]]
+        constrained_expected = [item["allOf"][1]["properties"]["expected"]["const"] for item in observations["prefixItems"]]
+        self.assertEqual(constrained_expected, expected)
+        self.assertTrue(all("if" in item["allOf"][2] and "else" in item["allOf"][2] for item in observations["prefixItems"]))
+        self.assertEqual(len(schema["allOf"]), 7)
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (
