@@ -63,6 +63,73 @@ IMPORTABLE_FILE_SUFFIXES = frozenset({
 })
 
 
+def capture_revision_manifest(repository: Path, commit: str) -> dict[str, tuple[str, bytes]]:
+    """Capture canonical tracked types, modes, and bytes without worktree metadata."""
+    manifest = {}
+    entries = subprocess.check_output(
+        [GIT, "--no-replace-objects", "ls-tree", "-r", "-z", "--full-tree", commit],
+        cwd=repository,
+    ).split(b"\0")
+    for entry in entries:
+        if not entry:
+            continue
+        metadata, encoded_name = entry.split(b"\t", 1)
+        mode, object_type, oid = metadata.decode().split()
+        relative = encoded_name.decode(errors="surrogateescape")
+        if object_type == "commit":
+            contents = oid.encode()
+        elif object_type == "blob":
+            contents = subprocess.check_output(
+                [GIT, "--no-replace-objects", "cat-file", "blob", oid],
+                cwd=repository,
+            )
+        else:
+            raise SystemExit("tracked workload checkout contains unsupported Git objects")
+        manifest[relative] = (mode, contents)
+    return manifest
+
+
+def require_frozen_worktree(root: Path,
+                            manifest: dict[str, tuple[str, bytes]]) -> None:
+    """Re-enumerate a frozen checkout without trusting its Git administration data."""
+    actual_paths = set()
+    for directory, directories, files in os.walk(root, followlinks=False):
+        current = Path(directory)
+        for name in files:
+            path = current / name
+            relative = path.relative_to(root).as_posix()
+            if relative == ".git":
+                continue
+            actual_paths.add(relative)
+        for name in directories:
+            path = current / name
+            if path.is_symlink():
+                actual_paths.add(path.relative_to(root).as_posix())
+
+    if actual_paths != set(manifest):
+        raise SystemExit("frozen workload checkout contains unexpected paths")
+
+    for relative, (mode, expected) in manifest.items():
+        path = root / relative
+        try:
+            if mode == "120000":
+                actual = os.readlink(path).encode(errors="surrogateescape")
+            elif mode == "160000":
+                raise SystemExit("frozen workload checkout contains unsupported submodule")
+            else:
+                if path.is_symlink() or not path.is_file():
+                    raise SystemExit("frozen workload checkout must match captured revision")
+                actual = path.read_bytes()
+                expected_executable = mode == "100755"
+                actual_executable = bool(path.stat().st_mode & 0o111)
+                if actual_executable != expected_executable:
+                    raise SystemExit("frozen workload checkout must match captured revision")
+        except OSError as error:
+            raise SystemExit("frozen workload checkout must match captured revision") from error
+        if actual != expected:
+            raise SystemExit("frozen workload checkout must match captured revision")
+
+
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -150,6 +217,7 @@ def clean_head() -> tuple[str, str]:
 @contextmanager
 def pinned_worktree(repository: Path, commit: str):
     """Yield a private detached worktree at the canonical captured commit."""
+    manifest = capture_revision_manifest(repository, commit)
     with tempfile.TemporaryDirectory(prefix="workload-validation-snapshot-") as temp:
         snapshot_root = Path(temp)
         descriptor = os.open(snapshot_root, os.O_RDONLY | os.O_DIRECTORY)
@@ -167,7 +235,7 @@ def pinned_worktree(repository: Path, commit: str):
                 require_clean_worktree(checkout)
                 set_worktree_writable(checkout, writable=False)
                 set_worktree_immutable(pinned_root, immutable=True)
-                require_clean_worktree(checkout)
+                require_frozen_worktree(checkout, manifest)
                 yield checkout
             finally:
                 set_worktree_immutable(pinned_root, immutable=False)

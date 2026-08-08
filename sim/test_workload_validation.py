@@ -342,7 +342,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 ]
             )
 
-    def test_pinned_worktree_rechecks_ignored_imports_after_freeze(self):
+    def test_pinned_worktree_rechecks_integrity_without_mutable_git_metadata(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -367,21 +367,47 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             head = subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=repo, text=True
             ).strip()
+            shadow = host / "runtime.so"
+            shadow.write_bytes(b"hostile extension")
+            subprocess.run(["git", "add", "-f", "host/runtime.so"], cwd=repo, check=True)
+            shadow_tree = subprocess.check_output(
+                ["git", "write-tree"], cwd=repo, text=True
+            ).strip()
+            alternate = subprocess.check_output(
+                ["git", "commit-tree", shadow_tree, "-p", head],
+                cwd=repo,
+                input="alternate metadata\n",
+                text=True,
+            ).strip()
+            subprocess.run(["git", "reset", "--hard", "-q", head], cwd=repo, check=True)
             yielded = False
 
             def inject_during_freeze(snapshot_root, immutable):
                 if not immutable:
                     return
-                snapshot_host = snapshot_root / "checkout" / "host"
+                snapshot = snapshot_root / "checkout"
+                snapshot_host = snapshot / "host"
                 snapshot_host.chmod(snapshot_host.stat().st_mode | 0o200)
                 (snapshot_host / "runtime.so").write_bytes(b"hostile extension")
+                git_dir = Path(subprocess.check_output(
+                    [workload_validation.GIT, "rev-parse", "--git-dir"],
+                    cwd=snapshot,
+                    text=True,
+                ).strip())
+                (git_dir / "HEAD").write_text(alternate + "\n")
+                subprocess.run(
+                    [workload_validation.GIT, "read-tree", alternate],
+                    cwd=snapshot,
+                    check=True,
+                )
+                workload_validation.require_clean_worktree(snapshot)
 
             with mock.patch.object(
                 workload_validation,
                 "set_worktree_immutable",
                 side_effect=inject_during_freeze,
             ):
-                with self.assertRaisesRegex(SystemExit, "ignored importable paths"):
+                with self.assertRaisesRegex(SystemExit, "unexpected paths"):
                     with workload_validation.pinned_worktree(repo, head):
                         yielded = True
 
