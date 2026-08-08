@@ -97,6 +97,7 @@ sim:
 lean:
 	cd lean && lake build
 	cd lean && lake build LeanVMBMinCore
+	cd lean && python3 check_full_profile_mutations.py
 
 formal:
 	cd formal && sby -f gf8_mul.sby
