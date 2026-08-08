@@ -100,12 +100,14 @@ def pinned_worktree(repository: Path, commit: str):
     with tempfile.TemporaryDirectory(prefix="workload-validation-snapshot-") as temp:
         checkout = Path(temp) / "checkout"
         subprocess.run(
-            ["git", "worktree", "add", "--detach", str(checkout), commit],
+            ["git", "-c", "core.hooksPath=/dev/null", "worktree", "add",
+             "--detach", str(checkout), commit],
             cwd=repository,
             check=True,
             stdout=subprocess.DEVNULL,
         )
         try:
+            require_clean_worktree(checkout)
             yield checkout
         finally:
             subprocess.run(

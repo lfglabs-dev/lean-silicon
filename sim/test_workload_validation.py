@@ -208,7 +208,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "replacement refs"):
                 workload_validation.require_clean_worktree(repo)
 
-    def test_pinned_worktree_is_unchanged_when_live_checkout_changes(self):
+    def test_pinned_worktree_disables_hooks_and_ignores_live_checkout_changes(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -227,6 +227,13 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             head = subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=repo, text=True
             ).strip()
+            hook = repo / ".git" / "hooks" / "post-checkout"
+            hook.write_text(
+                "#!/bin/sh\n"
+                "printf \"MODEL = 'hook mutation'\\n\" > model.py\n"
+                "git update-index --assume-unchanged model.py\n"
+            )
+            hook.chmod(0o755)
 
             with workload_validation.pinned_worktree(repo, head) as snapshot:
                 tracked.write_text("MODEL = 'temporary mutation'\n")
