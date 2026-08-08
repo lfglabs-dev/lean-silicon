@@ -98,7 +98,7 @@ def main() -> None:
     if (base != plan["source_commit"] or base_tree != plan["source_tree"] or
             output(["git", "merge-base", "--is-ancestor", base, head]) != ""):
         raise SystemExit("checkout does not descend from the pinned main source")
-    for tool in ("python3", "iverilog", "vvp", "yosys"):
+    for tool in ("iverilog", "vvp", "yosys"):
         if shutil.which(tool) is None:
             raise SystemExit(f"required tool missing: {tool}")
     receipt = {
