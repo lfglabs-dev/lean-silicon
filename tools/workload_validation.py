@@ -148,14 +148,34 @@ def pinned_worktree(repository: Path, commit: str):
         )
         try:
             require_clean_worktree(checkout)
+            set_worktree_writable(checkout, writable=False)
             yield checkout
         finally:
+            set_worktree_writable(checkout, writable=True)
             subprocess.run(
                 ["git", "worktree", "remove", "--force", str(checkout)],
                 cwd=repository,
                 check=True,
                 stdout=subprocess.DEVNULL,
             )
+
+
+def set_worktree_writable(checkout: Path, writable: bool) -> None:
+    """Freeze a snapshot against writes, or thaw it only for safe removal."""
+    paths = [checkout]
+    for directory, directories, files in os.walk(checkout):
+        root = Path(directory)
+        paths.extend(root / name for name in directories)
+        paths.extend(root / name for name in files)
+    if writable:
+        paths.sort(key=lambda path: len(path.parts))
+    else:
+        paths.sort(key=lambda path: len(path.parts), reverse=True)
+    for path in paths:
+        if path.is_symlink():
+            continue
+        mode = stat.S_IMODE(path.stat().st_mode)
+        path.chmod(mode | 0o200 if writable else mode & ~0o222)
 
 
 def run_comparison(command: list[str], out: Path, workload_id: str,
@@ -342,7 +362,13 @@ def collect_evidence(plan: dict, cache: Path, receipt: dict, upstream: Path,
             run, comparison = run_comparison(
                 command, out, workload["id"], cwd=candidate_snapshot
             )
+            require_clean_tracked_worktree(candidate_snapshot)
+            require_clean_tracked_worktree(upstream_snapshot)
             validate_comparison_runtime(comparison, plan["runtime"])
+            if comparison["artifact"]["sha256"] != workload["artifact_sha256"]:
+                raise SystemExit(
+                    f"comparison artifact differs from canonical input: {workload['id']}"
+                )
             actual = comparison_outcome(comparison)
             if actual != {k: workload["expected"][k] for k in actual}:
                 raise SystemExit(f"unexpected outcome {workload['id']}: {actual}")

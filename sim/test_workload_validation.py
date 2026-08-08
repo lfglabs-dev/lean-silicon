@@ -289,6 +289,11 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             hook.chmod(0o755)
 
             with workload_validation.pinned_worktree(repo, head) as snapshot:
+                self.assertEqual(
+                    (snapshot / "model.py").stat().st_mode & 0o222,
+                    0,
+                )
+                self.assertEqual(snapshot.stat().st_mode & 0o222, 0)
                 tracked.write_text("MODEL = 'temporary mutation'\n")
                 self.assertEqual(
                     (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
