@@ -172,6 +172,9 @@ def decide : Instruction -> Decision
   | .deref mode input =>
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if !(input.memory input.prepared.pointerAddress).written ||
+          (input.memory input.prepared.pointerAddress).value != encodeIndex input.prepared.base then
+        .fault (.deref .unresolvedPointer)
       else if mode == .cell && input.profile == .forwardOnly &&
           !(input.memory input.prepared.localAddress).written then
         .fault .unsupportedInProfile
@@ -209,6 +212,10 @@ def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decisi
         | some memory => .result {
             common := request.common, nextControl := pending.nextControl, memory := memory }
 
+def serviceResponseMatches (pending : ServicePending) (response : Blake3Response) : Bool :=
+  response.txnId == pending.request.common.txnId &&
+    response.serviceId == pending.request.serviceId
+
 inductive ServiceState where
   | idle
   | pending (request : ServicePending)
@@ -232,8 +239,11 @@ def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
       | .serviceRequired pending => {
           state := .pending pending, decision := some (.serviceRequired pending) }
       | decision => { state := .idle, decision := some decision }
-  | .pending pending, .respond response => {
-      state := .idle, decision := some (finishBlake3 pending response) }
+  | .pending pending, .respond response =>
+      if serviceResponseMatches pending response then {
+        state := .idle, decision := some (finishBlake3 pending response) }
+      else {
+        state := .pending pending, decision := some (.fault .badService) }
   | .idle, .respond _ => { state := .idle, decision := some (.fault .badService) }
   | .pending pending, .start _ => {
       state := .pending pending, decision := some (.fault .stateMismatch) }
@@ -407,15 +417,24 @@ theorem blake3_rejects_second_output_conflict (pending : ServicePending)
   simp [finishBlake3, htxn, hservice, hfirst, hconflict]
 
 theorem service_response_consumes_pending (pending : ServicePending)
-    (response : Blake3Response) :
+    (response : Blake3Response)
+    (hmatch : serviceResponseMatches pending response = true) :
     (serviceStep (.pending pending) (.respond response)).state = .idle := by
-  rfl
+  simp [serviceStep, hmatch]
+
+theorem mismatched_service_response_preserves_pending (pending : ServicePending)
+    (response : Blake3Response)
+    (hmismatch : serviceResponseMatches pending response = false) :
+    serviceStep (.pending pending) (.respond response) = {
+      state := .pending pending, decision := some (.fault .badService) } := by
+  simp [serviceStep, hmismatch]
 
 theorem service_replay_is_rejected (pending : ServicePending)
-    (first replay : Blake3Response) :
+    (first replay : Blake3Response)
+    (hmatch : serviceResponseMatches pending first = true) :
     let consumed := serviceStep (.pending pending) (.respond first)
     (serviceStep consumed.state (.respond replay)).decision = some (.fault .badService) := by
-  rfl
+  simp [serviceStep, hmatch]
 
 theorem service_abort_rejects_late_response (pending : ServicePending)
     (response : Blake3Response) :
@@ -480,6 +499,9 @@ theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
     decide (.deref mode input) =
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if !(input.memory input.prepared.pointerAddress).written ||
+          (input.memory input.prepared.pointerAddress).value != encodeIndex input.prepared.base then
+        .fault (.deref .unresolvedPointer)
       else if mode == .cell && input.profile == .forwardOnly &&
           !(input.memory input.prepared.localAddress).written then
         .fault .unsupportedInProfile
@@ -502,9 +524,18 @@ theorem deref_rejects_prepared_control_mismatch (mode : DerefMode)
 theorem forward_only_deref_cell_requires_local (input : DerefInput)
     (hprofile : input.profile = .forwardOnly)
     (hlocal : (input.memory input.prepared.localAddress).written = false)
-    (hcontrol : input.prepared.control = input.common.control) :
+    (hcontrol : input.prepared.control = input.common.control)
+    (hpointer : (input.memory input.prepared.pointerAddress).written = true)
+    (hvalue : (input.memory input.prepared.pointerAddress).value =
+      encodeIndex input.prepared.base) :
     decide (.deref .cell input) = .fault .unsupportedInProfile := by
-  simp [decide, hprofile, hlocal, hcontrol]
+  simp [decide, hprofile, hlocal, hcontrol, hpointer, hvalue]
+
+theorem deref_pointer_fault_precedes_profile_guard (input : DerefInput)
+    (hcontrol : input.prepared.control = input.common.control)
+    (hpointer : (input.memory input.prepared.pointerAddress).written = false) :
+    decide (.deref .cell input) = .fault (.deref .unresolvedPointer) := by
+  simp [decide, hcontrol, hpointer]
 
 theorem jump_uses_canonical_control (input : JumpInput) :
     decide (.jump input) =
@@ -613,6 +644,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms service_response_consumes_pending
+#print axioms mismatched_service_response_preserves_pending
 #print axioms service_replay_is_rejected
 #print axioms service_abort_rejects_late_response
 #print axioms service_reset_rejects_late_response
@@ -625,6 +657,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms deref_uses_canonical_control
 #print axioms deref_rejects_prepared_control_mismatch
 #print axioms forward_only_deref_cell_requires_local
+#print axioms deref_pointer_fault_precedes_profile_guard
 #print axioms jump_uses_canonical_control
 #print axioms jump_success_preserves_memory
 

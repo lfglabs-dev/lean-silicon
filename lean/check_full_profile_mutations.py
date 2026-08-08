@@ -55,12 +55,20 @@ mutations = {
         "| none => .serviceRequired { request, nextControl := request.common.control }\n      | some nextControl => .serviceRequired { request, nextControl }",
     ),
     "blake3-response-remains-replayable": (
-        "| .pending pending, .respond response => {\n      state := .idle, decision := some (finishBlake3 pending response) }",
-        "| .pending pending, .respond response => {\n      state := .pending pending, decision := some (finishBlake3 pending response) }",
+        "state := .idle, decision := some (finishBlake3 pending response)",
+        "state := .pending pending, decision := some (finishBlake3 pending response)",
     ),
     "forward-only-deref-copies-missing-local": (
         "else if mode == .cell && input.profile == .forwardOnly &&",
         "else if false && input.profile == .forwardOnly &&",
+    ),
+    "blake3-mismatch-drops-pending": (
+        "state := .pending pending, decision := some (.fault .badService)",
+        "state := .idle, decision := some (.fault .badService)",
+    ),
+    "deref-profile-guard-precedes-pointer": (
+        "else if !(input.memory input.prepared.pointerAddress).written ||",
+        "else if false && !(input.memory input.prepared.pointerAddress).written ||",
     ),
 }
 

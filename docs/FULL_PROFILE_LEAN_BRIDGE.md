@@ -16,8 +16,10 @@ policy or imply that the endpoint computed BLAKE3.
 The controller validates and retains the next control state before publishing a
 service request. Its service lifecycle is linear: exactly one response can be
 consumed only from a live pending state, and consumption, ABORT, or reset returns
-to idle. Replayed responses and responses arriving after ABORT/reset are proved
-to fault without reconstructing a discarded effect.
+to idle. A wrongly bound response faults while retaining the pending request so
+the correctly bound response can still arrive. Replayed responses and responses
+arriving after ABORT/reset are proved to fault without reconstructing a
+discarded effect.
 
 The proved bridge is deliberately transport-independent. A decided result is
 translated to `Transaction.Transition`, staged atomically, committed only by a
@@ -49,6 +51,8 @@ addresses, the packet's inconsistent-alias rejection, DEREF pointer resolution,
 and result CRC still arrive below this boundary. `DEREF_CELL` does carry the
 profile at the functional boundary and proves that `FORWARD_ONLY` rejects a
 missing local operand instead of applying interpreter reconciliation. The
+pointer's written/encoding proof is checked first, preserving unresolved-pointer
+precedence over that profile guard. The
 remaining preparation obligations remain explicit edges,
 not assumptions promoted to a full-profile equivalence claim.
 
