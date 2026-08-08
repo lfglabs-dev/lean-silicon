@@ -529,6 +529,33 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             self.assertEqual(receipt_path, stale)
             self.assertFalse(stale.exists())
 
+    def test_plan_is_loaded_from_captured_revision_not_live_path(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            plan_path = repo / "workloads" / "plan.json"
+            plan_path.parent.mkdir()
+            plan_path.write_text('{"identity":"captured"}\n')
+            subprocess.run(["git", "add", "workloads/plan.json"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "plan"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            plan_path.write_text('{"identity":"transient"}\n')
+
+            plan, plan_bytes = workload_validation.load_captured_plan(head, repo)
+
+            self.assertEqual(plan, {"identity": "captured"})
+            self.assertEqual(plan_bytes, b'{"identity":"captured"}\n')
+
     def test_failed_run_cannot_reuse_stale_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp) / "comparison.json"

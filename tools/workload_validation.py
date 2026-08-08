@@ -65,6 +65,15 @@ def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def load_captured_plan(head: str, root: Path = ROOT) -> tuple[dict, bytes]:
+    """Load and hash the plan from the already captured candidate revision."""
+    plan_bytes = subprocess.check_output(
+        [GIT, "--no-replace-objects", "show", f"{head}:workloads/plan.json"],
+        cwd=root,
+    )
+    return json.loads(plan_bytes), plan_bytes
+
+
 def capture(argv: list[str], cwd: Path = ROOT) -> str:
     return subprocess.check_output(argv, cwd=cwd, text=True, stderr=subprocess.STDOUT).strip()
 
@@ -141,28 +150,33 @@ def pinned_worktree(repository: Path, commit: str):
     """Yield a private detached worktree at the canonical captured commit."""
     with tempfile.TemporaryDirectory(prefix="workload-validation-snapshot-") as temp:
         snapshot_root = Path(temp)
-        checkout = snapshot_root / "checkout"
-        subprocess.run(
-            [GIT, "-c", "core.hooksPath=/dev/null", "worktree", "add",
-             "--detach", str(checkout), commit],
-            cwd=repository,
-            check=True,
-            stdout=subprocess.DEVNULL,
-        )
+        descriptor = os.open(snapshot_root, os.O_RDONLY | os.O_DIRECTORY)
         try:
-            require_clean_worktree(checkout)
-            set_worktree_writable(checkout, writable=False)
-            set_worktree_immutable(snapshot_root, immutable=True)
-            yield checkout
-        finally:
-            set_worktree_immutable(snapshot_root, immutable=False)
-            set_worktree_writable(checkout, writable=True)
+            pinned_root = Path(f"/proc/{os.getpid()}/fd/{descriptor}")
+            checkout = pinned_root / "checkout"
             subprocess.run(
-                [GIT, "worktree", "remove", "--force", str(checkout)],
+                [GIT, "-c", "core.hooksPath=/dev/null", "worktree", "add",
+                 "--detach", str(checkout), commit],
                 cwd=repository,
                 check=True,
                 stdout=subprocess.DEVNULL,
             )
+            try:
+                require_clean_worktree(checkout)
+                set_worktree_writable(checkout, writable=False)
+                set_worktree_immutable(pinned_root, immutable=True)
+                yield checkout
+            finally:
+                set_worktree_immutable(pinned_root, immutable=False)
+                set_worktree_writable(checkout, writable=True)
+                subprocess.run(
+                    [GIT, "worktree", "remove", "--force", str(checkout)],
+                    cwd=repository,
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                )
+        finally:
+            os.close(descriptor)
 
 
 def set_worktree_writable(checkout: Path, writable: bool) -> None:
@@ -425,12 +439,12 @@ def main() -> None:
         raise SystemExit("cache must deny group and other access")
     receipt_path = prepare_receipt_path(cache)
 
-    plan = json.loads(PLAN_PATH.read_text())
+    head, tree = clean_head()
+    plan, plan_bytes = load_captured_plan(head)
     validate_runtime(plan["runtime"])
     validate_unique_workload_ids(plan)
     validate_workload_identities(plan)
     validate_upstream_repository(plan["upstream"])
-    head, tree = clean_head()
     base = plan["source_commit"]
     if capture([GIT, "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
         raise SystemExit("pinned main commit/tree mismatch")
@@ -440,7 +454,8 @@ def main() -> None:
     receipt = {
         "schema": "lean-silicon/workload-validation-receipt/v1",
         "status": "pass", "issue": 51, "release_critical_path": False,
-        "plan_sha256": sha(PLAN_PATH), "checkout_head": head, "checkout_tree": tree,
+        "plan_sha256": hashlib.sha256(plan_bytes).hexdigest(),
+        "checkout_head": head, "checkout_tree": tree,
         "source_commit": base, "source_tree": plan["source_tree"],
         "upstream": plan["upstream"], "runtime": plan["runtime"],
         "toolchains": {
