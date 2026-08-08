@@ -1198,6 +1198,8 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
     def test_live_probe_must_reproduce_recorded_execution(self):
         artifact = json.loads(ARTIFACT.read_text())
         probe = {
+            "pc0": artifact["program"]["pc0"],
+            "fp0": artifact["program"]["fp0"],
             "bytecode": artifact["program"]["bytecode"],
             "execution": dict(artifact["upstream_execution"]),
         }
@@ -1212,6 +1214,27 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             ),
         ):
             with self.assertRaisesRegex(SystemExit, "does not match recorded"):
+                comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
+
+    def test_live_probe_must_reproduce_recorded_entry_metadata(self):
+        artifact = json.loads(ARTIFACT.read_text())
+        probe = {
+            "pc0": artifact["program"]["pc0"],
+            "fp0": artifact["program"]["fp0"],
+            "bytecode": artifact["program"]["bytecode"],
+            "execution": dict(artifact["upstream_execution"]),
+        }
+        artifact["program"]["fp0"] += 1
+        with (
+            mock.patch.object(comparison_tool._export, "candidate_head"),
+            mock.patch.object(comparison_tool._export, "require_checkout"),
+            mock.patch.object(
+                comparison_tool._export,
+                "run_probe",
+                return_value=(probe, ["cargo", "run"]),
+            ),
+        ):
+            with self.assertRaisesRegex(SystemExit, "recorded entry metadata: fp0"):
                 comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
 
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):

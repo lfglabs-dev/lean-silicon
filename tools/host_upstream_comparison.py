@@ -66,6 +66,15 @@ def upstream_execution(artifact_path: pathlib.Path, artifact: dict, upstream, to
         raise SystemExit(
             f"live compile of {artifact_path} does not reproduce the recorded bytecode"
         )
+    entry_mismatches = [
+        field for field in ("pc0", "fp0")
+        if probe[field] != artifact["program"][field]
+    ]
+    if entry_mismatches:
+        raise SystemExit(
+            f"live compile of {artifact_path} does not reproduce recorded entry "
+            f"metadata: {', '.join(entry_mismatches)}"
+        )
     live_exec = probe["execution"]
     # Compare fresh probe against recorded to refuse stale/tampered evidence
     mismatches = []
