@@ -28,11 +28,24 @@ SUPPORTED_RUNTIME = {
 }
 SUPPORTED_UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
 SAFE_WORKLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
-REQUIRED_WORKLOAD_IDS = frozenset({
-    "field_division",
-    "heap_recurrence",
-    "blake3_stack",
-})
+REQUIRED_WORKLOAD_INPUTS = {
+    "field_division": (
+        "workloads/field_division.zkdsl",
+        "workloads/field_division.program.json",
+        "crates/lean_compiler/tests/field_div.rs",
+    ),
+    "heap_recurrence": (
+        "workloads/heap_recurrence.zkdsl",
+        "workloads/heap_recurrence.program.json",
+        "crates/rec_aggregation/src/fibonacci.rs",
+    ),
+    "blake3_stack": (
+        "workloads/blake3_stack.zkdsl",
+        "workloads/blake3_stack.program.json",
+        "crates/lean_compiler/tests/stack_buf.rs",
+    ),
+}
+REQUIRED_WORKLOAD_IDS = frozenset(REQUIRED_WORKLOAD_INPUTS)
 IMPORTABLE_FILE_SUFFIXES = frozenset({
     ".py", ".pyw", ".pyc", ".pyo", ".so", ".pyd", ".dll", ".dylib",
 })
@@ -173,6 +186,16 @@ def validate_unique_workload_ids(plan: dict) -> None:
         raise SystemExit("workload ids must be safe filename components")
     if set(ids) != REQUIRED_WORKLOAD_IDS:
         raise SystemExit("plan must contain exactly the required workload ids")
+
+
+def validate_workload_identities(plan: dict) -> None:
+    """Bind each coverage label to its documented candidate/upstream inputs."""
+    for workload in plan["workloads"]:
+        actual = (workload["source"], workload["artifact"], workload["origin"])
+        if actual != REQUIRED_WORKLOAD_INPUTS[workload["id"]]:
+            raise SystemExit(
+                f"workload inputs differ from documented identity: {workload['id']}"
+            )
 
 
 def validate_upstream_repository(upstream: dict) -> None:
@@ -320,6 +343,7 @@ def main() -> None:
     plan = json.loads(PLAN_PATH.read_text())
     validate_runtime(plan["runtime"])
     validate_unique_workload_ids(plan)
+    validate_workload_identities(plan)
     validate_upstream_repository(plan["upstream"])
     head, tree = clean_head()
     base = plan["source_commit"]

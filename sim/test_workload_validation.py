@@ -86,6 +86,25 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                         {"workloads": workloads}
                     )
 
+    def test_required_ids_are_bound_to_documented_input_tuples(self):
+        plan = {
+            "workloads": [
+                {
+                    "id": workload_id,
+                    "source": inputs[0],
+                    "artifact": inputs[1],
+                    "origin": inputs[2],
+                }
+                for workload_id, inputs in
+                workload_validation.REQUIRED_WORKLOAD_INPUTS.items()
+            ]
+        }
+        workload_validation.validate_workload_identities(plan)
+
+        plan["workloads"][1]["artifact"] = plan["workloads"][0]["artifact"]
+        with self.assertRaisesRegex(SystemExit, "documented identity"):
+            workload_validation.validate_workload_identities(plan)
+
     def test_upstream_repository_attribution_is_pinned(self):
         upstream = {
             "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY
