@@ -95,6 +95,7 @@ inductive Fault where
   | unsupportedInProfile
   | badInverse
   | mulBacksolveZero
+  | aliasInconsistent
   | writeConflict
   | deref (reason : ControlPrimitives.Fault)
   | jump (reason : ControlPrimitives.Fault)

@@ -52,11 +52,18 @@ missing local operand instead of applying interpreter reconciliation. The
 remaining preparation obligations remain explicit edges,
 not assumptions promoted to a full-profile equivalence claim.
 
+`FullProfile.PacketPreparation` now covers the binary packet-to-functional
+boundary. It computes all three `fp + offset` addresses with checked `u32`
+arithmetic before inspecting supplied cells, so address overflow has precedence
+over alias faults. Contradictory cells naming any repeated address are rejected;
+successful preparation materializes the finite host memory view and refines
+through canonical XOR/MUL execution into atomic transaction staging.
+
 ## Remaining theorem graph
 
-1. Define packet preparation over supplied cells: checked effective addresses,
-   inconsistent-alias rejection before functional-memory construction, all
-   remaining write/alias quadrants, and prepared DEREF/JUMP field relations.
+1. Extend packet preparation from binary operations to SET and prepared
+   DEREF/JUMP fields, including pointer/index proposal checks and their exact
+   fault precedence.
 2. Define a byte-exact Lean codec for every fixed full-profile payload and prove
    decode/encode and malformed-field precedence into `FullProfile.Instruction`.
 3. Define an independent cycle transition system for

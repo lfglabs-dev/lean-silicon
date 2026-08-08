@@ -83,3 +83,44 @@ for name, (old, new) in mutations.items():
     if result.returncode == 0:
         raise SystemExit(f"SURVIVED: {name}")
     print(f"KILLED: {name}")
+
+packet_source = source.with_name("FullProfilePacket.lean")
+packet_text = packet_source.read_text()
+packet_mutations = {
+    "packet-skips-left-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.leftOffset with",
+        "match some (packet.common.control.fp + packet.leftOffset) with",
+    ),
+    "packet-accepts-inconsistent-alias": (
+        "if aliasConflict left right output packet.leftCell packet.rightCell",
+        "if false && aliasConflict left right output packet.leftCell packet.rightCell",
+    ),
+    "packet-bypasses-binary-decision": (
+        "| .ok input => finishBinary isXor input",
+        "| .ok input => .fault .badInverse",
+    ),
+    "packet-drops-left-cell": (
+        "putCell (putCell (putCell Memory.empty left packet.leftCell)",
+        "putCell (putCell (putCell Memory.empty left packet.outputCell)",
+    ),
+}
+
+for name, (old, new) in packet_mutations.items():
+    if old not in packet_text:
+        raise SystemExit(f"mutation anchor missing: {name}")
+    mutated = packet_text.replace(old, new, 1)
+    with tempfile.TemporaryDirectory(prefix="lsc1-lean-packet-mutation-") as directory:
+        candidate = Path(directory) / "FullProfilePacket.lean"
+        candidate.write_text(mutated)
+        result = subprocess.run(
+            ["lake", "env", "lean", str(candidate)],
+            cwd=packet_source.parent.parent,
+            env=os.environ,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+    if result.returncode == 0:
+        raise SystemExit(f"SURVIVED: {name}")
+    print(f"KILLED: {name}")
