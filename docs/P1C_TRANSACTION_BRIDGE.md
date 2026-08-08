@@ -24,8 +24,16 @@ pinned `YosysHQ/setup-oss-cad-suite` action.
 
 ## Claim
 
-`RTLTransactionRefinement.finite_sequence_refines` quantifies over arbitrary
-finite retained interaction traces and arbitrary finite command sequences.
+`RTLTransactionRefinement.coupled_finite_trace_refines` is the central
+prefix-sensitive theorem. It quantifies over arbitrary finite retained
+interaction traces and maintains a product of retained RTL state and the
+functional `Transaction.Model` after every event. Accepted commands atomically
+STAGE, the final ordered response beat performs matching RETIRE, reset invokes
+functional reset, and `ena = 0` invokes functional abort. Its invariant also
+retains the exact ordered arithmetic-result history. The companion theorem
+`finite_sequence_refines` projects completed transactions into an arbitrary
+finite command sequence.
+
 `ValidTrace` binds every receive to the correct operand byte. The relation
 requires the command sequence to equal the RTL trace's ordered retirement
 history. `ValidSequence` checks each functional STAGE at the state where it
@@ -34,8 +42,10 @@ functional IDLE state after every matching RETIRE.
 
 Supporting theorems pin the raw `0x01`/`0x02`/`0x03` decoder and `0xe0` fault
 precedence, one-command acceptance/staging/retirement, TX backpressure
-stutter, and reset/disable cleanup. Concrete examples witness a reachable SET
-stage/retirement and distinguish opcode mutations. The existing formal
+stutter, and reset/disable cleanup. General Lean witnesses reach synchronized
+acceptance and enable-disable abort; a concrete example reaches SET retirement
+and another theorem rejects a `retired = false` lifecycle mutation. The
+existing formal
 mutation gate terminal-fails result mutations (`xor_result`, `set_result`,
 `gf128_mul_accumulate`, `lsc1u_mul_output_mux`) and lifecycle mutations
 (`xor_retirement_lane`, `lsc1u_enable_multiplier_abort`, `stall_stability`).

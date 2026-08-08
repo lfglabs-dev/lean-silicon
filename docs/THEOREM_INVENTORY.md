@@ -60,6 +60,9 @@ boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
 | `executeOne_refines` | An admissible decoded command stages its translated transition, retires once with the arithmetic checksum, advances PC/retire sequence, preserves FP, and returns IDLE. |
 | `execute_sequence_idle` | Every arbitrary finite state-dependently admissible command sequence ends with no pending transaction. |
 | `finite_sequence_refines` | A payload-valid retained RTL trace and the functional command sequence naming exactly its retirements have identical ordered SET/XOR/MUL results and an IDLE functional lifecycle. |
+| `coupled_finite_trace_refines` | Every prefix of an arbitrary finite valid retained interaction trace preserves exact-result history and synchronizes accepted STAGE, pending state, matching final-beat RETIRE, reset, and enable-disable abort with `Transaction.Model`. |
+| `coupled_accept_reachable`, `coupled_disable_abort_reachable` | General non-vacuity witnesses reach synchronized pending state and then synchronized abort/IDLE for every implemented transaction. |
+| `retired_false_mutation_falsified` | A lifecycle mutation that suppresses successful matching retirement contradicts the functional refinement. |
 | `tx_backpressure_preserves_relation` | Deasserted TX ready preserves the common trace/transaction relation. |
 | `reset_disable_abort_pending` | Reset and enable-disable abort clear a pending functional transaction. |
 
