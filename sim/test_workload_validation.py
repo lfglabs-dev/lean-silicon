@@ -11,6 +11,17 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_new_invocation_invalidates_stale_aggregate_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache = Path(temp)
+            stale = cache / "receipt.json"
+            stale.write_text(json.dumps({"status": "pass"}))
+
+            receipt_path = workload_validation.prepare_receipt_path(cache)
+
+            self.assertEqual(receipt_path, stale)
+            self.assertFalse(stale.exists())
+
     def test_failed_run_cannot_reuse_stale_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp) / "comparison.json"
@@ -39,6 +50,19 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             self.assertEqual(run.returncode, 1)
             self.assertEqual(receipt, expected)
+
+    def test_changed_checkout_cannot_publish_aggregate_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "receipt.json"
+            with mock.patch.object(
+                workload_validation, "clean_head", return_value=("new-head", "new-tree")
+            ):
+                with self.assertRaisesRegex(SystemExit, "checkout changed"):
+                    workload_validation.publish_receipt(
+                        receipt_path, {"status": "pass"}, ("old-head", "old-tree")
+                    )
+
+            self.assertFalse(receipt_path.exists())
 
 
 if __name__ == "__main__":

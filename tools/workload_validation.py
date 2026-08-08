@@ -41,6 +41,21 @@ def run_comparison(command: list[str], out: Path, workload_id: str) -> tuple[sub
     return run, json.loads(out.read_text())
 
 
+def prepare_receipt_path(cache: Path) -> Path:
+    """Invalidate any aggregate receipt left by an earlier invocation."""
+    receipt_path = cache / "receipt.json"
+    receipt_path.unlink(missing_ok=True)
+    return receipt_path
+
+
+def publish_receipt(receipt_path: Path, receipt: dict,
+                    expected_checkout: tuple[str, str]) -> None:
+    """Publish only if the validated checkout is still the captured revision."""
+    if clean_head() != expected_checkout:
+        raise SystemExit("workload checkout changed during validation")
+    receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -53,6 +68,7 @@ def main() -> None:
     cache.mkdir(parents=True, mode=0o700, exist_ok=True)
     if stat.S_IMODE(cache.stat().st_mode) & 0o077:
         raise SystemExit("cache must deny group and other access")
+    receipt_path = prepare_receipt_path(cache)
 
     plan = json.loads(PLAN_PATH.read_text())
     head, tree = clean_head()
@@ -125,8 +141,7 @@ def main() -> None:
             "comparison_receipt": out.name, "comparison_sha256": sha(out),
             "command_exit_code": run.returncode,
         })
-    receipt_path = cache / "receipt.json"
-    receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    publish_receipt(receipt_path, receipt, (head, tree))
     print(json.dumps({"status": "pass", "receipt": str(receipt_path),
                       "checkout_head": head, "coverage": receipt["coverage"]}, sort_keys=True))
 
