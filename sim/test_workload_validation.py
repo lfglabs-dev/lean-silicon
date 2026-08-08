@@ -296,27 +296,36 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             )
             hook.chmod(0o755)
 
-            with mock.patch.object(
-                workload_validation, "set_worktree_immutable"
-            ) as set_immutable:
-                with workload_validation.pinned_worktree(repo, head) as snapshot:
-                    snapshot_root = snapshot.parent
-                    self.assertEqual(
-                        (snapshot / "model.py").stat().st_mode & 0o222,
-                        0,
-                    )
-                    self.assertEqual(snapshot.stat().st_mode & 0o222, 0)
-                    tracked.write_text("MODEL = 'temporary mutation'\n")
-                    self.assertEqual(
-                        (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
-                    )
-                    self.assertEqual(
-                        subprocess.check_output(
-                            ["git", "rev-parse", "HEAD"], cwd=snapshot, text=True
-                        ).strip(),
-                        head,
-                    )
-                    tracked.write_text("MODEL = 'captured'\n")
+            with tempfile.TemporaryDirectory() as fake_temp:
+                fake_git = Path(fake_temp) / "git"
+                marker = Path(fake_temp) / "called"
+                fake_git.write_text(f"#!/bin/sh\ntouch {marker}\nexit 99\n")
+                fake_git.chmod(0o755)
+                hostile_path = f"{fake_temp}:{workload_validation.os.environ['PATH']}"
+                with mock.patch.dict(workload_validation.os.environ, {"PATH": hostile_path}), mock.patch.object(
+                    workload_validation, "set_worktree_immutable"
+                ) as set_immutable:
+                    with workload_validation.pinned_worktree(repo, head) as snapshot:
+                        snapshot_root = snapshot.parent
+                        self.assertEqual(
+                            (snapshot / "model.py").stat().st_mode & 0o222,
+                            0,
+                        )
+                        self.assertEqual(snapshot.stat().st_mode & 0o222, 0)
+                        tracked.write_text("MODEL = 'temporary mutation'\n")
+                        self.assertEqual(
+                            (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
+                        )
+                        self.assertEqual(
+                            subprocess.check_output(
+                                [workload_validation.GIT, "rev-parse", "HEAD"],
+                                cwd=snapshot,
+                                text=True,
+                            ).strip(),
+                            head,
+                        )
+                        tracked.write_text("MODEL = 'captured'\n")
+                self.assertFalse(marker.exists())
 
             set_immutable.assert_has_calls(
                 [

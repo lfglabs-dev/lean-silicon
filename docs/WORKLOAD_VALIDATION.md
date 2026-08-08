@@ -25,8 +25,21 @@ git -C "$private/leanVM-b" checkout --detach c308034ab78619b39a59d26f3dc60e7df5b
 export CARGO_HOME="$private/cargo" RUSTUP_HOME="$private/rustup" TMPDIR="$private/tmp"
 export PATH="$CARGO_HOME/bin:$PATH"
 rustup toolchain install 1.88.0 --profile minimal
+installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0 cargo)")")
+toolchain_mb=$(du -sm "$installed_toolchain" | awk '{print $1}')
+truncate -s "$((toolchain_mb + 256))M" "$private/rust-toolchain.ext4"
+/usr/sbin/mkfs.ext4 -q "$private/rust-toolchain.ext4"
+mkdir "$private/rust-toolchain-ro"
+sudo mount -o loop "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
+sudo cp -a "$installed_toolchain/." "$private/rust-toolchain-ro/"
+sudo umount "$private/rust-toolchain-ro"
+rustup toolchain uninstall 1.88.0
+sudo mount -o loop,ro "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
+rustup toolchain link 1.88.0 "$private/rust-toolchain-ro"
 WORKLOAD_CACHE="$private/receipt" LEANVM_B_UPSTREAM="$private/leanVM-b" make workload-validation
 python3 -m json.tool "$private/receipt/receipt.json"
+rustup toolchain uninstall 1.88.0
+sudo umount "$private/rust-toolchain-ro"
 ```
 
 The command rejects a dirty candidate or upstream checkout, an upstream SHA or

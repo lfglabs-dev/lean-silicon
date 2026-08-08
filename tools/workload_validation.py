@@ -18,6 +18,7 @@ from pathlib import Path
 os.environ["GIT_NO_REPLACE_OBJECTS"] = "1"
 
 ROOT = Path(__file__).resolve().parents[1]
+GIT = "/usr/bin/git"
 PLAN_PATH = ROOT / "workloads/plan.json"
 SUPPORTED_RUNTIME = {
     "public_input": [
@@ -71,7 +72,7 @@ def capture(argv: list[str], cwd: Path = ROOT) -> str:
 def require_clean_tracked_worktree(root: Path = ROOT) -> None:
     """Compare filesystem bytes and modes directly to canonical HEAD objects."""
     entries = subprocess.check_output(
-        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=root
+        [GIT, "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=root
     ).split(b"\0")
     for entry in entries:
         if not entry:
@@ -90,13 +91,13 @@ def require_clean_tracked_worktree(root: Path = ROOT) -> None:
                 if actual_executable != expected_executable:
                     raise SystemExit("tracked workload checkout must match HEAD")
             elif object_type == "commit":
-                actual = capture(["git", "rev-parse", "HEAD"], cwd=path).encode()
+                actual = capture([GIT, "rev-parse", "HEAD"], cwd=path).encode()
             else:
                 raise SystemExit("tracked workload checkout contains unsupported Git objects")
         except OSError as error:
             raise SystemExit("tracked workload checkout must match HEAD") from error
         expected = subprocess.check_output(
-            ["git", "cat-file", object_type, oid], cwd=root
+            [GIT, "cat-file", object_type, oid], cwd=root
         )
         if object_type == "commit":
             expected = oid.encode()
@@ -106,15 +107,15 @@ def require_clean_tracked_worktree(root: Path = ROOT) -> None:
 
 def require_clean_worktree(root: Path = ROOT) -> None:
     """Reject changed tracked bytes and non-ignored untracked import shadows."""
-    if capture(["git", "for-each-ref", "--format=%(refname)", "refs/replace"], cwd=root):
+    if capture([GIT, "for-each-ref", "--format=%(refname)", "refs/replace"], cwd=root):
         raise SystemExit("workload checkout must not contain Git replacement refs")
     require_clean_tracked_worktree(root)
     if capture(
-        ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root
+        [GIT, "status", "--porcelain", "--untracked-files=all"], cwd=root
     ):
         raise SystemExit("workload checkout must not contain untracked files")
     ignored = subprocess.check_output(
-        ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+        [GIT, "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
         cwd=root,
     ).split(b"\0")
     for name in ignored:
@@ -132,7 +133,7 @@ def require_clean_worktree(root: Path = ROOT) -> None:
 
 def clean_head() -> tuple[str, str]:
     require_clean_worktree()
-    return capture(["git", "rev-parse", "HEAD"]), capture(["git", "rev-parse", "HEAD^{tree}"])
+    return capture([GIT, "rev-parse", "HEAD"]), capture([GIT, "rev-parse", "HEAD^{tree}"])
 
 
 @contextmanager
@@ -142,7 +143,7 @@ def pinned_worktree(repository: Path, commit: str):
         snapshot_root = Path(temp)
         checkout = snapshot_root / "checkout"
         subprocess.run(
-            ["git", "-c", "core.hooksPath=/dev/null", "worktree", "add",
+            [GIT, "-c", "core.hooksPath=/dev/null", "worktree", "add",
              "--detach", str(checkout), commit],
             cwd=repository,
             check=True,
@@ -157,7 +158,7 @@ def pinned_worktree(repository: Path, commit: str):
             set_worktree_immutable(snapshot_root, immutable=False)
             set_worktree_writable(checkout, writable=True)
             subprocess.run(
-                ["git", "worktree", "remove", "--force", str(checkout)],
+                [GIT, "worktree", "remove", "--force", str(checkout)],
                 cwd=repository,
                 check=True,
                 stdout=subprocess.DEVNULL,
@@ -284,7 +285,7 @@ def validate_upstream_repository(upstream: dict) -> None:
 
 def validate_upstream_checkout(upstream: Path, plan: dict) -> None:
     """Revalidate the pinned upstream state and every consumed origin file."""
-    if capture(["git", "rev-parse", "HEAD"], cwd=upstream) != plan["upstream"]["commit"]:
+    if capture([GIT, "rev-parse", "HEAD"], cwd=upstream) != plan["upstream"]["commit"]:
         raise SystemExit("upstream checkout is not at the pinned commit")
     require_clean_worktree(upstream)
     if sha(upstream / "Cargo.lock") != plan["upstream"]["cargo_lock_sha256"]:
@@ -307,7 +308,7 @@ def resolve_tracked_path(root: Path, relative: str) -> Path:
     except ValueError as error:
         raise SystemExit(f"plan path escapes its checkout: {relative}") from error
     tracked = subprocess.run(
-        ["git", "ls-files", "--error-unmatch", "--", str(canonical_relative)],
+        [GIT, "ls-files", "--error-unmatch", "--", str(canonical_relative)],
         cwd=root,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -431,9 +432,9 @@ def main() -> None:
     validate_upstream_repository(plan["upstream"])
     head, tree = clean_head()
     base = plan["source_commit"]
-    if capture(["git", "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
+    if capture([GIT, "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
         raise SystemExit("pinned main commit/tree mismatch")
-    subprocess.run(["git", "merge-base", "--is-ancestor", base, head], cwd=ROOT, check=True)
+    subprocess.run([GIT, "merge-base", "--is-ancestor", base, head], cwd=ROOT, check=True)
     validate_upstream_checkout(upstream, plan)
 
     receipt = {
