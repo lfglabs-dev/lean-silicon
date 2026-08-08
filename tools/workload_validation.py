@@ -77,6 +77,7 @@ def comparison_outcome(comparison: dict) -> dict:
         "cycles": comparison["upstream"]["cycles"],
         "model_steps": len(comparison["lean_silicon"]["steps"]),
         "reason": comparison["lean_silicon"]["reason"],
+        "mismatches": comparison["comparison"]["mismatches"],
     }
 
 

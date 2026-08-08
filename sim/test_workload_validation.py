@@ -20,7 +20,10 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
     def test_expected_outcome_includes_precise_model_boundary(self):
         comparison = {
-            "comparison": {"result": "MISMATCH"},
+            "comparison": {
+                "result": "MISMATCH",
+                "mismatches": [{"field": "terminal", "host": "fault"}],
+            },
             "upstream": {"cycles": 58},
             "lean_silicon": {
                 "terminal": "fault",
@@ -34,6 +37,9 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         self.assertEqual(outcome["model_steps"], 1)
         self.assertEqual(
             outcome["reason"], "pc 1 raised bad_pointer preparing the transaction"
+        )
+        self.assertEqual(
+            outcome["mismatches"], [{"field": "terminal", "host": "fault"}]
         )
 
     def test_comparison_profile_must_match_planned_runtime(self):

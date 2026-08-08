@@ -10,9 +10,10 @@ Check out the exact candidate head and the pinned upstream leanVM-b commit, then
 use private mutable caches outside either checkout:
 
 ```sh
+mkdir -p "$private/receipt" "$private/tmp"
+chmod 700 "$private" "$private/receipt" "$private/tmp"
 git clone https://github.com/leanEthereum/leanVM-b.git "$private/leanVM-b"
 git -C "$private/leanVM-b" checkout --detach c308034ab78619b39a59d26f3dc60e7df5b52649
-chmod 700 "$private" "$private/receipt"
 export CARGO_HOME="$private/cargo" RUSTUP_HOME="$private/rustup" TMPDIR="$private/tmp"
 export PATH="$CARGO_HOME/bin:$PATH"
 rustup toolchain install 1.88.0 --profile minimal
