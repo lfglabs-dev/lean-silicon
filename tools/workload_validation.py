@@ -192,6 +192,12 @@ def validate_source_binding(source: Path, artifact_doc: dict,
         raise SystemExit(f"artifact source binding mismatch: {source}")
 
 
+def validate_artifact_runtime(artifact_doc: dict, runtime: dict) -> None:
+    """Bind recorded execution attribution to the runtime actually exercised."""
+    if artifact_doc["upstream_execution"]["public_input"] != runtime["public_input"]:
+        raise SystemExit("artifact public input differs from the planned runtime")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -252,6 +258,7 @@ def main() -> None:
                 raise SystemExit(f"hash mismatch: {path}")
         artifact_doc = json.loads(artifact.read_text())
         validate_source_binding(source, artifact_doc, workload["source"])
+        validate_artifact_runtime(artifact_doc, plan["runtime"])
         if len(artifact_doc["program"]["bytecode"]) != workload["expected"]["bytecode_slots"]:
             raise SystemExit(f"bytecode count mismatch: {workload['id']}")
         out = cache / f"{workload['id']}.comparison.json"

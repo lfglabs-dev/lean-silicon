@@ -212,6 +212,19 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                     source, artifact, "workloads/case.zkdsl"
                 )
 
+    def test_artifact_public_input_must_match_planned_runtime(self):
+        runtime = dict(workload_validation.SUPPORTED_RUNTIME)
+        artifact = {
+            "upstream_execution": {
+                "public_input": list(runtime["public_input"]),
+            }
+        }
+        workload_validation.validate_artifact_runtime(artifact, runtime)
+
+        artifact["upstream_execution"]["public_input"][0] = "0x2"
+        with self.assertRaisesRegex(SystemExit, "public input differs"):
+            workload_validation.validate_artifact_runtime(artifact, runtime)
+
     def test_new_invocation_invalidates_stale_aggregate_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             cache = Path(temp)
