@@ -152,6 +152,13 @@ def require_actual_tracked_bytes(worktree: pathlib.Path) -> None:
         if actual != expected:
             raise SystemExit("compiler probe worktree must match its captured HEAD")
 
+    extras = subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=all", "--ignored"],
+        cwd=worktree,
+    )
+    if extras:
+        raise SystemExit("compiler probe worktree must not contain extra paths")
+
 
 def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
                           commit: str = COMMIT) -> None:

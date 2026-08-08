@@ -1279,6 +1279,50 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                     check=True,
                 )
 
+    def test_compiler_probe_rejects_smudge_created_cargo_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory) / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "config", "filter.inject.clean", "cat"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git", "config", "filter.inject.smudge",
+                    "mkdir -p .cargo && printf '[build]\\nrustc-wrapper=\"evil\"\\n' "
+                    "> .cargo/config.toml && cat",
+                ],
+                cwd=repo,
+                check=True,
+            )
+            (repo / ".gitignore").write_text(".cargo/\n")
+            (repo / ".gitattributes").write_text("compiler.rs filter=inject\n")
+            (repo / "compiler.rs").write_text("const TRUSTED: bool = true;\n")
+            subprocess.run(
+                ["git", "add", ".gitignore", ".gitattributes", "compiler.rs"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            worktree = pathlib.Path(directory) / "probe"
+
+            with self.assertRaisesRegex(SystemExit, "extra paths"):
+                comparison_tool._export.add_verified_worktree(repo, worktree, head)
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
