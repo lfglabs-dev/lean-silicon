@@ -413,6 +413,19 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             self.assertFalse(yielded)
 
+    def test_immutable_freeze_enters_descriptor_pinned_directory(self):
+        pinned = Path("/proc/123/fd/9")
+        with mock.patch.object(workload_validation.subprocess, "run") as run:
+            workload_validation.set_worktree_immutable(pinned, immutable=True)
+
+        run.assert_called_once_with(
+            ["/usr/bin/sudo", "-n", "/usr/bin/chattr", "-R", "+i", "."],
+            cwd=pinned,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     def test_untracked_package_shadow_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

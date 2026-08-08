@@ -272,7 +272,8 @@ def set_worktree_immutable(checkout: Path, immutable: bool) -> None:
     """Use the kernel immutable bit so the invoking UID cannot thaw snapshots."""
     operation = "+i" if immutable else "-i"
     subprocess.run(
-        ["/usr/bin/sudo", "-n", "/usr/bin/chattr", "-R", operation, str(checkout)],
+        ["/usr/bin/sudo", "-n", "/usr/bin/chattr", "-R", operation, "."],
+        cwd=checkout,
         check=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
