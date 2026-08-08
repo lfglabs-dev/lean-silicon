@@ -33,12 +33,19 @@ structure Common where
   resultChecksum : Transaction.ResultChecksum
   deriving DecidableEq, Repr
 
+inductive Profile where
+  | forwardOnly
+  | interpreterCompat
+  deriving DecidableEq, Repr
+
 structure BinaryInput where
   common : Common
+  profile : Profile
   memory : Mem
   left : Index
   right : Index
   output : Index
+  proposedInverse : Cell
 
 structure DerefInput where
   common : Common
@@ -80,6 +87,9 @@ inductive Instruction where
 inductive Fault where
   | address
   | stateMismatch
+  | unsupportedInProfile
+  | badInverse
+  | mulBacksolveZero
   | writeConflict
   | deref (reason : ControlPrimitives.Fault)
   | jump (reason : ControlPrimitives.Fault)
@@ -110,15 +120,49 @@ def finishWrite (common : Common) (memory : Mem) (address : Index)
       | some memory' => .result { common, nextControl := next, memory := memory' }
       | none => .fault .writeConflict
 
+def finishBinary (isXor : Bool) (input : BinaryInput) : Decision :=
+  let leftAbsent := !(input.memory input.left).written
+  let rightAbsent := !(input.memory input.right).written
+  if input.profile == .forwardOnly && (leftAbsent || rightAbsent) then
+    .fault .unsupportedInProfile
+  else
+    let backsolve := (input.memory input.output).written && (leftAbsent != rightAbsent)
+    let prepared : Except Fault Mem :=
+      if backsolve then
+        let knownAddress := if leftAbsent then input.right else input.left
+        let missingAddress := if leftAbsent then input.left else input.right
+        let known := (input.memory knownAddress).value
+        if isXor then
+          match writeOnce input.memory missingAddress
+              ((input.memory input.output).value ^^^ known) with
+          | some memory => .ok memory
+          | none => .error .writeConflict
+        else if known == 0#128 then
+          .error .mulBacksolveZero
+        else if !input.proposedInverse.written ||
+            GHASH128.mul known input.proposedInverse.value != 1#128 then
+          .error .badInverse
+        else
+          match writeOnce input.memory missingAddress
+              (GHASH128.mul (input.memory input.output).value input.proposedInverse.value) with
+          | some memory => .ok memory
+          | none => .error .writeConflict
+      else
+        .ok input.memory
+    match prepared with
+    | .error fault => .fault fault
+    | .ok memory =>
+        let value := if isXor then
+          (memory input.left).value ^^^ (memory input.right).value
+        else
+          GHASH128.mul (memory input.left).value (memory input.right).value
+        finishWrite input.common memory input.output value
+
 /-- Pure endpoint decision for every full-profile instruction kind. -/
 def decide : Instruction -> Decision
   | .set common memory address constant => finishWrite common memory address constant
-  | .xor input =>
-      finishWrite input.common input.memory input.output
-        ((input.memory input.left).value ^^^ (input.memory input.right).value)
-  | .mul input =>
-      finishWrite input.common input.memory input.output
-        (GHASH128.mul (input.memory input.left).value (input.memory input.right).value)
+  | .xor input => finishBinary true input
+  | .mul input => finishBinary false input
   | .deref mode input =>
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
@@ -327,14 +371,51 @@ theorem blake3_rejects_second_output_conflict (request : Blake3Request)
   simp [resumeBlake3, htxn, hservice, hfirst, hconflict]
 
 theorem xor_uses_supplied_operands (input : BinaryInput) :
-    decide (.xor input) = finishWrite input.common input.memory input.output
-      ((input.memory input.left).value ^^^ (input.memory input.right).value) := by
+    decide (.xor input) = finishBinary true input := by
   rfl
 
 theorem mul_uses_canonical_ghash (input : BinaryInput) :
-    decide (.mul input) = finishWrite input.common input.memory input.output
-      (GHASH128.mul (input.memory input.left).value (input.memory input.right).value) := by
+    decide (.mul input) = finishBinary false input := by
   rfl
+
+theorem mul_forward_uses_canonical_ghash (input : BinaryInput)
+    (hleft : (input.memory input.left).written = true)
+    (hright : (input.memory input.right).written = true) :
+    decide (.mul input) = finishWrite input.common input.memory input.output
+      (GHASH128.mul (input.memory input.left).value
+        (input.memory input.right).value) := by
+  simp [decide, finishBinary, hleft, hright]
+
+theorem forward_only_rejects_absent_left (isXor : Bool) (input : BinaryInput)
+    (hprofile : input.profile = .forwardOnly)
+    (hleft : (input.memory input.left).written = false) :
+    finishBinary isXor input = .fault .unsupportedInProfile := by
+  simp [finishBinary, hprofile, hleft]
+
+theorem forward_only_rejects_absent_right (isXor : Bool) (input : BinaryInput)
+    (hprofile : input.profile = .forwardOnly)
+    (hright : (input.memory input.right).written = false) :
+    finishBinary isXor input = .fault .unsupportedInProfile := by
+  simp [finishBinary, hprofile, hright]
+
+theorem mul_backsolve_rejects_zero (input : BinaryInput)
+    (hprofile : input.profile = .interpreterCompat)
+    (hleft : (input.memory input.left).written = false)
+    (hright : (input.memory input.right).written = true)
+    (houtput : (input.memory input.output).written = true)
+    (hzero : (input.memory input.right).value = 0#128) :
+    decide (.mul input) = .fault .mulBacksolveZero := by
+  simp [decide, finishBinary, hprofile, hleft, hright, houtput, hzero]
+
+theorem mul_backsolve_rejects_unverified_inverse (input : BinaryInput)
+    (hprofile : input.profile = .interpreterCompat)
+    (hleft : (input.memory input.left).written = false)
+    (hright : (input.memory input.right).written = true)
+    (houtput : (input.memory input.output).written = true)
+    (hknown : (input.memory input.right).value ≠ 0#128)
+    (hinverse : input.proposedInverse.written = false) :
+    decide (.mul input) = .fault .badInverse := by
+  simp [decide, finishBinary, hprofile, hleft, hright, houtput, hknown, hinverse]
 
 theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
     decide (.deref mode input) =
@@ -403,12 +484,30 @@ example : exists request, decide (.blake3 request) = .serviceRequired request :=
   exact ⟨request, rfl⟩
 
 def witnessBinary : BinaryInput := {
-  common := witnessCommon, memory := Memory.empty, left := 1, right := 2, output := 3 }
+  common := witnessCommon, profile := .interpreterCompat,
+  memory := Memory.empty, left := 1, right := 2, output := 3,
+  proposedInverse := { written := false, value := 0#128 } }
 
 def witnessZeroEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
   memory := writeRaw Memory.empty 3 (0#128)
+
+def witnessXorBacksolveMemory : Mem :=
+  writeRaw (writeRaw Memory.empty 2 (0x12#128)) 3 (0x34#128)
+
+def witnessXorBacksolve : BinaryInput := {
+  common := witnessCommon, profile := .interpreterCompat,
+  memory := witnessXorBacksolveMemory, left := 1, right := 2, output := 3,
+  proposedInverse := { written := false, value := 0#128 } }
+
+def witnessXorBacksolveEffect : Effect where
+  common := witnessCommon
+  nextControl := { pc := 4, fp := 9 }
+  memory := writeRaw (writeRaw witnessXorBacksolveMemory 1 (0x26#128)) 3 (0x34#128)
+
+example : decide (.xor witnessXorBacksolve) = .result witnessXorBacksolveEffect := by
+  rfl
 
 example : exists effect, decide (.xor witnessBinary) = .result effect := by
   refine ⟨witnessZeroEffect, ?_⟩
@@ -443,6 +542,11 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms mul_uses_canonical_ghash
+#print axioms mul_forward_uses_canonical_ghash
+#print axioms forward_only_rejects_absent_left
+#print axioms forward_only_rejects_absent_right
+#print axioms mul_backsolve_rejects_zero
+#print axioms mul_backsolve_rejects_unverified_inverse
 #print axioms deref_uses_canonical_control
 #print axioms deref_rejects_prepared_control_mismatch
 #print axioms jump_uses_canonical_control

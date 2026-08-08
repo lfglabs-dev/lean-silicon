@@ -34,18 +34,20 @@ relation. Reset restores the initial committed state, abort preserves the
 committed state, and a matching result can retire exactly once. Checked PC
 increment failure is an address fault and precedes any attempted write.
 
-This foundation does not yet encode the complete packet-profile guard surface.
-In particular XOR/MUL currently express the forward decision over supplied
-cells, not interpreter-compatible missing-operand back-solving; effective
-addresses and DEREF pointer resolution arrive already prepared; and result CRC
-is an opaque lifecycle binding. Those are required edges below, not assumptions
-silently promoted to a full-profile equivalence claim.
+The binary decision now models both negotiated profiles. `FORWARD_ONLY` rejects
+either absent operand. `INTERPRETER_COMPAT` reproduces single-absent-operand
+back-solving when the destination is present, including verified host-proposed
+MUL inverses and the zero-known-operand fault, before applying the canonical
+forward XOR or GHASH multiplication through write-once memory. Effective
+addresses, the packet's inconsistent-alias rejection, DEREF pointer resolution,
+and result CRC still arrive below this boundary; they remain explicit edges,
+not assumptions promoted to a full-profile equivalence claim.
 
 ## Remaining theorem graph
 
-1. Extend binary requests with presence/profile and inverse proposals, prove
-   XOR/MUL back-solving and all write/alias fault quadrants against the canonical
-   memory model, and relate prepared DEREF/JUMP inputs to checked packet fields.
+1. Define packet preparation over supplied cells: checked effective addresses,
+   inconsistent-alias rejection before functional-memory construction, all
+   remaining write/alias quadrants, and prepared DEREF/JUMP field relations.
 2. Define a byte-exact Lean codec for every fixed full-profile payload and prove
    decode/encode and malformed-field precedence into `FullProfile.Instruction`.
 3. Define an independent cycle transition system for

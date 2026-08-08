@@ -11,8 +11,8 @@ text = source.read_text()
 
 mutations = {
     "mul-becomes-xor": (
-        "(GHASH128.mul (input.memory input.left).value (input.memory input.right).value)",
-        "((input.memory input.left).value ^^^ (input.memory input.right).value)",
+        "GHASH128.mul (memory input.left).value (memory input.right).value",
+        "(memory input.left).value ^^^ (memory input.right).value",
     ),
     "blake3-bypasses-service": (
         "| .blake3 request => .serviceRequired request",
@@ -38,11 +38,21 @@ mutations = {
         "common := input.common, nextControl := control, memory := input.memory",
         "common := input.common, nextControl := control, memory := Memory.empty",
     ),
+    "forward-only-allows-missing-operands": (
+        "if input.profile == .forwardOnly && (leftAbsent || rightAbsent) then",
+        "if false then",
+    ),
+    "mul-accepts-absent-inverse": (
+        "else if !input.proposedInverse.written ||",
+        "else if false ||",
+    ),
+    "xor-skips-backsolve": (
+        "let backsolve := (input.memory input.output).written && (leftAbsent != rightAbsent)",
+        "let backsolve := false",
+    ),
 }
 
 for name, (old, new) in mutations.items():
-    if text.count(old) < 2 and name == "mul-becomes-xor":
-        raise SystemExit(f"mutation anchor changed: {name}")
     if old not in text:
         raise SystemExit(f"mutation anchor missing: {name}")
     mutated = text.replace(old, new, 1)
