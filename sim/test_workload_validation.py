@@ -16,6 +16,21 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "ids must be unique"):
             workload_validation.validate_unique_workload_ids(plan)
 
+    def test_workload_ids_must_be_single_safe_filename_components(self):
+        plan = {"workloads": [{"id": "suite/case"}]}
+        with self.assertRaisesRegex(SystemExit, "safe filename components"):
+            workload_validation.validate_unique_workload_ids(plan)
+
+    def test_upstream_repository_attribution_is_pinned(self):
+        upstream = {
+            "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY
+        }
+        workload_validation.validate_upstream_repository(upstream)
+
+        upstream["repository"] = "https://example.invalid/not-the-oracle.git"
+        with self.assertRaisesRegex(SystemExit, "repository is unsupported"):
+            workload_validation.validate_upstream_repository(upstream)
+
     def test_hidden_tracked_change_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

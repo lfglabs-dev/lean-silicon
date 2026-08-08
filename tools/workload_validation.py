@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -21,6 +22,8 @@ SUPPORTED_RUNTIME = {
     ],
     "profile": "INTERPRETER_COMPAT",
 }
+SUPPORTED_UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
+SAFE_WORKLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 
 
 def sha(path: Path) -> str:
@@ -91,10 +94,18 @@ def selected_workload_count(plan: dict) -> int:
 
 
 def validate_unique_workload_ids(plan: dict) -> None:
-    """Ensure each evidence entry has a distinct comparison-receipt path."""
+    """Ensure each evidence entry has a distinct safe cache filename."""
     ids = [workload["id"] for workload in plan["workloads"]]
     if len(ids) != len(set(ids)):
         raise SystemExit("workload ids must be unique")
+    if any(SAFE_WORKLOAD_ID.fullmatch(workload_id) is None for workload_id in ids):
+        raise SystemExit("workload ids must be safe filename components")
+
+
+def validate_upstream_repository(upstream: dict) -> None:
+    """Bind the plan attribution to the repository supported by the comparator."""
+    if upstream["repository"] != SUPPORTED_UPSTREAM_REPOSITORY:
+        raise SystemExit("plan upstream repository is unsupported")
 
 
 def comparison_outcome(comparison: dict) -> dict:
@@ -145,6 +156,7 @@ def main() -> None:
     plan = json.loads(PLAN_PATH.read_text())
     validate_runtime(plan["runtime"])
     validate_unique_workload_ids(plan)
+    validate_upstream_repository(plan["upstream"])
     head, tree = clean_head()
     base = plan["source_commit"]
     if capture(["git", "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
