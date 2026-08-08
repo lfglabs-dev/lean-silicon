@@ -1,0 +1,23 @@
+{
+  "schema": "lean-silicon/full-profile-assurance-plan/v1",
+  "issue": 50,
+  "release_critical_path": false,
+  "profile": "LSC-1 protocol v1",
+  "source_commit": "c89d24e75ba2cf8bfab871e1c68c738821a8681f",
+  "source_tree": "d1ec337c51d736750d982a475cac668732c8a26b",
+  "frozen_upstream": "c308034ab78619b39a59d26f3dc60e7df5b52649",
+  "rtl_top": "lean_silicon_lsc1",
+  "synthesis_top": "lsc1_packet_frontend",
+  "implemented_requests": [
+    "XOR", "MUL_NATIVE", "SET_CONSTANT", "DEREF_CELL", "DEREF_PC",
+    "DEREF_FP", "JUMP", "NEGOTIATE", "RETIRE", "STATUS_QUERY"
+  ],
+  "model_only_requests": ["BLAKE3_REQUEST", "SERVICE_RESPONSE"],
+  "claims": {
+    "unbounded": [],
+    "bounded": [
+      "seeded byte-exact executable-model versus RTL response comparison",
+      "adversarial cycle simulation of framing, backpressure, abort, staging and retirement"
+    ]
+  }
+}

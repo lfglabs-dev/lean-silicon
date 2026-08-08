@@ -106,6 +106,10 @@ jobs:
           asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_stream_adapter.sv
           asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv;
           hierarchy -check -top lean_silicon_lsc1; proc; check; synth -top lean_silicon_lsc1; stat'
+      - name: LSC-1 full-profile bounded assurance (non-release lane)
+        env:
+          LSC1_FULL_CACHE: ${{ runner.temp }}/lsc1-full-profile
+        run: make full-profile-assurance
       - name: M2 controller lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv src/leanvm_b_m2_scalar_controller.sv;

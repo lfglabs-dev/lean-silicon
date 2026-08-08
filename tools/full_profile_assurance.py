@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Reproducible bounded assurance receipt for the non-release LSC-1 lane."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PLAN_PATH = ROOT / "assurance/full-profile/plan.json"
+RTL = [
+    "asic_core/rtl/lsc1_packet_rx.sv",
+    "asic_core/rtl/lsc1_packet_tx.sv",
+    "asic_core/rtl/gf2n_mul_bitstream.sv",
+    "asic_core/rtl/gf128_mul_bitstream.sv",
+    "asic_core/rtl/leanvm_b_stream_alu.sv",
+    "asic_core/rtl/lsc1_stream_adapter.sv",
+    "asic_core/rtl/lsc1_field_encoder.sv",
+    "asic_core/rtl/lsc1_packet_frontend.sv",
+]
+
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def output(argv: list[str]) -> str:
+    return subprocess.check_output(argv, cwd=ROOT, text=True, stderr=subprocess.STDOUT).strip()
+
+
+def run(name: str, argv: list[str], receipt: dict, env: dict[str, str] | None = None) -> str:
+    completed = subprocess.run(argv, cwd=ROOT, text=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, env=env)
+    receipt["commands"].append({"name": name, "argv": argv, "exit_code": completed.returncode,
+                                "output_sha256": hashlib.sha256(completed.stdout.encode()).hexdigest()})
+    if completed.returncode:
+        sys.stderr.write(completed.stdout)
+        raise SystemExit(f"{name} failed with exit {completed.returncode}")
+    return completed.stdout
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cache-dir", required=True, type=Path)
+    parser.add_argument("--verify", action="store_true", required=True)
+    args = parser.parse_args()
+    cache = args.cache_dir.resolve()
+    if cache == ROOT or ROOT in cache.parents:
+        raise SystemExit("cache must resolve outside the checkout")
+    cache.mkdir(parents=True, exist_ok=True)
+    plan = json.loads(PLAN_PATH.read_text())
+    head = output(["git", "rev-parse", "HEAD"])
+    tree = output(["git", "rev-parse", "HEAD^{tree}"])
+    # A PR checkout naturally has a new commit/tree; its first parent is the pinned main source.
+    base = output(["git", "rev-parse", f"{plan['source_commit']}^{{commit}}"])
+    base_tree = output(["git", "rev-parse", f"{base}^{{tree}}"])
+    if (base != plan["source_commit"] or base_tree != plan["source_tree"] or
+            output(["git", "merge-base", "--is-ancestor", base, head]) != ""):
+        raise SystemExit("checkout does not descend from the pinned main source")
+    for tool in ("python3", "iverilog", "vvp", "yosys"):
+        if shutil.which(tool) is None:
+            raise SystemExit(f"required tool missing: {tool}")
+    receipt = {
+        "schema": "lean-silicon/full-profile-assurance-receipt/v1",
+        "plan_sha256": sha(PLAN_PATH), "source_commit": plan["source_commit"],
+        "source_tree": plan["source_tree"], "checkout_head": head, "checkout_tree": tree,
+        "release_critical_path": False,
+        "toolchains": {
+            "python": sys.version.replace("\n", " "),
+            "iverilog": output(["iverilog", "-V"]).splitlines()[0],
+            "yosys": output(["yosys", "-V"]),
+        },
+        "rtl": [{"path": path, "sha256": sha(ROOT / path)} for path in RTL],
+        "assumptions": [
+            "single synchronous clock", "testbench asserts reset before traffic",
+            "two-state finite vectors", "ready/valid defines accepted beats",
+            "finite test vectors are eventually supplied and drained",
+            "Yosys-elaborated hierarchy snapshot is provenance-only",
+        ],
+        "classification": {"unbounded": [], "bounded": plan["claims"]["bounded"]},
+        "commands": [], "mutations": [], "residual_gaps": [
+            "no complete independent formal packet transition specification",
+            "no Lean-to-RTL relation", "BLAKE3 request/service response are model-only",
+            "no synthesized or pinned physical full-profile netlist", "finite corpus is not exhaustive",
+        ],
+    }
+    run("rtl_model_differential", ["python3", "-m", "unittest", "sim.test_packet_frontend_rtl_differential", "-v"], receipt)
+    run("cycle_non_vacuity", ["make", "-C", "test/packet_frontend", "sim"], receipt)
+    run("cycle_mutations", ["make", "-C", "test/packet_frontend", "mutation"], receipt)
+    receipt["mutations"].append({"boundary": "cycle/runtime", "killed": True, "count": 5})
+    run("differential_mutations", ["make", "-C", "test/packet_frontend", "differential-mutation"], receipt)
+    receipt["mutations"].append({"boundary": "model/RTL", "killed": True, "count": 2})
+    netlist = cache / "lsc1_packet_frontend.elaborated.v"
+    script = "read_verilog -sv " + " ".join(RTL) + "; hierarchy -check -top lsc1_packet_frontend; write_verilog -noattr " + str(netlist)
+    run("generate_elaborated_snapshot", ["yosys", "-q", "-p", script], receipt)
+    receipt["generated_netlist"] = {"path": netlist.name, "sha256": sha(netlist), "bytes": netlist.stat().st_size}
+    mutated = cache / "lsc1_packet_frontend.elaborated.mutated.v"
+    mutated.write_bytes(netlist.read_bytes() + b"\n// provenance mutation\n")
+    killed = sha(mutated) != receipt["generated_netlist"]["sha256"]
+    receipt["mutations"].append({"boundary": "generated-artifact provenance pin", "killed": killed, "count": 1})
+    if not killed:
+        raise SystemExit("generated-artifact provenance mutation unexpectedly survived")
+    receipt["status"] = "pass"
+    (cache / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    print(json.dumps({"status": "pass", "receipt": str(cache / "receipt.json"),
+                      "netlist_sha256": receipt["generated_netlist"]["sha256"]}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
