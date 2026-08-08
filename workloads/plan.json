@@ -10,7 +10,7 @@
     "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
     "rust_toolchain": "1.88.0"
   },
-  "runtime": {"public_input": ["0x00000000000000000000000000000001", "0x00000000000000000000000000000000"], "profile": "LSC1_FULL"},
+  "runtime": {"public_input": ["0x00000000000000000000000000000001", "0x00000000000000000000000000000000"], "profile": "INTERPRETER_COMPAT"},
   "workloads": [
     {
       "id": "field_division",

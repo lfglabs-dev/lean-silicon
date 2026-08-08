@@ -36,6 +36,36 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             outcome["reason"], "pc 1 raised bad_pointer preparing the transaction"
         )
 
+    def test_comparison_profile_must_match_planned_runtime(self):
+        comparison = {"lean_silicon": {"profile": "INTERPRETER_COMPAT"}}
+        runtime = dict(workload_validation.SUPPORTED_RUNTIME)
+        workload_validation.validate_comparison_runtime(comparison, runtime)
+
+        comparison["lean_silicon"]["profile"] = "FORWARD_ONLY"
+        with self.assertRaisesRegex(SystemExit, "comparison profile differs"):
+            workload_validation.validate_comparison_runtime(comparison, runtime)
+
+    def test_artifact_embedded_source_must_match_checked_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "case.zkdsl"
+            source.write_text("def main():\n    return\n")
+            artifact = {
+                "source": {
+                    "path": "workloads/case.zkdsl",
+                    "sha256": workload_validation.sha(source),
+                    "text": source.read_text(),
+                }
+            }
+            workload_validation.validate_source_binding(
+                source, artifact, "workloads/case.zkdsl"
+            )
+
+            artifact["source"]["text"] = "def main():\n    assert 1 == 0\n"
+            with self.assertRaisesRegex(SystemExit, "source binding mismatch"):
+                workload_validation.validate_source_binding(
+                    source, artifact, "workloads/case.zkdsl"
+                )
+
     def test_new_invocation_invalidates_stale_aggregate_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             cache = Path(temp)

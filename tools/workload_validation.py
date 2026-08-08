@@ -19,7 +19,7 @@ SUPPORTED_RUNTIME = {
         "0x00000000000000000000000000000001",
         "0x00000000000000000000000000000000",
     ],
-    "profile": "LSC1_FULL",
+    "profile": "INTERPRETER_COMPAT",
 }
 
 
@@ -78,6 +78,25 @@ def comparison_outcome(comparison: dict) -> dict:
         "model_steps": len(comparison["lean_silicon"]["steps"]),
         "reason": comparison["lean_silicon"]["reason"],
     }
+
+
+def validate_comparison_runtime(comparison: dict, runtime: dict) -> None:
+    """Bind the receipt's runtime claim to the comparator's executed profile."""
+    if comparison["lean_silicon"]["profile"] != runtime["profile"]:
+        raise SystemExit("comparison profile differs from the planned runtime")
+
+
+def validate_source_binding(source: Path, artifact_doc: dict,
+                            expected_path: str) -> None:
+    """Bind the checked source file to the compiler input embedded in its artifact."""
+    embedded = artifact_doc["source"]
+    expected = {
+        "path": expected_path,
+        "sha256": sha(source),
+        "text": source.read_text(),
+    }
+    if any(embedded.get(key) != value for key, value in expected.items()):
+        raise SystemExit(f"artifact source binding mismatch: {source}")
 
 
 def main() -> None:
@@ -140,6 +159,7 @@ def main() -> None:
             if sha(path) != expected:
                 raise SystemExit(f"hash mismatch: {path}")
         artifact_doc = json.loads(artifact.read_text())
+        validate_source_binding(source, artifact_doc, workload["source"])
         if len(artifact_doc["program"]["bytecode"]) != workload["expected"]["bytecode_slots"]:
             raise SystemExit(f"bytecode count mismatch: {workload['id']}")
         out = cache / f"{workload['id']}.comparison.json"
@@ -147,6 +167,7 @@ def main() -> None:
                    workload["artifact"], "--upstream", str(upstream), "--rust-toolchain",
                    plan["upstream"]["rust_toolchain"], "--out", str(out)]
         run, comparison = run_comparison(command, out, workload["id"])
+        validate_comparison_runtime(comparison, plan["runtime"])
         actual = comparison_outcome(comparison)
         if actual != {k: workload["expected"][k] for k in actual}:
             raise SystemExit(f"unexpected outcome {workload['id']}: {actual}")
