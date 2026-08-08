@@ -47,7 +47,7 @@ mutation:
 	  if vvp "$$d/abort.vvp" >"$$d/abort.out" 2>&1; then \
 	    echo "ABORT-discard mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
-	  grep -q "ABORT retained or emitted a pending response" "$$d/abort.out"; \
+	  grep -q "ABORT emitted a response for a partial packet" "$$d/abort.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
 	  sed -i.bak "s/frame_opcode == OP_SET && frame_length != 51/1'b0 \\&\\& frame_opcode == OP_SET \\&\\& frame_length != 51/" \
 	    "$$d/lsc1_packet_frontend.sv"; \
