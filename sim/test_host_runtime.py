@@ -1365,7 +1365,7 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             cargo.write_text(
                 "#!/bin/sh\n"
                 "test -f crates/lean_compiler/examples/leansilicon_export.rs\n"
-                "printf '{\"private_archive\":true}\\n'\n"
+                "printf '{\"private_archive\":true,\"uid\":%s}\\n' \"$(id -u)\"\n"
             )
             cargo.chmod(0o755)
             marker = base / "privileged-path-was-used"
@@ -1377,25 +1377,49 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
 
             with mock.patch.dict(
                 os.environ, {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            ), mock.patch.object(
+                comparison_tool._export,
+                "resolved_toolchain_snapshot",
+                return_value=(fake_bin, "cargo"),
             ):
                 result, command = comparison_tool._export.run_probe(
                     repo, "source input", "test-toolchain", head
                 )
 
-            self.assertEqual(result, {"private_archive": True})
+            self.assertTrue(result["private_archive"])
+            self.assertGreaterEqual(result["uid"], 200000)
+            self.assertNotEqual(result["uid"], 65534)
             self.assertEqual(command[0:2], ["cargo", "+test-toolchain"])
             self.assertFalse(marker.exists())
 
-    def test_default_rustup_home_is_resolved_from_home(self):
+    def test_only_selected_rustup_toolchain_is_resolved_for_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
-            environment = dict(os.environ)
-            environment.pop("RUSTUP_HOME", None)
-            environment["HOME"] = directory
-            with mock.patch.dict(os.environ, environment, clear=True):
-                self.assertEqual(
-                    comparison_tool._export.resolved_rustup_home(),
-                    pathlib.Path(directory) / ".rustup",
+            root = pathlib.Path(directory) / "toolchains" / "1.88.0-target"
+            (root / "bin").mkdir(parents=True)
+            actual_cargo = root / "bin" / "cargo"
+            actual_cargo.touch()
+            proxy_bin = pathlib.Path(directory) / "proxy-bin"
+            proxy_bin.mkdir()
+            (proxy_bin / "cargo").touch()
+            (proxy_bin / "rustup").touch()
+            with (
+                mock.patch.object(
+                    comparison_tool._export.shutil,
+                    "which",
+                    return_value=str(proxy_bin / "cargo"),
+                ),
+                mock.patch.object(
+                    comparison_tool._export.subprocess,
+                    "check_output",
+                    return_value=str(actual_cargo),
+                ),
+            ):
+                selected_root, relative = (
+                    comparison_tool._export.resolved_toolchain_snapshot("1.88.0")
                 )
+
+            self.assertEqual(selected_root, root)
+            self.assertEqual(relative, "bin/cargo")
 
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:

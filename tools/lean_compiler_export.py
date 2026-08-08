@@ -64,13 +64,29 @@ def private_namespace_available() -> bool:
         return False
 
 
-def resolved_rustup_home() -> pathlib.Path:
-    """Resolve Rustup's explicit home or its documented HOME-relative default."""
-    configured = os.environ.get("RUSTUP_HOME")
-    if configured:
-        return pathlib.Path(configured).expanduser().resolve()
-    home = pathlib.Path(os.environ.get("HOME", pathlib.Path.home()))
-    return (home / ".rustup").resolve()
+def resolved_toolchain_snapshot(toolchain: str) -> tuple[pathlib.Path, str]:
+    """Resolve only the requested Rustup toolchain and its Cargo-relative path."""
+    cargo_proxy = shutil.which("cargo")
+    if cargo_proxy is None:
+        raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
+    rustup = pathlib.Path(cargo_proxy).resolve().parent / "rustup"
+    if not rustup.exists():
+        rustup_path = shutil.which("rustup")
+        if rustup_path is None:
+            raise SystemExit("rustup is required to resolve the pinned Rust toolchain")
+        rustup = pathlib.Path(rustup_path).resolve()
+    try:
+        cargo = pathlib.Path(subprocess.check_output(
+            [str(rustup), "which", "--toolchain", toolchain, "cargo"],
+            text=True,
+            stderr=subprocess.STDOUT,
+        ).strip()).resolve()
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(
+            f"rustup could not resolve toolchain {toolchain}:\n{error.output}"
+        ) from error
+    root = cargo.parent.parent
+    return root, str(cargo.relative_to(root))
 
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
@@ -245,21 +261,23 @@ tar -xf - -C "$PRIVATE_ROOT"
 example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
 mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
-mkdir -p "$PRIVATE_ROOT/tool-bin" "$PRIVATE_ROOT/rustup-home" \
-  "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp"
-cp -a "$HOST_CARGO_BIN/." "$PRIVATE_ROOT/tool-bin/"
-if [ -d "$HOST_RUSTUP_HOME" ]; then
-  cp -a "$HOST_RUSTUP_HOME/." "$PRIVATE_ROOT/rustup-home/"
-fi
-chown -R 65534:65534 "$PRIVATE_ROOT"
+mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
+  "$PRIVATE_ROOT/toolchain"
+cp -a "$HOST_TOOLCHAIN_ROOT/." "$PRIVATE_ROOT/toolchain/"
+RUN_UID=$((200000 + $$))
+while /usr/bin/ps -eo uid= | /bin/grep -qx " *$RUN_UID"; do
+  RUN_UID=$((RUN_UID + 1))
+done
+chown -R "$RUN_UID:$RUN_UID" "$PRIVATE_ROOT"
 cd "$PRIVATE_ROOT"
-/usr/bin/setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
+/usr/bin/setpriv --reuid "$RUN_UID" --regid "$RUN_UID" --clear-groups --inh-caps=-all \
   --bounding-set=-all /usr/bin/env \
-  PATH="$PRIVATE_ROOT/tool-bin:/usr/bin:/bin" \
+  PRIVATE_ROOT="$PRIVATE_ROOT" \
+  PATH="$PRIVATE_ROOT/toolchain/bin:/usr/bin:/bin" \
   CARGO_HOME="$PRIVATE_ROOT/cargo-home" \
-  RUSTUP_HOME="$PRIVATE_ROOT/rustup-home" \
   TMPDIR="$PRIVATE_ROOT/tmp" /bin/sh -ceu '
-    printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
+    printf %s "$LEAN_SOURCE" | "$PRIVATE_ROOT/toolchain/$CARGO_RELATIVE" \
+      run --quiet --locked \
       -p lean_compiler --example leansilicon_export
   '
 """
@@ -270,14 +288,12 @@ cd "$PRIVATE_ROOT"
             stderr=subprocess.PIPE,
         )
         assert archive.stdout is not None
-        cargo_path = shutil.which("cargo")
-        if cargo_path is None:
-            raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
+        toolchain_root, cargo_relative = resolved_toolchain_snapshot(toolchain)
         completed = subprocess.run(
             [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",
              f"PATH={PRIVILEGED_PATH}",
-             f"HOST_CARGO_BIN={pathlib.Path(cargo_path).resolve().parent}",
-             f"HOST_RUSTUP_HOME={resolved_rustup_home()}",
+             f"HOST_TOOLCHAIN_ROOT={toolchain_root}",
+             f"CARGO_RELATIVE={cargo_relative}",
              f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
              f"LEAN_SOURCE={source}",
              f"RUST_TOOLCHAIN={toolchain}",
