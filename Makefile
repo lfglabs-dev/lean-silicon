@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -36,6 +36,12 @@ host-export:
 host-comparison:
 	$(PYTHON) tools/host_upstream_comparison.py --artifact $(HOST_ARTIFACT) \
 	  $(if $(LEANVM_B_UPSTREAM),--upstream "$(LEANVM_B_UPSTREAM)",)
+
+# Non-release, non-SKY26c realistic workload lane. Both paths are caller-owned.
+workload-validation:
+	@test -n "$(WORKLOAD_CACHE)" || (echo "set WORKLOAD_CACHE to a private directory outside the checkout" >&2; exit 2)
+	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
+	$(PYTHON) tools/workload_validation.py --cache-dir "$(WORKLOAD_CACHE)" --upstream "$(LEANVM_B_UPSTREAM)"
 
 design-space:
 	$(PYTHON) tools/design_space.py
