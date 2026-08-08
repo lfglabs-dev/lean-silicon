@@ -47,7 +47,7 @@ mismatched archive fails closed.
 An explicit Yosys SAT query must emit a parseable JSON model witnessing reset
 asserted at edge 1, released at edge 2, and the driven `uio_oe == 8'hb6` output
 with `ena == 1`; UNSAT or a missing/invalid model fails the lane. The runner then
-requires covers for one complete multiply and two consecutive transaction
+requires covers for one complete multiply and two consecutive valid-command
 retirements. It then changes the first output comparison to demand a
 one-bit mismatch; the induction task must produce SBY status `FAIL`, meaning a
 property
@@ -83,7 +83,7 @@ ABC 1.01), the final miter produced:
 - Boolector depth-4 k-induction: `PASS` (base and induction, 23 seconds);
 - ABC PDR: `PASS` (all four assertions, 176 seconds);
 - retained 74-edge ABC BMC: `PASS` (704 seconds);
-- cover: two transaction retirements at step 7 and a complete MUL retirement
+- cover: two valid-command retirements at step 70 and a complete MUL retirement
   at step 179;
 - one-bit output mutation: `FAIL` at step 2, as required.
 

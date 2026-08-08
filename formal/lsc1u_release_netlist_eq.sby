@@ -41,7 +41,7 @@ bounded: select -assert-count 3 c:$assert*
 prove: select -assert-count 4 c:$assert* c:state_correspondence
 induction: select -assert-count 4 c:$assert* c:state_correspondence
 cover: select -assert-count 4 c:$assert* c:state_correspondence
-cover: select -assert-count 4 c:*check_cover*
+cover: select -assert-count 4 c:$cover*
 
 [files]
 ../src/gf2n_mul_bitstream.sv

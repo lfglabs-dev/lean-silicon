@@ -42,7 +42,8 @@ module lsc1u_release_netlist_eq_formal(
   );
   reg past_valid = 1'b0;
   reg [1:0] mul_retired_count = 2'd0;
-  reg [1:0] transaction_count = 2'd0;
+  reg valid_transaction_active = 1'b0;
+  reg [1:0] valid_transaction_count = 2'd0;
   always @(posedge clk) begin
     past_valid <= 1'b1;
     if (!rst_n || !ena)
@@ -50,10 +51,19 @@ module lsc1u_release_netlist_eq_formal(
     else if (rtl_state == 4'd7 && rtl_byte_index == 4'd15 &&
              rtl_out_valid && uio_in[3] && mul_retired_count != 2'd3)
       mul_retired_count <= mul_retired_count + 1'b1;
-    if (!rst_n || !ena)
-      transaction_count <= 2'd0;
-    else if (rtl_done_reg && transaction_count != 2'd3)
-      transaction_count <= transaction_count + 1'b1;
+    if (!rst_n || !ena) begin
+      valid_transaction_active <= 1'b0;
+      valid_transaction_count <= 2'd0;
+    end else begin
+      if (rtl_state == 4'd0 && rtl_uio_out[1] && uio_in[0] &&
+          (ui_in == 8'h01 || ui_in == 8'h02 || ui_in == 8'h03))
+        valid_transaction_active <= 1'b1;
+      if (rtl_done_reg && valid_transaction_active) begin
+        valid_transaction_active <= 1'b0;
+        if (valid_transaction_count != 2'd3)
+          valid_transaction_count <= valid_transaction_count + 1'b1;
+      end
+    end
     if (!past_valid) assume(!rst_n);
     if (past_valid) begin
       assert(rtl_uo == gate_uo);
@@ -71,7 +81,7 @@ module lsc1u_release_netlist_eq_formal(
       cover(rst_n);
       cover(rst_n && (rtl_uo != 0 || rtl_uio_out != 0 || rtl_uio_oe != 0));
       cover(mul_retired_count >= 2'd1);
-      cover(transaction_count >= 2'd2);
+      cover(valid_transaction_count >= 2'd2);
     end
   end
 endmodule
