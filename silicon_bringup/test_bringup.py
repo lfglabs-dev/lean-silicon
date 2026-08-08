@@ -132,6 +132,12 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(execution["real_silicon"], {"const": False})
         numeric = receipt(); numeric["execution"]["real_silicon"] = 0
         with self.assertRaises(ValueError): validate_receipt(numeric)
+        empty_transport = receipt(); empty_transport["execution"]["transport"] = ""
+        with self.assertRaises(ValueError): validate_receipt(empty_transport)
+        numeric_oracle = receipt(); numeric_oracle["oracle"]["matched"] = 1
+        with self.assertRaises(ValueError): validate_receipt(numeric_oracle)
+        numeric_outcome = receipt(); numeric_outcome["outcome"]["passed"] = 1
+        with self.assertRaises(ValueError): validate_receipt(numeric_outcome)
 
     def test_json_schema_requires_complete_ordered_corpus(self):
         schema = json.loads((Path(__file__).parent / "receipt.schema.json").read_text())
@@ -147,6 +153,7 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(constrained_expected, expected)
         self.assertTrue(all("if" in item["allOf"][2] and "else" in item["allOf"][2] for item in observations["prefixItems"]))
         self.assertEqual(len(schema["allOf"]), 7)
+        self.assertEqual(schema["properties"]["execution"]["properties"]["transport"]["minLength"], 1)
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (

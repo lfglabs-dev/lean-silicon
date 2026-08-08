@@ -252,9 +252,12 @@ def validate_receipt(document: dict) -> None:
             raise ValueError("observation is not bound to the shipped deterministic vector")
     matched = all(item["oracle_match"] for item in observations)
     oracle_record = document["oracle"]
-    if oracle_record != {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": matched}:
+    if (not isinstance(oracle_record, dict) or type(oracle_record.get("matched")) is not bool or
+            oracle_record != {"algorithm": "independent GF(2^128), little-endian, low reduction 0x87", "matched": matched}):
         raise ValueError("oracle summary is inconsistent")
     passed = all(item["oracle_match"] and item["retire_done_pulse"] and item["idle_after_retire"] for item in observations)
     failures = [] if passed else [item["id"] for item in observations if not (item["oracle_match"] and item["retire_done_pulse"] and item["idle_after_retire"])]
-    if document["outcome"] != {"passed": passed, "failures": failures}:
+    outcome = document["outcome"]
+    if (not isinstance(outcome, dict) or type(outcome.get("passed")) is not bool or
+            outcome != {"passed": passed, "failures": failures}):
         raise ValueError("outcome summary is inconsistent")
