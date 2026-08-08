@@ -10,6 +10,9 @@ __pycache__/
 !host/fixtures/*.json
 # Immutable conformance inputs are reviewed source artifacts, not run output.
 !conformance/*.json
+# Reviewed assurance plans are source; mutable receipts remain in private caches.
+!assurance/full-profile/plan.json
+!assurance/full-profile/schema.json
 lean/.lake/
 formal/gf8_mul/
 formal/gf128_serialize/

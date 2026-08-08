@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -100,6 +100,11 @@ formal:
 
 formal-mutations:
 	$(PYTHON) formal/check_mutations.py
+
+# Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
+full-profile-assurance:
+	@test -n "$(LSC1_FULL_CACHE)" || (echo "set LSC1_FULL_CACHE to a private directory outside the checkout" >&2; exit 2)
+	$(PYTHON) tools/full_profile_assurance.py --cache-dir "$(LSC1_FULL_CACHE)" --verify
 
 release-netlist-equivalence:
 	@test -n "$(LSC1_EQ_CACHE)" || (echo "set LSC1_EQ_CACHE to a private directory outside the checkout" >&2; exit 2)
