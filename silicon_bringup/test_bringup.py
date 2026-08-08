@@ -26,7 +26,7 @@ class BringupTest(unittest.TestCase):
     def test_fault_is_observable_until_error_byte_is_accepted(self):
         driver = Driver(DryRunBackend()); driver.reset(); driver.send(0x7F)
         pins = driver.backend.pins()
-        self.assertTrue(pins.uio_out & (TX_VALID | BUSY | FAULT))
+        self.assertEqual(pins.uio_out & (TX_VALID | BUSY | FAULT), TX_VALID | BUSY | FAULT)
         value, done = driver.receive_all()
         self.assertEqual(value, b"\xe0"); self.assertTrue(done)
         self.assertTrue(driver.backend.pins().uio_out & RX_READY)
@@ -72,10 +72,11 @@ class BringupTest(unittest.TestCase):
     def test_reset_and_deselect_abort_partial_work_and_uio6_is_ignored(self):
         driver = Driver(DryRunBackend()); driver.reset(); driver.send(3); driver.send(0x12)
         self.assertTrue(driver.backend.pins().uio_out & BUSY)
+        driver._cycle(uio=1 << 6)
+        self.assertEqual(driver.backend.command, 3)
+        self.assertEqual(driver.backend.pins().uio_out & (BUSY | TX_VALID), BUSY | TX_VALID)
         self.assertTrue(driver.reset().uio_out & RX_READY)
         driver.send(3); driver.send(0x34); driver.deselect_abort()
-        self.assertTrue(driver.backend.pins().uio_out & RX_READY)
-        driver._cycle(uio=1 << 6)
         self.assertTrue(driver.backend.pins().uio_out & RX_READY)
 
     def test_schema_accepts_dry_run_and_rejects_hardware_lie(self):
@@ -84,6 +85,8 @@ class BringupTest(unittest.TestCase):
         with self.assertRaises(ValueError): validate_receipt(dishonest)
         relabelled = receipt(); relabelled["execution"].update(kind="hardware", real_silicon=True)
         with self.assertRaises(ValueError): validate_receipt(relabelled)
+        numeric = receipt(); numeric["execution"]["real_silicon"] = 0
+        with self.assertRaises(ValueError): validate_receipt(numeric)
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (

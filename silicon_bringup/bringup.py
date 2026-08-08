@@ -185,7 +185,7 @@ def validate_receipt(document: dict) -> None:
             execution.get("kind") not in {"dry-run", "simulation", "hardware"} or
             not isinstance(execution.get("transport"), str) or not execution["transport"]):
         raise ValueError("invalid execution record")
-    if execution.get("real_silicon") != (execution["kind"] == "hardware"):
+    if type(execution.get("real_silicon")) is not bool or execution["real_silicon"] != (execution["kind"] == "hardware"):
         raise ValueError("execution kind and real_silicon disagree")
     if execution["transport"] == "deterministic Python pin-model" and execution["kind"] != "dry-run":
         raise ValueError("deterministic pin-model transport is dry-run evidence only")
