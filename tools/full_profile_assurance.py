@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 try:
@@ -38,6 +39,21 @@ def sha(path: Path) -> str:
 
 def output(argv: list[str]) -> str:
     return subprocess.check_output(argv, cwd=ROOT, text=True, stderr=subprocess.STDOUT).strip()
+
+
+def require_clean_tracked_worktree() -> None:
+    """Compare actual tracked files to HEAD without trusting index flags."""
+    index_fd, index_name = tempfile.mkstemp(prefix="lsc1-full-index-")
+    os.close(index_fd)
+    os.unlink(index_name)
+    try:
+        env = os.environ | {"GIT_INDEX_FILE": index_name}
+        subprocess.run(["git", "read-tree", "HEAD"], cwd=ROOT, env=env, check=True)
+        clean = subprocess.run(["git", "diff-files", "--quiet"], cwd=ROOT, env=env).returncode == 0
+    finally:
+        Path(index_name).unlink(missing_ok=True)
+    if not clean:
+        raise SystemExit("tracked assurance checkout must match HEAD")
 
 
 def validate_contract(document: dict, definition: dict) -> None:
@@ -72,9 +88,7 @@ def main() -> None:
     plan = json.loads(PLAN_PATH.read_text())
     schema = json.loads(SCHEMA_PATH.read_text())
     validate_contract(plan, schema["$defs"]["plan"])
-    tracked_status = output(["git", "status", "--porcelain", "--untracked-files=no"])
-    if tracked_status != "":
-        raise SystemExit("tracked assurance checkout must be clean")
+    require_clean_tracked_worktree()
     head = output(["git", "rev-parse", "HEAD"])
     tree = output(["git", "rev-parse", "HEAD^{tree}"])
     # A PR checkout naturally has a new commit/tree; its first parent is the pinned main source.
