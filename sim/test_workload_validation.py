@@ -547,6 +547,25 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             self.assertEqual(receipt, expected)
             self.assertEqual(json.loads(out.read_text()), expected)
 
+    def test_comparison_diagnostics_do_not_contaminate_fresh_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp) / "comparison.json"
+            expected = {"comparison": {"result": "MISMATCH"}}
+            completed = subprocess.CompletedProcess(
+                [], 1, stdout=json.dumps(expected), stderr="expected mismatch\n"
+            )
+
+            with mock.patch.object(workload_validation.subprocess, "run", return_value=completed):
+                run, receipt = workload_validation.run_comparison(
+                    [workload_validation.sys.executable, "-I", "comparison"],
+                    out,
+                    "case",
+                )
+
+            self.assertEqual(run.stderr, "expected mismatch\n")
+            self.assertEqual(receipt, expected)
+            self.assertEqual(json.loads(out.read_text()), expected)
+
     def test_comparison_uses_fresh_isolated_bytecode_cache(self):
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp) / "comparison.json"

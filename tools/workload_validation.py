@@ -206,11 +206,12 @@ def run_comparison(command: list[str], out: Path, workload_id: str,
             env=os.environ,
             text=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
         )
     try:
         receipt = json.loads(run.stdout)
     except json.JSONDecodeError:
+        sys.stderr.write(run.stderr or "")
         sys.stderr.write(run.stdout)
         raise SystemExit(f"comparison produced no receipt: {workload_id}")
     out.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
