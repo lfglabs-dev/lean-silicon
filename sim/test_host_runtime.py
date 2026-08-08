@@ -1338,6 +1338,8 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 comparison_tool._export.add_verified_worktree(repo, worktree, head)
 
     def test_compiler_probe_executes_from_namespace_private_archive(self):
+        if not comparison_tool._export.private_namespace_available():
+            self.skipTest("runner forbids the user/mount namespace required by the lane")
         with tempfile.TemporaryDirectory() as directory:
             base = pathlib.Path(directory)
             repo = base / "upstream"

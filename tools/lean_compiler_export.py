@@ -48,6 +48,15 @@ UNEXPOSED = {
     "Execution::trace": "pub(crate): per-step trace rows and access counts",
 }
 
+
+def private_namespace_available() -> bool:
+    """Return whether this runner permits the required user/mount namespace."""
+    return subprocess.run(
+        ["unshare", "--user", "--map-root-user", "--mount", "--fork", "true"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
 use primitives::field::F128;
