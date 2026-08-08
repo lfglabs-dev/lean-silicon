@@ -1,0 +1,8 @@
+def main():
+    a = StackBuf(2)
+    a[0] = 5
+    a[1] = 7
+    c = StackBuf(2)
+    blake3(a, a, c)
+    assert c[0] == c[0]
+    return

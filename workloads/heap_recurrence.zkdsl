@@ -1,0 +1,12 @@
+def main():
+    buff = HeapBuf(6)
+    buff[1] = 1
+    buff[GEN] = GEN
+    for x in mul_range(1, GEN ** 2):
+        b = x * x
+        f0 = buff[b]
+        f1 = buff[b * GEN]
+        f2 = f0 * f1
+        buff[b * GEN ** 2] = f1
+        buff[b * GEN ** 3] = f2
+    return
