@@ -14,6 +14,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = ROOT / "workloads/plan.json"
+SUPPORTED_RUNTIME = {
+    "public_input": [
+        "0x00000000000000000000000000000001",
+        "0x00000000000000000000000000000000",
+    ],
+    "profile": "LSC1_FULL",
+}
 
 
 def sha(path: Path) -> str:
@@ -56,6 +63,23 @@ def publish_receipt(receipt_path: Path, receipt: dict,
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
 
+def validate_runtime(runtime: dict) -> None:
+    """Refuse plan runtime claims the fixed comparator does not execute."""
+    if runtime != SUPPORTED_RUNTIME:
+        raise SystemExit("plan runtime differs from the comparator's supported runtime")
+
+
+def comparison_outcome(comparison: dict) -> dict:
+    """Return every boundary value that the workload plan pins."""
+    return {
+        "comparison": comparison["comparison"]["result"],
+        "terminal": comparison["lean_silicon"]["terminal"],
+        "cycles": comparison["upstream"]["cycles"],
+        "model_steps": len(comparison["lean_silicon"]["steps"]),
+        "reason": comparison["lean_silicon"]["reason"],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -71,6 +95,7 @@ def main() -> None:
     receipt_path = prepare_receipt_path(cache)
 
     plan = json.loads(PLAN_PATH.read_text())
+    validate_runtime(plan["runtime"])
     head, tree = clean_head()
     base = plan["source_commit"]
     if capture(["git", "rev-parse", f"{base}^{{tree}}"] ) != plan["source_tree"]:
@@ -122,9 +147,7 @@ def main() -> None:
                    workload["artifact"], "--upstream", str(upstream), "--rust-toolchain",
                    plan["upstream"]["rust_toolchain"], "--out", str(out)]
         run, comparison = run_comparison(command, out, workload["id"])
-        actual = {"comparison": comparison["comparison"]["result"],
-                  "terminal": comparison["lean_silicon"]["terminal"],
-                  "cycles": comparison["upstream"]["cycles"]}
+        actual = comparison_outcome(comparison)
         if actual != {k: workload["expected"][k] for k in actual}:
             raise SystemExit(f"unexpected outcome {workload['id']}: {actual}")
         is_match = actual["comparison"] == "MATCH"

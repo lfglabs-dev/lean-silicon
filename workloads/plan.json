@@ -21,7 +21,7 @@
       "origin": "crates/lean_compiler/tests/field_div.rs",
       "origin_sha256": "ac930c6885d87fbb8d5df35e53ee299476340e5bdb3698cf6eb3d4128cf944d1",
       "derivation": "field_div_end_to_end reduced to its runtime division invariant",
-      "expected": {"comparison": "MATCH", "terminal": "halted", "cycles": 9, "bytecode_slots": 16}
+      "expected": {"comparison": "MATCH", "terminal": "halted", "cycles": 9, "model_steps": 9, "reason": "reached sentinel pc 15", "bytecode_slots": 16}
     },
     {
       "id": "heap_recurrence",
@@ -32,7 +32,7 @@
       "origin": "crates/rec_aggregation/src/fibonacci.rs",
       "origin_sha256": "f3ecbc292e3362062192893729836977f3d58e662cb75594d3e376d8f0ff0028",
       "derivation": "fibonacci_program scaled to two recurrence blocks while preserving HeapBuf, mul_range, MUL and DEREF structure",
-      "expected": {"comparison": "MISMATCH", "terminal": "fault", "cycles": 58, "bytecode_slots": 64}
+      "expected": {"comparison": "MISMATCH", "terminal": "fault", "cycles": 58, "model_steps": 1, "reason": "pc 1 raised bad_pointer preparing the transaction", "bytecode_slots": 64}
     },
     {
       "id": "blake3_stack",
@@ -43,7 +43,7 @@
       "origin": "crates/lean_compiler/tests/stack_buf.rs",
       "origin_sha256": "a0f42f1944af4d079de7db02b0b30243db27fd9c42732f88f1fd86326a0cf1d1",
       "derivation": "stack_buf_blake3_self_hash with publication replaced by a local identity assertion",
-      "expected": {"comparison": "MISMATCH", "terminal": "unsupported", "cycles": 10, "bytecode_slots": 16}
+      "expected": {"comparison": "MISMATCH", "terminal": "unsupported", "cycles": 10, "model_steps": 4, "reason": "pc 4: Blake3 is not integrated. BLAKE3 is a host service (D-004) and this scaffold has no BLAKE3 compression implementation to answer SERVICE_REQUIRED with", "bytecode_slots": 16}
     }
   ]
 }

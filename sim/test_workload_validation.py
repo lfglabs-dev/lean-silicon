@@ -11,6 +11,31 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_plan_runtime_must_match_fixed_comparator_runtime(self):
+        changed = dict(workload_validation.SUPPORTED_RUNTIME)
+        changed["public_input"] = ["0x2", "0x0"]
+
+        with self.assertRaisesRegex(SystemExit, "plan runtime differs"):
+            workload_validation.validate_runtime(changed)
+
+    def test_expected_outcome_includes_precise_model_boundary(self):
+        comparison = {
+            "comparison": {"result": "MISMATCH"},
+            "upstream": {"cycles": 58},
+            "lean_silicon": {
+                "terminal": "fault",
+                "reason": "pc 1 raised bad_pointer preparing the transaction",
+                "steps": [{"pc": 0}],
+            },
+        }
+
+        outcome = workload_validation.comparison_outcome(comparison)
+
+        self.assertEqual(outcome["model_steps"], 1)
+        self.assertEqual(
+            outcome["reason"], "pc 1 raised bad_pointer preparing the transaction"
+        )
+
     def test_new_invocation_invalidates_stale_aggregate_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             cache = Path(temp)
