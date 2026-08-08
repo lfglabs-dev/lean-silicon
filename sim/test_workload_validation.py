@@ -85,6 +85,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 "terminal": "fault",
                 "reason": "pc 1 raised bad_pointer preparing the transaction",
                 "steps": [{"pc": 0}],
+                "final_state": {"written": [0, 1, 3]},
             },
         }
 
@@ -97,6 +98,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         self.assertEqual(
             outcome["mismatches"], [{"field": "terminal", "host": "fault"}]
         )
+        self.assertEqual(outcome["model_written"], [0, 1, 3])
 
     def test_comparison_profile_must_match_planned_runtime(self):
         comparison = {"lean_silicon": {"profile": "INTERPRETER_COMPAT"}}

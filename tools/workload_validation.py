@@ -117,6 +117,7 @@ def comparison_outcome(comparison: dict) -> dict:
         "model_steps": len(comparison["lean_silicon"]["steps"]),
         "reason": comparison["lean_silicon"]["reason"],
         "mismatches": comparison["comparison"]["mismatches"],
+        "model_written": comparison["lean_silicon"]["final_state"]["written"],
     }
 
 
