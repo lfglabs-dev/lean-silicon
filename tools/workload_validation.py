@@ -30,6 +30,17 @@ def clean_head() -> tuple[str, str]:
     return capture(["git", "rev-parse", "HEAD"]), capture(["git", "rev-parse", "HEAD^{tree}"])
 
 
+def run_comparison(command: list[str], out: Path, workload_id: str) -> tuple[subprocess.CompletedProcess[str], dict]:
+    """Run one comparison and return only a receipt created by this invocation."""
+    out.unlink(missing_ok=True)
+    run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    if not out.exists():
+        sys.stderr.write(run.stdout)
+        raise SystemExit(f"comparison produced no receipt: {workload_id}")
+    return run, json.loads(out.read_text())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -94,12 +105,7 @@ def main() -> None:
         command = [sys.executable, "tools/host_upstream_comparison.py", "--artifact",
                    workload["artifact"], "--upstream", str(upstream), "--rust-toolchain",
                    plan["upstream"]["rust_toolchain"], "--out", str(out)]
-        run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        if not out.exists():
-            sys.stderr.write(run.stdout)
-            raise SystemExit(f"comparison produced no receipt: {workload['id']}")
-        comparison = json.loads(out.read_text())
+        run, comparison = run_comparison(command, out, workload["id"])
         actual = {"comparison": comparison["comparison"]["result"],
                   "terminal": comparison["lean_silicon"]["terminal"],
                   "cycles": comparison["upstream"]["cycles"]}
