@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -14,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = ROOT / "assurance/full-profile/plan.json"
+SCHEMA_PATH = ROOT / "assurance/full-profile/schema.json"
 RTL = [
     "asic_core/rtl/lsc1_packet_rx.sv",
     "asic_core/rtl/lsc1_packet_tx.sv",
@@ -34,11 +34,29 @@ def output(argv: list[str]) -> str:
     return subprocess.check_output(argv, cwd=ROOT, text=True, stderr=subprocess.STDOUT).strip()
 
 
-def run(name: str, argv: list[str], receipt: dict, env: dict[str, str] | None = None) -> str:
+def validate_contract(document: dict, definition: dict) -> None:
+    """Fail closed on the closed, required top-level machine contract."""
+    required = set(definition["required"])
+    properties = set(definition["properties"])
+    if set(document) != properties or not required <= set(document):
+        raise SystemExit("assurance JSON does not match its closed schema")
+    for key, rule in definition["properties"].items():
+        if "const" in rule and document[key] != rule["const"]:
+            raise SystemExit(f"assurance JSON violates schema constant: {key}")
+    try:
+        import jsonschema
+    except ImportError:
+        return
+    jsonschema.Draft202012Validator.check_schema(definition)
+    jsonschema.Draft202012Validator(definition).validate(document)
+
+
+def run(name: str, argv: list[str], receipt: dict, env: dict[str, str] | None = None,
+        recorded_argv: list[str] | None = None) -> str:
     completed = subprocess.run(argv, cwd=ROOT, text=True, stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT, env=env)
-    receipt["commands"].append({"name": name, "argv": argv, "exit_code": completed.returncode,
-                                "output_sha256": hashlib.sha256(completed.stdout.encode()).hexdigest()})
+    receipt["commands"].append({"name": name, "argv": recorded_argv or argv,
+                                "exit_code": completed.returncode})
     if completed.returncode:
         sys.stderr.write(completed.stdout)
         raise SystemExit(f"{name} failed with exit {completed.returncode}")
@@ -53,8 +71,12 @@ def main() -> None:
     cache = args.cache_dir.resolve()
     if cache == ROOT or ROOT in cache.parents:
         raise SystemExit("cache must resolve outside the checkout")
-    cache.mkdir(parents=True, exist_ok=True)
+    cache.mkdir(parents=True, mode=0o700, exist_ok=True)
+    if cache.stat().st_mode & 0o077:
+        raise SystemExit("cache must deny group and other access")
     plan = json.loads(PLAN_PATH.read_text())
+    schema = json.loads(SCHEMA_PATH.read_text())
+    validate_contract(plan, schema["$defs"]["plan"])
     head = output(["git", "rev-parse", "HEAD"])
     tree = output(["git", "rev-parse", "HEAD^{tree}"])
     # A PR checkout naturally has a new commit/tree; its first parent is the pinned main source.
@@ -96,20 +118,22 @@ def main() -> None:
     receipt["mutations"].append({"boundary": "cycle/runtime", "killed": True, "count": 5})
     run("differential_mutations", ["make", "-C", "test/packet_frontend", "differential-mutation"], receipt)
     receipt["mutations"].append({"boundary": "model/RTL", "killed": True, "count": 2})
-    netlist = cache / "lsc1_packet_frontend.elaborated.v"
-    script = "read_verilog -sv " + " ".join(RTL) + "; hierarchy -check -top lsc1_packet_frontend; write_verilog -noattr " + str(netlist)
-    run("generate_elaborated_snapshot", ["yosys", "-q", "-p", script], receipt)
-    receipt["generated_netlist"] = {"path": netlist.name, "sha256": sha(netlist), "bytes": netlist.stat().st_size}
+    snapshot = cache / "lsc1_packet_frontend.elaborated.v"
+    script_prefix = "read_verilog -sv " + " ".join(RTL) + "; hierarchy -check -top lsc1_packet_frontend; write_verilog -noattr "
+    run("generate_elaborated_snapshot", ["yosys", "-q", "-p", script_prefix + str(snapshot)], receipt,
+        recorded_argv=["yosys", "-q", "-p", script_prefix + "$LSC1_FULL_CACHE/lsc1_packet_frontend.elaborated.v"])
+    receipt["generated_snapshot"] = {"path": snapshot.name, "sha256": sha(snapshot), "bytes": snapshot.stat().st_size}
     mutated = cache / "lsc1_packet_frontend.elaborated.mutated.v"
-    mutated.write_bytes(netlist.read_bytes() + b"\n// provenance mutation\n")
-    killed = sha(mutated) != receipt["generated_netlist"]["sha256"]
+    mutated.write_bytes(snapshot.read_bytes() + b"\n// provenance mutation\n")
+    killed = sha(mutated) != receipt["generated_snapshot"]["sha256"]
     receipt["mutations"].append({"boundary": "generated-artifact provenance pin", "killed": killed, "count": 1})
     if not killed:
         raise SystemExit("generated-artifact provenance mutation unexpectedly survived")
     receipt["status"] = "pass"
+    validate_contract(receipt, schema["$defs"]["receipt"])
     (cache / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"status": "pass", "receipt": str(cache / "receipt.json"),
-                      "netlist_sha256": receipt["generated_netlist"]["sha256"]}, sort_keys=True))
+                      "snapshot_sha256": receipt["generated_snapshot"]["sha256"]}, sort_keys=True))
 
 
 if __name__ == "__main__":

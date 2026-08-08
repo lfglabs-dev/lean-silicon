@@ -10,9 +10,9 @@ The machine-readable plan is `assurance/full-profile/plan.json`. Its source is
 current `main` at commit `c89d24e75ba2cf8bfab871e1c68c738821a8681f`, tree
 `d1ec337c51d736750d982a475cac668732c8a26b`. Semantic authority remains frozen
 leanVM-b `c308034ab78619b39a59d26f3dc60e7df5b52649`. The assurance command hashes
-every RTL input, records exact `python`, Icarus and Yosys version output, writes
+every RTL input to the elaborated hierarchy, records exact `python`, Icarus and Yosys version output, writes
 the generated Yosys-elaborated hierarchy snapshot only to the caller's private cache, and
-records its SHA-256. The receipt therefore pins source, RTL, generated netlist,
+records its SHA-256. The receipt therefore pins source, RTL, generated snapshot,
 toolchain, commands, assumptions, outcomes, and residual gaps in one JSON file.
 
 ```sh
@@ -22,9 +22,11 @@ python3 -m json.tool "$cache/receipt.json"
 ```
 
 The cache is mutable evidence, not a release artifact. Preserve a receipt and
-the netlist together when reproducing a particular run. A receipt is accepted
-only if the checkout commit and tree equal the plan pins and the cache resolves
-outside the checkout.
+the hierarchy snapshot together when reproducing a particular run. A receipt is
+accepted only if the checkout descends from the plan's exact source commit/tree,
+the cache resolves outside the checkout, and its permissions deny group/other
+access. Receipt content is deterministic for an exact checkout and toolchain;
+caller-specific cache paths and timing-bearing command output are not recorded.
 
 ## State and transaction surface
 

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "issue", "release_critical_path", "profile", "source_commit", "source_tree", "frozen_upstream", "integration_top", "elaboration_top", "implemented_requests", "model_only_requests", "claims"],
+      "properties": {
+        "schema": {"const": "lean-silicon/full-profile-assurance-plan/v1"},
+        "issue": {"const": 50},
+        "release_critical_path": {"const": false},
+        "profile": {"const": "LSC-1 protocol v1"},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "frozen_upstream": {"const": "c308034ab78619b39a59d26f3dc60e7df5b52649"},
+        "integration_top": {"const": "lean_silicon_lsc1"},
+        "elaboration_top": {"const": "lsc1_packet_frontend"},
+        "implemented_requests": {"type": "array", "minItems": 10, "maxItems": 10, "uniqueItems": true, "items": {"type": "string"}},
+        "model_only_requests": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "string"}},
+        "claims": {
+          "type": "object", "additionalProperties": false, "required": ["unbounded", "bounded"],
+          "properties": {
+            "unbounded": {"type": "array", "maxItems": 0},
+            "bounded": {"type": "array", "minItems": 2, "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "plan_sha256", "source_commit", "source_tree", "checkout_head", "checkout_tree", "release_critical_path", "toolchains", "rtl", "assumptions", "classification", "commands", "mutations", "residual_gaps", "generated_snapshot", "status"],
+      "properties": {
+        "schema": {"const": "lean-silicon/full-profile-assurance-receipt/v1"},
+        "plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "checkout_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "checkout_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "release_critical_path": {"const": false},
+        "toolchains": {"type": "object", "additionalProperties": false, "required": ["python", "iverilog", "yosys"], "properties": {"python": {"type": "string"}, "iverilog": {"type": "string"}, "yosys": {"type": "string"}}},
+        "rtl": {"type": "array", "minItems": 8, "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+        "assumptions": {"type": "array", "minItems": 6, "items": {"type": "string"}},
+        "classification": {"type": "object", "additionalProperties": false, "required": ["unbounded", "bounded"], "properties": {"unbounded": {"type": "array", "maxItems": 0}, "bounded": {"type": "array", "minItems": 2, "items": {"type": "string"}}}},
+        "commands": {"type": "array", "minItems": 5, "items": {"type": "object", "additionalProperties": false, "required": ["name", "argv", "exit_code"], "properties": {"name": {"type": "string"}, "argv": {"type": "array", "items": {"type": "string"}}, "exit_code": {"const": 0}}}},
+        "mutations": {"type": "array", "minItems": 3, "items": {"type": "object", "additionalProperties": false, "required": ["boundary", "killed", "count"], "properties": {"boundary": {"type": "string"}, "killed": {"const": true}, "count": {"type": "integer", "minimum": 1}}}},
+        "residual_gaps": {"type": "array", "minItems": 5, "items": {"type": "string"}},
+        "generated_snapshot": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"], "properties": {"path": {"const": "lsc1_packet_frontend.elaborated.v"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 1}}},
+        "status": {"const": "pass"}
+      }
+    }
+  }
+}
