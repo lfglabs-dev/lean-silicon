@@ -208,6 +208,39 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "replacement refs"):
                 workload_validation.require_clean_worktree(repo)
 
+    def test_pinned_worktree_is_unchanged_when_live_checkout_changes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            tracked = repo / "model.py"
+            tracked.write_text("MODEL = 'captured'\n")
+            subprocess.run(["git", "add", "model.py"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+
+            with workload_validation.pinned_worktree(repo, head) as snapshot:
+                tracked.write_text("MODEL = 'temporary mutation'\n")
+                self.assertEqual(
+                    (snapshot / "model.py").read_text(), "MODEL = 'captured'\n"
+                )
+                self.assertEqual(
+                    subprocess.check_output(
+                        ["git", "rev-parse", "HEAD"], cwd=snapshot, text=True
+                    ).strip(),
+                    head,
+                )
+                tracked.write_text("MODEL = 'captured'\n")
+
     def test_untracked_package_shadow_is_not_accepted_as_clean(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)

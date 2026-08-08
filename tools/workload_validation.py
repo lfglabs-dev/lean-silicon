@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 # Never allow repository-local replacement refs to rewrite pinned Git objects.
@@ -93,14 +94,37 @@ def clean_head() -> tuple[str, str]:
     return capture(["git", "rev-parse", "HEAD"]), capture(["git", "rev-parse", "HEAD^{tree}"])
 
 
-def run_comparison(command: list[str], out: Path, workload_id: str) -> tuple[subprocess.CompletedProcess[str], dict]:
+@contextmanager
+def pinned_worktree(repository: Path, commit: str):
+    """Yield a private detached worktree at the canonical captured commit."""
+    with tempfile.TemporaryDirectory(prefix="workload-validation-snapshot-") as temp:
+        checkout = Path(temp) / "checkout"
+        subprocess.run(
+            ["git", "worktree", "add", "--detach", str(checkout), commit],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        try:
+            yield checkout
+        finally:
+            subprocess.run(
+                ["git", "worktree", "remove", "--force", str(checkout)],
+                cwd=repository,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+
+
+def run_comparison(command: list[str], out: Path, workload_id: str,
+                   cwd: Path = ROOT) -> tuple[subprocess.CompletedProcess[str], dict]:
     """Run one comparison and return only a receipt created by this invocation."""
     out.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(prefix="workload-validation-pycache-") as pycache:
         env = os.environ | {"PYTHONPYCACHEPREFIX": pycache}
         run = subprocess.run(
             command,
-            cwd=ROOT,
+            cwd=cwd,
             env=env,
             text=True,
             stdout=subprocess.PIPE,
@@ -228,6 +252,55 @@ def validate_artifact_runtime(artifact_doc: dict, runtime: dict) -> None:
         raise SystemExit("artifact public input differs from the planned runtime")
 
 
+def collect_evidence(plan: dict, cache: Path, receipt: dict, upstream: Path,
+                     head: str) -> None:
+    """Run every comparison from immutable candidate and upstream snapshots."""
+    with (
+        pinned_worktree(ROOT, head) as candidate_snapshot,
+        pinned_worktree(upstream, plan["upstream"]["commit"]) as upstream_snapshot,
+    ):
+        for workload in plan["workloads"]:
+            source = resolve_tracked_path(ROOT, workload["source"])
+            artifact = resolve_tracked_path(ROOT, workload["artifact"])
+            origin = resolve_tracked_path(upstream, workload["origin"])
+            for path, expected in ((source, workload["source_sha256"]),
+                                   (artifact, workload["artifact_sha256"]),
+                                   (origin, workload["origin_sha256"])):
+                if sha(path) != expected:
+                    raise SystemExit(f"hash mismatch: {path}")
+            artifact_doc = json.loads(artifact.read_text())
+            validate_source_binding(source, artifact_doc, workload["source"])
+            validate_artifact_runtime(artifact_doc, plan["runtime"])
+            if len(artifact_doc["program"]["bytecode"]) != workload["expected"]["bytecode_slots"]:
+                raise SystemExit(f"bytecode count mismatch: {workload['id']}")
+            out = cache / f"{workload['id']}.comparison.json"
+            command = [sys.executable, "-I", "tools/host_upstream_comparison.py", "--artifact",
+                       workload["artifact"], "--upstream", str(upstream_snapshot), "--rust-toolchain",
+                       plan["upstream"]["rust_toolchain"], "--out", str(out)]
+            run, comparison = run_comparison(
+                command, out, workload["id"], cwd=candidate_snapshot
+            )
+            validate_comparison_runtime(comparison, plan["runtime"])
+            actual = comparison_outcome(comparison)
+            if actual != {k: workload["expected"][k] for k in actual}:
+                raise SystemExit(f"unexpected outcome {workload['id']}: {actual}")
+            is_match = actual["comparison"] == "MATCH"
+            receipt["coverage"]["matched" if is_match else "expected_failures"] += 1
+            receipt["evidence"]["functional_model"].append({
+                "id": workload["id"], "source_sha256": workload["source_sha256"],
+                "artifact_sha256": workload["artifact_sha256"],
+                "origin_sha256": workload["origin_sha256"],
+                "bytecode_slots": len(artifact_doc["program"]["bytecode"]),
+                "upstream_cycles": comparison["upstream"]["cycles"],
+                "upstream_mem_used": comparison["upstream"]["mem_used"],
+                "model_steps": len(comparison["lean_silicon"]["steps"]),
+                "result": actual["comparison"], "terminal": actual["terminal"],
+                "reason": comparison["lean_silicon"]["reason"],
+                "comparison_receipt": out.name, "comparison_sha256": sha(out),
+                "command_exit_code": run.returncode,
+            })
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -277,44 +350,7 @@ def main() -> None:
             "timing of the Python/Rust validation command is deliberately not a benchmark",
         ],
     }
-    for workload in plan["workloads"]:
-        source = resolve_tracked_path(ROOT, workload["source"])
-        artifact = resolve_tracked_path(ROOT, workload["artifact"])
-        origin = resolve_tracked_path(upstream, workload["origin"])
-        for path, expected in ((source, workload["source_sha256"]),
-                               (artifact, workload["artifact_sha256"]),
-                               (origin, workload["origin_sha256"])):
-            if sha(path) != expected:
-                raise SystemExit(f"hash mismatch: {path}")
-        artifact_doc = json.loads(artifact.read_text())
-        validate_source_binding(source, artifact_doc, workload["source"])
-        validate_artifact_runtime(artifact_doc, plan["runtime"])
-        if len(artifact_doc["program"]["bytecode"]) != workload["expected"]["bytecode_slots"]:
-            raise SystemExit(f"bytecode count mismatch: {workload['id']}")
-        out = cache / f"{workload['id']}.comparison.json"
-        command = [sys.executable, "-I", "tools/host_upstream_comparison.py", "--artifact",
-                   workload["artifact"], "--upstream", str(upstream), "--rust-toolchain",
-                   plan["upstream"]["rust_toolchain"], "--out", str(out)]
-        run, comparison = run_comparison(command, out, workload["id"])
-        validate_comparison_runtime(comparison, plan["runtime"])
-        actual = comparison_outcome(comparison)
-        if actual != {k: workload["expected"][k] for k in actual}:
-            raise SystemExit(f"unexpected outcome {workload['id']}: {actual}")
-        is_match = actual["comparison"] == "MATCH"
-        receipt["coverage"]["matched" if is_match else "expected_failures"] += 1
-        receipt["evidence"]["functional_model"].append({
-            "id": workload["id"], "source_sha256": sha(source),
-            "artifact_sha256": sha(artifact),
-            "origin_sha256": workload["origin_sha256"],
-            "bytecode_slots": len(artifact_doc["program"]["bytecode"]),
-            "upstream_cycles": comparison["upstream"]["cycles"],
-            "upstream_mem_used": comparison["upstream"]["mem_used"],
-            "model_steps": len(comparison["lean_silicon"]["steps"]),
-            "result": actual["comparison"], "terminal": actual["terminal"],
-            "reason": comparison["lean_silicon"]["reason"],
-            "comparison_receipt": out.name, "comparison_sha256": sha(out),
-            "command_exit_code": run.returncode,
-        })
+    collect_evidence(plan, cache, receipt, upstream, head)
     validate_upstream_checkout(upstream, plan)
     publish_receipt(receipt_path, receipt, (head, tree))
     print(json.dumps({"status": "pass", "receipt": str(receipt_path),
