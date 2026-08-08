@@ -31,8 +31,11 @@ be used to claim hardware execution. The machine-readable contract is
 [`receipt.schema.json`](receipt.schema.json); `--output` refuses to overwrite
 an existing receipt.
 
-A future physical transport must implement the ready/valid pin protocol and
-produce a receipt with `kind: hardware` and `real_silicon: true`, together with
-independent board provenance. That is intentionally outside this PR, and the
-v1 validator rejects hardware receipts because this schema cannot verify that
-provenance.
+A physical transport must implement the ready/valid pin protocol and produce a
+receipt with `kind: hardware`, `real_silicon: true`, a structured `serial` or
+`gpio` transport record, and a separate `board_provenance` record. Provenance
+names the Tiny Tapeout demo-board, board and chip identities, capture time, and
+the SHA-256 digest of independently retained capture evidence. Validation
+enforces this positive structure; it does not authenticate the referenced
+evidence, so consumers making hardware claims must obtain and verify that
+artifact independently.

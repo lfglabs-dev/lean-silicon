@@ -207,15 +207,36 @@ def validate_receipt(document: dict) -> None:
     if set(document) != required or document["schema"] != "lean-silicon.lsc1u-bringup-receipt.v1":
         raise ValueError("not an LSC-1u bring-up receipt v1")
     execution, interface = document["execution"], document["interface"]
-    if (not isinstance(execution, dict) or set(execution) != {"kind", "real_silicon", "transport"} or
-            execution.get("kind") not in {"dry-run", "simulation", "hardware"} or
-            not isinstance(execution.get("transport"), str) or not execution["transport"]):
+    if (not isinstance(execution, dict) or execution.get("kind") not in {"dry-run", "simulation", "hardware"}):
         raise ValueError("invalid execution record")
     if type(execution.get("real_silicon")) is not bool or execution["real_silicon"] != (execution["kind"] == "hardware"):
         raise ValueError("execution kind and real_silicon disagree")
     if execution["kind"] == "hardware":
-        raise ValueError("receipt v1 cannot verify independent hardware provenance")
-    if execution["transport"] == "deterministic Python pin-model" and execution["kind"] != "dry-run":
+        if set(execution) != {"kind", "real_silicon", "transport", "board_provenance"}:
+            raise ValueError("hardware receipts require independent board provenance")
+        transport = execution.get("transport")
+        if (not isinstance(transport, dict) or set(transport) != {"kind", "endpoint", "adapter_id"} or
+                transport.get("kind") not in {"serial", "gpio"} or
+                any(not isinstance(transport.get(key), str) or
+                    re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}", transport[key]) is None
+                    for key in ("endpoint", "adapter_id"))):
+            raise ValueError("hardware transport is not structured and allowlisted")
+        provenance = execution.get("board_provenance")
+        if (not isinstance(provenance, dict) or
+                set(provenance) != {"platform", "board_id", "chip_id", "captured_at", "evidence_sha256"} or
+                provenance.get("platform") != "tiny-tapeout-demoboard" or
+                any(not isinstance(provenance.get(key), str) or
+                    re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", provenance[key]) is None
+                    for key in ("board_id", "chip_id")) or
+                not isinstance(provenance.get("captured_at"), str) or
+                re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", provenance["captured_at"]) is None or
+                not isinstance(provenance.get("evidence_sha256"), str) or
+                re.fullmatch(r"[0-9a-f]{64}", provenance["evidence_sha256"]) is None):
+            raise ValueError("hardware receipt lacks structured board provenance")
+    elif (set(execution) != {"kind", "real_silicon", "transport"} or
+            not isinstance(execution.get("transport"), str) or not execution["transport"]):
+        raise ValueError("invalid non-hardware execution record")
+    if execution.get("transport") == "deterministic Python pin-model" and execution["kind"] != "dry-run":
         raise ValueError("deterministic pin-model transport is dry-run evidence only")
     if interface != {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}:
         raise ValueError("receipt does not identify the implemented Tiny Tapeout pin contract")

@@ -118,18 +118,50 @@ class BringupTest(unittest.TestCase):
         driver.send(3); driver.send(0x34); driver.deselect_abort()
         self.assertTrue(driver.backend.pins().uio_out & RX_READY)
 
-    def test_schema_accepts_dry_run_and_rejects_hardware_lie(self):
+    @staticmethod
+    def hardware_receipt():
+        document = receipt()
+        document["execution"] = {
+            "kind": "hardware",
+            "real_silicon": True,
+            "transport": {"kind": "serial", "endpoint": "ttyACM0", "adapter_id": "rp2040-42"},
+            "board_provenance": {
+                "platform": "tiny-tapeout-demoboard",
+                "board_id": "tt-demo-17",
+                "chip_id": "ttsky26a-03",
+                "captured_at": "2026-08-08T04:00:00Z",
+                "evidence_sha256": "a1" * 32,
+            },
+        }
+        return document
+
+    def test_hardware_receipts_require_positive_transport_and_board_provenance(self):
         validate_receipt(receipt())
+        validate_receipt(self.hardware_receipt())
         dishonest = receipt(); dishonest["execution"] = {"kind": "hardware", "real_silicon": False, "transport": "none"}
         with self.assertRaises(ValueError): validate_receipt(dishonest)
         relabelled = receipt(); relabelled["execution"].update(kind="hardware", real_silicon=True)
         with self.assertRaises(ValueError): validate_receipt(relabelled)
         disguised = receipt(); disguised["execution"].update(kind="hardware", real_silicon=True, transport="deterministic Python pin-model ")
         with self.assertRaises(ValueError): validate_receipt(disguised)
+        for mutate in (
+            lambda value: value["execution"].pop("board_provenance"),
+            lambda value: value["execution"]["transport"].update(kind="pin-model"),
+            lambda value: value["execution"].update(transport="serial"),
+            lambda value: value["execution"]["board_provenance"].update(platform="unknown-board"),
+            lambda value: value["execution"]["board_provenance"].update(board_id=" "),
+            lambda value: value["execution"]["board_provenance"].update(evidence_sha256="not-a-digest"),
+        ):
+            with self.subTest(mutate=mutate):
+                forged = self.hardware_receipt(); mutate(forged)
+                with self.assertRaises(ValueError): validate_receipt(forged)
         schema = json.loads((Path(__file__).parent / "receipt.schema.json").read_text())
-        execution = schema["properties"]["execution"]["properties"]
-        self.assertNotIn("hardware", execution["kind"]["enum"])
-        self.assertEqual(execution["real_silicon"], {"const": False})
+        dry_execution, hardware_execution = schema["properties"]["execution"]["oneOf"]
+        self.assertEqual(dry_execution["properties"]["kind"]["enum"], ["dry-run", "simulation"])
+        self.assertEqual(hardware_execution["properties"]["kind"], {"const": "hardware"})
+        self.assertEqual(hardware_execution["properties"]["real_silicon"], {"const": True})
+        self.assertEqual(hardware_execution["properties"]["transport"]["properties"]["kind"]["enum"], ["serial", "gpio"])
+        self.assertIn("board_provenance", hardware_execution["required"])
         numeric = receipt(); numeric["execution"]["real_silicon"] = 0
         with self.assertRaises(ValueError): validate_receipt(numeric)
         empty_transport = receipt(); empty_transport["execution"]["transport"] = ""
@@ -153,7 +185,10 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(constrained_expected, expected)
         self.assertTrue(all("if" in item["allOf"][2] and "else" in item["allOf"][2] for item in observations["prefixItems"]))
         self.assertEqual(len(schema["allOf"]), 7)
-        self.assertEqual(schema["properties"]["execution"]["properties"]["transport"]["minLength"], 1)
+        dry_execution, hardware_execution = schema["properties"]["execution"]["oneOf"]
+        self.assertEqual(dry_execution["properties"]["transport"]["minLength"], 1)
+        self.assertEqual(hardware_execution["properties"]["transport"]["properties"]["kind"]["enum"], ["serial", "gpio"])
+        self.assertIn("board_provenance", hardware_execution["required"])
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (

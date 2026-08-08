@@ -22,12 +22,50 @@
     "schema": {"const": "lean-silicon.lsc1u-bringup-receipt.v1"},
     "execution": {
       "type": "object", "additionalProperties": false,
-      "required": ["kind", "real_silicon", "transport"],
       "properties": {
-        "kind": {"enum": ["dry-run", "simulation"]},
-        "real_silicon": {"const": false},
-        "transport": {"type": "string", "minLength": 1}
-      }
+        "kind": {"enum": ["dry-run", "simulation", "hardware"]},
+        "real_silicon": {"type": "boolean"},
+        "transport": {},
+        "board_provenance": {}
+      },
+      "oneOf": [
+        {
+          "required": ["kind", "real_silicon", "transport"],
+          "not": {"required": ["board_provenance"]},
+          "properties": {
+            "kind": {"enum": ["dry-run", "simulation"]},
+            "real_silicon": {"const": false},
+            "transport": {"type": "string", "minLength": 1}
+          }
+        },
+        {
+          "required": ["kind", "real_silicon", "transport", "board_provenance"],
+          "properties": {
+            "kind": {"const": "hardware"},
+            "real_silicon": {"const": true},
+            "transport": {
+              "type": "object", "additionalProperties": false,
+              "required": ["kind", "endpoint", "adapter_id"],
+              "properties": {
+                "kind": {"enum": ["serial", "gpio"]},
+                "endpoint": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+                "adapter_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"}
+              }
+            },
+            "board_provenance": {
+              "type": "object", "additionalProperties": false,
+              "required": ["platform", "board_id", "chip_id", "captured_at", "evidence_sha256"],
+              "properties": {
+                "platform": {"const": "tiny-tapeout-demoboard"},
+                "board_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+                "chip_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+                "captured_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+                "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          }
+        }
+      ]
     },
     "interface": {
       "type": "object", "additionalProperties": false,
