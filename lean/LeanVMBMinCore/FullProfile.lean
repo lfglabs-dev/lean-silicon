@@ -77,6 +77,7 @@ inductive Instruction where
   | blake3 (request : Blake3Request)
 
 inductive Fault where
+  | address
   | writeConflict
   | deref (reason : ControlPrimitives.Fault)
   | jump (reason : ControlPrimitives.Fault)
@@ -100,9 +101,12 @@ def advance (common : Common) : Option Control := do
 
 def finishWrite (common : Common) (memory : Mem) (address : Index)
     (value : Word) : Decision :=
-  match advance common, writeOnce memory address value with
-  | some next, some memory' => .result { common, nextControl := next, memory := memory' }
-  | _, _ => .fault .writeConflict
+  match advance common with
+  | none => .fault .address
+  | some next =>
+      match writeOnce memory address value with
+      | some memory' => .result { common, nextControl := next, memory := memory' }
+      | none => .fault .writeConflict
 
 /-- Pure endpoint decision for every full-profile instruction kind. -/
 def decide : Instruction -> Decision
@@ -144,7 +148,7 @@ def resumeBlake3 (request : Blake3Request) (response : Blake3Response) : Decisio
             match advance request.common with
             | some control => .result {
                 common := request.common, nextControl := control, memory := memory }
-            | none => .fault .writeConflict
+            | none => .fault .address
 
 def transitionOf (effect : Effect) : Transaction.Transition := {
   txnId := effect.common.txnId
@@ -225,6 +229,48 @@ theorem staged_result_abort_never_commits (model : Transaction.Model)
       hidle hrange hmatch
   · exact Transaction.abort_preserves_committed _
 
+theorem staged_result_reset_restores_initial (model : Transaction.Model)
+    (instruction : Instruction) (effect : Effect)
+    (hdecide : decide instruction = .result effect)
+    (hrepresentable : Representable effect)
+    (hidle : model.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
+    let staged := Transaction.step model (.stage (transitionOf effect))
+    stages model instruction staged /\
+      (Transaction.step staged.model .reset).model = Transaction.initial := by
+  dsimp
+  constructor
+  · exact decided_result_stages model instruction effect hdecide hrepresentable
+      hidle hrange hmatch
+  · exact Transaction.reset_restores_initial _
+
+theorem staged_result_matching_retire_is_exactly_once (model : Transaction.Model)
+    (instruction : Instruction) (effect : Effect)
+    (hdecide : decide instruction = .result effect)
+    (hrepresentable : Representable effect)
+    (hidle : model.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
+    let staged := Transaction.step model (.stage (transitionOf effect))
+    let first := Transaction.step staged.model
+      (.retire effect.common.txnId effect.common.resultChecksum)
+    let second := Transaction.step first.model
+      (.retire effect.common.txnId effect.common.resultChecksum)
+    stages model instruction staged /\
+      first.retired = true /\ second.retired = false /\
+      second.fault = some .badState /\
+      second.model.committed = first.model.committed := by
+  have hstage := Transaction.stage_is_atomic model (transitionOf effect)
+    hidle hrange hmatch
+  dsimp
+  constructor
+  · exact decided_result_stages model instruction effect hdecide hrepresentable
+      hidle hrange hmatch
+  · rw [hstage]
+    simpa [transitionOf] using
+      (Transaction.matching_retire_is_exactly_once model (transitionOf effect))
+
 theorem blake3_never_decides_digest (request : Blake3Request) :
     decide (.blake3 request) = .serviceRequired request := by rfl
 
@@ -237,6 +283,23 @@ theorem blake3_rejects_wrong_service (request : Blake3Request)
     (response : Blake3Response) (h : response.serviceId != request.serviceId) :
     resumeBlake3 request response = .fault .badService := by
   simp [resumeBlake3, h]
+
+theorem finishWrite_rejects_pc_overflow (common : Common) (memory : Mem)
+    (address : Index) (value : Word) (h : advance common = none) :
+    finishWrite common memory address value = .fault .address := by
+  simp [finishWrite, h]
+
+theorem blake3_resume_rejects_pc_overflow (request : Blake3Request)
+    (response : Blake3Response) (memory₁ memory₂ : Mem)
+    (htxn : response.txnId = request.common.txnId)
+    (hservice : response.serviceId = request.serviceId)
+    (hfirst : writeOnce request.memory request.outputAddresses.1
+      response.digest.1 = some memory₁)
+    (hsecond : writeOnce memory₁ request.outputAddresses.2
+      response.digest.2 = some memory₂)
+    (hoverflow : advance request.common = none) :
+    resumeBlake3 request response = .fault .address := by
+  simp [resumeBlake3, htxn, hservice, hfirst, hsecond, hoverflow]
 
 theorem blake3_rejects_first_output_conflict (request : Blake3Request)
     (response : Blake3Response)
@@ -349,7 +412,11 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms decided_result_stages
 #print axioms staged_result_matching_retire_commits
 #print axioms staged_result_abort_never_commits
+#print axioms staged_result_reset_restores_initial
+#print axioms staged_result_matching_retire_is_exactly_once
 #print axioms blake3_never_decides_digest
+#print axioms finishWrite_rejects_pc_overflow
+#print axioms blake3_resume_rejects_pc_overflow
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms mul_uses_canonical_ghash

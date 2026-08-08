@@ -25,6 +25,11 @@ outcome to contain the exact pending transition. A rejected stage therefore
 cannot satisfy the relation. The reachability witness constructs a concrete SET
 that reaches this pending state from `Transaction.initial`.
 
+The bridge also lifts reset, abort, and matching retirement into the semantic
+relation. Reset restores the initial committed state, abort preserves the
+committed state, and a matching result can retire exactly once. Checked PC
+increment failure is an address fault and precedes any attempted write.
+
 This foundation does not yet encode the complete packet-profile guard surface.
 In particular XOR/MUL currently express the forward decision over supplied
 cells, not interpreter-compatible missing-operand back-solving; effective

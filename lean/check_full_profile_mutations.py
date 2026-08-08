@@ -26,6 +26,10 @@ mutations = {
         "match writeOnce request.memory request.outputAddresses.1 response.digest.1 with",
         "match some (writeRaw request.memory request.outputAddresses.1 response.digest.1) with",
     ),
+    "pc-overflow-becomes-write-conflict": (
+        "| none => .fault .address\n  | some next =>",
+        "| none => .fault .writeConflict\n  | some next =>",
+    ),
 }
 
 for name, (old, new) in mutations.items():
