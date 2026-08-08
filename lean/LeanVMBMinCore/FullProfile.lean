@@ -47,6 +47,7 @@ structure DerefInput where
 
 structure JumpInput where
   common : Common
+  memory : Mem
   condition : Word
   targetPcWord : Word
   targetFpWord : Word
@@ -78,6 +79,7 @@ inductive Instruction where
 
 inductive Fault where
   | address
+  | stateMismatch
   | writeConflict
   | deref (reason : ControlPrimitives.Fault)
   | jump (reason : ControlPrimitives.Fault)
@@ -118,19 +120,22 @@ def decide : Instruction -> Decision
       finishWrite input.common input.memory input.output
         (GHASH128.mul (input.memory input.left).value (input.memory input.right).value)
   | .deref mode input =>
-      match executeDeref encodeIndex mode input.memory input.prepared with
-      | .ok control memory => .result {
-          common := input.common, nextControl := control, memory := memory }
-      | .deferred control left right memory => .result {
-          common := input.common, nextControl := control, memory := memory
-          deferred := [(left, right)] }
-      | .fault reason => .fault (.deref reason)
+      if input.prepared.control != input.common.control then
+        .fault .stateMismatch
+      else
+        match executeDeref encodeIndex mode input.memory input.prepared with
+        | .ok control memory => .result {
+            common := input.common, nextControl := control, memory := memory }
+        | .deferred control left right memory => .result {
+            common := input.common, nextControl := control, memory := memory
+            deferred := [(left, right)] }
+        | .fault reason => .fault (.deref reason)
   | .jump input =>
       match ControlPrimitives.jump encodeIndex
           input.common.control input.condition input.targetPcWord input.targetFpWord
           input.inverseWitness input.resolvedTargets with
       | .ok control => .result {
-          common := input.common, nextControl := control, memory := Memory.empty }
+          common := input.common, nextControl := control, memory := input.memory }
       | .fault reason => .fault (.jump reason)
   | .blake3 request => .serviceRequired request
 
@@ -333,23 +338,40 @@ theorem mul_uses_canonical_ghash (input : BinaryInput) :
 
 theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
     decide (.deref mode input) =
-      match executeDeref encodeIndex mode input.memory input.prepared with
-      | .ok control memory => .result {
-          common := input.common, nextControl := control, memory := memory }
-      | .deferred control left right memory => .result {
-          common := input.common, nextControl := control, memory := memory
-          deferred := [(left, right)] }
-      | .fault reason => .fault (.deref reason) := by
+      if input.prepared.control != input.common.control then
+        .fault .stateMismatch
+      else
+        match executeDeref encodeIndex mode input.memory input.prepared with
+        | .ok control memory => .result {
+            common := input.common, nextControl := control, memory := memory }
+        | .deferred control left right memory => .result {
+            common := input.common, nextControl := control, memory := memory
+            deferred := [(left, right)] }
+        | .fault reason => .fault (.deref reason) := by
   rfl
+
+theorem deref_rejects_prepared_control_mismatch (mode : DerefMode)
+    (input : DerefInput)
+    (h : input.prepared.control != input.common.control) :
+    decide (.deref mode input) = .fault .stateMismatch := by
+  simp [decide, h]
 
 theorem jump_uses_canonical_control (input : JumpInput) :
     decide (.jump input) =
       match ControlPrimitives.jump encodeIndex input.common.control input.condition
           input.targetPcWord input.targetFpWord input.inverseWitness input.resolvedTargets with
       | .ok control => .result {
-          common := input.common, nextControl := control, memory := Memory.empty }
+          common := input.common, nextControl := control, memory := input.memory }
       | .fault reason => .fault (.jump reason) := by
   rfl
+
+theorem jump_success_preserves_memory (input : JumpInput) (control : Control)
+    (h : ControlPrimitives.jump encodeIndex input.common.control input.condition
+      input.targetPcWord input.targetFpWord input.inverseWitness
+      input.resolvedTargets = .ok control) :
+    decide (.jump input) = .result {
+      common := input.common, nextControl := control, memory := input.memory } := by
+  simp [decide, h]
 
 /-! Concrete reachability witnesses keep the relation observably non-empty. -/
 
@@ -397,7 +419,8 @@ example : exists effect, decide (.mul witnessBinary) = .result effect := by
   rfl
 
 def witnessJump : JumpInput := {
-  common := witnessCommon, condition := 0#128, targetPcWord := 0#128,
+  common := witnessCommon, memory := Memory.empty,
+  condition := 0#128, targetPcWord := 0#128,
   targetFpWord := 0#128, inverseWitness := 0#128, resolvedTargets := none }
 
 def witnessJumpEffect : Effect where
@@ -421,6 +444,8 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_rejects_second_output_conflict
 #print axioms mul_uses_canonical_ghash
 #print axioms deref_uses_canonical_control
+#print axioms deref_rejects_prepared_control_mismatch
 #print axioms jump_uses_canonical_control
+#print axioms jump_success_preserves_memory
 
 end LeanVMBMinCore.FullProfile

@@ -25,6 +25,10 @@ outcome to contain the exact pending transition. A rejected stage therefore
 cannot satisfy the relation. The reachability witness constructs a concrete SET
 that reaches this pending state from `Transaction.initial`.
 
+DEREF rejects a prepared host resolution whose captured control differs from
+the transaction's current control. JUMP is control-only and returns the exact
+supplied memory view unchanged; it cannot erase host-owned state.
+
 The bridge also lifts reset, abort, and matching retirement into the semantic
 relation. Reset restores the initial committed state, abort preserves the
 committed state, and a matching result can retire exactly once. Checked PC

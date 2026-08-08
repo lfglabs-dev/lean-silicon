@@ -30,6 +30,14 @@ mutations = {
         "| none => .fault .address\n  | some next =>",
         "| none => .fault .writeConflict\n  | some next =>",
     ),
+    "deref-bypasses-control-binding": (
+        "if input.prepared.control != input.common.control then",
+        "if false then",
+    ),
+    "jump-drops-host-memory": (
+        "common := input.common, nextControl := control, memory := input.memory",
+        "common := input.common, nextControl := control, memory := Memory.empty",
+    ),
 }
 
 for name, (old, new) in mutations.items():
