@@ -78,7 +78,7 @@ class DryRunBackend:
         status = (RX_READY if not self.outgoing else 0) | (TX_VALID if self.outgoing else 0)
         status |= BUSY if self.command is not None or self.outgoing else 0
         status |= FAULT if self.fault else 0
-        status |= DONE if self.done else 0
+        status |= DONE if self.done and self.rst_n else 0
         return Pins(self.outgoing[0] if self.outgoing else 0, status, OUTPUT_ENABLES)
 
     def cycle(self) -> Pins:
@@ -199,6 +199,8 @@ def validate_receipt(document: dict) -> None:
     if not isinstance(observations, list) or len(observations) != len(vectors):
         raise ValueError("observations do not cover the declared vectors")
     cases = {case["id"]: case for case in json.loads((ROOT / "vectors.json").read_text())["cases"]}
+    if vectors != list(cases):
+        raise ValueError("receipt does not cover the complete shipped vector corpus")
     required_observation = {"id", "opcode", "received", "expected", "oracle_match", "retire_done_pulse", "idle_after_retire"}
     for vector_id, observation in zip(vectors, observations):
         if (not isinstance(observation, dict) or set(observation) != required_observation or

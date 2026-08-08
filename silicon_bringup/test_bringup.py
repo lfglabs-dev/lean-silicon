@@ -62,6 +62,13 @@ class BringupTest(unittest.TestCase):
         driver._cycle()
         self.assertTrue(backend.pins().uio_out & RX_READY)
 
+    def test_reset_suppresses_pending_done_immediately(self):
+        backend = DryRunBackend(); driver = Driver(backend); driver.reset(); driver.send(0x7F)
+        driver._cycle(uio=1 << 3)
+        self.assertTrue(backend.pins().uio_out & DONE)
+        backend.drive(ui_in=0, uio_in=0, ena=True, rst_n=False)
+        self.assertFalse(backend.pins().uio_out & DONE)
+
     def test_reset_and_deselect_abort_partial_work_and_uio6_is_ignored(self):
         driver = Driver(DryRunBackend()); driver.reset(); driver.send(3); driver.send(0x12)
         self.assertTrue(driver.backend.pins().uio_out & BUSY)
@@ -84,6 +91,7 @@ class BringupTest(unittest.TestCase):
             lambda value: value["observations"][0].update(received="ff" * 16, expected="ff" * 16),
             lambda value: value["observations"][0].update(retire_done_pulse=False),
             lambda value: value.update(vectors=value["vectors"][:-1]),
+            lambda value: (value.update(vectors=value["vectors"][:-1]), value.update(observations=value["observations"][:-1])),
             lambda value: value["outcome"].update(passed=False),
         ):
             with self.subTest(mutate=mutate):
