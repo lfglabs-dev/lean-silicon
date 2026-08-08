@@ -97,6 +97,39 @@ def open_resolved_toolchain_snapshot(toolchain: str) -> tuple[int, str]:
     return descriptor, cargo_relative
 
 
+def require_readonly_toolchain_mount(descriptor: int) -> None:
+    """Require the pinned toolchain to be the root of a read-only filesystem."""
+    fdinfo = pathlib.Path(f"/proc/self/fdinfo/{descriptor}").read_text()
+    mount_id = next(
+        (line.split(":", 1)[1].strip() for line in fdinfo.splitlines()
+         if line.startswith("mnt_id:")),
+        None,
+    )
+    if mount_id is None:
+        raise SystemExit("cannot identify selected Rust toolchain mount")
+    mount = next(
+        (line.split() for line in pathlib.Path("/proc/self/mountinfo").read_text().splitlines()
+         if line.split()[0] == mount_id),
+        None,
+    )
+    if mount is None:
+        raise SystemExit("cannot identify selected Rust toolchain mount")
+    mount_root = mount[3]
+    mountpoint = pathlib.Path(
+        mount[4].replace("\\040", " ").replace("\\011", "\t")
+        .replace("\\012", "\n").replace("\\134", "\\")
+    )
+    pinned = pathlib.Path(f"/proc/self/fd/{descriptor}")
+    if (
+        mount_root != "/"
+        or "ro" not in mount[5].split(",")
+        or not os.path.samefile(pinned, mountpoint)
+    ):
+        raise SystemExit(
+            "selected Rust toolchain must be a dedicated read-only filesystem mount"
+        )
+
+
 def require_safe_archive_tree(upstream: pathlib.Path, commit: str) -> None:
     """Reject Git entries that could redirect privileged archive extraction."""
     listing = subprocess.check_output(
@@ -279,12 +312,8 @@ def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
         ]
         script = """
 PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
-TOOLCHAIN_FROZEN=0
 TOOLCHAIN_MOUNTED=0
 cleanup() {
-  if [ "$TOOLCHAIN_FROZEN" = 1 ]; then
-    /usr/sbin/fsfreeze --unfreeze "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
-  fi
   if [ "$TOOLCHAIN_MOUNTED" = 1 ]; then
     /usr/bin/umount "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
   fi
@@ -301,11 +330,7 @@ mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
   "$PRIVATE_ROOT/toolchain" "$PRIVATE_ROOT/host-toolchain"
 /usr/bin/mount --bind "$HOST_TOOLCHAIN_FD" "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=1
-/usr/sbin/fsfreeze --freeze "$PRIVATE_ROOT/host-toolchain"
-TOOLCHAIN_FROZEN=1
 cp -a "$PRIVATE_ROOT/host-toolchain/." "$PRIVATE_ROOT/toolchain/"
-/usr/sbin/fsfreeze --unfreeze "$PRIVATE_ROOT/host-toolchain"
-TOOLCHAIN_FROZEN=0
 /usr/bin/umount "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=0
 RUN_UID=$((200000 + $$))
@@ -326,6 +351,12 @@ cd "$PRIVATE_ROOT"
   '
 """
         require_safe_archive_tree(upstream, commit)
+        toolchain_descriptor, cargo_relative = open_resolved_toolchain_snapshot(toolchain)
+        try:
+            require_readonly_toolchain_mount(toolchain_descriptor)
+        except BaseException:
+            os.close(toolchain_descriptor)
+            raise
         archive = subprocess.Popen(
             [GIT, "archive", "--format=tar", commit],
             cwd=upstream,
@@ -333,7 +364,6 @@ cd "$PRIVATE_ROOT"
             stderr=subprocess.PIPE,
         )
         assert archive.stdout is not None
-        toolchain_descriptor, cargo_relative = open_resolved_toolchain_snapshot(toolchain)
         try:
             completed = subprocess.run(
                 [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",

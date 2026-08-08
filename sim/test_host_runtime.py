@@ -1392,9 +1392,9 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                         repo, "source input", "test-toolchain", head
                     )
                 except SystemExit as error:
-                    if "freeze failed: Operation not supported" in str(error):
+                    if "dedicated read-only filesystem mount" in str(error):
                         self.skipTest(
-                            "fake toolchain filesystem lacks atomic freeze support"
+                            "fake toolchain is not on a dedicated read-only mount"
                         )
                     raise
 
@@ -1480,6 +1480,19 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 pinned = pathlib.Path(f"/proc/self/fd/{descriptor}")
                 self.assertTrue(os.path.samefile(pinned, original))
                 self.assertEqual((pinned / relative).read_text(), "selected")
+            finally:
+                os.close(descriptor)
+
+    def test_mutable_host_toolchain_mount_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                with self.assertRaisesRegex(
+                    SystemExit, "dedicated read-only filesystem mount"
+                ):
+                    comparison_tool._export.require_readonly_toolchain_mount(
+                        descriptor
+                    )
             finally:
                 os.close(descriptor)
 

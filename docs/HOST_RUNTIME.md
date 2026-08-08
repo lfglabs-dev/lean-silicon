@@ -132,8 +132,8 @@ the claim because `Execution::trace` is not public at the frozen revision.
 
 Live compiler export/comparison requires Linux mount namespaces and
 non-interactive passwordless `sudo` for the fixed privileged broker commands,
-plus `fsfreeze` support on the selected Rust toolchain filesystem so its private
-copy is atomic. The live probe fails closed when a prerequisite is unavailable.
+plus a selected Rust toolchain provisioned as the root of its own read-only
+filesystem mount. The live probe fails closed when a prerequisite is unavailable.
 
 ```sh
 git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanvm-b

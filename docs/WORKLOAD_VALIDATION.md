@@ -8,9 +8,10 @@ not modify `src/`, `release/`, FPGA bitstreams, GDS, tags, or release gates.
 
 Live compiler execution requires Linux mount namespaces and non-interactive
 passwordless `sudo` for the fixed privileged broker commands. The filesystem
-holding the selected Rust toolchain must also support `fsfreeze`, which makes
-the private copy atomic against concurrent writers. The validator checks these
-prerequisites while compiling and fails closed when one is absent.
+root of the selected Rust toolchain must be provisioned as its own read-only
+mount, making the private copy immutable before this invocation begins. The
+validator checks these prerequisites while compiling and fails closed when one
+is absent.
 
 Check out the exact candidate head and the pinned upstream leanVM-b commit, then
 use private mutable caches outside either checkout:
