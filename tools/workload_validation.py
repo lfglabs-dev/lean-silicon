@@ -161,13 +161,15 @@ def pinned_worktree(repository: Path, commit: str):
 def run_comparison(command: list[str], out: Path, workload_id: str,
                    cwd: Path = ROOT) -> tuple[subprocess.CompletedProcess[str], dict]:
     """Run one comparison and return only a receipt created by this invocation."""
+    if command[:2] != [sys.executable, "-I"]:
+        raise SystemExit("comparison must use isolated Python")
     out.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(prefix="workload-validation-pycache-") as pycache:
-        env = os.environ | {"PYTHONPYCACHEPREFIX": pycache}
+        isolated_command = command[:2] + ["-X", f"pycache_prefix={pycache}"] + command[2:]
         run = subprocess.run(
-            command,
+            isolated_command,
             cwd=cwd,
-            env=env,
+            env=os.environ,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

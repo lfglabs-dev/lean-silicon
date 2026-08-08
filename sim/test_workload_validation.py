@@ -504,7 +504,11 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             with mock.patch.object(workload_validation.subprocess, "run", return_value=failed):
                 with self.assertRaisesRegex(SystemExit, "comparison produced no receipt"):
-                    workload_validation.run_comparison(["comparison"], out, "case")
+                    workload_validation.run_comparison(
+                        [workload_validation.sys.executable, "-I", "comparison"],
+                        out,
+                        "case",
+                    )
 
             self.assertFalse(out.exists())
 
@@ -519,7 +523,9 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             with mock.patch.object(workload_validation.subprocess, "run", side_effect=write_fresh_receipt):
                 run, receipt = workload_validation.run_comparison(
-                    ["comparison"], out, "case"
+                    [workload_validation.sys.executable, "-I", "comparison"],
+                    out,
+                    "case",
                 )
 
             self.assertEqual(run.returncode, 1)
@@ -532,8 +538,13 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             def inspect_isolated_cache(*_args, **kwargs):
                 nonlocal observed_cache
-                observed_cache = Path(kwargs["env"]["PYTHONPYCACHEPREFIX"])
+                command = _args[0]
+                prefix_option = next(
+                    item for item in command if item.startswith("pycache_prefix=")
+                )
+                observed_cache = Path(prefix_option.split("=", 1)[1])
                 self.assertTrue(observed_cache.is_dir())
+                self.assertEqual(command[1:3], ["-I", "-X"])
                 out.write_text(json.dumps({"comparison": {"result": "MATCH"}}))
                 return subprocess.CompletedProcess([], 0, stdout="")
 
@@ -542,7 +553,11 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 "run",
                 side_effect=inspect_isolated_cache,
             ):
-                workload_validation.run_comparison(["comparison"], out, "case")
+                workload_validation.run_comparison(
+                    [workload_validation.sys.executable, "-I", "comparison"],
+                    out,
+                    "case",
+                )
 
             self.assertIsNotNone(observed_cache)
             self.assertFalse(observed_cache.exists())
