@@ -57,6 +57,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # The release-equivalence lane reads its frozen RTL from SOURCE_SHA.
+          fetch-depth: 0
       - uses: YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde
       - name: Bounded GF(2^8) proof
         run: cd formal && sby -f gf8_mul.sby
@@ -91,6 +94,10 @@ jobs:
         run: cd formal && sby -f lsc1u_wrapper_composition.sby
       - name: Fixed release netlist versus RTL bounded equivalence
         run: cd formal && sby -f lsc1u_netlist_eq.sby short
+      - name: Pinned v0.1.1 physical netlist sequential equivalence lane
+        env:
+          LSC1_EQ_CACHE: ${{ runner.temp }}/lsc1-eq-cache
+        run: make release-netlist-equivalence
       - name: Mutation sensitivity of retained safety and arithmetic properties
         run: make formal-mutations
       - name: Yosys lint and synthesis

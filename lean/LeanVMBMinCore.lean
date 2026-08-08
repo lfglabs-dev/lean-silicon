@@ -12,3 +12,4 @@ import LeanVMBMinCore.ControlPrimitives
 import LeanVMBMinCore.ISA
 import LeanVMBMinCore.Optimality
 import LeanVMBMinCore.RTLRefinement
+import LeanVMBMinCore.RTLTraceRefinement

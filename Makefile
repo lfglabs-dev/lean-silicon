@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations clean package checksums
+.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -100,6 +100,10 @@ formal:
 
 formal-mutations:
 	$(PYTHON) formal/check_mutations.py
+
+release-netlist-equivalence:
+	@test -n "$(LSC1_EQ_CACHE)" || (echo "set LSC1_EQ_CACHE to a private directory outside the checkout" >&2; exit 2)
+	$(PYTHON) tools/verify_lsc1u_release_equivalence.py --cache-dir "$(LSC1_EQ_CACHE)"
 
 clean:
 	$(MAKE) -C test clean

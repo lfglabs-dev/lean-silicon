@@ -23,7 +23,8 @@ immutable.
 
 `MANIFEST.json` pins final main's exact commit/tree, toolchains, frozen oracle,
 exact-head CI, physical-flow jobs, GitHub artifact archive hashes, and selected
-payload hashes. `SHA256SUMS.txt` covers the two canonical package documents.
+payload hashes. `SHA256SUMS.txt` covers the canonical package documents and the
+durable copy of the selected service-produced archive.
 
 The exact-main GDS run `31203929606` completed successfully. Its GDS, precheck,
 gate-level test, and viewer jobs are identified in the manifest. The downloaded
@@ -39,8 +40,10 @@ compares RTL with the historical `release/v0.1` netlist (SHA-256
 `0c85d1afefddf1166e4b3047500f9c27a03ad7198c9c075f505c4536888c03c3`), not
 the selected exact-main physical-run netlist (SHA-256
 `97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc`).
-The manifest records this boundary explicitly; no formal-equivalence claim is
-made for the selected physical payload.
+The manifest records the historical boundary explicitly. The later
+`make release-netlist-equivalence` lane fetches and hash-checks the selected
+physical payload and provides the bounded 74-edge result described in
+`docs/LSC1U_RELEASE_EQUIVALENCE.md`; it does not establish unbounded equivalence.
 
 ## Explicit limitations
 
@@ -56,9 +59,8 @@ made for the selected physical payload.
 - No ULX3S board run is claimed. No FPGA hardware or fabricated ASIC was
   attached or physically validated for this package.
 - GitHub artifact archives are service-produced ZIPs; payload hashes identify
-  the release bytes independently of ZIP container metadata.
-- The package contains receipts and hashes, not duplicated large binary
-  artifacts. Reproduction requires downloading the retained artifacts from the
-  pinned run.
+  the release bytes independently of ZIP container metadata. The selected
+  `tt_submission` archive is retained verbatim under `evidence/` so the
+  historical proof does not depend on service retention.
 - No tag, GitHub release, submission, publication, merge, or branch deletion is
   part of this preparation PR.
