@@ -24,8 +24,8 @@ python3 -m json.tool "$cache/receipt.json"
 The cache is mutable evidence, not a release artifact. Preserve a receipt and
 the hierarchy snapshot together when reproducing a particular run. A receipt is
 accepted only if the checkout descends from the plan's exact source commit/tree,
-the cache resolves outside the checkout, and its permissions deny group/other
-access. Receipt content is deterministic for an exact checkout and toolchain;
+all tracked inputs are clean, the cache resolves outside the checkout, and its
+permissions deny group/other access. Receipt content is deterministic for an exact checkout and toolchain;
 caller-specific cache paths and timing-bearing command output are not recorded.
 
 ## State and transaction surface

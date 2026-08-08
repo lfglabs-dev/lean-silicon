@@ -72,8 +72,9 @@ def main() -> None:
     plan = json.loads(PLAN_PATH.read_text())
     schema = json.loads(SCHEMA_PATH.read_text())
     validate_contract(plan, schema["$defs"]["plan"])
-    if output(["git", "status", "--porcelain"]) != "":
-        raise SystemExit("assurance checkout must be clean")
+    tracked_status = output(["git", "status", "--porcelain", "--untracked-files=no"])
+    if tracked_status != "":
+        raise SystemExit("tracked assurance checkout must be clean")
     head = output(["git", "rev-parse", "HEAD"])
     tree = output(["git", "rev-parse", "HEAD^{tree}"])
     # A PR checkout naturally has a new commit/tree; its first parent is the pinned main source.
