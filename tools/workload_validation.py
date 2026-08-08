@@ -29,6 +29,8 @@ SUPPORTED_RUNTIME = {
 }
 SUPPORTED_UPSTREAM_REPOSITORY = "https://github.com/leanEthereum/leanVM-b.git"
 SUPPORTED_UPSTREAM_COMMIT = "c308034ab78619b39a59d26f3dc60e7df5b52649"
+SUPPORTED_RUST_TOOLCHAIN = "leanvm-validation-1.88.0"
+SUPPORTED_RUST_TOOLCHAIN_SHA256 = "51ed91eab1f530bc88d68a25cf129f6e10f683c1f5594183e06af7d763f2fa8c"
 SAFE_WORKLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 REQUIRED_WORKLOAD_INPUTS = {
     "field_division": (
@@ -295,6 +297,10 @@ def validate_upstream_repository(upstream: dict) -> None:
         raise SystemExit("plan upstream repository is unsupported")
     if upstream["commit"] != SUPPORTED_UPSTREAM_COMMIT:
         raise SystemExit("plan upstream commit is unsupported")
+    if upstream["rust_toolchain"] != SUPPORTED_RUST_TOOLCHAIN:
+        raise SystemExit("plan Rust toolchain is unsupported")
+    if upstream["rust_toolchain_sha256"] != SUPPORTED_RUST_TOOLCHAIN_SHA256:
+        raise SystemExit("plan Rust toolchain identity is unsupported")
 
 
 def validate_upstream_checkout(upstream: Path, plan: dict) -> None:
@@ -394,7 +400,8 @@ def collect_evidence(plan: dict, cache: Path, receipt: dict, upstream: Path,
             out = cache / f"{workload['id']}.comparison.json"
             command = [sys.executable, "-I", "tools/host_upstream_comparison.py", "--artifact",
                        workload["artifact"], "--upstream", str(upstream_snapshot), "--rust-toolchain",
-                       plan["upstream"]["rust_toolchain"], "--out", "-"]
+                       plan["upstream"]["rust_toolchain"], "--rust-toolchain-sha256",
+                       plan["upstream"]["rust_toolchain_sha256"], "--out", "-"]
             run, comparison = run_comparison(
                 command, out, workload["id"], cwd=candidate_snapshot
             )

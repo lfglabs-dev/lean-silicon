@@ -30,12 +30,14 @@ m2-differential:
 host-export:
 	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
 	$(PYTHON) tools/lean_compiler_export.py --upstream "$(LEANVM_B_UPSTREAM)" \
-	  --source $(HOST_SOURCE) --out $(HOST_ARTIFACT)
+	  --source $(HOST_SOURCE) --out $(HOST_ARTIFACT) \
+	  --rust-toolchain leanvm-validation-1.88.0
 
 # Without LEANVM_B_UPSTREAM this compares against the recorded upstream run.
 host-comparison:
 	$(PYTHON) -I tools/host_upstream_comparison.py --artifact $(HOST_ARTIFACT) \
-	  $(if $(LEANVM_B_UPSTREAM),--upstream "$(LEANVM_B_UPSTREAM)",)
+	  $(if $(LEANVM_B_UPSTREAM),--upstream "$(LEANVM_B_UPSTREAM)" \
+	  --rust-toolchain leanvm-validation-1.88.0,)
 
 # Non-release, non-SKY26c realistic workload lane. Both paths are caller-owned.
 workload-validation:

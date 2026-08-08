@@ -15,6 +15,7 @@ around it.
 import argparse
 import base64
 import datetime
+import hashlib
 import json
 import os
 import pathlib
@@ -43,6 +44,7 @@ PRIVILEGED_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
 SUDO = "/usr/bin/sudo"
 UNSHARE = "/usr/bin/unshare"
 GIT = "/usr/bin/git"
+PINNED_TOOLCHAIN_SHA256 = "51ed91eab1f530bc88d68a25cf129f6e10f683c1f5594183e06af7d763f2fa8c"
 
 #: Public-only fields.  Anything `pub(crate)` upstream is reported as absent.
 UNEXPOSED = {
@@ -127,6 +129,35 @@ def require_readonly_toolchain_mount(descriptor: int) -> None:
     ):
         raise SystemExit(
             "selected Rust toolchain must be a dedicated read-only filesystem mount"
+        )
+
+
+def toolchain_tree_sha256(root: pathlib.Path) -> str:
+    """Hash every toolchain path, type, mode, link target, and regular-file byte."""
+    digest = hashlib.sha256()
+    paths = sorted(root.rglob("*"), key=lambda path: path.relative_to(root).as_posix())
+    for path in paths:
+        relative = path.relative_to(root).as_posix().encode()
+        metadata = path.lstat()
+        mode = metadata.st_mode & 0o7777
+        if path.is_symlink():
+            kind, payload = b"link", os.readlink(path).encode()
+        elif path.is_dir():
+            kind, payload = b"dir", b""
+        elif path.is_file():
+            kind, payload = b"file", path.read_bytes()
+        else:
+            raise SystemExit(f"unsupported entry in selected Rust toolchain: {relative!r}")
+        digest.update(kind + b"\0" + relative + b"\0" + f"{mode:o}".encode() + b"\0")
+        digest.update(len(payload).to_bytes(8, "big") + payload)
+    return digest.hexdigest()
+
+
+def require_authenticated_toolchain(descriptor: int, expected_sha256: str) -> None:
+    actual = toolchain_tree_sha256(pathlib.Path(f"/proc/self/fd/{descriptor}"))
+    if actual != expected_sha256:
+        raise SystemExit(
+            f"selected Rust toolchain identity mismatch: expected {expected_sha256}, got {actual}"
         )
 
 
@@ -301,7 +332,8 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
 
 
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
-              commit: str = COMMIT) -> tuple[dict, list[str]]:
+              commit: str = COMMIT,
+              toolchain_sha256: str = PINNED_TOOLCHAIN_SHA256) -> tuple[dict, list[str]]:
     if not private_namespace_available():
         raise SystemExit(
             "live compiler probe requires Linux mount namespaces and passwordless sudo"
@@ -355,6 +387,7 @@ cd "$PRIVATE_ROOT"
         toolchain_descriptor, cargo_relative = open_resolved_toolchain_snapshot(toolchain)
         try:
             require_readonly_toolchain_mount(toolchain_descriptor)
+            require_authenticated_toolchain(toolchain_descriptor, toolchain_sha256)
         except BaseException:
             os.close(toolchain_descriptor)
             raise
@@ -404,6 +437,7 @@ def main() -> None:
     parser.add_argument("--source", required=True, type=pathlib.Path, help="zkDSL source file")
     parser.add_argument("--out", required=True, type=pathlib.Path, help="artifact JSON to write")
     parser.add_argument("--rust-toolchain", default="1.88.0")
+    parser.add_argument("--rust-toolchain-sha256", default=PINNED_TOOLCHAIN_SHA256)
     args = parser.parse_args()
     args.source = args.source.resolve()
 
@@ -413,7 +447,10 @@ def main() -> None:
         raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
 
     source = args.source.read_text()
-    probe, command = run_probe(args.upstream, source, args.rust_toolchain)
+    probe, command = run_probe(
+        args.upstream, source, args.rust_toolchain,
+        toolchain_sha256=args.rust_toolchain_sha256,
+    )
     postflight = require_checkout(args.upstream)
     if candidate_head() != tested_head:
         raise SystemExit("candidate checkout rejected: HEAD changed during export")

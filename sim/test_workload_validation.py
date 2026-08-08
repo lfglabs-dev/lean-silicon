@@ -105,6 +105,10 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         upstream = {
             "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY,
             "commit": workload_validation.SUPPORTED_UPSTREAM_COMMIT,
+            "rust_toolchain": workload_validation.SUPPORTED_RUST_TOOLCHAIN,
+            "rust_toolchain_sha256": (
+                workload_validation.SUPPORTED_RUST_TOOLCHAIN_SHA256
+            ),
         }
         workload_validation.validate_upstream_repository(upstream)
 
@@ -115,6 +119,10 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
         upstream = {
             "repository": workload_validation.SUPPORTED_UPSTREAM_REPOSITORY,
             "commit": "0" * 40,
+            "rust_toolchain": workload_validation.SUPPORTED_RUST_TOOLCHAIN,
+            "rust_toolchain_sha256": (
+                workload_validation.SUPPORTED_RUST_TOOLCHAIN_SHA256
+            ),
         }
         with self.assertRaisesRegex(SystemExit, "commit is unsupported"):
             workload_validation.validate_upstream_repository(upstream)

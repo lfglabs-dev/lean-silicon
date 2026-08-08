@@ -1508,6 +1508,26 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             finally:
                 os.close(descriptor)
 
+    def test_toolchain_manifest_authenticates_all_consumed_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "bin").mkdir()
+            cargo = root / "bin" / "cargo"
+            cargo.write_bytes(b"canonical cargo")
+            expected = comparison_tool._export.toolchain_tree_sha256(root)
+            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                comparison_tool._export.require_authenticated_toolchain(
+                    descriptor, expected
+                )
+                cargo.write_bytes(b"forged cargo")
+                with self.assertRaisesRegex(SystemExit, "identity mismatch"):
+                    comparison_tool._export.require_authenticated_toolchain(
+                        descriptor, expected
+                    )
+            finally:
+                os.close(descriptor)
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
