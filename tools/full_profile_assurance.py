@@ -12,6 +12,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:
+    import jsonschema
+except ImportError as error:
+    raise SystemExit("required Python package missing: jsonschema") from error
+
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = ROOT / "assurance/full-profile/plan.json"
 SCHEMA_PATH = ROOT / "assurance/full-profile/schema.json"
@@ -36,18 +41,7 @@ def output(argv: list[str]) -> str:
 
 
 def validate_contract(document: dict, definition: dict) -> None:
-    """Fail closed on the closed, required top-level machine contract."""
-    required = set(definition["required"])
-    properties = set(definition["properties"])
-    if set(document) != properties or not required <= set(document):
-        raise SystemExit("assurance JSON does not match its closed schema")
-    for key, rule in definition["properties"].items():
-        if "const" in rule and document[key] != rule["const"]:
-            raise SystemExit(f"assurance JSON violates schema constant: {key}")
-    try:
-        import jsonschema
-    except ImportError:
-        return
+    """Validate the complete closed machine contract."""
     jsonschema.Draft202012Validator.check_schema(definition)
     jsonschema.Draft202012Validator(definition).validate(document)
 
@@ -78,6 +72,8 @@ def main() -> None:
     plan = json.loads(PLAN_PATH.read_text())
     schema = json.loads(SCHEMA_PATH.read_text())
     validate_contract(plan, schema["$defs"]["plan"])
+    if output(["git", "status", "--porcelain"]) != "":
+        raise SystemExit("assurance checkout must be clean")
     head = output(["git", "rev-parse", "HEAD"])
     tree = output(["git", "rev-parse", "HEAD^{tree}"])
     # A PR checkout naturally has a new commit/tree; its first parent is the pinned main source.
