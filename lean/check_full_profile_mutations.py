@@ -55,16 +55,28 @@ mutations = {
         "| none => .serviceRequired { request, nextControl := request.common.control }\n      | some nextControl => .serviceRequired { request, nextControl }",
     ),
     "blake3-response-remains-replayable": (
-        "state := .idle, decision := some (finishBlake3 pending response)",
-        "state := .pending pending, decision := some (finishBlake3 pending response)",
+        "state := .idle nextServiceId, decision := some (finishBlake3 pending response)",
+        "state := .pending nextServiceId pending, decision := some (finishBlake3 pending response)",
+    ),
+    "blake3-service-id-is-caller-owned": (
+        "let assigned := start.assignServiceId nextServiceId",
+        "let assigned := start.assignServiceId 0",
+    ),
+    "blake3-reset-reuses-service-id": (
+        "| .pending nextServiceId _, .reset => { state := .idle nextServiceId }",
+        "| .pending nextServiceId _, .reset => { state := .idle 1 }",
+    ),
+    "blake3-allows-three-message-words": (
+        "inputWords : Fin 4 -> Word",
+        "inputWords : Fin 3 -> Word",
     ),
     "forward-only-deref-copies-missing-local": (
         "else if mode == .cell && input.profile == .forwardOnly &&",
         "else if false && input.profile == .forwardOnly &&",
     ),
     "blake3-mismatch-drops-pending": (
-        "state := .pending pending, decision := some (.fault .badService)",
-        "state := .idle, decision := some (.fault .badService)",
+        "state := .pending nextServiceId pending, decision := some (.fault .badService)",
+        "state := .idle nextServiceId, decision := some (.fault .badService)",
     ),
     "deref-profile-guard-precedes-pointer": (
         "else if !(input.memory input.prepared.pointerAddress).written ||",

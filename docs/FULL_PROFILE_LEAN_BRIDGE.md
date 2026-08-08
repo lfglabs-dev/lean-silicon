@@ -6,7 +6,9 @@ atomic transaction lifecycle. It models host-owned memory/fetch/witness inputs
 as explicit request data. SET/XOR/MUL decide writes with `Memory.writeOnce` and
 `GHASH128.mul`; DEREF and JUMP call `ControlPrimitives`; BLAKE3 can only create
 an external service request and accepts a response bound to the same transaction
-and service identifiers.
+and endpoint-assigned monotone service identifier. Its request type fixes the
+compression shape at four message words, two chaining-value words, and sixteen
+metadata bytes, so malformed arities are not representable.
 
 The service request retains the host-supplied memory view across suspension.
 Both returned digest words pass through `Memory.writeOnce`; either collision is

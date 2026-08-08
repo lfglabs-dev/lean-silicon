@@ -66,10 +66,32 @@ structure Blake3Request where
   common : Common
   serviceId : UInt32
   memory : Mem
-  inputWords : List Word
-  chainingValue : List Word
+  /-- BLAKE3 compression has exactly four message words. -/
+  inputWords : Fin 4 -> Word
+  /-- BLAKE3 compression has exactly two chaining-value words. -/
+  chainingValue : Fin 2 -> Word
   outputAddresses : Index × Index
-  metadata : List UInt8
+  /-- Counter, block length, and flags occupy exactly sixteen bytes. -/
+  metadata : Fin 16 -> UInt8
+
+/-- Host-owned BLAKE3 inputs before the endpoint assigns a service identifier. -/
+structure Blake3Start where
+  common : Common
+  memory : Mem
+  inputWords : Fin 4 -> Word
+  chainingValue : Fin 2 -> Word
+  outputAddresses : Index × Index
+  metadata : Fin 16 -> UInt8
+
+def Blake3Start.assignServiceId (start : Blake3Start)
+    (serviceId : UInt32) : Blake3Request := {
+  common := start.common
+  serviceId
+  memory := start.memory
+  inputWords := start.inputWords
+  chainingValue := start.chainingValue
+  outputAddresses := start.outputAddresses
+  metadata := start.metadata }
 
 structure Blake3Response where
   txnId : Transaction.TxnId
@@ -217,11 +239,13 @@ def serviceResponseMatches (pending : ServicePending) (response : Blake3Response
     response.serviceId == pending.request.serviceId
 
 inductive ServiceState where
-  | idle
-  | pending (request : ServicePending)
+  /-- The next endpoint-owned identifier; callers cannot choose the live ID. -/
+  | idle (nextServiceId : UInt32)
+  /-- The sequence advances when a request is accepted and survives abort. -/
+  | pending (nextServiceId : UInt32) (request : ServicePending)
 
 inductive ServiceCommand where
-  | start (request : Blake3Request)
+  | start (request : Blake3Start)
   | respond (response : Blake3Response)
   | abort
   | reset
@@ -232,21 +256,26 @@ structure ServiceOutcome where
 
 /-- Linear service controller: only a live pending request may consume one response. -/
 def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
-  | _, .reset => { state := .idle }
-  | _, .abort => { state := .idle }
-  | .idle, .start request =>
-      match decide (.blake3 request) with
+  | .idle nextServiceId, .reset => { state := .idle nextServiceId }
+  | .pending nextServiceId _, .reset => { state := .idle nextServiceId }
+  | .idle nextServiceId, .abort => { state := .idle nextServiceId }
+  | .pending nextServiceId _, .abort => { state := .idle nextServiceId }
+  | .idle nextServiceId, .start start =>
+      let assigned := start.assignServiceId nextServiceId
+      match decide (.blake3 assigned) with
       | .serviceRequired pending => {
-          state := .pending pending, decision := some (.serviceRequired pending) }
-      | decision => { state := .idle, decision := some decision }
-  | .pending pending, .respond response =>
+          state := .pending (nextServiceId + 1) pending,
+          decision := some (.serviceRequired pending) }
+      | decision => { state := .idle nextServiceId, decision := some decision }
+  | .pending nextServiceId pending, .respond response =>
       if serviceResponseMatches pending response then {
-        state := .idle, decision := some (finishBlake3 pending response) }
+        state := .idle nextServiceId, decision := some (finishBlake3 pending response) }
       else {
-        state := .pending pending, decision := some (.fault .badService) }
-  | .idle, .respond _ => { state := .idle, decision := some (.fault .badService) }
-  | .pending pending, .start _ => {
-      state := .pending pending, decision := some (.fault .stateMismatch) }
+        state := .pending nextServiceId pending, decision := some (.fault .badService) }
+  | .idle nextServiceId, .respond _ => {
+      state := .idle nextServiceId, decision := some (.fault .badService) }
+  | .pending nextServiceId pending, .start _ => {
+      state := .pending nextServiceId pending, decision := some (.fault .stateMismatch) }
 
 def transitionOf (effect : Effect) : Transaction.Transition := {
   txnId := effect.common.txnId
@@ -379,6 +408,16 @@ theorem blake3_rejects_pc_overflow_before_service (request : Blake3Request)
     decide (.blake3 request) = .fault .address := by
   simp [decide, hoverflow]
 
+theorem service_start_assigns_endpoint_id (start : Blake3Start)
+    (serviceId : UInt32) (nextControl : Control)
+    (hadvance : advance start.common = some nextControl) :
+    let request := start.assignServiceId serviceId
+    let pending : ServicePending := { request, nextControl }
+    serviceStep (.idle serviceId) (.start start) = {
+      state := .pending (serviceId + 1) pending
+      decision := some (.serviceRequired pending) } := by
+  simp [serviceStep, Blake3Start.assignServiceId, decide, hadvance]
+
 theorem blake3_rejects_wrong_transaction (pending : ServicePending)
     (response : Blake3Response)
     (h : response.txnId != pending.request.common.txnId) :
@@ -416,36 +455,48 @@ theorem blake3_rejects_second_output_conflict (pending : ServicePending)
     finishBlake3 pending response = .fault .writeConflict := by
   simp [finishBlake3, htxn, hservice, hfirst, hconflict]
 
-theorem service_response_consumes_pending (pending : ServicePending)
+theorem service_response_consumes_pending (nextServiceId : UInt32)
+    (pending : ServicePending)
     (response : Blake3Response)
     (hmatch : serviceResponseMatches pending response = true) :
-    (serviceStep (.pending pending) (.respond response)).state = .idle := by
+    (serviceStep (.pending nextServiceId pending) (.respond response)).state =
+      .idle nextServiceId := by
   simp [serviceStep, hmatch]
 
-theorem mismatched_service_response_preserves_pending (pending : ServicePending)
+theorem mismatched_service_response_preserves_pending (nextServiceId : UInt32)
+    (pending : ServicePending)
     (response : Blake3Response)
     (hmismatch : serviceResponseMatches pending response = false) :
-    serviceStep (.pending pending) (.respond response) = {
-      state := .pending pending, decision := some (.fault .badService) } := by
+    serviceStep (.pending nextServiceId pending) (.respond response) = {
+      state := .pending nextServiceId pending,
+      decision := some (.fault .badService) } := by
   simp [serviceStep, hmismatch]
 
-theorem service_replay_is_rejected (pending : ServicePending)
+theorem service_replay_is_rejected (nextServiceId : UInt32) (pending : ServicePending)
     (first replay : Blake3Response)
     (hmatch : serviceResponseMatches pending first = true) :
-    let consumed := serviceStep (.pending pending) (.respond first)
+    let consumed := serviceStep (.pending nextServiceId pending) (.respond first)
     (serviceStep consumed.state (.respond replay)).decision = some (.fault .badService) := by
   simp [serviceStep, hmatch]
 
-theorem service_abort_rejects_late_response (pending : ServicePending)
+theorem service_abort_rejects_late_response (nextServiceId : UInt32)
+    (pending : ServicePending)
     (response : Blake3Response) :
-    let aborted := serviceStep (.pending pending) .abort
+    let aborted := serviceStep (.pending nextServiceId pending) .abort
     (serviceStep aborted.state (.respond response)).decision = some (.fault .badService) := by
   rfl
 
-theorem service_reset_rejects_late_response (pending : ServicePending)
+theorem service_reset_rejects_late_response (nextServiceId : UInt32)
+    (pending : ServicePending)
     (response : Blake3Response) :
-    let reset := serviceStep (.pending pending) .reset
+    let reset := serviceStep (.pending nextServiceId pending) .reset
     (serviceStep reset.state (.respond response)).decision = some (.fault .badService) := by
+  rfl
+
+theorem service_reset_preserves_sequence (nextServiceId : UInt32)
+    (pending : ServicePending) :
+    (serviceStep (.pending nextServiceId pending) .reset).state =
+      .idle nextServiceId := by
   rfl
 
 theorem xor_uses_supplied_operands (input : BinaryInput) :
@@ -579,8 +630,8 @@ example : stages Transaction.initial
 example : exists request pending, decide (.blake3 request) = .serviceRequired pending := by
   let request : Blake3Request := {
     common := witnessCommon, serviceId := 11, memory := Memory.empty,
-    inputWords := [], chainingValue := [],
-    outputAddresses := (20, 21), metadata := [] }
+    inputWords := fun _ => 0#128, chainingValue := fun _ => 0#128,
+    outputAddresses := (20, 21), metadata := fun _ => 0 }
   refine ⟨request, { request, nextControl := { pc := 4, fp := 9 } },
     blake3_never_decides_digest request { pc := 4, fp := 9 } ?_⟩
   decide
@@ -640,6 +691,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms staged_result_matching_retire_is_exactly_once
 #print axioms blake3_never_decides_digest
 #print axioms blake3_rejects_pc_overflow_before_service
+#print axioms service_start_assigns_endpoint_id
 #print axioms finishWrite_rejects_pc_overflow
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
@@ -648,6 +700,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms service_replay_is_rejected
 #print axioms service_abort_rejects_late_response
 #print axioms service_reset_rejects_late_response
+#print axioms service_reset_preserves_sequence
 #print axioms mul_uses_canonical_ghash
 #print axioms mul_forward_uses_canonical_ghash
 #print axioms forward_only_rejects_absent_left
