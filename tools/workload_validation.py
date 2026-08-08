@@ -139,7 +139,8 @@ def clean_head() -> tuple[str, str]:
 def pinned_worktree(repository: Path, commit: str):
     """Yield a private detached worktree at the canonical captured commit."""
     with tempfile.TemporaryDirectory(prefix="workload-validation-snapshot-") as temp:
-        checkout = Path(temp) / "checkout"
+        snapshot_root = Path(temp)
+        checkout = snapshot_root / "checkout"
         subprocess.run(
             ["git", "-c", "core.hooksPath=/dev/null", "worktree", "add",
              "--detach", str(checkout), commit],
@@ -150,10 +151,10 @@ def pinned_worktree(repository: Path, commit: str):
         try:
             require_clean_worktree(checkout)
             set_worktree_writable(checkout, writable=False)
-            set_worktree_immutable(checkout, immutable=True)
+            set_worktree_immutable(snapshot_root, immutable=True)
             yield checkout
         finally:
-            set_worktree_immutable(checkout, immutable=False)
+            set_worktree_immutable(snapshot_root, immutable=False)
             set_worktree_writable(checkout, writable=True)
             subprocess.run(
                 ["git", "worktree", "remove", "--force", str(checkout)],

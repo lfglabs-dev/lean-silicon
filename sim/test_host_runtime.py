@@ -1387,9 +1387,16 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 "resolved_toolchain_snapshot",
                 return_value=(fake_bin, "cargo"),
             ):
-                result, command = comparison_tool._export.run_probe(
-                    repo, "source input", "test-toolchain", head
-                )
+                try:
+                    result, command = comparison_tool._export.run_probe(
+                        repo, "source input", "test-toolchain", head
+                    )
+                except SystemExit as error:
+                    if "freeze failed: Operation not supported" in str(error):
+                        self.skipTest(
+                            "fake toolchain filesystem lacks atomic freeze support"
+                        )
+                    raise
 
             self.assertTrue(result["private_archive"])
             self.assertGreaterEqual(result["uid"], 200000)

@@ -300,6 +300,7 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
                 workload_validation, "set_worktree_immutable"
             ) as set_immutable:
                 with workload_validation.pinned_worktree(repo, head) as snapshot:
+                    snapshot_root = snapshot.parent
                     self.assertEqual(
                         (snapshot / "model.py").stat().st_mode & 0o222,
                         0,
@@ -319,8 +320,8 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
 
             set_immutable.assert_has_calls(
                 [
-                    mock.call(mock.ANY, immutable=True),
-                    mock.call(mock.ANY, immutable=False),
+                    mock.call(snapshot_root, immutable=True),
+                    mock.call(snapshot_root, immutable=False),
                 ]
             )
 

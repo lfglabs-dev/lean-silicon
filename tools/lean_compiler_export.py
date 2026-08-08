@@ -283,7 +283,7 @@ TOOLCHAIN_FROZEN=0
 TOOLCHAIN_MOUNTED=0
 cleanup() {
   if [ "$TOOLCHAIN_FROZEN" = 1 ]; then
-    /usr/bin/chattr -R -i "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
+    /usr/sbin/fsfreeze --unfreeze "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
   fi
   if [ "$TOOLCHAIN_MOUNTED" = 1 ]; then
     /usr/bin/umount "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
@@ -301,10 +301,10 @@ mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
   "$PRIVATE_ROOT/toolchain" "$PRIVATE_ROOT/host-toolchain"
 /usr/bin/mount --bind "$HOST_TOOLCHAIN_FD" "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=1
-/usr/bin/chattr -R +i "$PRIVATE_ROOT/host-toolchain"
+/usr/sbin/fsfreeze --freeze "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_FROZEN=1
 cp -a "$PRIVATE_ROOT/host-toolchain/." "$PRIVATE_ROOT/toolchain/"
-/usr/bin/chattr -R -i "$PRIVATE_ROOT/host-toolchain"
+/usr/sbin/fsfreeze --unfreeze "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_FROZEN=0
 /usr/bin/umount "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=0
