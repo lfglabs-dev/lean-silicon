@@ -67,7 +67,7 @@ class DryRunBackend:
     def reset_state(self):
         self.command = None; self.incoming = bytearray(); self.outgoing = bytearray()
         self.input_count = self.responses_acked = self.response_total = 0
-        self.mul_bits_remaining = 0; self.pending_mul_result = None
+        self.mul_bits_remaining = 0; self.pending_mul_result = None; self.mul_tx_bubble = False
         self.fault = False; self.done = False
 
     def drive(self, *, ui_in: int, uio_in: int, ena: bool, rst_n: bool):
@@ -76,7 +76,7 @@ class DryRunBackend:
     def pins(self) -> Pins:
         if not self.ena:
             return Pins(0, 0, 0)
-        status = (RX_READY if not self.outgoing and not self.mul_bits_remaining and self.pending_mul_result is None else 0) | (TX_VALID if self.outgoing else 0)
+        status = (RX_READY if not self.outgoing and not self.mul_bits_remaining and self.pending_mul_result is None else 0) | (TX_VALID if self.outgoing and not self.mul_tx_bubble else 0)
         status |= BUSY if self.command is not None or self.outgoing else 0
         status |= FAULT if self.fault else 0
         status |= DONE if self.done and self.rst_n else 0
@@ -90,6 +90,8 @@ class DryRunBackend:
         self.done = False
         tx_fire = bool(before.uio_out & TX_VALID and self.uio_in & TX_READY)
         rx_fire = bool(before.uio_out & RX_READY and self.uio_in & RX_VALID)
+        if self.mul_tx_bubble:
+            self.mul_tx_bubble = False
         if self.mul_bits_remaining:
             self.mul_bits_remaining -= 1
         elif self.pending_mul_result is not None:
@@ -100,6 +102,8 @@ class DryRunBackend:
             self.responses_acked += 1
             if self.responses_acked == self.response_total:
                 self.done, self.command, self.fault = True, None, False
+            elif self.command == OPCODES["MUL"]:
+                self.mul_tx_bubble = True
         if rx_fire:
             if self.command is None:
                 self.incoming.clear()
@@ -139,9 +143,15 @@ class Driver:
         self._cycle(byte, RX_VALID); self._cycle()
     def receive_all(self) -> tuple[bytes, bool]:
         answer = bytearray()
-        while self.backend.pins().uio_out & TX_VALID:
-            answer.append(self.backend.pins().uo_out)
-            self._cycle(uio=TX_READY)
+        while True:
+            pins = self.backend.pins()
+            if pins.uio_out & TX_VALID:
+                answer.append(pins.uo_out)
+                self._cycle(uio=TX_READY)
+            elif self.backend.command is not None and not pins.uio_out & RX_READY:
+                self._cycle()
+            else:
+                break
         observed_done = bool(self.backend.pins().uio_out & DONE)
         self._cycle()
         return bytes(answer), observed_done

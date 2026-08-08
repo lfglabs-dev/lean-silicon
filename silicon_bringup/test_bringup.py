@@ -76,6 +76,22 @@ class BringupTest(unittest.TestCase):
         driver._cycle()
         self.assertTrue(driver.backend.pins().uio_out & TX_VALID)
 
+    def test_mul_response_has_rtl_transmit_valid_bubbles(self):
+        cases = json.loads((Path(__file__).parent / "vectors.json").read_text())["cases"]
+        case = next(item for item in cases if item["opcode"] == "MUL")
+        driver = Driver(DryRunBackend()); driver.reset()
+        driver.send(2)
+        for value in bytes.fromhex(case["a"] + case["b"]): driver.send(value)
+        while not driver.backend.pins().uio_out & TX_VALID: driver._cycle()
+        first = driver.backend.pins().uo_out
+        driver._cycle(uio=1 << 3)
+        self.assertFalse(driver.backend.pins().uio_out & (RX_READY | TX_VALID))
+        driver._cycle()
+        self.assertTrue(driver.backend.pins().uio_out & TX_VALID)
+        tail, done = driver.receive_all()
+        self.assertEqual(bytes((first,)) + tail, bytes.fromhex(case["expected"]))
+        self.assertTrue(done)
+
     def test_final_tx_ack_cannot_accept_same_edge_input(self):
         backend = DryRunBackend(); driver = Driver(backend); driver.reset(); driver.send(0x7F)
         self.assertTrue(backend.pins().uio_out & TX_VALID)
@@ -116,6 +132,16 @@ class BringupTest(unittest.TestCase):
         self.assertEqual(execution["real_silicon"], {"const": False})
         numeric = receipt(); numeric["execution"]["real_silicon"] = 0
         with self.assertRaises(ValueError): validate_receipt(numeric)
+
+    def test_json_schema_requires_complete_ordered_corpus(self):
+        schema = json.loads((Path(__file__).parent / "receipt.schema.json").read_text())
+        vector_ids = [case["id"] for case in json.loads((Path(__file__).parent / "vectors.json").read_text())["cases"]]
+        self.assertEqual(schema["properties"]["vectors"], {"const": vector_ids})
+        observations = schema["properties"]["observations"]
+        self.assertEqual(observations["minItems"], len(vector_ids))
+        self.assertEqual(observations["maxItems"], len(vector_ids))
+        constrained_ids = [item["allOf"][1]["properties"]["id"]["const"] for item in observations["prefixItems"]]
+        self.assertEqual(constrained_ids, vector_ids)
 
     def test_schema_rejects_forged_or_incomplete_results(self):
         for mutate in (
