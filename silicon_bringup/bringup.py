@@ -187,6 +187,8 @@ def validate_receipt(document: dict) -> None:
         raise ValueError("invalid execution record")
     if type(execution.get("real_silicon")) is not bool or execution["real_silicon"] != (execution["kind"] == "hardware"):
         raise ValueError("execution kind and real_silicon disagree")
+    if execution["kind"] == "hardware":
+        raise ValueError("receipt v1 cannot verify independent hardware provenance")
     if execution["transport"] == "deterministic Python pin-model" and execution["kind"] != "dry-run":
         raise ValueError("deterministic pin-model transport is dry-run evidence only")
     if interface != {"top": "tt_um_lfglabs_lsc1u", "uio_oe": "0xb6", "abort": "synchronous rst_n=0 or ena=0; uio[6] is reserved and ignored", "reserved_input_bits": [6]}:

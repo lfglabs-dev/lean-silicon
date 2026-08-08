@@ -33,4 +33,6 @@ an existing receipt.
 
 A future physical transport must implement the ready/valid pin protocol and
 produce a receipt with `kind: hardware` and `real_silicon: true`, together with
-independent board provenance. That is intentionally outside this PR.
+independent board provenance. That is intentionally outside this PR, and the
+v1 validator rejects hardware receipts because this schema cannot verify that
+provenance.

@@ -85,6 +85,8 @@ class BringupTest(unittest.TestCase):
         with self.assertRaises(ValueError): validate_receipt(dishonest)
         relabelled = receipt(); relabelled["execution"].update(kind="hardware", real_silicon=True)
         with self.assertRaises(ValueError): validate_receipt(relabelled)
+        disguised = receipt(); disguised["execution"].update(kind="hardware", real_silicon=True, transport="deterministic Python pin-model ")
+        with self.assertRaises(ValueError): validate_receipt(disguised)
         numeric = receipt(); numeric["execution"]["real_silicon"] = 0
         with self.assertRaises(ValueError): validate_receipt(numeric)
 
