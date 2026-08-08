@@ -88,6 +88,13 @@ def resolved_toolchain_snapshot(toolchain: str) -> tuple[pathlib.Path, str]:
     root = cargo.parent.parent
     return root, str(cargo.relative_to(root))
 
+
+def open_resolved_toolchain_snapshot(toolchain: str) -> tuple[int, str]:
+    """Pin the selected toolchain inode before the privileged broker starts."""
+    root, cargo_relative = resolved_toolchain_snapshot(toolchain)
+    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+    return descriptor, cargo_relative
+
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
 use primitives::field::F128;
@@ -256,9 +263,13 @@ def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
         script = """
 PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
 TOOLCHAIN_FROZEN=0
+TOOLCHAIN_MOUNTED=0
 cleanup() {
   if [ "$TOOLCHAIN_FROZEN" = 1 ]; then
-    /usr/bin/chattr -R -i "$HOST_TOOLCHAIN_ROOT" 2>/dev/null || true
+    /usr/bin/chattr -R -i "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
+  fi
+  if [ "$TOOLCHAIN_MOUNTED" = 1 ]; then
+    /usr/bin/umount "$PRIVATE_ROOT/host-toolchain" 2>/dev/null || true
   fi
   /usr/bin/umount "$PRIVATE_ROOT" 2>/dev/null || true
   /usr/bin/rmdir "$PRIVATE_ROOT" 2>/dev/null || true
@@ -270,12 +281,16 @@ example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
 mkdir -p "$(dirname "$example")"
 printf %s "$PROBE_BASE64" | base64 -d > "$example"
 mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
-  "$PRIVATE_ROOT/toolchain"
-/usr/bin/chattr -R +i "$HOST_TOOLCHAIN_ROOT"
+  "$PRIVATE_ROOT/toolchain" "$PRIVATE_ROOT/host-toolchain"
+/usr/bin/mount --bind "$HOST_TOOLCHAIN_FD" "$PRIVATE_ROOT/host-toolchain"
+TOOLCHAIN_MOUNTED=1
+/usr/bin/chattr -R +i "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_FROZEN=1
-cp -a "$HOST_TOOLCHAIN_ROOT/." "$PRIVATE_ROOT/toolchain/"
-/usr/bin/chattr -R -i "$HOST_TOOLCHAIN_ROOT"
+cp -a "$PRIVATE_ROOT/host-toolchain/." "$PRIVATE_ROOT/toolchain/"
+/usr/bin/chattr -R -i "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_FROZEN=0
+/usr/bin/umount "$PRIVATE_ROOT/host-toolchain"
+TOOLCHAIN_MOUNTED=0
 RUN_UID=$((200000 + $$))
 while /usr/bin/ps -eo uid= | /bin/grep -qx " *$RUN_UID"; do
   RUN_UID=$((RUN_UID + 1))
@@ -300,21 +315,24 @@ cd "$PRIVATE_ROOT"
             stderr=subprocess.PIPE,
         )
         assert archive.stdout is not None
-        toolchain_root, cargo_relative = resolved_toolchain_snapshot(toolchain)
-        completed = subprocess.run(
-            [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",
-             f"PATH={PRIVILEGED_PATH}",
-             f"HOST_TOOLCHAIN_ROOT={toolchain_root}",
-             f"CARGO_RELATIVE={cargo_relative}",
-             f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
-             f"LEAN_SOURCE={source}",
-             f"RUST_TOOLCHAIN={toolchain}",
-             "CARGO_INCREMENTAL=0", "/bin/sh", "-ceu", script],
-            stdin=archive.stdout,
-            text=False,
-            capture_output=True,
-            env=os.environ,
-        )
+        toolchain_descriptor, cargo_relative = open_resolved_toolchain_snapshot(toolchain)
+        try:
+            completed = subprocess.run(
+                [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",
+                 f"PATH={PRIVILEGED_PATH}",
+                 f"HOST_TOOLCHAIN_FD=/proc/{os.getpid()}/fd/{toolchain_descriptor}",
+                 f"CARGO_RELATIVE={cargo_relative}",
+                 f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
+                 f"LEAN_SOURCE={source}",
+                 f"RUST_TOOLCHAIN={toolchain}",
+                 "CARGO_INCREMENTAL=0", "/bin/sh", "-ceu", script],
+                stdin=archive.stdout,
+                text=False,
+                capture_output=True,
+                env=os.environ,
+            )
+        finally:
+            os.close(toolchain_descriptor)
         archive.stdout.close()
         archive_stderr = archive.communicate()[1]
         if archive.returncode:

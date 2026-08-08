@@ -1421,6 +1421,34 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             self.assertEqual(selected_root, root)
             self.assertEqual(relative, "bin/cargo")
 
+    def test_open_toolchain_snapshot_survives_mutable_parent_path_swap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = pathlib.Path(directory) / "toolchains"
+            selected = parent / "selected"
+            (selected / "bin").mkdir(parents=True)
+            (selected / "bin" / "cargo").write_text("selected")
+
+            with mock.patch.object(
+                comparison_tool._export,
+                "resolved_toolchain_snapshot",
+                return_value=(selected, "bin/cargo"),
+            ):
+                descriptor, relative = (
+                    comparison_tool._export.open_resolved_toolchain_snapshot("1.88.0")
+                )
+
+            try:
+                original = parent / "original"
+                selected.rename(original)
+                (selected / "bin").mkdir(parents=True)
+                (selected / "bin" / "cargo").write_text("forged")
+
+                pinned = pathlib.Path(f"/proc/self/fd/{descriptor}")
+                self.assertTrue(os.path.samefile(pinned, original))
+                self.assertEqual((pinned / relative).read_text(), "selected")
+            finally:
+                os.close(descriptor)
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
