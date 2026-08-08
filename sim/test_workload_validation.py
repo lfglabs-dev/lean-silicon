@@ -11,6 +11,26 @@ from tools import workload_validation
 
 
 class WorkloadValidationReceiptTest(unittest.TestCase):
+    def test_validation_entrypoints_use_isolated_python(self):
+        makefile = (workload_validation.ROOT / "Makefile").read_text()
+        self.assertIn("$(PYTHON) -I tools/workload_validation.py", makefile)
+        self.assertIn("$(PYTHON) -I tools/host_upstream_comparison.py", makefile)
+
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            (directory / "json.py").write_text(
+                "raise SystemExit('untracked shadow module imported')\n"
+            )
+            script = directory / "probe.py"
+            script.write_text("import json\nprint(json.__name__)\n")
+            completed = subprocess.run(
+                [workload_validation.sys.executable, "-I", str(script)],
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertEqual(completed.stdout.strip(), "json")
+
     def test_plan_paths_cannot_escape_or_use_untracked_inputs(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp) / "repo"

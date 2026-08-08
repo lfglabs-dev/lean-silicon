@@ -34,14 +34,14 @@ host-export:
 
 # Without LEANVM_B_UPSTREAM this compares against the recorded upstream run.
 host-comparison:
-	$(PYTHON) tools/host_upstream_comparison.py --artifact $(HOST_ARTIFACT) \
+	$(PYTHON) -I tools/host_upstream_comparison.py --artifact $(HOST_ARTIFACT) \
 	  $(if $(LEANVM_B_UPSTREAM),--upstream "$(LEANVM_B_UPSTREAM)",)
 
 # Non-release, non-SKY26c realistic workload lane. Both paths are caller-owned.
 workload-validation:
 	@test -n "$(WORKLOAD_CACHE)" || (echo "set WORKLOAD_CACHE to a private directory outside the checkout" >&2; exit 2)
 	@test -n "$(LEANVM_B_UPSTREAM)" || (echo "set LEANVM_B_UPSTREAM to leanEthereum/leanVM-b@c308034..." >&2; exit 2)
-	$(PYTHON) tools/workload_validation.py --cache-dir "$(WORKLOAD_CACHE)" --upstream "$(LEANVM_B_UPSTREAM)"
+	$(PYTHON) -I tools/workload_validation.py --cache-dir "$(WORKLOAD_CACHE)" --upstream "$(LEANVM_B_UPSTREAM)"
 
 design-space:
 	$(PYTHON) tools/design_space.py

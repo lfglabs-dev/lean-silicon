@@ -262,7 +262,7 @@ def main() -> None:
         if len(artifact_doc["program"]["bytecode"]) != workload["expected"]["bytecode_slots"]:
             raise SystemExit(f"bytecode count mismatch: {workload['id']}")
         out = cache / f"{workload['id']}.comparison.json"
-        command = [sys.executable, "tools/host_upstream_comparison.py", "--artifact",
+        command = [sys.executable, "-I", "tools/host_upstream_comparison.py", "--artifact",
                    workload["artifact"], "--upstream", str(upstream), "--rust-toolchain",
                    plan["upstream"]["rust_toolchain"], "--out", str(out)]
         run, comparison = run_comparison(command, out, workload["id"])
