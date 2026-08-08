@@ -152,6 +152,8 @@ class BringupTest(unittest.TestCase):
         for mutate in (
             lambda value: value["observations"][0].update(received="ff" * 16),
             lambda value: value["observations"][0].update(received="ff" * 16, expected="ff" * 16),
+            lambda value: value["observations"][0].update(received=value["observations"][0]["received"].upper()),
+            lambda value: value["observations"][0].update(expected="00 " * 15 + "00"),
             lambda value: value["observations"][0].update(retire_done_pulse=False),
             lambda value: value.update(vectors=value["vectors"][:-1]),
             lambda value: (value.update(vectors=value["vectors"][:-1]), value.update(observations=value["observations"][:-1])),

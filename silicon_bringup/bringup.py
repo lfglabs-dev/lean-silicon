@@ -6,6 +6,7 @@ board or fabricated-silicon execution.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -235,6 +236,11 @@ def validate_receipt(document: dict) -> None:
                 any(type(observation[key]) is not bool for key in ("oracle_match", "retire_done_pulse", "idle_after_retire"))):
             raise ValueError("invalid observation record")
         try:
+            if (not isinstance(observation["received"], str) or
+                    not isinstance(observation["expected"], str) or
+                    re.fullmatch(r"[0-9a-f]{32}", observation["received"]) is None or
+                    re.fullmatch(r"[0-9a-f]{32}", observation["expected"]) is None):
+                raise ValueError("non-canonical hexadecimal result")
             received = bytes.fromhex(observation["received"])
             expected = bytes.fromhex(observation["expected"])
         except (TypeError, ValueError) as error:
