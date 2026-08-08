@@ -42,6 +42,7 @@ SCHEMA = "leansilicon.host.program/1"
 PRIVILEGED_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
 SUDO = "/usr/bin/sudo"
 UNSHARE = "/usr/bin/unshare"
+GIT = "/usr/bin/git"
 
 #: Public-only fields.  Anything `pub(crate)` upstream is reported as absent.
 UNEXPOSED = {
@@ -94,6 +95,22 @@ def open_resolved_toolchain_snapshot(toolchain: str) -> tuple[int, str]:
     root, cargo_relative = resolved_toolchain_snapshot(toolchain)
     descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
     return descriptor, cargo_relative
+
+
+def require_safe_archive_tree(upstream: pathlib.Path, commit: str) -> None:
+    """Reject Git entries that could redirect privileged archive extraction."""
+    listing = subprocess.check_output(
+        [GIT, "ls-tree", "-r", "-z", commit], cwd=upstream
+    )
+    reserved = {"cargo-home", "host-toolchain", "tmp", "toolchain"}
+    for entry in listing.rstrip(b"\0").split(b"\0") if listing else ():
+        metadata, raw_path = entry.split(b"\t", 1)
+        mode, object_type, _object_id = metadata.split(b" ", 2)
+        path = raw_path.decode("utf-8", errors="surrogateescape")
+        if mode not in {b"100644", b"100755"} or object_type != b"blob":
+            raise SystemExit(f"unsafe entry in canonical upstream archive: {path}")
+        if pathlib.PurePosixPath(path).parts[0] in reserved:
+            raise SystemExit(f"reserved path in canonical upstream archive: {path}")
 
 PROBE = r'''use lean_compiler::{compile, disassemble, parse};
 use lean_vm::cpu::{DerefMode, Op};
@@ -308,8 +325,9 @@ cd "$PRIVATE_ROOT"
       -p lean_compiler --example leansilicon_export
   '
 """
+        require_safe_archive_tree(upstream, commit)
         archive = subprocess.Popen(
-            ["git", "archive", "--format=tar", commit],
+            [GIT, "archive", "--format=tar", commit],
             cwd=upstream,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

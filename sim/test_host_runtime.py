@@ -1374,6 +1374,11 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 f"#!/bin/sh\ntouch {marker}\nexec /bin/sh \"$@\"\n"
             )
             fake_shell.chmod(0o755)
+            fake_git = fake_bin / "git"
+            fake_git.write_text(
+                f"#!/bin/sh\ntouch {marker}\nexit 99\n"
+            )
+            fake_git.chmod(0o755)
 
             with mock.patch.dict(
                 os.environ, {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
@@ -1420,6 +1425,28 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
 
             self.assertEqual(selected_root, root)
             self.assertEqual(relative, "bin/cargo")
+
+    def test_privileged_archive_rejects_symlink_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            (repo / "redirect").symlink_to("/tmp")
+            subprocess.run(["git", "add", "redirect"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "symlink"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+
+            with self.assertRaisesRegex(SystemExit, "unsafe entry.*redirect"):
+                comparison_tool._export.require_safe_archive_tree(repo, head)
 
     def test_open_toolchain_snapshot_survives_mutable_parent_path_swap(self):
         with tempfile.TemporaryDirectory() as directory:
