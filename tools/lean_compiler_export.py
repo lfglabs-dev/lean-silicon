@@ -233,14 +233,13 @@ def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
             "live compiler probe requires Linux mount namespaces and passwordless sudo"
         )
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
-        pathlib.Path(directory).chmod(0o711)
-        private_root = pathlib.Path(directory) / "private-root"
-        private_root.mkdir(mode=0o700)
         command = [
             "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
             "-p", "lean_compiler", "--example", "leansilicon_export",
         ]
         script = """
+PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
+trap '/usr/bin/umount "$PRIVATE_ROOT" 2>/dev/null || true; /usr/bin/rmdir "$PRIVATE_ROOT" 2>/dev/null || true' EXIT
 mount -t tmpfs -o mode=0700 tmpfs "$PRIVATE_ROOT"
 tar -xf - -C "$PRIVATE_ROOT"
 example="$PRIVATE_ROOT/crates/lean_compiler/examples/leansilicon_export.rs"
@@ -279,7 +278,6 @@ cd "$PRIVATE_ROOT"
              f"PATH={PRIVILEGED_PATH}",
              f"HOST_CARGO_BIN={pathlib.Path(cargo_path).resolve().parent}",
              f"HOST_RUSTUP_HOME={resolved_rustup_home()}",
-             f"PRIVATE_ROOT={private_root}",
              f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
              f"LEAN_SOURCE={source}",
              f"RUST_TOOLCHAIN={toolchain}",
