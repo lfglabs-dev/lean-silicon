@@ -56,11 +56,11 @@ structure JumpInput where
 structure Blake3Request where
   common : Common
   serviceId : UInt32
+  memory : Mem
   inputWords : List Word
   chainingValue : List Word
   outputAddresses : Index × Index
   metadata : List UInt8
-  deriving DecidableEq, Repr
 
 structure Blake3Response where
   txnId : Transaction.TxnId
@@ -135,12 +135,16 @@ def resumeBlake3 (request : Blake3Request) (response : Blake3Response) : Decisio
   if response.txnId != request.common.txnId || response.serviceId != request.serviceId then
     .fault .badService
   else
-    let memory := writeRaw
-      (writeRaw Memory.empty request.outputAddresses.1 response.digest.1)
-      request.outputAddresses.2 response.digest.2
-    match advance request.common with
-    | some control => .result { common := request.common, nextControl := control, memory := memory }
+    match writeOnce request.memory request.outputAddresses.1 response.digest.1 with
     | none => .fault .writeConflict
+    | some memory =>
+        match writeOnce memory request.outputAddresses.2 response.digest.2 with
+        | none => .fault .writeConflict
+        | some memory =>
+            match advance request.common with
+            | some control => .result {
+                common := request.common, nextControl := control, memory := memory }
+            | none => .fault .writeConflict
 
 def transitionOf (effect : Effect) : Transaction.Transition := {
   txnId := effect.common.txnId
@@ -234,6 +238,26 @@ theorem blake3_rejects_wrong_service (request : Blake3Request)
     resumeBlake3 request response = .fault .badService := by
   simp [resumeBlake3, h]
 
+theorem blake3_rejects_first_output_conflict (request : Blake3Request)
+    (response : Blake3Response)
+    (htxn : response.txnId = request.common.txnId)
+    (hservice : response.serviceId = request.serviceId)
+    (hconflict : writeOnce request.memory request.outputAddresses.1
+      response.digest.1 = none) :
+    resumeBlake3 request response = .fault .writeConflict := by
+  simp [resumeBlake3, htxn, hservice, hconflict]
+
+theorem blake3_rejects_second_output_conflict (request : Blake3Request)
+    (response : Blake3Response) (memory : Mem)
+    (htxn : response.txnId = request.common.txnId)
+    (hservice : response.serviceId = request.serviceId)
+    (hfirst : writeOnce request.memory request.outputAddresses.1
+      response.digest.1 = some memory)
+    (hconflict : writeOnce memory request.outputAddresses.2
+      response.digest.2 = none) :
+    resumeBlake3 request response = .fault .writeConflict := by
+  simp [resumeBlake3, htxn, hservice, hfirst, hconflict]
+
 theorem xor_uses_supplied_operands (input : BinaryInput) :
     decide (.xor input) = finishWrite input.common input.memory input.output
       ((input.memory input.left).value ^^^ (input.memory input.right).value) := by
@@ -288,7 +312,8 @@ example : stages Transaction.initial
 
 example : exists request, decide (.blake3 request) = .serviceRequired request := by
   let request : Blake3Request := {
-    common := witnessCommon, serviceId := 11, inputWords := [], chainingValue := [],
+    common := witnessCommon, serviceId := 11, memory := Memory.empty,
+    inputWords := [], chainingValue := [],
     outputAddresses := (20, 21), metadata := [] }
   exact ⟨request, rfl⟩
 
@@ -325,6 +350,8 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms staged_result_matching_retire_commits
 #print axioms staged_result_abort_never_commits
 #print axioms blake3_never_decides_digest
+#print axioms blake3_rejects_first_output_conflict
+#print axioms blake3_rejects_second_output_conflict
 #print axioms mul_uses_canonical_ghash
 #print axioms deref_uses_canonical_control
 #print axioms jump_uses_canonical_control

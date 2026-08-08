@@ -22,6 +22,10 @@ mutations = {
         "outcome.model.state = .resultPending (transitionOf effect)",
         "outcome.model.state = .idle",
     ),
+    "blake3-unchecked-first-write": (
+        "match writeOnce request.memory request.outputAddresses.1 response.digest.1 with",
+        "match some (writeRaw request.memory request.outputAddresses.1 response.digest.1) with",
+    ),
 }
 
 for name, (old, new) in mutations.items():

@@ -8,6 +8,11 @@ as explicit request data. SET/XOR/MUL decide writes with `Memory.writeOnce` and
 an external service request and accepts a response bound to the same transaction
 and service identifiers.
 
+The service request retains the host-supplied memory view across suspension.
+Both returned digest words pass through `Memory.writeOnce`; either collision is
+proved to fault, so external service ownership does not bypass canonical memory
+policy or imply that the endpoint computed BLAKE3.
+
 The proved bridge is deliberately transport-independent. A decided result is
 translated to `Transaction.Transition`, staged atomically, committed only by a
 matching RETIRE, and discarded without commit by ABORT. Existing `Packet`
