@@ -59,8 +59,16 @@ def clean_head() -> tuple[str, str]:
 def run_comparison(command: list[str], out: Path, workload_id: str) -> tuple[subprocess.CompletedProcess[str], dict]:
     """Run one comparison and return only a receipt created by this invocation."""
     out.unlink(missing_ok=True)
-    run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+    with tempfile.TemporaryDirectory(prefix="workload-validation-pycache-") as pycache:
+        env = os.environ | {"PYTHONPYCACHEPREFIX": pycache}
+        run = subprocess.run(
+            command,
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
     if not out.exists():
         sys.stderr.write(run.stdout)
         raise SystemExit(f"comparison produced no receipt: {workload_id}")

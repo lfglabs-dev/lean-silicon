@@ -227,6 +227,28 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             self.assertEqual(run.returncode, 1)
             self.assertEqual(receipt, expected)
 
+    def test_comparison_uses_fresh_isolated_bytecode_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp) / "comparison.json"
+            observed_cache = None
+
+            def inspect_isolated_cache(*_args, **kwargs):
+                nonlocal observed_cache
+                observed_cache = Path(kwargs["env"]["PYTHONPYCACHEPREFIX"])
+                self.assertTrue(observed_cache.is_dir())
+                out.write_text(json.dumps({"comparison": {"result": "MATCH"}}))
+                return subprocess.CompletedProcess([], 0, stdout="")
+
+            with mock.patch.object(
+                workload_validation.subprocess,
+                "run",
+                side_effect=inspect_isolated_cache,
+            ):
+                workload_validation.run_comparison(["comparison"], out, "case")
+
+            self.assertIsNotNone(observed_cache)
+            self.assertFalse(observed_cache.exists())
+
     def test_changed_checkout_cannot_publish_aggregate_receipt(self):
         with tempfile.TemporaryDirectory() as temp:
             receipt_path = Path(temp) / "receipt.json"
