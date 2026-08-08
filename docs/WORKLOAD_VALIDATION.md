@@ -6,7 +6,7 @@ not modify `src/`, `release/`, FPGA bitstreams, GDS, tags, or release gates.
 
 ## Reproduce
 
-Live compiler execution requires Linux mount namespaces and non-interactive
+Live compiler execution requires x86_64 Linux, mount namespaces, and non-interactive
 passwordless `sudo` for the fixed privileged broker commands. The filesystem
 root of the selected Rust toolchain must be provisioned as its own read-only
 mount, making the private copy immutable before this invocation begins. The
@@ -24,8 +24,8 @@ git clone https://github.com/leanEthereum/leanVM-b.git "$private/leanVM-b"
 git -C "$private/leanVM-b" checkout --detach c308034ab78619b39a59d26f3dc60e7df5b52649
 export CARGO_HOME="$private/cargo" RUSTUP_HOME="$private/rustup" TMPDIR="$private/tmp"
 export PATH="$CARGO_HOME/bin:$PATH"
-rustup toolchain install 1.88.0 --profile minimal
-installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0 cargo)")")
+rustup toolchain install 1.88.0-x86_64-unknown-linux-gnu --profile minimal
+installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0-x86_64-unknown-linux-gnu cargo)")")
 toolchain_mb=$(du -sm "$installed_toolchain" | awk '{print $1}')
 truncate -s "$((toolchain_mb + 256))M" "$private/rust-toolchain.ext4"
 /usr/sbin/mkfs.ext4 -q "$private/rust-toolchain.ext4"
@@ -33,7 +33,7 @@ mkdir "$private/rust-toolchain-ro"
 sudo mount -o loop "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
 sudo cp -a "$installed_toolchain/." "$private/rust-toolchain-ro/"
 sudo umount "$private/rust-toolchain-ro"
-rustup toolchain uninstall 1.88.0
+rustup toolchain uninstall 1.88.0-x86_64-unknown-linux-gnu
 sudo mount -o loop,ro "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
 rustup toolchain link leanvm-validation-1.88.0 "$private/rust-toolchain-ro"
 WORKLOAD_CACHE="$private/receipt" LEANVM_B_UPSTREAM="$private/leanVM-b" make workload-validation

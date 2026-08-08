@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import pathlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -334,6 +335,10 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
               commit: str = COMMIT,
               toolchain_sha256: str = PINNED_TOOLCHAIN_SHA256) -> tuple[dict, list[str]]:
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "x86_64", "amd64"
+    }:
+        raise SystemExit("live compiler probe requires x86_64 Linux")
     if not private_namespace_available():
         raise SystemExit(
             "live compiler probe requires Linux mount namespaces and passwordless sudo"
@@ -343,7 +348,7 @@ def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
             "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
             "-p", "lean_compiler", "--example", "leansilicon_export",
         ]
-        script = """
+        script = r"""
 PRIVATE_ROOT=$(/usr/bin/mktemp -d /run/leanvm-probe.XXXXXX)
 TOOLCHAIN_MOUNTED=0
 cleanup() {
@@ -364,6 +369,26 @@ mkdir -p "$PRIVATE_ROOT/cargo-home" "$PRIVATE_ROOT/tmp" \
 /usr/bin/mount --bind "$HOST_TOOLCHAIN_FD" "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=1
 cp -a "$PRIVATE_ROOT/host-toolchain/." "$PRIVATE_ROOT/toolchain/"
+/usr/bin/python3 - "$PRIVATE_ROOT/toolchain" "$TOOLCHAIN_SHA256" <<'PY'
+import hashlib, os, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+digest = hashlib.sha256()
+for path in sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix()):
+    relative = path.relative_to(root).as_posix().encode()
+    mode = path.lstat().st_mode & 0o7777
+    if path.is_symlink():
+        kind, payload = b"link", os.readlink(path).encode()
+    elif path.is_dir():
+        kind, payload = b"dir", b""
+    elif path.is_file():
+        kind, payload = b"file", path.read_bytes()
+    else:
+        raise SystemExit(f"unsupported private toolchain entry: {relative!r}")
+    digest.update(kind + b"\0" + relative + b"\0" + f"{mode:o}".encode() + b"\0")
+    digest.update(len(payload).to_bytes(8, "big") + payload)
+if digest.hexdigest() != sys.argv[2]:
+    raise SystemExit("private Rust toolchain identity mismatch")
+PY
 /usr/bin/umount "$PRIVATE_ROOT/host-toolchain"
 TOOLCHAIN_MOUNTED=0
 RUN_UID=$((200000 + $$))
@@ -407,6 +432,7 @@ cd "$PRIVATE_ROOT"
                  f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
                  f"LEAN_SOURCE={source}",
                  f"RUST_TOOLCHAIN={toolchain}",
+                 f"TOOLCHAIN_SHA256={toolchain_sha256}",
                  "CARGO_INCREMENTAL=0", "/bin/sh", "-ceu", script],
                 stdin=archive.stdout,
                 text=False,

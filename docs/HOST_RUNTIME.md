@@ -130,7 +130,7 @@ the claim because `Execution::trace` is not public at the frozen revision.
 
 ## 6. Reproducing
 
-Live compiler export/comparison requires Linux mount namespaces and
+Live compiler export/comparison requires x86_64 Linux, mount namespaces, and
 non-interactive passwordless `sudo` for the fixed privileged broker commands,
 plus a selected Rust toolchain provisioned as the root of its own read-only
 filesystem mount. The live probe fails closed when a prerequisite is unavailable.
@@ -139,8 +139,8 @@ filesystem mount. The live probe fails closed when a prerequisite is unavailable
 private=$(mktemp -d /tmp/lean-silicon-host.XXXXXX)
 export CARGO_HOME="$private/cargo" RUSTUP_HOME="$private/rustup"
 export PATH="$CARGO_HOME/bin:$PATH"
-rustup toolchain install 1.88.0 --profile minimal
-installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0 cargo)")")
+rustup toolchain install 1.88.0-x86_64-unknown-linux-gnu --profile minimal
+installed_toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0-x86_64-unknown-linux-gnu cargo)")")
 toolchain_mb=$(du -sm "$installed_toolchain" | awk '{print $1}')
 truncate -s "$((toolchain_mb + 256))M" "$private/rust-toolchain.ext4"
 /usr/sbin/mkfs.ext4 -q "$private/rust-toolchain.ext4"
@@ -148,7 +148,7 @@ mkdir "$private/rust-toolchain-ro"
 sudo mount -o loop "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
 sudo cp -a "$installed_toolchain/." "$private/rust-toolchain-ro/"
 sudo umount "$private/rust-toolchain-ro"
-rustup toolchain uninstall 1.88.0
+rustup toolchain uninstall 1.88.0-x86_64-unknown-linux-gnu
 sudo mount -o loop,ro "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
 rustup toolchain link leanvm-validation-1.88.0 "$private/rust-toolchain-ro"
 git clone https://github.com/leanEthereum/leanVM-b.git "$private/leanvm-b"

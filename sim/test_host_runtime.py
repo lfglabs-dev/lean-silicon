@@ -1528,6 +1528,18 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             finally:
                 os.close(descriptor)
 
+    def test_live_probe_rejects_non_x86_64_hosts_before_privilege(self):
+        with mock.patch.object(
+            comparison_tool._export.platform, "machine", return_value="aarch64"
+        ), mock.patch.object(
+            comparison_tool._export, "private_namespace_available"
+        ) as namespace_available:
+            with self.assertRaisesRegex(SystemExit, "requires x86_64 Linux"):
+                comparison_tool._export.run_probe(
+                    pathlib.Path("unused"), "source", "toolchain"
+                )
+        namespace_available.assert_not_called()
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
