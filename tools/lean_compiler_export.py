@@ -39,6 +39,9 @@ COMMIT, REPOSITORY = _gate.COMMIT, _gate.REPOSITORY
 require_checkout, candidate_head, sha256 = _gate.require_checkout, _gate.candidate_head, _gate.sha256
 
 SCHEMA = "leansilicon.host.program/1"
+PRIVILEGED_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
+SUDO = "/usr/bin/sudo"
+UNSHARE = "/usr/bin/unshare"
 
 #: Public-only fields.  Anything `pub(crate)` upstream is reported as absent.
 UNEXPOSED = {
@@ -51,11 +54,14 @@ UNEXPOSED = {
 
 def private_namespace_available() -> bool:
     """Return whether this runner permits the privileged mount broker."""
-    return subprocess.run(
-        ["sudo", "-n", "unshare", "--mount", "--fork", "true"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    ).returncode == 0
+    try:
+        return subprocess.run(
+            [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/true"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode == 0
+    except FileNotFoundError:
+        return False
 
 
 def resolved_rustup_home() -> pathlib.Path:
@@ -222,6 +228,10 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
 
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str,
               commit: str = COMMIT) -> tuple[dict, list[str]]:
+    if not private_namespace_available():
+        raise SystemExit(
+            "live compiler probe requires Linux mount namespaces and passwordless sudo"
+        )
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
         pathlib.Path(directory).chmod(0o711)
         private_root = pathlib.Path(directory) / "private-root"
@@ -244,12 +254,12 @@ if [ -d "$HOST_RUSTUP_HOME" ]; then
 fi
 chown -R 65534:65534 "$PRIVATE_ROOT"
 cd "$PRIVATE_ROOT"
-setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
-  --bounding-set=-all env \
+/usr/bin/setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
+  --bounding-set=-all /usr/bin/env \
   PATH="$PRIVATE_ROOT/tool-bin:/usr/bin:/bin" \
   CARGO_HOME="$PRIVATE_ROOT/cargo-home" \
   RUSTUP_HOME="$PRIVATE_ROOT/rustup-home" \
-  TMPDIR="$PRIVATE_ROOT/tmp" sh -ceu '
+  TMPDIR="$PRIVATE_ROOT/tmp" /bin/sh -ceu '
     printf %s "$LEAN_SOURCE" | cargo +"$RUST_TOOLCHAIN" run --quiet --locked \
       -p lean_compiler --example leansilicon_export
   '
@@ -265,15 +275,15 @@ setpriv --reuid 65534 --regid 65534 --clear-groups --inh-caps=-all \
         if cargo_path is None:
             raise SystemExit("cargo is required to compile the pinned lean_compiler probe")
         completed = subprocess.run(
-            ["sudo", "-n", "unshare", "--mount", "--fork", "env",
-             f"PATH={os.environ['PATH']}",
+            [SUDO, "-n", UNSHARE, "--mount", "--fork", "/usr/bin/env",
+             f"PATH={PRIVILEGED_PATH}",
              f"HOST_CARGO_BIN={pathlib.Path(cargo_path).resolve().parent}",
              f"HOST_RUSTUP_HOME={resolved_rustup_home()}",
              f"PRIVATE_ROOT={private_root}",
              f"PROBE_BASE64={base64.b64encode(PROBE.encode()).decode()}",
              f"LEAN_SOURCE={source}",
              f"RUST_TOOLCHAIN={toolchain}",
-             "CARGO_INCREMENTAL=0", "sh", "-ceu", script],
+             "CARGO_INCREMENTAL=0", "/bin/sh", "-ceu", script],
             stdin=archive.stdout,
             text=False,
             capture_output=True,

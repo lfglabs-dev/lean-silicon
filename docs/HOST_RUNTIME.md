@@ -130,6 +130,10 @@ the claim because `Execution::trace` is not public at the frozen revision.
 
 ## 6. Reproducing
 
+Live compiler export/comparison requires Linux mount namespaces and
+non-interactive passwordless `sudo` for the fixed privileged broker commands.
+The live probe checks this prerequisite first and fails closed when unavailable.
+
 ```sh
 git clone https://github.com/leanEthereum/leanVM-b.git /tmp/leanvm-b
 git -C /tmp/leanvm-b checkout c308034ab78619b39a59d26f3dc60e7df5b52649

@@ -1368,6 +1368,12 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                 "printf '{\"private_archive\":true}\\n'\n"
             )
             cargo.chmod(0o755)
+            marker = base / "privileged-path-was-used"
+            fake_shell = fake_bin / "sh"
+            fake_shell.write_text(
+                f"#!/bin/sh\ntouch {marker}\nexec /bin/sh \"$@\"\n"
+            )
+            fake_shell.chmod(0o755)
 
             with mock.patch.dict(
                 os.environ, {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
@@ -1378,6 +1384,7 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
 
             self.assertEqual(result, {"private_archive": True})
             self.assertEqual(command[0:2], ["cargo", "+test-toolchain"])
+            self.assertFalse(marker.exists())
 
     def test_default_rustup_home_is_resolved_from_home(self):
         with tempfile.TemporaryDirectory() as directory:
