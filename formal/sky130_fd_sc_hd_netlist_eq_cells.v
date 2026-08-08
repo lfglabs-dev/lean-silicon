@@ -3,7 +3,7 @@
 // absent: this file models digital logic only and is not a replacement for the
 // foundry simulation library.
 `default_nettype none
-`define PINS inout VPWR, VGND, VPB, VNB
+`define PINS input VPWR, VGND, VPB, VNB
 
 module sky130_fd_sc_hd__dfxtp_2(input D, CLK, output reg Q, `PINS);
   always @(posedge CLK) Q <= D;
@@ -14,6 +14,7 @@ module sky130_fd_sc_hd__conb_1(output HI, LO, `PINS); assign HI=1'b1; assign LO=
 `BUF_CELL(sky130_fd_sc_hd__buf_1)
 `BUF_CELL(sky130_fd_sc_hd__buf_2)
 `BUF_CELL(sky130_fd_sc_hd__buf_4)
+`BUF_CELL(sky130_fd_sc_hd__clkbuf_1)
 `BUF_CELL(sky130_fd_sc_hd__clkbuf_2)
 `BUF_CELL(sky130_fd_sc_hd__clkbuf_4)
 `BUF_CELL(sky130_fd_sc_hd__clkbuf_8)
@@ -23,6 +24,7 @@ module sky130_fd_sc_hd__conb_1(output HI, LO, `PINS); assign HI=1'b1; assign LO=
 `define INV_CELL(n) module n(input A, output Y, `PINS); assign Y=~A; endmodule
 `INV_CELL(sky130_fd_sc_hd__inv_2)
 `INV_CELL(sky130_fd_sc_hd__clkinv_2)
+`INV_CELL(sky130_fd_sc_hd__clkinvlp_4)
 
 module sky130_fd_sc_hd__mux2_1(input A0,A1,S, output X, `PINS); assign X=S?A1:A0; endmodule
 module sky130_fd_sc_hd__and2_2(input A,B, output X, `PINS); assign X=A&B; endmodule
@@ -44,6 +46,8 @@ module sky130_fd_sc_hd__nor2_2(input A,B, output Y, `PINS); assign Y=~(A|B); end
 module sky130_fd_sc_hd__nor3_2(input A,B,C, output Y, `PINS); assign Y=~(A|B|C); endmodule
 module sky130_fd_sc_hd__nor4_2(input A,B,C,D, output Y, `PINS); assign Y=~(A|B|C|D); endmodule
 module sky130_fd_sc_hd__nor4b_2(input A,B,C,D_N, output Y, `PINS); assign Y=~(A|B|C|(~D_N)); endmodule
+module sky130_fd_sc_hd__nor4_4(input A,B,C,D, output Y, `PINS); assign Y=~(A|B|C|D); endmodule
+module sky130_fd_sc_hd__nor4b_4(input A,B,C,D_N, output Y, `PINS); assign Y=~(A|B|C|(~D_N)); endmodule
 
 `define AO21(n,o,e) module n(input A1,A2,B1, output o, `PINS); assign o=e; endmodule
 `AO21(sky130_fd_sc_hd__a21o_2,X,(A1&A2)|B1)
@@ -52,6 +56,7 @@ module sky130_fd_sc_hd__nor4b_2(input A,B,C,D_N, output Y, `PINS); assign Y=~(A|
 `AO211(sky130_fd_sc_hd__a211o_2,X,(A1&A2)|B1|C1)
 `AO211(sky130_fd_sc_hd__a211oi_2,Y,~((A1&A2)|B1|C1))
 module sky130_fd_sc_hd__a2111oi_1(input A1,A2,B1,C1,D1, output Y, `PINS); assign Y=~((A1&A2)|B1|C1|D1); endmodule
+module sky130_fd_sc_hd__a2111oi_2(input A1,A2,B1,C1,D1, output Y, `PINS); assign Y=~((A1&A2)|B1|C1|D1); endmodule
 module sky130_fd_sc_hd__a221o_2(input A1,A2,B1,B2,C1, output X, `PINS); assign X=(A1&A2)|(B1&B2)|C1; endmodule
 module sky130_fd_sc_hd__a22o_2(input A1,A2,B1,B2, output X, `PINS); assign X=(A1&A2)|(B1&B2); endmodule
 module sky130_fd_sc_hd__a2bb2o_2(input A1_N,A2_N,B1,B2, output X, `PINS); assign X=((~A1_N)&(~A2_N))|(B1&B2); endmodule
