@@ -76,6 +76,10 @@ structure Blake3Response where
   digest : Word × Word
   deriving DecidableEq, Repr
 
+structure ServicePending where
+  request : Blake3Request
+  nextControl : Control
+
 inductive Instruction where
   | set (common : Common) (memory : Mem) (address : Index) (constant : Word)
   | xor (input : BinaryInput)
@@ -104,7 +108,7 @@ structure Effect where
 
 inductive Decision where
   | result (effect : Effect)
-  | serviceRequired (request : Blake3Request)
+  | serviceRequired (pending : ServicePending)
   | fault (reason : Fault)
 
 def advance (common : Common) : Option Control := do
@@ -181,10 +185,14 @@ def decide : Instruction -> Decision
       | .ok control => .result {
           common := input.common, nextControl := control, memory := input.memory }
       | .fault reason => .fault (.jump reason)
-  | .blake3 request => .serviceRequired request
+  | .blake3 request =>
+      match advance request.common with
+      | none => .fault .address
+      | some nextControl => .serviceRequired { request, nextControl }
 
 /-- A service response is accepted only by the request that created it. -/
-def resumeBlake3 (request : Blake3Request) (response : Blake3Response) : Decision :=
+def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decision :=
+  let request := pending.request
   if response.txnId != request.common.txnId || response.serviceId != request.serviceId then
     .fault .badService
   else
@@ -193,11 +201,37 @@ def resumeBlake3 (request : Blake3Request) (response : Blake3Response) : Decisio
     | some memory =>
         match writeOnce memory request.outputAddresses.2 response.digest.2 with
         | none => .fault .writeConflict
-        | some memory =>
-            match advance request.common with
-            | some control => .result {
-                common := request.common, nextControl := control, memory := memory }
-            | none => .fault .address
+        | some memory => .result {
+            common := request.common, nextControl := pending.nextControl, memory := memory }
+
+inductive ServiceState where
+  | idle
+  | pending (request : ServicePending)
+
+inductive ServiceCommand where
+  | start (request : Blake3Request)
+  | respond (response : Blake3Response)
+  | abort
+  | reset
+
+structure ServiceOutcome where
+  state : ServiceState
+  decision : Option Decision := none
+
+/-- Linear service controller: only a live pending request may consume one response. -/
+def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
+  | _, .reset => { state := .idle }
+  | _, .abort => { state := .idle }
+  | .idle, .start request =>
+      match decide (.blake3 request) with
+      | .serviceRequired pending => {
+          state := .pending pending, decision := some (.serviceRequired pending) }
+      | decision => { state := .idle, decision := some decision }
+  | .pending pending, .respond response => {
+      state := .idle, decision := some (finishBlake3 pending response) }
+  | .idle, .respond _ => { state := .idle, decision := some (.fault .badService) }
+  | .pending pending, .start _ => {
+      state := .pending pending, decision := some (.fault .stateMismatch) }
 
 def transitionOf (effect : Effect) : Transaction.Transition := {
   txnId := effect.common.txnId
@@ -320,55 +354,75 @@ theorem staged_result_matching_retire_is_exactly_once (model : Transaction.Model
     simpa [transitionOf] using
       (Transaction.matching_retire_is_exactly_once model (transitionOf effect))
 
-theorem blake3_never_decides_digest (request : Blake3Request) :
-    decide (.blake3 request) = .serviceRequired request := by rfl
+theorem blake3_never_decides_digest (request : Blake3Request) (nextControl : Control)
+    (hadvance : advance request.common = some nextControl) :
+    decide (.blake3 request) = .serviceRequired { request, nextControl } := by
+  simp [decide, hadvance]
 
-theorem blake3_rejects_wrong_transaction (request : Blake3Request)
-    (response : Blake3Response) (h : response.txnId != request.common.txnId) :
-    resumeBlake3 request response = .fault .badService := by
-  simp [resumeBlake3, h]
+theorem blake3_rejects_pc_overflow_before_service (request : Blake3Request)
+    (hoverflow : advance request.common = none) :
+    decide (.blake3 request) = .fault .address := by
+  simp [decide, hoverflow]
 
-theorem blake3_rejects_wrong_service (request : Blake3Request)
-    (response : Blake3Response) (h : response.serviceId != request.serviceId) :
-    resumeBlake3 request response = .fault .badService := by
-  simp [resumeBlake3, h]
+theorem blake3_rejects_wrong_transaction (pending : ServicePending)
+    (response : Blake3Response)
+    (h : response.txnId != pending.request.common.txnId) :
+    finishBlake3 pending response = .fault .badService := by
+  simp [finishBlake3, h]
+
+theorem blake3_rejects_wrong_service (pending : ServicePending)
+    (response : Blake3Response)
+    (h : response.serviceId != pending.request.serviceId) :
+    finishBlake3 pending response = .fault .badService := by
+  simp [finishBlake3, h]
 
 theorem finishWrite_rejects_pc_overflow (common : Common) (memory : Mem)
     (address : Index) (value : Word) (h : advance common = none) :
     finishWrite common memory address value = .fault .address := by
   simp [finishWrite, h]
 
-theorem blake3_resume_rejects_pc_overflow (request : Blake3Request)
-    (response : Blake3Response) (memory₁ memory₂ : Mem)
-    (htxn : response.txnId = request.common.txnId)
-    (hservice : response.serviceId = request.serviceId)
-    (hfirst : writeOnce request.memory request.outputAddresses.1
-      response.digest.1 = some memory₁)
-    (hsecond : writeOnce memory₁ request.outputAddresses.2
-      response.digest.2 = some memory₂)
-    (hoverflow : advance request.common = none) :
-    resumeBlake3 request response = .fault .address := by
-  simp [resumeBlake3, htxn, hservice, hfirst, hsecond, hoverflow]
-
-theorem blake3_rejects_first_output_conflict (request : Blake3Request)
+theorem blake3_rejects_first_output_conflict (pending : ServicePending)
     (response : Blake3Response)
-    (htxn : response.txnId = request.common.txnId)
-    (hservice : response.serviceId = request.serviceId)
-    (hconflict : writeOnce request.memory request.outputAddresses.1
+    (htxn : response.txnId = pending.request.common.txnId)
+    (hservice : response.serviceId = pending.request.serviceId)
+    (hconflict : writeOnce pending.request.memory pending.request.outputAddresses.1
       response.digest.1 = none) :
-    resumeBlake3 request response = .fault .writeConflict := by
-  simp [resumeBlake3, htxn, hservice, hconflict]
+    finishBlake3 pending response = .fault .writeConflict := by
+  simp [finishBlake3, htxn, hservice, hconflict]
 
-theorem blake3_rejects_second_output_conflict (request : Blake3Request)
+theorem blake3_rejects_second_output_conflict (pending : ServicePending)
     (response : Blake3Response) (memory : Mem)
-    (htxn : response.txnId = request.common.txnId)
-    (hservice : response.serviceId = request.serviceId)
-    (hfirst : writeOnce request.memory request.outputAddresses.1
+    (htxn : response.txnId = pending.request.common.txnId)
+    (hservice : response.serviceId = pending.request.serviceId)
+    (hfirst : writeOnce pending.request.memory pending.request.outputAddresses.1
       response.digest.1 = some memory)
-    (hconflict : writeOnce memory request.outputAddresses.2
+    (hconflict : writeOnce memory pending.request.outputAddresses.2
       response.digest.2 = none) :
-    resumeBlake3 request response = .fault .writeConflict := by
-  simp [resumeBlake3, htxn, hservice, hfirst, hconflict]
+    finishBlake3 pending response = .fault .writeConflict := by
+  simp [finishBlake3, htxn, hservice, hfirst, hconflict]
+
+theorem service_response_consumes_pending (pending : ServicePending)
+    (response : Blake3Response) :
+    (serviceStep (.pending pending) (.respond response)).state = .idle := by
+  rfl
+
+theorem service_replay_is_rejected (pending : ServicePending)
+    (first replay : Blake3Response) :
+    let consumed := serviceStep (.pending pending) (.respond first)
+    (serviceStep consumed.state (.respond replay)).decision = some (.fault .badService) := by
+  rfl
+
+theorem service_abort_rejects_late_response (pending : ServicePending)
+    (response : Blake3Response) :
+    let aborted := serviceStep (.pending pending) .abort
+    (serviceStep aborted.state (.respond response)).decision = some (.fault .badService) := by
+  rfl
+
+theorem service_reset_rejects_late_response (pending : ServicePending)
+    (response : Blake3Response) :
+    let reset := serviceStep (.pending pending) .reset
+    (serviceStep reset.state (.respond response)).decision = some (.fault .badService) := by
+  rfl
 
 theorem xor_uses_supplied_operands (input : BinaryInput) :
     decide (.xor input) = finishBinary true input := by
@@ -476,12 +530,14 @@ example : stages Transaction.initial
     (by simp [Representable, CheckedIndex.valid, witnessSetEffect, witnessCommon,
       CheckedIndex.max]) rfl (by decide) (by decide)
 
-example : exists request, decide (.blake3 request) = .serviceRequired request := by
+example : exists request pending, decide (.blake3 request) = .serviceRequired pending := by
   let request : Blake3Request := {
     common := witnessCommon, serviceId := 11, memory := Memory.empty,
     inputWords := [], chainingValue := [],
     outputAddresses := (20, 21), metadata := [] }
-  exact ⟨request, rfl⟩
+  refine ⟨request, { request, nextControl := { pc := 4, fp := 9 } },
+    blake3_never_decides_digest request { pc := 4, fp := 9 } ?_⟩
+  decide
 
 def witnessBinary : BinaryInput := {
   common := witnessCommon, profile := .interpreterCompat,
@@ -537,10 +593,14 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms staged_result_reset_restores_initial
 #print axioms staged_result_matching_retire_is_exactly_once
 #print axioms blake3_never_decides_digest
+#print axioms blake3_rejects_pc_overflow_before_service
 #print axioms finishWrite_rejects_pc_overflow
-#print axioms blake3_resume_rejects_pc_overflow
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
+#print axioms service_response_consumes_pending
+#print axioms service_replay_is_rejected
+#print axioms service_abort_rejects_late_response
+#print axioms service_reset_rejects_late_response
 #print axioms mul_uses_canonical_ghash
 #print axioms mul_forward_uses_canonical_ghash
 #print axioms forward_only_rejects_absent_left

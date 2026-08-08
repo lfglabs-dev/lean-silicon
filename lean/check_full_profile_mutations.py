@@ -15,8 +15,8 @@ mutations = {
         "(memory input.left).value ^^^ (memory input.right).value",
     ),
     "blake3-bypasses-service": (
-        "| .blake3 request => .serviceRequired request",
-        "| .blake3 request => .fault .badService",
+        "| some nextControl => .serviceRequired { request, nextControl }",
+        "| some nextControl => .fault .badService",
     ),
     "stages-accepts-rejection": (
         "outcome.model.state = .resultPending (transitionOf effect)",
@@ -49,6 +49,14 @@ mutations = {
     "xor-skips-backsolve": (
         "let backsolve := (input.memory input.output).written && (leftAbsent != rightAbsent)",
         "let backsolve := false",
+    ),
+    "blake3-suspends-on-pc-overflow": (
+        "| none => .fault .address\n      | some nextControl => .serviceRequired { request, nextControl }",
+        "| none => .serviceRequired { request, nextControl := request.common.control }\n      | some nextControl => .serviceRequired { request, nextControl }",
+    ),
+    "blake3-response-remains-replayable": (
+        "| .pending pending, .respond response => {\n      state := .idle, decision := some (finishBlake3 pending response) }",
+        "| .pending pending, .respond response => {\n      state := .pending pending, decision := some (finishBlake3 pending response) }",
     ),
 }
 

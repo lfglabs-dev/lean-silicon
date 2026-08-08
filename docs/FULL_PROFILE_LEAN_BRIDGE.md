@@ -13,6 +13,12 @@ Both returned digest words pass through `Memory.writeOnce`; either collision is
 proved to fault, so external service ownership does not bypass canonical memory
 policy or imply that the endpoint computed BLAKE3.
 
+The controller validates and retains the next control state before publishing a
+service request. Its service lifecycle is linear: exactly one response can be
+consumed only from a live pending state, and consumption, ABORT, or reset returns
+to idle. Replayed responses and responses arriving after ABORT/reset are proved
+to fault without reconstructing a discarded effect.
+
 The proved bridge is deliberately transport-independent. A decided result is
 translated to `Transaction.Transition`, staged atomically, committed only by a
 matching RETIRE, and discarded without commit by ABORT. Existing `Packet`
