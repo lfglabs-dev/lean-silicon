@@ -15,6 +15,7 @@ around it.
 import argparse
 import datetime
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -110,13 +111,49 @@ fn serde_json_string(text: &str) -> String {
 '''
 
 
+def require_actual_tracked_bytes(worktree: pathlib.Path) -> None:
+    """Compare populated worktree bytes to HEAD without trusting index flags."""
+    index_fd, index_name = tempfile.mkstemp(prefix="leanvm-probe-index-")
+    os.close(index_fd)
+    os.unlink(index_name)
+    try:
+        env = os.environ | {"GIT_INDEX_FILE": index_name}
+        subprocess.run(["git", "read-tree", "HEAD"], cwd=worktree, env=env, check=True)
+        clean = subprocess.run(
+            ["git", "update-index", "--really-refresh", "-q"],
+            cwd=worktree,
+            env=env,
+        ).returncode == 0
+    finally:
+        pathlib.Path(index_name).unlink(missing_ok=True)
+    if not clean:
+        raise SystemExit("compiler probe worktree must match its captured HEAD")
+
+
+def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
+                          commit: str = COMMIT) -> None:
+    """Populate a hook-free detached worktree and validate its actual bytes."""
+    subprocess.run(
+        ["git", "-c", "core.hooksPath=/dev/null", "-C", str(upstream),
+         "worktree", "add", "--detach", str(worktree), commit],
+        check=True,
+        capture_output=True,
+    )
+    try:
+        require_actual_tracked_bytes(worktree)
+    except BaseException:
+        subprocess.run(
+            ["git", "-C", str(upstream), "worktree", "remove", "--force", str(worktree)],
+            check=True,
+            capture_output=True,
+        )
+        raise
+
+
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
         worktree = pathlib.Path(directory) / "upstream-worktree"
-        subprocess.run(
-            ["git", "-C", str(upstream), "worktree", "add", "--detach", str(worktree), COMMIT],
-            check=True, capture_output=True,
-        )
+        add_verified_worktree(upstream, worktree)
         try:
             example = worktree / "crates/lean_compiler/examples/leansilicon_export.rs"
             example.parent.mkdir(parents=True, exist_ok=True)

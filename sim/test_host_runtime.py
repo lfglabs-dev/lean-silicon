@@ -1237,6 +1237,48 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "recorded entry metadata: fp0"):
                 comparison_tool.upstream_execution(ARTIFACT, artifact, ROOT, "1.88.0")
 
+    def test_compiler_probe_worktree_disables_post_checkout_hook(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory) / "upstream"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            tracked = repo / "compiler.rs"
+            tracked.write_text("const TRUSTED: bool = true;\n")
+            subprocess.run(["git", "add", "compiler.rs"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "captured"], cwd=repo, check=True)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            hook = repo / ".git" / "hooks" / "post-checkout"
+            hook.write_text(
+                "#!/bin/sh\n"
+                "printf 'const TRUSTED: bool = false;\\n' > compiler.rs\n"
+                "git update-index --assume-unchanged compiler.rs\n"
+            )
+            hook.chmod(0o755)
+            worktree = pathlib.Path(directory) / "probe"
+
+            comparison_tool._export.add_verified_worktree(repo, worktree, head)
+            try:
+                self.assertEqual(
+                    (worktree / "compiler.rs").read_text(),
+                    "const TRUSTED: bool = true;\n",
+                )
+            finally:
+                subprocess.run(
+                    ["git", "worktree", "remove", "--force", str(worktree)],
+                    cwd=repo,
+                    check=True,
+                )
+
     def test_out_of_tree_artifact_fails_with_a_clean_domain_error(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = pathlib.Path(directory) / "artifact.json"
