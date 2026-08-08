@@ -82,6 +82,7 @@ ABC 1.01), the final miter produced:
 
 - Boolector depth-4 k-induction: `PASS` (base and induction, 23 seconds);
 - ABC PDR: `PASS` (all four assertions, 176 seconds);
+- retained 74-edge ABC BMC: `PASS` (704 seconds);
 - cover: two transaction retirements at step 7 and a complete MUL retirement
   at step 179;
 - one-bit output mutation: `FAIL` at step 2, as required.
@@ -89,7 +90,9 @@ ABC 1.01), the final miter produced:
 The unchanged merged 74-edge lane was also started from current `main`; this
 host reached frame 57 without a counterexample before that redundant
 superlinear run was stopped. The merged release receipt retains the completed
-74-edge result. This interrupted rerun is not represented as a new BMC pass.
+74-edge result. After the state assertion was restricted to the unbounded
+tasks, the final retained external-output task completed through all 75 modeled
+frames as reported above.
 
 ## Reproduction
 
