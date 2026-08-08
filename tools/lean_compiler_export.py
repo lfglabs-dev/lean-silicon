@@ -111,7 +111,9 @@ fn serde_json_string(text: &str) -> String {
 '''
 
 
-def require_actual_tracked_bytes(worktree: pathlib.Path) -> None:
+def require_actual_tracked_bytes(
+    worktree: pathlib.Path, allowed_extra_paths: frozenset[str] = frozenset()
+) -> None:
     """Compare filesystem bytes and modes directly to canonical HEAD objects."""
     entries = subprocess.check_output(
         ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD"], cwd=worktree
@@ -152,12 +154,31 @@ def require_actual_tracked_bytes(worktree: pathlib.Path) -> None:
         if actual != expected:
             raise SystemExit("compiler probe worktree must match its captured HEAD")
 
-    extras = subprocess.check_output(
+    status = subprocess.check_output(
         ["git", "status", "--porcelain", "--untracked-files=all", "--ignored"],
         cwd=worktree,
-    )
-    if extras:
+        text=True,
+    ).splitlines()
+    extras = {line[3:] for line in status if line[:2] in {"??", "!!"}}
+    if extras != allowed_extra_paths or any(
+        line[:2] not in {"??", "!!"} for line in status
+    ):
         raise SystemExit("compiler probe worktree must not contain extra paths")
+
+
+def set_worktree_writable(worktree: pathlib.Path, writable: bool) -> None:
+    """Freeze compiler/probe inputs for Cargo, or thaw them for removal."""
+    paths = [worktree]
+    for directory, directories, files in os.walk(worktree):
+        root = pathlib.Path(directory)
+        paths.extend(root / name for name in directories)
+        paths.extend(root / name for name in files)
+    paths.sort(key=lambda path: len(path.parts), reverse=not writable)
+    for path in paths:
+        if path.is_symlink():
+            continue
+        mode = path.stat().st_mode
+        path.chmod(mode | 0o200 if writable else mode & ~0o222)
 
 
 def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
@@ -183,19 +204,39 @@ def add_verified_worktree(upstream: pathlib.Path, worktree: pathlib.Path,
 def run_probe(upstream: pathlib.Path, source: str, toolchain: str) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory(prefix="leanvm-b-compiler-probe-") as directory:
         worktree = pathlib.Path(directory) / "upstream-worktree"
+        target = pathlib.Path(directory) / "cargo-target"
         add_verified_worktree(upstream, worktree)
+        frozen = False
         try:
             example = worktree / "crates/lean_compiler/examples/leansilicon_export.rs"
             example.parent.mkdir(parents=True, exist_ok=True)
             example.write_text(PROBE)
+            set_worktree_writable(worktree, writable=False)
+            frozen = True
             command = [
                 "cargo", f"+{toolchain}", "run", "--quiet", "--locked",
                 "-p", "lean_compiler", "--example", "leansilicon_export",
             ]
             completed = subprocess.run(
-                command, cwd=worktree, input=source, text=True, capture_output=True
+                command,
+                cwd=worktree,
+                env=os.environ | {
+                    "CARGO_TARGET_DIR": str(target),
+                    "CARGO_INCREMENTAL": "0",
+                },
+                input=source,
+                text=True,
+                capture_output=True,
+            )
+            if example.read_text() != PROBE:
+                raise SystemExit("compiler probe source changed during execution")
+            require_actual_tracked_bytes(
+                worktree,
+                frozenset({"crates/lean_compiler/examples/leansilicon_export.rs"}),
             )
         finally:
+            if frozen:
+                set_worktree_writable(worktree, writable=True)
             subprocess.run(
                 ["git", "-C", str(upstream), "worktree", "remove", "--force", str(worktree)],
                 check=True, capture_output=True,

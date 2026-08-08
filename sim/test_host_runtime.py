@@ -1272,7 +1272,20 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
                     (worktree / "compiler.rs").read_text(),
                     "const TRUSTED: bool = true;\n",
                 )
+                probe = worktree / "probe.rs"
+                probe.write_text("fn main() {}\n")
+                comparison_tool._export.set_worktree_writable(
+                    worktree, writable=False
+                )
+                self.assertEqual((worktree / "compiler.rs").stat().st_mode & 0o222, 0)
+                self.assertEqual(probe.stat().st_mode & 0o222, 0)
+                comparison_tool._export.require_actual_tracked_bytes(
+                    worktree, frozenset({"probe.rs"})
+                )
             finally:
+                comparison_tool._export.set_worktree_writable(
+                    worktree, writable=True
+                )
                 subprocess.run(
                     ["git", "worktree", "remove", "--force", str(worktree)],
                     cwd=repo,
