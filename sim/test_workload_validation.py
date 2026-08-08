@@ -211,7 +211,33 @@ class WorkloadValidationReceiptTest(unittest.TestCase):
             shadow.mkdir()
             (shadow / "__init__.pyc").write_bytes(b"unchecked bytecode")
 
-            with self.assertRaisesRegex(SystemExit, "ignored Python bytecode"):
+            with self.assertRaisesRegex(SystemExit, "ignored importable files"):
+                workload_validation.require_clean_worktree(repo)
+
+    def test_info_excluded_source_package_shadow_is_not_accepted_as_clean(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            host = repo / "host"
+            host.mkdir()
+            (host / "runtime.py").write_text("TRUSTED = True\n")
+            subprocess.run(["git", "add", "host/runtime.py"], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "initial"], cwd=repo, check=True)
+            exclude = repo / ".git" / "info" / "exclude"
+            exclude.write_text(exclude.read_text() + "\nhost/runtime/\n")
+            shadow = host / "runtime"
+            shadow.mkdir()
+            (shadow / "__init__.py").write_text("TRUSTED = False\n")
+
+            with self.assertRaisesRegex(SystemExit, "ignored importable files"):
                 workload_validation.require_clean_worktree(repo)
 
     def test_selected_count_is_derived_from_validated_plan(self):

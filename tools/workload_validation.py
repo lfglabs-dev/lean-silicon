@@ -29,6 +29,9 @@ REQUIRED_WORKLOAD_IDS = frozenset({
     "heap_recurrence",
     "blake3_stack",
 })
+IMPORTABLE_FILE_SUFFIXES = frozenset({
+    ".py", ".pyw", ".pyc", ".pyo", ".so", ".pyd", ".dll", ".dylib",
+})
 
 
 def sha(path: Path) -> str:
@@ -67,8 +70,12 @@ def require_clean_worktree(root: Path = ROOT) -> None:
         ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
         cwd=root,
     ).split(b"\0")
-    if any(Path(name.decode()).suffix in {".pyc", ".pyo"} for name in ignored if name):
-        raise SystemExit("workload checkout must not contain ignored Python bytecode")
+    if any(
+        Path(name.decode()).suffix.lower() in IMPORTABLE_FILE_SUFFIXES
+        for name in ignored
+        if name
+    ):
+        raise SystemExit("workload checkout must not contain ignored importable files")
 
 
 def clean_head() -> tuple[str, str]:
