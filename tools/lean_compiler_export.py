@@ -133,7 +133,8 @@ def require_readonly_toolchain_mount(descriptor: int) -> None:
 def require_safe_archive_tree(upstream: pathlib.Path, commit: str) -> None:
     """Reject Git entries that could redirect privileged archive extraction."""
     listing = subprocess.check_output(
-        [GIT, "ls-tree", "-r", "-z", commit], cwd=upstream
+        [GIT, "--no-replace-objects", "ls-tree", "-r", "-z", commit],
+        cwd=upstream,
     )
     reserved = {"cargo-home", "host-toolchain", "tmp", "toolchain"}
     for entry in listing.rstrip(b"\0").split(b"\0") if listing else ():
@@ -358,7 +359,7 @@ cd "$PRIVATE_ROOT"
             os.close(toolchain_descriptor)
             raise
         archive = subprocess.Popen(
-            [GIT, "archive", "--format=tar", commit],
+            [GIT, "--no-replace-objects", "archive", "--format=tar", commit],
             cwd=upstream,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

@@ -1451,6 +1451,18 @@ class FrozenUpstreamComparisonTests(unittest.TestCase):
             head = subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=repo, text=True
             ).strip()
+            (repo / "redirect").unlink()
+            (repo / "redirect").write_text("replacement hides unsafe entry\n")
+            subprocess.run(["git", "add", "redirect"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "replacement"], cwd=repo, check=True
+            )
+            replacement = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            subprocess.run(
+                ["git", "replace", head, replacement], cwd=repo, check=True
+            )
 
             with self.assertRaisesRegex(SystemExit, "unsafe entry.*redirect"):
                 comparison_tool._export.require_safe_archive_tree(repo, head)

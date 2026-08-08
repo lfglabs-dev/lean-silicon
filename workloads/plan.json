@@ -8,7 +8,7 @@
     "repository": "https://github.com/leanEthereum/leanVM-b.git",
     "commit": "c308034ab78619b39a59d26f3dc60e7df5b52649",
     "cargo_lock_sha256": "0dd4d59866ce12d9bdad27ad7bb3532519a17387821741f52d2c9a43519280c6",
-    "rust_toolchain": "1.88.0"
+    "rust_toolchain": "leanvm-validation-1.88.0"
   },
   "runtime": {"public_input": ["0x00000000000000000000000000000001", "0x00000000000000000000000000000000"], "profile": "INTERPRETER_COMPAT"},
   "workloads": [

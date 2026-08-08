@@ -35,10 +35,10 @@ sudo cp -a "$installed_toolchain/." "$private/rust-toolchain-ro/"
 sudo umount "$private/rust-toolchain-ro"
 rustup toolchain uninstall 1.88.0
 sudo mount -o loop,ro "$private/rust-toolchain.ext4" "$private/rust-toolchain-ro"
-rustup toolchain link 1.88.0 "$private/rust-toolchain-ro"
+rustup toolchain link leanvm-validation-1.88.0 "$private/rust-toolchain-ro"
 WORKLOAD_CACHE="$private/receipt" LEANVM_B_UPSTREAM="$private/leanVM-b" make workload-validation
 python3 -m json.tool "$private/receipt/receipt.json"
-rustup toolchain uninstall 1.88.0
+rustup toolchain uninstall leanvm-validation-1.88.0
 sudo umount "$private/rust-toolchain-ro"
 ```
 
