@@ -62,8 +62,11 @@ either absent operand. `INTERPRETER_COMPAT` reproduces single-absent-operand
 back-solving when the destination is present, including verified host-proposed
 MUL inverses and the zero-known-operand fault, before applying the canonical
 forward XOR or GHASH multiplication through write-once memory. Effective
-addresses, the packet's inconsistent-alias rejection, DEREF pointer resolution,
-and result CRC still arrive below this boundary. `DEREF_CELL` does carry the
+addresses, the packet's inconsistent-alias rejection, and DEREF pointer resolution
+still arrive below this boundary. BLAKE3 completion is the exception: it retains
+the fixed service kind and access order, composes the digest through write-once
+memory, serializes the completed result payload, and derives the staged RETIRE
+checksum with reflected IEEE CRC-32. `DEREF_CELL` does carry the
 profile at the functional boundary and proves that `FORWARD_ONLY` rejects a
 missing local operand instead of applying interpreter reconciliation. The
 pointer's written/encoding proof is checked first, preserving unresolved-pointer
@@ -91,9 +94,9 @@ through canonical XOR/MUL execution into atomic transaction staging.
    backpressure, reset and ABORT dominance.
 4. Prove accepted-frame refinement from that cycle system to `FullProfile.decide`
    for SET/XOR/MUL/DEREF/JUMP and to the proved raw BLAKE3 service path.
-5. Prove response serialization and staged-result CRC correspondence, then lift
-   `successful_service_response_matching_retire_exactly_once` to the cycle
-   system's DONE edge.
+5. Lift the proved BLAKE3 staged-result CRC correspondence and
+   `successful_service_response_matching_retire_exactly_once` to the cycle system's
+   DONE edge.
 6. Bind the independent cycle system to authored SV with unbounded formal
    correspondence (or explicitly bounded results where induction cannot close).
 

@@ -31,7 +31,7 @@ mutations = {
         "match writeOnce memory address value with\n  | none => .fault .address",
     ),
     "blake3-ignores-service-kind": (
-        "response.serviceKind != 1 then",
+        "response.serviceKind != request.serviceKind || request.serviceKind != 1 then",
         "false then",
     ),
     "bridge-uses-u32-index-bound": (
@@ -117,6 +117,30 @@ mutations = {
     "blake3-retire-never-commits": (
         "Transaction.step state.transaction (.retire txnId checksum)",
         "Transaction.step state.transaction .abort",
+    ),
+    "blake3-request-drops-service-kind": (
+        "serviceKind := 1\n  memory := start.memory",
+        "serviceKind := 0\n  memory := start.memory",
+    ),
+    "idle-response-is-not-bad-state": (
+        "state := .idle nextServiceId, decision := some (.fault .badState)",
+        "state := .idle nextServiceId, decision := some (.fault .badService)",
+    ),
+    "pending-start-is-not-bad-state": (
+        "state := .pending nextServiceId pending, decision := some (.fault .badState)",
+        "state := .pending nextServiceId pending, decision := some (.fault .stateMismatch)",
+    ),
+    "blake3-allows-presence-alias-mismatch": (
+        "other.1 != address || other.2 == cell",
+        "other.1 != address || other.2.written != cell.written || other.2 == cell",
+    ),
+    "blake3-start-skips-committed-control": (
+        "else if !commonStateMatches state.transaction raw.common then",
+        "else if false then",
+    ),
+    "blake3-retire-uses-preselected-checksum": (
+        "common := completedBlake3Common pending response",
+        "common := request.common",
     ),
 }
 
