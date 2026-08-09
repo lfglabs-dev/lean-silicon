@@ -138,6 +138,10 @@ mutations = {
         "else if !commonStateMatches state.transaction raw.common then",
         "else if false then",
     ),
+    "endpoint-control-masks-pending-service": (
+        "match state.service with\n      | .pending nextServiceId pending =>",
+        "match .idle 1 with\n      | .pending nextServiceId pending =>",
+    ),
     "blake3-retire-uses-preselected-checksum": (
         "common := completedBlake3Common pending response",
         "common := request.common",

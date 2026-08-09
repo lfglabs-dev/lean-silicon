@@ -480,13 +480,18 @@ def endpointStep (state : EndpointState) : EndpointCommand -> EndpointOutcome
       { state := { transaction := transaction.model, service := service.state }
         decision := service.decision, transactionOutcome := some transaction }
   | .service (.start raw) =>
-      if state.transaction.state != .idle then
-        { state, decision := some (.fault .badState) }
-      else if !commonStateMatches state.transaction raw.common then
-        { state, decision := some (.fault .stateMismatch) }
-      else
-        let service := serviceStep state.service (.start raw)
-        { state := { state with service := service.state }, decision := service.decision }
+      match state.service with
+      | .pending nextServiceId pending =>
+          let service := serviceStep (.pending nextServiceId pending) (.start raw)
+          { state := { state with service := service.state }, decision := service.decision }
+      | .idle nextServiceId =>
+          if state.transaction.state != .idle then
+            { state, decision := some (.fault .badState) }
+          else if !commonStateMatches state.transaction raw.common then
+            { state, decision := some (.fault .stateMismatch) }
+          else
+            let service := serviceStep (.idle nextServiceId) (.start raw)
+            { state := { state with service := service.state }, decision := service.decision }
   | .service (.respond response) =>
       match state.service with
       | .pending nextServiceId pending =>
@@ -586,12 +591,25 @@ theorem endpoint_reset_restores_protocol_initial (state : EndpointState) :
   rfl
 
 theorem service_start_requires_committed_control (state : EndpointState)
-    (raw : RawBlake3Request)
+    (raw : RawBlake3Request) (nextServiceId : UInt32)
+    (hservice : state.service = .idle nextServiceId)
     (hidle : state.transaction.state = .idle)
     (hmismatch : commonStateMatches state.transaction raw.common = false) :
     endpointStep state (.service (.start raw)) = {
       state, decision := some (.fault .stateMismatch) } := by
-  simp [endpointStep, hidle, hmismatch]
+  simp [endpointStep, hservice, hidle, hmismatch]
+
+/-- A live service is the outer endpoint state, so it masks neither state nor control faults. -/
+theorem endpoint_pending_service_start_is_bad_state (state : EndpointState)
+    (raw : RawBlake3Request) (nextServiceId : UInt32) (pending : ServicePending)
+    (hservice : state.service = .pending nextServiceId pending) :
+    endpointStep state (.service (.start raw)) = {
+      state, decision := some (.fault .badState) } := by
+  cases state with
+  | mk transaction service =>
+    simp only at hservice
+    subst service
+    rfl
 
 theorem protocol_rejects_u16_boundary : ¬ ProtocolIndex (2 ^ 16) := by
   simp [ProtocolIndex, protocolIndexLimit]
@@ -807,6 +825,13 @@ theorem blake3_rejects_wrong_kind (pending : ServicePending)
     (h : response.serviceKind != 1) :
     finishBlake3 pending response = .fault .badService := by
   simp [finishBlake3, hrequest, h]
+
+theorem service_match_rejects_wrong_kind (pending : ServicePending)
+    (response : Blake3Response)
+    (hrequest : pending.request.serviceKind = 1)
+    (h : response.serviceKind != 1) :
+    serviceResponseMatches pending response = false := by
+  simp [serviceResponseMatches, hrequest, h]
 
 theorem completed_blake3_checksum_is_payload_crc (pending : ServicePending)
     (response : Blake3Response) :
@@ -1174,12 +1199,14 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms successful_service_response_matching_retire_exactly_once
 #print axioms endpoint_reset_restores_protocol_initial
 #print axioms service_start_requires_committed_control
+#print axioms endpoint_pending_service_start_is_bad_state
 #print axioms finishWrite_rejects_pc_overflow
 #print axioms finishWrite_conflict_precedes_pc_overflow
 #print axioms blake3_rejects_wrong_kind
 #print axioms completed_blake3_checksum_is_payload_crc
 #print axioms finished_blake3_checksum_is_payload_crc
 #print axioms service_match_rejects_wrong_transaction
+#print axioms service_match_rejects_wrong_kind
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms service_response_consumes_pending
