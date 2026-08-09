@@ -9,6 +9,9 @@ an external service request and accepts a response bound to the same transaction
 and endpoint-assigned monotone service identifier. Its request type fixes the
 compression shape at four message words, two chaining-value words, and sixteen
 metadata bytes, so malformed arities are not representable.
+Responses must also carry the BLAKE3 compression service kind. The staging
+bridge enforces the negotiated 16-bit control-index limit rather than merely
+the transport's wider `u32` representation.
 
 The service request retains the host-supplied memory view across suspension.
 Both returned digest words pass through `Memory.writeOnce`; either collision is
@@ -41,8 +44,10 @@ supplied memory view unchanged; it cannot erase host-owned state.
 
 The bridge also lifts reset, abort, and matching retirement into the semantic
 relation. Reset restores the initial committed state, abort preserves the
-committed state, and a matching result can retire exactly once. Checked PC
-increment failure is an address fault and precedes any attempted write.
+committed state, and a matching result can retire exactly once. A write-once
+collision takes precedence over checked PC-increment overflow, matching the
+executable decision path; an otherwise valid write with overflowing PC faults
+as an address error.
 
 The binary decision now models both negotiated profiles. `FORWARD_ONLY` rejects
 either absent operand. `INTERPRETER_COMPAT` reproduces single-absent-operand

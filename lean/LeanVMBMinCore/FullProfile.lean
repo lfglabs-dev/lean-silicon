@@ -96,6 +96,7 @@ def Blake3Start.assignServiceId (start : Blake3Start)
 structure Blake3Response where
   txnId : Transaction.TxnId
   serviceId : UInt32
+  serviceKind : UInt8
   digest : Word × Word
   deriving DecidableEq, Repr
 
@@ -141,12 +142,12 @@ def advance (common : Common) : Option Control := do
 
 def finishWrite (common : Common) (memory : Mem) (address : Index)
     (value : Word) : Decision :=
-  match advance common with
-  | none => .fault .address
-  | some next =>
-      match writeOnce memory address value with
-      | some memory' => .result { common, nextControl := next, memory := memory' }
-      | none => .fault .writeConflict
+  match writeOnce memory address value with
+  | none => .fault .writeConflict
+  | some memory' =>
+      match advance common with
+      | none => .fault .address
+      | some next => .result { common, nextControl := next, memory := memory' }
 
 def finishBinary (isXor : Bool) (input : BinaryInput) : Decision :=
   let leftAbsent := !(input.memory input.left).written
@@ -223,7 +224,8 @@ def decide : Instruction -> Decision
 /-- A service response is accepted only by the request that created it. -/
 def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decision :=
   let request := pending.request
-  if response.txnId != request.common.txnId || response.serviceId != request.serviceId then
+  if response.txnId != request.common.txnId || response.serviceId != request.serviceId ||
+      response.serviceKind != 1 then
     .fault .badService
   else
     match writeOnce request.memory request.outputAddresses.1 response.digest.1 with
@@ -236,7 +238,7 @@ def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decisi
 
 def serviceResponseMatches (pending : ServicePending) (response : Blake3Response) : Bool :=
   response.txnId == pending.request.common.txnId &&
-    response.serviceId == pending.request.serviceId
+    response.serviceId == pending.request.serviceId && response.serviceKind == 1
 
 inductive ServiceState where
   /-- The next endpoint-owned identifier; callers cannot choose the live ID. -/
@@ -287,11 +289,18 @@ def transitionOf (effect : Effect) : Transaction.Transition := {
 }
 
 /-- Every canonical control index survives the packet lifecycle's `UInt32` boundary. -/
+def protocolIndexLimit : Nat := 2 ^ 16
+
+def ProtocolIndex (index : Index) : Prop := index < protocolIndexLimit
+
 def Representable (effect : Effect) : Prop :=
-  CheckedIndex.valid effect.common.control.pc /\
-    CheckedIndex.valid effect.common.control.fp /\
-    CheckedIndex.valid effect.nextControl.pc /\
-    CheckedIndex.valid effect.nextControl.fp
+  ProtocolIndex effect.common.control.pc /\
+    ProtocolIndex effect.common.control.fp /\
+    ProtocolIndex effect.nextControl.pc /\
+    ProtocolIndex effect.nextControl.fp
+
+theorem protocol_rejects_u16_boundary : ¬ ProtocolIndex (2 ^ 16) := by
+  simp [ProtocolIndex, protocolIndexLimit]
 
 /--
 Non-vacuous bridge: a representable functional result is accepted into the
@@ -430,30 +439,45 @@ theorem blake3_rejects_wrong_service (pending : ServicePending)
     finishBlake3 pending response = .fault .badService := by
   simp [finishBlake3, h]
 
+theorem blake3_rejects_wrong_kind (pending : ServicePending)
+    (response : Blake3Response) (h : response.serviceKind != 1) :
+    finishBlake3 pending response = .fault .badService := by
+  simp [finishBlake3, h]
+
 theorem finishWrite_rejects_pc_overflow (common : Common) (memory : Mem)
-    (address : Index) (value : Word) (h : advance common = none) :
+    (address : Index) (value : Word) (memory' : Mem)
+    (hwrite : writeOnce memory address value = some memory')
+    (h : advance common = none) :
     finishWrite common memory address value = .fault .address := by
-  simp [finishWrite, h]
+  simp [finishWrite, hwrite, h]
+
+theorem finishWrite_conflict_precedes_pc_overflow (common : Common) (memory : Mem)
+    (address : Index) (value : Word)
+    (hconflict : writeOnce memory address value = none) :
+    finishWrite common memory address value = .fault .writeConflict := by
+  simp [finishWrite, hconflict]
 
 theorem blake3_rejects_first_output_conflict (pending : ServicePending)
     (response : Blake3Response)
     (htxn : response.txnId = pending.request.common.txnId)
     (hservice : response.serviceId = pending.request.serviceId)
+    (hkind : response.serviceKind = 1)
     (hconflict : writeOnce pending.request.memory pending.request.outputAddresses.1
       response.digest.1 = none) :
     finishBlake3 pending response = .fault .writeConflict := by
-  simp [finishBlake3, htxn, hservice, hconflict]
+  simp [finishBlake3, htxn, hservice, hkind, hconflict]
 
 theorem blake3_rejects_second_output_conflict (pending : ServicePending)
     (response : Blake3Response) (memory : Mem)
     (htxn : response.txnId = pending.request.common.txnId)
     (hservice : response.serviceId = pending.request.serviceId)
+    (hkind : response.serviceKind = 1)
     (hfirst : writeOnce pending.request.memory pending.request.outputAddresses.1
       response.digest.1 = some memory)
     (hconflict : writeOnce memory pending.request.outputAddresses.2
       response.digest.2 = none) :
     finishBlake3 pending response = .fault .writeConflict := by
-  simp [finishBlake3, htxn, hservice, hfirst, hconflict]
+  simp [finishBlake3, htxn, hservice, hkind, hfirst, hconflict]
 
 theorem service_response_consumes_pending (nextServiceId : UInt32)
     (pending : ServicePending)
@@ -624,8 +648,8 @@ example : stages Transaction.initial
     (Transaction.step Transaction.initial (.stage (transitionOf witnessSetEffect))) := by
   exact decided_result_stages Transaction.initial
     (.set witnessCommon Memory.empty 12 (0x2a#128)) witnessSetEffect rfl
-    (by simp [Representable, CheckedIndex.valid, witnessSetEffect, witnessCommon,
-      CheckedIndex.max]) rfl (by decide) (by decide)
+    (by simp [Representable, ProtocolIndex, protocolIndexLimit, witnessSetEffect,
+      witnessCommon]) rfl (by decide) (by decide)
 
 example : exists request pending, decide (.blake3 request) = .serviceRequired pending := by
   let request : Blake3Request := {
@@ -685,6 +709,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
   rfl
 
 #print axioms decided_result_stages
+#print axioms protocol_rejects_u16_boundary
 #print axioms staged_result_matching_retire_commits
 #print axioms staged_result_abort_never_commits
 #print axioms staged_result_reset_restores_initial
@@ -693,6 +718,8 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_rejects_pc_overflow_before_service
 #print axioms service_start_assigns_endpoint_id
 #print axioms finishWrite_rejects_pc_overflow
+#print axioms finishWrite_conflict_precedes_pc_overflow
+#print axioms blake3_rejects_wrong_kind
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms service_response_consumes_pending

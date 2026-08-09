@@ -26,9 +26,17 @@ mutations = {
         "match writeOnce request.memory request.outputAddresses.1 response.digest.1 with",
         "match some (writeRaw request.memory request.outputAddresses.1 response.digest.1) with",
     ),
-    "pc-overflow-becomes-write-conflict": (
-        "| none => .fault .address\n  | some next =>",
-        "| none => .fault .writeConflict\n  | some next =>",
+    "write-conflict-loses-to-pc-overflow": (
+        "match writeOnce memory address value with\n  | none => .fault .writeConflict",
+        "match writeOnce memory address value with\n  | none => .fault .address",
+    ),
+    "blake3-ignores-service-kind": (
+        "response.serviceKind != 1 then",
+        "false then",
+    ),
+    "bridge-uses-u32-index-bound": (
+        "def protocolIndexLimit : Nat := 2 ^ 16",
+        "def protocolIndexLimit : Nat := 2 ^ 32",
     ),
     "deref-bypasses-control-binding": (
         "if input.prepared.control != input.common.control then",
