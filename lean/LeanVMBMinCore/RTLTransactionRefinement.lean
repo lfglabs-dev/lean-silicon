@@ -150,41 +150,61 @@ supplied by `txnIdOf`, just as the retained host supplies them in hardware. -/
 structure CoupledState where
   rtl : RTLTraceRefinement.State
   functional : Transaction.Model
+  /-- Functional retirement history, extended only by an outcome whose
+  `retired` bit is true.  It is deliberately retained across reset, matching
+  the RTL proof history. -/
+  functionalRetired : List AcceptedTransaction
+  /-- Architectural values expected from retirements in the current reset
+  epoch.  Unlike the retained histories, these reset with the model. -/
+  expectedPc : Transaction.Index
+  expectedRetireSeq : UInt32
   deriving DecidableEq, Repr
 
 def coupledInitial : CoupledState :=
-  ⟨RTLTraceRefinement.initial, Transaction.initial⟩
+  ⟨RTLTraceRefinement.initial, Transaction.initial, [], 0, 0⟩
 
 /-- One synchronized retained/controller and functional lifecycle step. -/
 def coupledStep (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (s : CoupledState) (input : RTLTraceRefinement.Input) : CoupledState :=
   match input with
   | .reset =>
-      ⟨RTLTraceRefinement.step s.rtl .reset,
-        (Transaction.step s.functional .reset).model⟩
+      { s with
+        rtl := RTLTraceRefinement.step s.rtl .reset
+        functional := (Transaction.step s.functional .reset).model
+        expectedPc := 0
+        expectedRetireSeq := 0 }
   | .disable =>
-      ⟨RTLTraceRefinement.step s.rtl .disable,
-        (Transaction.step s.functional .abort).model⟩
+      { s with
+        rtl := RTLTraceRefinement.step s.rtl .disable
+        functional := (Transaction.step s.functional .abort).model }
   | .accept transaction =>
       match s.rtl.phase with
       | .idle =>
-          ⟨RTLTraceRefinement.step s.rtl (.accept transaction),
-            (Transaction.step s.functional
-              (.stage (toTransition s.functional
-                (txnIdOf transaction) transaction))).model⟩
+          { s with
+            rtl := RTLTraceRefinement.step s.rtl (.accept transaction)
+            functional := (Transaction.step s.functional
+                (.stage (toTransition s.functional
+                  (txnIdOf transaction) transaction))).model }
       | _ => s
   | .tx true =>
       match s.rtl.phase with
       | .transmit transaction index =>
           if index.val = 15 then
-            ⟨RTLTraceRefinement.step s.rtl (.tx true),
-              (Transaction.step s.functional
-                (.retire (txnIdOf transaction)
-                  (resultChecksum
-                    (result transaction.opcode transaction.a transaction.b)))).model⟩
-          else ⟨RTLTraceRefinement.step s.rtl (.tx true), s.functional⟩
-      | _ => ⟨RTLTraceRefinement.step s.rtl (.tx true), s.functional⟩
-  | input => ⟨RTLTraceRefinement.step s.rtl input, s.functional⟩
+            let outcome := Transaction.step s.functional
+              (.retire (txnIdOf transaction)
+                (resultChecksum
+                  (result transaction.opcode transaction.a transaction.b)))
+            { s with
+              rtl := RTLTraceRefinement.step s.rtl (.tx true)
+              functional := outcome.model
+              functionalRetired :=
+                if outcome.retired then s.functionalRetired ++ [transaction]
+                else s.functionalRetired
+              expectedPc := s.expectedPc + 1
+              expectedRetireSeq := s.expectedRetireSeq + 1 }
+          else { s with rtl := RTLTraceRefinement.step s.rtl (.tx true) }
+      | _ => { s with rtl := RTLTraceRefinement.step s.rtl (.tx true) }
+  | input => { s with rtl := RTLTraceRefinement.step s.rtl input }
 
 /-- Lifecycle representation relation at every prefix. -/
 def LifecycleRelated (txnIdOf : AcceptedTransaction → Transaction.TxnId)
@@ -197,9 +217,21 @@ def LifecycleRelated (txnIdOf : AcceptedTransaction → Transaction.TxnId)
           (result transaction.opcode transaction.a transaction.b)
   | _, _ => False
 
+/-- Completed RTL retirements are exactly the functional outcomes whose
+`retired` bit was true.  The committed PC and retirement sequence are also
+tied to the number of final-beat retirements in the current reset epoch. -/
+def RetirementRelated (s : CoupledState) : Prop :=
+  s.functionalRetired = s.rtl.retired ∧
+    s.functional.committed.pc = s.expectedPc ∧
+    s.functional.committed.retireSeq = s.expectedRetireSeq ∧
+    match s.functional.state with
+    | .idle => True
+    | .resultPending transition => transition.nextPc = s.expectedPc + 1
+
 def StateRelated (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (s : CoupledState) : Prop :=
-  RTLTraceRefinement.Invariant s.rtl ∧ LifecycleRelated txnIdOf s
+  RTLTraceRefinement.Invariant s.rtl ∧ LifecycleRelated txnIdOf s ∧
+    RetirementRelated s
 
 /-- Input validity combines exact payload-byte binding with the functional
 STAGE preconditions at precisely those IDLE command-acceptance prefixes. -/
@@ -221,7 +253,9 @@ theorem coupledInitial_related
     StateRelated txnIdOf coupledInitial := by
   exact ⟨RTLTraceRefinement.initial_invariant, by
     simp [LifecycleRelated, coupledInitial, RTLTraceRefinement.initial,
-      RTLTraceRefinement.Phase.pending, Transaction.initial]⟩
+      RTLTraceRefinement.Phase.pending, Transaction.initial], by
+    simp [RetirementRelated, coupledInitial, RTLTraceRefinement.initial,
+      Transaction.initial]⟩
 
 theorem lifecycle_step (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (s : CoupledState) (input : RTLTraceRefinement.Input)
@@ -324,6 +358,96 @@ theorem coupledStep_rtl
             simp [hlast]
   | _ => rfl
 
+theorem retirement_step
+    (txnIdOf : AcceptedTransaction → Transaction.TxnId)
+    (s : CoupledState) (input : RTLTraceRefinement.Input)
+    (hlifecycle : LifecycleRelated txnIdOf s)
+    (hretirement : RetirementRelated s) :
+    RetirementRelated (coupledStep txnIdOf s input) := by
+  rcases s with ⟨⟨phase, accepted, retired, outputs⟩, functional,
+    functionalRetired, expectedPc, expectedRetireSeq⟩
+  cases input with
+  | reset => simp_all [coupledStep, RetirementRelated,
+      RTLTraceRefinement.step, Transaction.step, Transaction.initial]
+  | disable => simp_all [coupledStep, RetirementRelated,
+      RTLTraceRefinement.step, Transaction.step]
+  | invalidOpcode =>
+      cases phase <;> simp_all [coupledStep, RetirementRelated,
+        LifecycleRelated, RTLTraceRefinement.step,
+        RTLTraceRefinement.Phase.pending]
+  | accept transaction =>
+      cases phase with
+      | idle =>
+          have hidle : functional.state = .idle := by
+            cases hfunctional : functional.state with
+            | idle => rfl
+            | resultPending transition =>
+                simp [LifecycleRelated, RTLTraceRefinement.Phase.pending,
+                  hfunctional] at hlifecycle
+          by_cases hmatch : Transaction.stateMatches functional
+            (toTransition functional (txnIdOf transaction) transaction) = false
+          · simp_all [coupledStep, RetirementRelated,
+              RTLTraceRefinement.step, Transaction.step, hidle, hmatch]
+          · by_cases hrange : Transaction.currentIndicesInRange
+                (toTransition functional (txnIdOf transaction) transaction) = false
+            · simp_all [coupledStep, RetirementRelated,
+                RTLTraceRefinement.step, Transaction.step, hidle, hmatch,
+                hrange]
+            · simp_all [coupledStep, RetirementRelated,
+                RTLTraceRefinement.step, Transaction.step, hidle, hmatch,
+                hrange, toTransition]
+      | _ => simp_all [coupledStep, RetirementRelated,
+          RTLTraceRefinement.step]
+  | receive data =>
+      cases phase with
+      | receiveA transaction index =>
+          rcases transaction with ⟨opcode, a, b⟩
+          cases opcode <;> by_cases hlast : index.val = 15 <;>
+            simp_all [coupledStep, RetirementRelated,
+              RTLTraceRefinement.step]
+      | receiveB transaction index =>
+          rcases transaction with ⟨opcode, a, b⟩
+          cases opcode <;> by_cases hlast : index.val = 15 <;>
+            simp_all [coupledStep, RetirementRelated,
+              RTLTraceRefinement.step]
+      | _ => simp_all [coupledStep, RetirementRelated,
+          RTLTraceRefinement.step]
+  | execute =>
+      cases phase <;> simp_all [coupledStep, RetirementRelated,
+        RTLTraceRefinement.step]
+  | refill =>
+      cases phase <;> simp_all [coupledStep, RetirementRelated,
+        RTLTraceRefinement.step]
+  | tx ready =>
+      cases ready with
+      | false => simpa [coupledStep, RetirementRelated,
+          RTLTraceRefinement.backpressure_stable] using hretirement
+      | true =>
+          cases phase with
+          | transmit transaction index =>
+              by_cases hlast : index.val = 15
+              · cases hfunctional : functional.state with
+                | idle =>
+                    simp [LifecycleRelated, RTLTraceRefinement.Phase.pending,
+                      hfunctional] at hlifecycle
+                | resultPending transition =>
+                    have hmatch : transition.txnId = txnIdOf transaction ∧
+                        transition.resultChecksum = resultChecksum
+                          (result transaction.opcode transaction.a
+                            transaction.b) := by
+                      simpa [LifecycleRelated, RTLTraceRefinement.Phase.pending,
+                        hfunctional] using hlifecycle
+                    have hnext : transition.nextPc = expectedPc + 1 := by
+                      simpa [RetirementRelated, hfunctional] using
+                        hretirement.2.2.2
+                    simp_all [coupledStep, hlast, RetirementRelated,
+                      RTLTraceRefinement.step, Transaction.step, toTransition]
+              · rcases transaction with ⟨opcode, a, b⟩
+                cases opcode <;> simpa [coupledStep, hlast,
+                  RetirementRelated, RTLTraceRefinement.step] using hretirement
+          | _ => simp_all [coupledStep, RetirementRelated,
+              RTLTraceRefinement.step]
+
 theorem stateRelated_step
     (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (s : CoupledState) (input : RTLTraceRefinement.Input)
@@ -333,15 +457,19 @@ theorem stateRelated_step
   constructor
   · rw [coupledStep_rtl]
     exact RTLTraceRefinement.invariant_step s.rtl input hrelated.1
-  · exact lifecycle_step txnIdOf s input hrelated.2 hvalid
+  · constructor
+    · exact lifecycle_step txnIdOf s input hrelated.2.1 hvalid
+    · exact retirement_step txnIdOf s input hrelated.2.1 hrelated.2.2
 
 def coupledRun (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (inputs : List RTLTraceRefinement.Input) : CoupledState :=
   inputs.foldl (coupledStep txnIdOf) coupledInitial
 
 /-- Prefix-sensitive arbitrary-finite simulation theorem. This is the central
-state/transaction refinement: every valid prefix maintains both exact ordered
-results and the synchronized STAGE/pending/RETIRE-or-abort lifecycle. -/
+state/transaction refinement: every valid prefix maintains exact ordered
+results, synchronized STAGE/pending/RETIRE-or-abort lifecycle, equality of RTL
+and successful functional retirement histories, and the committed PC/retire
+sequence induced by final response beats in the current reset epoch. -/
 theorem coupled_finite_trace_refines
     (txnIdOf : AcceptedTransaction → Transaction.TxnId)
     (inputs : List RTLTraceRefinement.Input)

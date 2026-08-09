@@ -30,7 +30,12 @@ interaction traces and maintains a product of retained RTL state and the
 functional `Transaction.Model` after every event. Accepted commands atomically
 STAGE, the final ordered response beat performs matching RETIRE, reset invokes
 functional reset, and `ena = 0` invokes functional abort. Its invariant also
-retains the exact ordered arithmetic-result history. The companion theorem
+retains the exact ordered arithmetic-result history. The product records a
+functional retirement only when `Transaction.Outcome.retired = true`, requires
+that history to equal the RTL retirement history, and ties committed `pc` and
+`retireSeq` to final response beats within each reset epoch. Thus replacing the
+final matching RETIRE with abort, a mismatch, or a false retirement outcome
+breaks the central relation itself. The companion theorem
 `finite_sequence_refines` projects completed transactions into an arbitrary
 finite command sequence.
 
