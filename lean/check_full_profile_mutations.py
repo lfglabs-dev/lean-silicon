@@ -94,6 +94,10 @@ mutations = {
         "if validBlake3Metadata raw.metadata then prepareValidBlake3 raw",
         "if true then prepareValidBlake3 raw",
     ),
+    "blake3-accepts-noncanonical-absent-cells": (
+        "if !canonicalBlake3Cells raw then .error .badCell",
+        "if false then .error .badCell",
+    ),
     "blake3-second-output-reuses-first": (
         "match CheckedIndex.add out0 1 with",
         "match CheckedIndex.add out0 0 with",

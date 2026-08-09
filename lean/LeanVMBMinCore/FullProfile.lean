@@ -42,6 +42,7 @@ inductive Fault where
   | mulBacksolveZero
   | aliasInconsistent
   | writeConflict
+  | badCell
   | deref (reason : ControlPrimitives.Fault)
   | jump (reason : ControlPrimitives.Fault)
   | badService
@@ -127,6 +128,17 @@ def metadataFlags (metadata : Word) : Nat :=
 def validBlake3Metadata (metadata : Word) : Bool :=
   metadataBlockLength metadata <= 64 && metadataFlags metadata < 128
 
+/-- The packet decoder's canonical cell rule: absence carries no hidden value. -/
+def canonicalCell (cell : Cell) : Bool :=
+  cell.written || cell.value == 0#128
+
+/-- Validate every raw BLAKE3 cell before interpreting any instruction field. -/
+def canonicalBlake3Cells (raw : RawBlake3Request) : Bool :=
+  canonicalCell (raw.messageCells 0) && canonicalCell (raw.messageCells 1) &&
+    canonicalCell (raw.messageCells 2) && canonicalCell (raw.messageCells 3) &&
+    canonicalCell (raw.cvCells 0) && canonicalCell (raw.cvCells 1) &&
+    canonicalCell (raw.outCells 0) && canonicalCell (raw.outCells 1)
+
 def putSuppliedCell (memory : Mem) (address : Index) (cell : Cell) : Mem :=
   fun query => if query = address then cell else memory query
 
@@ -183,7 +195,8 @@ def prepareValidBlake3 (raw : RawBlake3Request) : Except Fault Blake3Start :=
     else .error .aliasInconsistent
 
 def prepareBlake3 (raw : RawBlake3Request) : Except Fault Blake3Start :=
-  if validBlake3Metadata raw.metadata then prepareValidBlake3 raw
+  if !canonicalBlake3Cells raw then .error .badCell
+  else if validBlake3Metadata raw.metadata then prepareValidBlake3 raw
   else .error .badService
 
 def Blake3Start.assignServiceId (start : Blake3Start)
@@ -823,9 +836,21 @@ theorem endpoint_rejects_out_of_range_control_before_service
         commonControlRepresentableB, hpc]
 
 theorem malformed_blake3_metadata_is_rejected (raw : RawBlake3Request)
+    (hcells : canonicalBlake3Cells raw = true)
     (hbad : validBlake3Metadata raw.metadata = false) :
     prepareBlake3 raw = .error .badService := by
+  simp [prepareBlake3, hcells, hbad]
+
+theorem noncanonical_blake3_cell_is_rejected (raw : RawBlake3Request)
+    (hbad : canonicalBlake3Cells raw = false) :
+    prepareBlake3 raw = .error .badCell := by
   simp [prepareBlake3, hbad]
+
+theorem noncanonical_blake3_cell_precedes_metadata (raw : RawBlake3Request)
+    (hcell : canonicalBlake3Cells raw = false)
+    (_hmetadata : validBlake3Metadata raw.metadata = false) :
+    prepareBlake3 raw = .error .badCell := by
+  simp [prepareBlake3, hcell]
 
 theorem blake3_assigned_kind_is_compress (start : Blake3Start) (serviceId : UInt32) :
     (start.assignServiceId serviceId).serviceKind = 1 := by
@@ -842,6 +867,7 @@ theorem supplied_alias_presence_mismatch_is_rejected (address : Index)
   simp [suppliedAliasesAgree, hne]
 
 theorem blake3_output_base_overflow_is_rejected (raw : RawBlake3Request)
+    (hcells : canonicalBlake3Cells raw = true)
     (hmeta : validBlake3Metadata raw.metadata = true)
     (in0 in1 in2 in3 cv0 cv1 : Index)
     (h0 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 0) = some in0)
@@ -852,11 +878,12 @@ theorem blake3_output_base_overflow_is_rejected (raw : RawBlake3Request)
     (hcv1 : CheckedIndex.add cv0 1 = some cv1)
     (hout : CheckedIndex.add raw.common.control.fp raw.outOffset = none) :
     prepareBlake3 raw = .error .address := by
-  rw [prepareBlake3, if_pos hmeta]
+  rw [prepareBlake3, if_neg (by simp [hcells]), if_pos hmeta]
   simp [prepareValidBlake3, prepareBlake3Addresses, h0, h1, h2, h3, hcv0,
     hcv1, hout]
 
 theorem blake3_second_output_overflow_is_rejected (raw : RawBlake3Request)
+    (hcells : canonicalBlake3Cells raw = true)
     (hmeta : validBlake3Metadata raw.metadata = true)
     (in0 in1 in2 in3 cv0 cv1 out0 : Index)
     (h0 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 0) = some in0)
@@ -868,7 +895,7 @@ theorem blake3_second_output_overflow_is_rejected (raw : RawBlake3Request)
     (hout0 : CheckedIndex.add raw.common.control.fp raw.outOffset = some out0)
     (hout1 : CheckedIndex.add out0 1 = none) :
     prepareBlake3 raw = .error .address := by
-  rw [prepareBlake3, if_pos hmeta]
+  rw [prepareBlake3, if_neg (by simp [hcells]), if_pos hmeta]
   simp [prepareValidBlake3, prepareBlake3Addresses, h0, h1, h2, h3, hcv0,
     hcv1, hout0, hout1]
 
@@ -1189,8 +1216,38 @@ def witnessRawBlake3 : RawBlake3Request := {
   cvCells := fun i => { written := true, value := BitVec.ofNat 128 (i.val + 5) }
   outCells := fun _ => { written := false, value := 0#128 } }
 
+def witnessNoncanonicalMessage : RawBlake3Request := {
+  witnessRawBlake3 with
+  messageCells := fun i => if i = 2 then { written := false, value := 0x5a#128 }
+    else witnessRawBlake3.messageCells i }
+
+def witnessNoncanonicalCv : RawBlake3Request := {
+  witnessRawBlake3 with
+  cvCells := fun i => if i = 1 then { written := false, value := 0x5b#128 }
+    else witnessRawBlake3.cvCells i }
+
+def witnessNoncanonicalOutput : RawBlake3Request := {
+  witnessRawBlake3 with
+  metadata := -1
+  outCells := fun i => if i = 0 then { written := false, value := 0x5c#128 }
+    else witnessRawBlake3.outCells i }
+
 example : (prepareBlake3 witnessRawBlake3).isOk := by
   decide
+
+example : prepareBlake3 witnessNoncanonicalMessage = .error .badCell := by
+  apply noncanonical_blake3_cell_is_rejected
+  rfl
+
+example : prepareBlake3 witnessNoncanonicalCv = .error .badCell := by
+  apply noncanonical_blake3_cell_is_rejected
+  rfl
+
+/-- Concrete precedence witness: BAD_CELL wins even though metadata is malformed too. -/
+example : prepareBlake3 witnessNoncanonicalOutput = .error .badCell := by
+  apply noncanonical_blake3_cell_precedes_metadata
+  · rfl
+  · rfl
 
 def witnessBlake3Request : Blake3Request := {
   common := witnessCommon
@@ -1336,6 +1393,8 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_rejects_pc_overflow_before_service
 #print axioms service_start_assigns_endpoint_id
 #print axioms malformed_blake3_metadata_is_rejected
+#print axioms noncanonical_blake3_cell_is_rejected
+#print axioms noncanonical_blake3_cell_precedes_metadata
 #print axioms blake3_assigned_kind_is_compress
 #print axioms supplied_alias_presence_mismatch_is_rejected
 #print axioms blake3_output_base_overflow_is_rejected
