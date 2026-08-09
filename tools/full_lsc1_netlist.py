@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = ROOT / "assurance/full-lsc1-netlist/plan.json"
+BOUNDED_EDGES = 3
 
 
 def sha256(path: Path) -> str:
@@ -72,6 +73,13 @@ def canonical_rtl_env(**updates: str) -> dict[str, str]:
     env.pop("LSC1_RTL_DIR", None)
     env.update(updates)
     return env
+
+
+def bounded_sat_argv(read_script: str) -> list[str]:
+    """Build the mandatory bound including one operational post-reset state."""
+    return ["yosys", "-Q", "-p", read_script +
+            f"sat -verify -prove-asserts -set-assumes -seq {BOUNDED_EDGES} "
+            "-set-def-inputs"]
 
 
 def main() -> None:
@@ -146,9 +154,9 @@ endmodule
 """)
     eq_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
                "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
-    run("whole_design_bmc_2", ["yosys", "-Q", "-p", eq_read +
-        "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"], receipt)
-    receipt["proofs"]["whole_design_bmc"] = {"status": "pass", "edges": 2,
+    run("whole_design_bmc_3", bounded_sat_argv(eq_read), receipt)
+    receipt["proofs"]["whole_design_bmc"] = {"status": "pass",
+        "edges": BOUNDED_EDGES,
         "observables": plan["observables"], "post_reset_inputs": "unconstrained"}
     induction_argv = ["yosys", "-Q", "-p", eq_read +
         "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"]
@@ -174,8 +182,7 @@ endmodule
                 "formal/full_lsc1_controller_invariants.sv; "
                 "prep -flatten -top lean_silicon_lsc1; async2sync; "
                 "chformal -cover -remove; chformal -lower; ")
-    run("controller_invariants_bmc_2", ["yosys", "-Q", "-p", inv_read +
-        "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"], receipt)
+    run("controller_invariants_bmc_3", bounded_sat_argv(inv_read), receipt)
     controller_argv = ["yosys", "-Q", "-p", inv_read +
         "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"]
     try:
@@ -193,7 +200,7 @@ endmodule
         "argv": controller_argv, "exit_code": controller_rc})
     receipt["proofs"]["controller_invariants"] = {
         "status": "pass" if controller_rc == 0 else "bounded-pass-unbounded-blocked",
-        "bounded_edges": 2, "method": "temporal induction",
+        "bounded_edges": BOUNDED_EDGES, "method": "temporal induction",
         "blocker": controller_blocker}
     run("opcode_reset_backpressure_fault_nonvacuity",
         ["make", "-C", "test/packet_frontend", "sim"], receipt)

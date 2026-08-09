@@ -34,6 +34,13 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
         self.assertNotIn("LSC1_RTL_DIR", env)
         self.assertEqual(env["LSC1_SYNTH_NETLIST"], "net.v")
 
+    def test_mandatory_bound_includes_operational_post_reset_state(self) -> None:
+        self.assertGreaterEqual(full_lsc1_netlist.BOUNDED_EDGES, 3)
+        argv = full_lsc1_netlist.bounded_sat_argv("read-design; ")
+        self.assertIn(f"-seq {full_lsc1_netlist.BOUNDED_EDGES}", argv[-1])
+        self.assertIn("-set-assumes", argv[-1])
+        self.assertIn("-set-def-inputs", argv[-1])
+
 
 if __name__ == "__main__":
     unittest.main()

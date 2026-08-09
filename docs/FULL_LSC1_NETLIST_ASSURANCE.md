@@ -25,8 +25,9 @@ python3 -m json.tool "$cache/receipt.json"
 The correspondence harness asserts all 24 wrapper output bits. Reset is
 asserted on an initialization edge preceding the first comparison; `ui_in`,
 `uio_in`, `ena`, reset, abort, and transmit backpressure are arbitrary on and
-after the first compared edge. A whole-design two-edge BMC
-(reset plus an arbitrary post-reset transition) is mandatory. Longer
+after the first compared edge. Mandatory three-edge whole-design and controller
+BMCs include the initialization reset edge, the first compared reset state,
+and an operational state after an arbitrary post-reset transition. Longer
 implemented-opcode sequences run directly on the synthesized netlist.
 Transactional responses are compared byte-for-byte with the executable model;
 valid NEGOTIATE is checked against an independent canonical-RTL wire vector
