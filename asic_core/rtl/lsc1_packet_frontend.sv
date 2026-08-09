@@ -116,6 +116,18 @@ module lsc1_packet_frontend (
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
 
+`ifdef FORMAL_FULL_LSC1
+    full_lsc1_controller_invariants formal_controller_invariants (
+        .clk(clk), .rst_n(rst_n), .abort(abort), .rx_ready(rx_ready),
+        .tx_valid(tx_valid), .tx_ready(tx_ready), .tx_data(tx_data),
+        .busy(busy), .fault(fault), .done_pulse(done_pulse),
+        .frame_valid(frame_valid), .rx_fault_valid(rx_fault_valid),
+        .tx_start(tx_start), .tx_busy(tx_busy), .compute_state(compute_state),
+        .alu_busy(alu_busy), .encoder_busy(encoder_busy),
+        .result_pending(result_pending)
+    );
+`endif
+
     task automatic emit_fault;
         input [7:0] status;
         input [31:0] txn;

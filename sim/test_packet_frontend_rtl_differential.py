@@ -47,9 +47,12 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             raise unittest.SkipTest("Icarus Verilog is exercised by the systemverilog CI job")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "packet-vector.vvp"
+        netlist = os.environ.get("LSC1_SYNTH_NETLIST")
+        sources = ([netlist, str(ROOT / "test/packet_frontend/tb_lsc1_packet_vector_netlist.sv")]
+                   if netlist else [str(rtl_path(path)) for path in RTL])
         subprocess.run(
             ["iverilog", "-g2012", "-s", "tb_lsc1_packet_vector", "-o", str(cls.simulator)]
-            + [str(rtl_path(path)) for path in RTL],
+            + sources,
             cwd=ROOT,
             check=True,
             capture_output=True,
@@ -73,6 +76,48 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         )
         line = next(item for item in run.stdout.splitlines() if item.startswith("RESPONSE "))
         return bytes.fromhex(line.removeprefix("RESPONSE "))
+
+    def rtl_sequence(self, first: protocol.RequestFrame,
+                     second: protocol.RequestFrame) -> list[bytes]:
+        paths = []
+        encoded_frames = (first.encode(), second.encode())
+        for index, encoded in enumerate(encoded_frames, 1):
+            path = Path(self.temporary.name) / f"request{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in encoded) + "\n")
+            paths.append(path)
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+REQUEST={paths[0]}",
+             f"+LENGTH={len(encoded_frames[0])}", f"+REQUEST2={paths[1]}",
+             f"+LENGTH2={len(encoded_frames[1])}"], cwd=ROOT, check=True,
+            capture_output=True, text=True,
+        )
+        return [bytes.fromhex(line.removeprefix("RESPONSE "))
+                for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+
+    def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
+        negotiate = protocol.build_negotiate(
+            profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)
+        # The canonical RTL advertises only its implemented feature bit.  The
+        # executable model also advertises services explicitly excluded here.
+        expected_negotiate = protocol.ResponseFrame(
+            protocol.Status.OK,
+            b"\x01\x01\x00\x01\x10\x00\x02\x00\x00\x00\x31\x43\x53\x4c",
+        ).encode()
+        self.assertEqual(self.rtl_exchange(negotiate), expected_negotiate)
+
+        staged = protocol.build_set_constant(
+            txn_id=0x42, pc=7, fp=11,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            offset=3, constant=0x123456789ABCDEF, cell=protocol.ABSENT,
+        )
+        endpoint = protocol.Lsc1Endpoint()
+        staged_response, _ = protocol.drive(endpoint, staged.encode())
+        result = protocol.decode_response(staged_response)
+        retire = protocol.build_retire(
+            txn_id=0x42, result_crc=protocol.crc32(result.payload))
+        retire_response, _ = protocol.drive(endpoint, retire.encode())
+        self.assertEqual(self.rtl_sequence(staged, retire),
+                         [staged_response, retire_response])
 
     def test_seeded_set_xor_mul_and_frame_faults(self) -> None:
         randomizer = random.Random(0x4C534331)

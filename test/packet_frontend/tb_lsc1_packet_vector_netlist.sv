@@ -1,8 +1,7 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-// One-frame harness used by the Python RTL differential test.  Input is a
-// temporary readmemh file; output is one machine-readable RESPONSE line.
+// Public-pin adaptation of tb_lsc1_packet_vector for the synthesized full top.
 module tb_lsc1_packet_vector;
     reg clk = 0;
     always #5 clk = ~clk;
@@ -14,6 +13,8 @@ module tb_lsc1_packet_vector;
     wire tx_valid;
     reg tx_ready = 0;
     wire busy, fault, done_pulse;
+    wire [7:0] uio_in = {1'b0, abort, 2'b00, tx_ready, 2'b00, rx_valid};
+    wire [7:0] uio_out, uio_oe;
 
     reg [7:0] request [0:511];
     reg [7:0] response [0:511];
@@ -22,12 +23,16 @@ module tb_lsc1_packet_vector;
     integer cycle = 0, i;
     reg [1023:0] request_path, request2_path;
 
-    lsc1_packet_frontend dut (
-        .clk(clk), .rst_n(rst_n), .abort(abort),
-        .rx_data(rx_data), .rx_valid(rx_valid), .rx_ready(rx_ready),
-        .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready),
-        .busy(busy), .fault(fault), .done_pulse(done_pulse)
+    lean_silicon_lsc1_netlist dut (
+        .ui_in(rx_data), .uo_out(tx_data), .uio_in(uio_in),
+        .uio_out(uio_out), .uio_oe(uio_oe), .ena(1'b1),
+        .clk(clk), .rst_n(rst_n)
     );
+    assign rx_ready = uio_out[1];
+    assign tx_valid = uio_out[2];
+    assign busy = uio_out[4];
+    assign fault = uio_out[5];
+    assign done_pulse = uio_out[7];
 
     always @(negedge clk) begin
         cycle = cycle + 1;
@@ -84,7 +89,7 @@ module tb_lsc1_packet_vector;
 
     initial begin
         #20_000_000;
-        $fatal(1, "vector differential timeout");
+        $fatal(1, "synthesized vector differential timeout");
     end
 endmodule
 
