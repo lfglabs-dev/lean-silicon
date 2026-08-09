@@ -19,8 +19,9 @@ module tb_lsc1_packet_vector;
     reg [7:0] request [0:511];
     reg [7:0] response [0:511];
     integer request_length, response_count = 0, total = 0;
+    integer request2_length = 0;
     integer cycle = 0, i;
-    reg [1023:0] request_path;
+    reg [1023:0] request_path, request2_path;
 
     lean_silicon_lsc1_netlist dut (
         .ui_in(rx_data), .uo_out(tx_data), .uio_in(uio_in),
@@ -71,6 +72,18 @@ module tb_lsc1_packet_vector;
         for (i = 0; i < total; i = i + 1)
             $write("%02x", response[i]);
         $write("\n");
+        if ($value$plusargs("REQUEST2=%s", request2_path) &&
+            $value$plusargs("LENGTH2=%d", request2_length)) begin
+            $readmemh(request2_path, request);
+            response_count = 0; total = 0;
+            for (i = 0; i < request2_length; i = i + 1)
+                send_byte(request[i], i % 3);
+            wait (total != 0 && response_count == total);
+            $write("RESPONSE ");
+            for (i = 0; i < total; i = i + 1)
+                $write("%02x", response[i]);
+            $write("\n");
+        end
         $finish;
     end
 

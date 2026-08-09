@@ -22,8 +22,8 @@
   "constraints": [
     "single rising-edge clock",
     "two-state digital inputs",
-    "rst_n is asserted on the first compared edge",
-    "all inputs after the reset edge are unconstrained, including abort and backpressure",
+    "rst_n is asserted on an initialization edge preceding the first comparison",
+    "all inputs on and after the first compared edge are unconstrained, including reset, abort and backpressure",
     "ena is functionally unused by the canonical top"
   ],
   "excluded": [

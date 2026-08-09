@@ -22,8 +22,8 @@ module full_lsc1_controller_invariants (
             if (tx_start) begin assert(busy); assert(!rx_ready); end
             // Controller starts a response only at its idle arbitration boundary.
             if (tx_start) begin assert(!tx_busy); assert(compute_state == 0); end
-            // Arithmetic subcontrollers exclude receive traffic.
-            if (compute_state != 0 || alu_busy || encoder_busy) assert(!rx_ready);
+            // Computation and every cycle of an active response exclude receive traffic.
+            if (tx_busy || compute_state != 0 || alu_busy || encoder_busy) assert(!rx_ready);
         end
 
         if (past_valid && $past(tx_valid && !tx_ready && rst_n && !abort) && rst_n && !abort) begin

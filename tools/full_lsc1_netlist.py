@@ -55,6 +55,25 @@ def require_clean() -> None:
         raise SystemExit("tracked checkout must match HEAD")
 
 
+def prepare_private_cache(cache: Path) -> None:
+    """Create a private cache, but never change permissions on an existing path."""
+    if cache.exists():
+        if not cache.is_dir():
+            raise SystemExit("cache must be a directory")
+    else:
+        cache.mkdir(parents=True, mode=0o700)
+    if stat.S_IMODE(cache.stat().st_mode) & 0o077:
+        raise SystemExit("cache must deny group/other access")
+
+
+def canonical_rtl_env(**updates: str) -> dict[str, str]:
+    """Return an environment that cannot redirect tests away from pinned RTL."""
+    env = os.environ.copy()
+    env.pop("LSC1_RTL_DIR", None)
+    env.update(updates)
+    return env
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", required=True, type=Path)
@@ -62,10 +81,7 @@ def main() -> None:
     cache = args.cache_dir.resolve()
     if cache == ROOT or ROOT in cache.parents:
         raise SystemExit("cache must be outside checkout")
-    cache.mkdir(parents=True, mode=0o700, exist_ok=True)
-    os.chmod(cache, stat.S_IRWXU)
-    if cache.stat().st_mode & 0o077:
-        raise SystemExit("cache must deny group/other access")
+    prepare_private_cache(cache)
     require_clean()
     plan = json.loads(PLAN_PATH.read_text())
     head = capture(["git", "rev-parse", "HEAD"])
@@ -105,8 +121,8 @@ def main() -> None:
     receipt["netlist"] = {"path": netlist.name, "sha256": sha256(netlist),
                           "bytes": netlist.stat().st_size}
 
-    netlist_env = os.environ | {"LSC1_SYNTH_NETLIST": str(netlist)}
-    run("synthesized_netlist_all_opcode_sequences",
+    netlist_env = canonical_rtl_env(LSC1_SYNTH_NETLIST=str(netlist))
+    run("synthesized_netlist_implemented_opcode_sequences",
         [sys.executable, "-m", "unittest", "sim.test_packet_frontend_rtl_differential", "-v"],
         receipt, env=netlist_env)
 
@@ -182,10 +198,13 @@ endmodule
     run("opcode_reset_backpressure_fault_nonvacuity",
         ["make", "-C", "test/packet_frontend", "sim"], receipt)
     run("all_opcode_model_rtl_sequences", [sys.executable, "-m", "unittest",
-        "sim.test_packet_frontend_rtl_differential", "-v"], receipt)
+        "sim.test_packet_frontend_rtl_differential", "-v"], receipt,
+        env=canonical_rtl_env())
     receipt["covers"]["cycle_sequences"] = {
         "status": "witnessed",
-        "scope": "all implemented opcodes plus reset, abort, backpressure and faults"}
+        "scope": ("all implemented opcodes, including valid NEGOTIATE and a staged "
+                  "instruction followed by valid RETIRE, plus reset, abort, "
+                  "backpressure and faults")}
 
     mutated_miter = cache / "whole_design_miter.mutated.sv"
     original_miter = miter.read_text()

@@ -19,15 +19,19 @@ cache="$(mktemp -d)"
 chmod 700 "$cache"
 LSC1_FULL_NETLIST_CACHE="$cache" make full-lsc1-netlist-assurance
 python3 -m json.tool "$cache/receipt.json"
-sha256sum -c "$cache/SHA256SUMS"
+(cd "$cache" && sha256sum -c SHA256SUMS)
 ```
 
 The correspondence harness asserts all 24 wrapper output bits. Reset is
-asserted for the first compared edge; `ui_in`, `uio_in`, `ena`, reset, abort,
-and transmit backpressure are otherwise arbitrary. A whole-design two-edge BMC
-(reset plus an arbitrary post-reset transition) is mandatory. Longer opcode
-sequences run directly on the synthesized netlist and are compared byte-for-byte
-with the executable model. Temporal induction is attempted under a 15-second
+asserted on an initialization edge preceding the first comparison; `ui_in`,
+`uio_in`, `ena`, reset, abort, and transmit backpressure are arbitrary on and
+after the first compared edge. A whole-design two-edge BMC
+(reset plus an arbitrary post-reset transition) is mandatory. Longer
+implemented-opcode sequences run directly on the synthesized netlist.
+Transactional responses are compared byte-for-byte with the executable model;
+valid NEGOTIATE is checked against an independent canonical-RTL wire vector
+because model-only service feature bits are explicitly outside this lane.
+Temporal induction is attempted under a 15-second
 HOST ceiling and its exact pass or tool blocker is retained without weakening
 the bounded and trace results. Separate controller
 invariants cover reset/abort clearing, response stability under backpressure,
