@@ -124,7 +124,7 @@ endmodule
 """)
     eq_read = ("read_verilog -formal -lib +/simcells.v; "
                f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
-               "prep -flatten -top whole_design_miter; chformal -lower; ")
+               "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     run("whole_design_bmc_20", ["yosys", "-Q", "-p", eq_read +
         "sat -verify -prove-asserts -set-assumes -seq 20 -set-def-inputs"], receipt)
     receipt["proofs"]["whole_design_bmc"] = {"status": "pass", "edges": 20,
@@ -142,7 +142,7 @@ endmodule
 
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "
-                "prep -flatten -top lean_silicon_lsc1; chformal -lower; ")
+                "prep -flatten -top lean_silicon_lsc1; async2sync; chformal -lower; ")
     run("controller_invariants_unbounded", ["yosys", "-Q", "-p", inv_read +
         "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"], receipt)
     receipt["proofs"]["controller_invariants"] = {"status": "pass", "method": "temporal induction"}
@@ -163,7 +163,7 @@ endmodule
     mutated_miter.write_text(changed)
     mutation_read = ("read_verilog -formal -lib +/simcells.v; "
                      f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
-                     "prep -flatten -top whole_design_miter; chformal -lower; ")
+                     "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     mutation_argv = ["yosys", "-Q", "-p", mutation_read +
         "sat -verify -prove-asserts -set-assumes -seq 4 -set-def-inputs"]
     mutation = subprocess.run(mutation_argv,
