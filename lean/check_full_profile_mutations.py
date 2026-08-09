@@ -138,6 +138,10 @@ mutations = {
         "else if !commonStateMatches state.transaction raw.common then",
         "else if false then",
     ),
+    "blake3-start-skips-control-range": (
+        "else if !commonControlRepresentableB raw.common then",
+        "else if false then",
+    ),
     "endpoint-control-masks-pending-service": (
         "match state.service with\n      | .pending nextServiceId pending =>",
         "match .idle 1 with\n      | .pending nextServiceId pending =>",

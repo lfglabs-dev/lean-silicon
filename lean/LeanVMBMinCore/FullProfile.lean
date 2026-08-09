@@ -506,6 +506,9 @@ def representableB (effect : Effect) : Bool :=
     effect.nextControl.pc < protocolIndexLimit &&
     effect.nextControl.fp < protocolIndexLimit
 
+def commonControlRepresentableB (common : Common) : Bool :=
+  common.control.pc < protocolIndexLimit && common.control.fp < protocolIndexLimit
+
 def commonStateMatches (model : Transaction.Model) (common : Common) : Bool :=
   !model.stateValid ||
     (UInt32.ofNat common.control.pc == model.committed.pc &&
@@ -547,6 +550,8 @@ def endpointStep (state : EndpointState) : EndpointCommand -> EndpointOutcome
             { state, decision := some (.fault .badState) }
           else if !commonStateMatches state.transaction raw.common then
             { state, decision := some (.fault .stateMismatch) }
+          else if !commonControlRepresentableB raw.common then
+            { state, decision := some (.fault .address) }
           else
             let service := serviceStep (.idle nextServiceId) (.start raw)
             { state := { state with service := service.state }, decision := service.decision }
@@ -800,6 +805,23 @@ theorem service_start_assigns_endpoint_id (raw : RawBlake3Request) (start : Blak
   simp [serviceStep, hprepare, hnonzero, hnotmax, Blake3Start.assignServiceId,
     decide, hadvance]
 
+theorem endpoint_rejects_out_of_range_control_before_service
+    (raw : RawBlake3Request)
+    (hout : raw.common.control.pc >= protocolIndexLimit ∨
+      raw.common.control.fp >= protocolIndexLimit) :
+    endpointStep endpointInitial (.service (.start raw)) = {
+      state := endpointInitial, decision := some (.fault .address) } := by
+  rcases hout with hpc | hfp
+  · have hnot : ¬raw.common.control.pc < protocolIndexLimit := Nat.not_lt.mpr hpc
+    simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+      commonControlRepresentableB, hnot]
+  · have hnot : ¬raw.common.control.fp < protocolIndexLimit := Nat.not_lt.mpr hfp
+    by_cases hpc : raw.common.control.pc < protocolIndexLimit
+    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+        commonControlRepresentableB, hpc, hnot]
+    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+        commonControlRepresentableB, hpc]
+
 theorem malformed_blake3_metadata_is_rejected (raw : RawBlake3Request)
     (hbad : validBlake3Metadata raw.metadata = false) :
     prepareBlake3 raw = .error .badService := by
@@ -922,7 +944,8 @@ theorem finished_blake3_transition_checksum_is_payload_crc (pending : ServicePen
   split at hfinish <;> try contradiction
   next memory hfirst hsecond =>
     cases hfinish
-    rfl
+    simp [transitionOf, effectResultChecksum, effectResultPayload, effectWrites,
+      blake3ResultPayload, completedBlake3Common] <;> rfl
 
 theorem finishWrite_rejects_pc_overflow (common : Common) (memory : Mem)
     (address : Index) (value : Word) (memory' : Mem)
