@@ -156,7 +156,8 @@ endmodule
 
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "
-                "prep -flatten -top lean_silicon_lsc1; async2sync; chformal -lower; ")
+                "prep -flatten -top lean_silicon_lsc1; async2sync; "
+                "chformal -cover -remove; chformal -lower; ")
     run("controller_invariants_bmc_2", ["yosys", "-Q", "-p", inv_read +
         "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"], receipt)
     controller_argv = ["yosys", "-Q", "-p", inv_read +
