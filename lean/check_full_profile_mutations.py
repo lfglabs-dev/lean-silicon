@@ -171,7 +171,8 @@ mutations = {
 for name, (old, new) in mutations.items():
     if old not in text:
         raise SystemExit(f"mutation anchor missing: {name}")
-    mutated = text.replace(old, new, 1)
+    mutated = text.replace(old, new) if name == "blake3-accepts-noncanonical-absent-cells" \
+        else text.replace(old, new, 1)
     with tempfile.TemporaryDirectory(prefix="lsc1-lean-mutation-") as directory:
         candidate = Path(directory) / "FullProfile.lean"
         candidate.write_text(mutated)

@@ -554,20 +554,22 @@ def endpointStep (state : EndpointState) : EndpointCommand -> EndpointOutcome
       { state := { transaction := transaction.model, service := service.state }
         decision := service.decision, transactionOutcome := some transaction }
   | .service (.start raw) =>
-      match state.service with
-      | .pending nextServiceId pending =>
-          let service := serviceStep (.pending nextServiceId pending) (.start raw)
-          { state := { state with service := service.state }, decision := service.decision }
-      | .idle nextServiceId =>
-          if state.transaction.state != .idle then
-            { state, decision := some (.fault .badState) }
-          else if !commonStateMatches state.transaction raw.common then
-            { state, decision := some (.fault .stateMismatch) }
-          else if !commonControlRepresentableB raw.common then
-            { state, decision := some (.fault .address) }
-          else
-            let service := serviceStep (.idle nextServiceId) (.start raw)
+      if !canonicalBlake3Cells raw then
+        { state, decision := some (.fault .badCell) }
+      else match state.service with
+        | .pending nextServiceId pending =>
+            let service := serviceStep (.pending nextServiceId pending) (.start raw)
             { state := { state with service := service.state }, decision := service.decision }
+        | .idle nextServiceId =>
+            if state.transaction.state != .idle then
+              { state, decision := some (.fault .badState) }
+            else if !commonStateMatches state.transaction raw.common then
+              { state, decision := some (.fault .stateMismatch) }
+            else if !commonControlRepresentableB raw.common then
+              { state, decision := some (.fault .address) }
+            else
+              let service := serviceStep (.idle nextServiceId) (.start raw)
+              { state := { state with service := service.state }, decision := service.decision }
   | .service (.respond response) =>
       match state.service with
       | .pending nextServiceId pending =>
@@ -666,18 +668,26 @@ theorem endpoint_reset_restores_protocol_initial (state : EndpointState) :
     (endpointStep state (.service .reset)).state = endpointInitial := by
   rfl
 
+theorem endpoint_noncanonical_blake3_cell_precedes_state_guards
+    (state : EndpointState) (raw : RawBlake3Request)
+    (hbad : canonicalBlake3Cells raw = false) :
+    (endpointStep state (.service (.start raw))).decision = some (.fault .badCell) := by
+  simp [endpointStep, hbad]
+
 theorem service_start_requires_committed_control (state : EndpointState)
     (raw : RawBlake3Request) (nextServiceId : UInt32)
+    (hcells : canonicalBlake3Cells raw = true)
     (hservice : state.service = .idle nextServiceId)
     (hidle : state.transaction.state = .idle)
     (hmismatch : commonStateMatches state.transaction raw.common = false) :
     endpointStep state (.service (.start raw)) = {
       state, decision := some (.fault .stateMismatch) } := by
-  simp [endpointStep, hservice, hidle, hmismatch]
+  simp [endpointStep, hcells, hservice, hidle, hmismatch]
 
 /-- A live service is the outer endpoint state, so it masks neither state nor control faults. -/
 theorem endpoint_pending_service_start_is_bad_state (state : EndpointState)
     (raw : RawBlake3Request) (nextServiceId : UInt32) (pending : ServicePending)
+    (hcells : canonicalBlake3Cells raw = true)
     (hservice : state.service = .pending nextServiceId pending) :
     endpointStep state (.service (.start raw)) = {
       state, decision := some (.fault .badState) } := by
@@ -685,7 +695,7 @@ theorem endpoint_pending_service_start_is_bad_state (state : EndpointState)
   | mk transaction service =>
     simp only at hservice
     subst service
-    rfl
+    simp [endpointStep, serviceStep, hcells]
 
 theorem protocol_rejects_u16_boundary : ¬ ProtocolIndex (2 ^ 16) := by
   simp [ProtocolIndex, protocolIndexLimit]
@@ -820,19 +830,20 @@ theorem service_start_assigns_endpoint_id (raw : RawBlake3Request) (start : Blak
 
 theorem endpoint_rejects_out_of_range_control_before_service
     (raw : RawBlake3Request)
+    (hcells : canonicalBlake3Cells raw = true)
     (hout : raw.common.control.pc >= protocolIndexLimit ∨
       raw.common.control.fp >= protocolIndexLimit) :
     endpointStep endpointInitial (.service (.start raw)) = {
       state := endpointInitial, decision := some (.fault .address) } := by
   rcases hout with hpc | hfp
   · have hnot : ¬raw.common.control.pc < protocolIndexLimit := Nat.not_lt.mpr hpc
-    simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+    simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches, hcells,
       commonControlRepresentableB, hnot]
   · have hnot : ¬raw.common.control.fp < protocolIndexLimit := Nat.not_lt.mpr hfp
     by_cases hpc : raw.common.control.pc < protocolIndexLimit
-    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches, hcells,
         commonControlRepresentableB, hpc, hnot]
-    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches,
+    · simp [endpointStep, endpointInitial, Transaction.initial, commonStateMatches, hcells,
         commonControlRepresentableB, hpc]
 
 theorem malformed_blake3_metadata_is_rejected (raw : RawBlake3Request)
@@ -1404,6 +1415,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms successful_service_response_stages
 #print axioms successful_service_response_matching_retire_exactly_once
 #print axioms endpoint_reset_restores_protocol_initial
+#print axioms endpoint_noncanonical_blake3_cell_precedes_state_guards
 #print axioms service_start_requires_committed_control
 #print axioms endpoint_pending_service_start_is_bad_state
 #print axioms finishWrite_rejects_pc_overflow
