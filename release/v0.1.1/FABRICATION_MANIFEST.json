@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "candidate": "lsc1u-v0.1.1-exact-main-31203929606",
+  "status": "pre-silicon-no-go",
+  "source": {
+    "commit": "741a2073e0d341a15bb130b1d75295bbceb138df",
+    "tree": "6d0085cb016c7ce317ab91160c670b44d6fb51fd",
+    "branch": "main"
+  },
+  "retained_archive": {
+    "path": "evidence/tt_submission-9004116698.zip",
+    "sha256": "1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f",
+    "github_artifact_id": 9004116698,
+    "workflow_run": 31203929606
+  },
+  "payload": [
+    {"class":"gds","member":"tt_submission/tt_um_lfglabs_lsc1u.gds","sha256":"52a10ef119b3cf435ad13041203f9b6200902df10f82b1e00890193abb2cc307","min_bytes":1000000},
+    {"class":"oas","member":"tt_submission/tt_um_lfglabs_lsc1u.oas","sha256":"a76516d3f84ade685a4b164908aaa57ab65ee5863914f10721c8b0fcde73093c","min_bytes":100000},
+    {"class":"netlist","member":"tt_submission/tt_um_lfglabs_lsc1u.v","sha256":"97000459a97f1d775db06ed88fefb59e28fde09b27a5046aaadd036ad01e16bc","min_bytes":100000},
+    {"class":"lef","member":"tt_submission/tt_um_lfglabs_lsc1u.lef","sha256":"0a93f156399f228e3c37c06ec175cf20589b3086201d4f729b336e51ec0ebb24","min_bytes":1000},
+    {"class":"pinout","member":"info.yaml","sha256":"f1194bbf4d72e9f2a1a0c4dffb6d0137fbd6eca56fb1cd22246ab6c74546336e","min_bytes":500},
+    {"class":"config","member":"src/config.json","sha256":"6cd132aa7f25dd73ceb98034de7100ffb7dbe8491120cf919ee3dfc8c644d3a0","min_bytes":500},
+    {"class":"config_merged","member":"src/config_merged.json","sha256":"f127b3054cde3b4b13bcc4c4ddc27c3372ec91869efae5e8a77760b158682e46","min_bytes":500},
+    {"class":"user_config","member":"src/user_config.json","sha256":"f346ff0f7dc3a2d9be0f8a908c7cdb90609d1811e8603bc54ba0124796c20c04","min_bytes":100},
+    {"class":"user_config_tcl","member":"src/user_config.tcl","sha256":"a9e12c7785940b058ea8976694b79d186a82cf3a111215cd6a4dd259c029c2ec","min_bytes":100},
+    {"class":"pdk","member":"tt_submission/pdk.json","sha256":"d551717008d61a63fef26471923ab841538583053fb5b0f238e8adef50542a39","min_bytes":100},
+    {"class":"metrics","member":"tt_submission/stats/metrics.csv","sha256":"5e4b0ef93fe315edd41c2c2911ac2e7c25e1b1805868e4ea67e5e66c6e394158","min_bytes":1000}
+  ],
+  "external_exact_run_payload": {
+    "artifact_id": 9004115188,
+    "archive_sha256": "0de05d70b7ce83ca3b53a693c72dc4556af31d420c796c15ded4a9f4c8697694",
+    "def": {"path":"runs/wokwi/final/def/tt_um_lfglabs_lsc1u.def","sha256":"23f6ce96e03e5dd49f67d6fa66bd12b7d2607f0dd69726141aa306ad09a6fbe5"},
+    "limitation": "DEF is identified in the exact-run GDS_logs artifact but is not a Tiny Tapeout submission-archive member or retained byte in git."
+  },
+  "toolchain": {
+    "pdk":"sky130A/open_pdks@8afc8346a57fe1ab7934ba5a6056ea8b43078e71",
+    "physical_flow":"LibreLane 3.0.3",
+    "lean":"leanprover/lean4:v4.32.1",
+    "rust":"1.88.0",
+    "python":"3.13",
+    "cocotb":"2.0.1"
+  },
+  "receipts": {
+    "precheck":{"path":"evidence/precheck-results.xml","sha256":"2b65422b62e532d0e78dd6232ffa02a4808dfa1274557e185896a0d5c9b38b25","source_payload_sha256":"d01553d955714a00e42d47b60700cc01e15e15b8b3ea1777b658603d4b3ad42d","required_tests":["Magic DRC","KLayout FEOL","KLayout BEOL","KLayout offgrid","KLayout pin label overlapping drawing","KLayout zero area","KLayout Checks","Pin check","Boundary check","Power pin check","Layer check","Cell name check","urpm/nwell check","Analog pin check","Verilog syntax check"]},
+    "gate_level":{"path":"evidence/gatelevel-results.xml","sha256":"2e19968793b30ee3d3dfe79b3be3578faf6520fb00aa36aeb9f7eb2b5166ebcb","source_payload_sha256":"a01c222fe71d091622a2dfda4e823fbe323826a1587d0eb530e68facb8cf6aa2","required_tests":["lsc1u_all_retained_operations","lsc1u_reset_ena_framing_and_backpressure","lsc1u_reset_ena_every_state_and_consecutive_commands","lsc1u_little_endian_polynomial_vectors","lsc1u_shared_mutation_corpus_and_latency"]},
+    "metrics_zero_keys":["magic__drc_error__count","design__lvs_error__count","antenna__violating__nets","antenna__violating__pins","route__antenna_violation__count","timing__setup_vio__count","timing__hold_vio__count"],
+    "density_key":"design__instance__utilization",
+    "density_expected":0.600044
+  }
+}

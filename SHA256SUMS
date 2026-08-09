@@ -7,7 +7,7 @@ dc4fd27671dc6184c8106cac4193bada03706186206784f4cd872ca183592494  ./.github/work
 f67f4446c203b7bbe5104660ca79030328423b642b7cf537ba585c1dbf846283  ./.gitignore
 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  ./LICENSE
 6bdbfe37959e0283134042372101a8a446432eb2516e085bf7850a712720c3c5  ./MANIFEST.md
-d78f170ac04243b634174aac4179cdb4978766e52d900f08812c6a5251db49df  ./Makefile
+b30adfba0d281eae33e8b85d8eae425e4864c1000f69e300881dfa257bd49077  ./Makefile
 80e228fef99ac1908d50b416073df9f555fa693ad4e3ee59fa88c76028fc2232  ./README.md
 de4c0f6adf6ff1356bf9d7599ab52aef93a00b50c5a77c727ec0ce036ff2d1a2  ./RESULTS.md
 baa38ad5792511470f4cc9d2344d46f0c7af8a365d5b5e178dca88634b288bff  ./VALIDATION.txt
@@ -184,9 +184,13 @@ d1f2dfa6bf564b9cf248838630eb92efd55f03e9ab8bf5e7dfec3d318b9f0f29  ./lean/lakefil
 8e3538e0ab5f81a3ee04927d8838c8c674e0e112838b4b3ce87ec218143276af  ./lean/lean-toolchain
 d59a11f361717058c708574a6f41d9be99da29cfcc3b0c033045ce6f0e57a5d5  ./planning/OWNERSHIP.md
 a19467b08293daf14a67ccd8f0efbcddfeb3854c38525acd7fcfd98f01552587  ./planning/milestones.yaml
+fbf1dd62e8673e3b194c020b1a5efc3c04d6e13feb65d5c1ffbd362f08563152  ./release/v0.1.1/FABRICATION_MANIFEST.json
+1998c352a5516687a31e9ce372dd4806b6e6d6eb161860c40db52928dcddf0f5  ./release/v0.1.1/FABRICATION_READINESS.md
 4294814c0ed6ba66705d9c44d8ea4181c9f48912b7418e48ad081167af658c53  ./release/v0.1.1/MANIFEST.json
-0977f3ae0082afdbbadf703cf2248bd026999a8b5ca9ae3f32bd80d6cfed858a  ./release/v0.1.1/RELEASE.md
-8014d1bd86f7d78e90cc8e0b1332aec96fe6b2bd6cd7a9627983a14d5d8f677d  ./release/v0.1.1/SHA256SUMS.txt
+dfa51843be9e09720e018452bf3f2577047204b24193e97241ae74316853dde7  ./release/v0.1.1/RELEASE.md
+eef9a804ee7bf2b02da6e6b610950393354de7ddf6681c61a5a9f18474e16363  ./release/v0.1.1/SHA256SUMS.txt
+2e19968793b30ee3d3dfe79b3be3578faf6520fb00aa36aeb9f7eb2b5166ebcb  ./release/v0.1.1/evidence/gatelevel-results.xml
+2b65422b62e532d0e78dd6232ffa02a4808dfa1274557e185896a0d5c9b38b25  ./release/v0.1.1/evidence/precheck-results.xml
 1c6721712d3dec19f0b143bd3af99e5e0982928a151d6142a25f5bf0dd1ef80f  ./release/v0.1.1/evidence/tt_submission-9004116698.zip
 414cbe378a1f84a038b9db25081ba655aaff4d64a3c488c8302a083863f39d8e  ./release/v0.1/CLAIMS.md
 c59b11678b6c84ef9f8c5cca1922c13b3b7a01c908a7f2284fe81cc2dacfce4b  ./release/v0.1/INFO.yaml.example
@@ -436,6 +440,7 @@ d0c03fb87fe5f08fbec435d485e4dd14c96d164e90b0e8b0ed8980cf27e8c077  ./test/tb_m2_s
 2ea0bf23432e7c9471b09d7dac47b1b548f37d746a8cdf1fc9bd8128cd2a8018  ./test/tb_packet_uart_bridge.sv
 b78b938f396ae20d1fdccde99281430778a879808e60a35788b6fe044151329c  ./test/tb_stream_alu.sv
 1cdfef46a813dd43f5700b5e3ed7ec0bfb07e07403c82f8ac8fa4fb4dfbd0d55  ./test/tb_uart_bridge.sv
+99ef82ee5229bf354f2ef01ad1b4ca857cc166e01f432e44a8acc82b692ad07f  ./test/test_fabrication_bundle.py
 1a047bd2d21b30021b0f958b913f0a67a8740fc0732f4e1efaf3d56bc6de2ad5  ./test/test_select_exact_gds_run.py
 d32b66a8f2b5961f686b478f19f1b1a14bb638e2031c23cafb86575b68d5c8ea  ./test/test_tt.py
 3e60c7c2c2b38cd4777381ff12cf38a8cc4e3d7d30fc3ad39b9799b5b25bd269  ./test/test_viewer_workflow.py
@@ -464,6 +469,7 @@ d39b590b15a494a1e62ff7605ca3b8c8ffec122e0f10f6dce7f997fcecceef1b  ./tools/rtl_st
 094b637f6424fc3e941a139b75d952725c29ac59398de757005e824f496bb7e1  ./tools/select_exact_gds_run.sh
 a2b4b3a985df1ecde148745dcc94684c77364cf9a4fa22735f2f4754aa0489db  ./tools/source_provenance.py
 77760424b9ccaea9dfca5b3ac0412cce74db801bf583f4b7d32eb6d9b80b255d  ./tools/sv_smoke_check.py
+6f6d2f97d96aeddd39e3bae8c4ea9193bec8a5a4237d5a17a93057e1d2c38f26  ./tools/verify_fabrication_bundle.py
 650919f4b3f0d2a94022d4de230f16afca36fc5c3eee45b77571cb0ec5c52994  ./tools/verify_lsc1u_release_equivalence.py
 63b655c6651cb3efb17f4f4702160a823a38b70c12bf8484f700048a36d069ef  ./tools/workload_validation.py
 d930b3a00795450bad3cfa1941fcc3028e03b5cf9724dab32c7f07d0678f38b4  ./workloads/blake3_stack.program.json

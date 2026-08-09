@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1786125295" />
+    <testcase name="lsc1u_all_retained_operations" classname="test_tt" time="0.7690162658691406" sim_time_ns="136302.0" />
+    <testcase name="lsc1u_reset_ena_framing_and_backpressure" classname="test_tt" time="0.0035829544067382812" sim_time_ns="959.9990000000107" />
+    <testcase name="lsc1u_reset_ena_every_state_and_consecutive_commands" classname="test_tt" time="0.15672636032104492" sim_time_ns="32679.99900000001" />
+    <testcase name="lsc1u_little_endian_polynomial_vectors" classname="test_tt" time="0.07303500175476074" sim_time_ns="18479.99900000001" />
+    <testcase name="lsc1u_shared_mutation_corpus_and_latency" classname="test_tt" time="0.4512612819671631" sim_time_ns="130359.99900000001" />
+  </testsuite>
+</testsuites>
