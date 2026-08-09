@@ -27,7 +27,7 @@ asserted for the first compared edge; `ui_in`, `uio_in`, `ena`, reset, abort,
 and transmit backpressure are otherwise arbitrary. A whole-design two-edge BMC
 (reset plus an arbitrary post-reset transition) is mandatory. Longer opcode
 sequences run directly on the synthesized netlist and are compared byte-for-byte
-with the executable model. Temporal induction is attempted under a 60-second
+with the executable model. Temporal induction is attempted under a 15-second
 HOST ceiling and its exact pass or tool blocker is retained without weakening
 the bounded and trace results. Separate controller
 invariants cover reset/abort clearing, response stability under backpressure,
