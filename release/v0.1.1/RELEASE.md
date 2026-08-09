@@ -1,5 +1,10 @@
 # v0.1.1 final-main release package
 
+The payload-specific fabrication manifest, fail-closed verification command,
+proof matrix, residual risks, and operational checklists are in
+`FABRICATION_MANIFEST.json` and `FABRICATION_READINESS.md`. These additions do
+not change the selected physical payload or this package's NO-GO boundary.
+
 This bounded package describes final `main` after merged PR #45. It prepares a
 new immutable version; it does not create, publish, move, overwrite, or delete
 any tag or GitHub release. The existing `v0.1` objects remain historical and

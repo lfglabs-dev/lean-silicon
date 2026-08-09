@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -11,6 +11,10 @@ python:
 workflow-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_select_exact_gds_run.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_viewer_workflow.py -v
+
+fabrication-bundle:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/verify_fabrication_bundle.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_fabrication_bundle.py -v
 
 conformance-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/conformance_differential.py --validate-only
@@ -90,7 +94,7 @@ fpga-detect:
 fpga-preflight:
 	$(PYTHON) fpga_harness/hardware_preflight.py
 
-check: python workflow-check conformance-check host-comparison design-space exact-xor interface-check consistency silicon-bringup-test checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
+check: python workflow-check fabrication-bundle conformance-check host-comparison design-space exact-xor interface-check consistency silicon-bringup-test checksum-check mincore-state-count smoke placeholders fpga-boundary fpga-harness
 
 sim:
 	$(MAKE) -C test sim

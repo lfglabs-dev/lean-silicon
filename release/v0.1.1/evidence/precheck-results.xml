@@ -1,0 +1,12 @@
+<testsuites>
+  <testsuite name="Tiny Tapeout Prechecks">
+    <testcase name="Magic DRC"/><testcase name="KLayout FEOL"/>
+    <testcase name="KLayout BEOL"/><testcase name="KLayout offgrid"/>
+    <testcase name="KLayout pin label overlapping drawing"/><testcase name="KLayout zero area"/>
+    <testcase name="KLayout Checks"/><testcase name="Pin check"/>
+    <testcase name="Boundary check"/><testcase name="Power pin check"/>
+    <testcase name="Layer check"/><testcase name="Cell name check"/>
+    <testcase name="urpm/nwell check"/><testcase name="Analog pin check"/>
+    <testcase name="Verilog syntax check"/>
+  </testsuite>
+</testsuites>
