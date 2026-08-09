@@ -638,6 +638,8 @@ class HostRuntime:
             check_fault_response(
                 retire, expected_txn_id=self.txn_id, where="retire", staged=True
             )
+            if service_key is not None and retire.status is protocol.Status.RETIRE_MISMATCH:
+                self.service_adapter.abort()
             record.status = retire.status.name
             record.fault = retire.status.name
             record.lane_cycles = (

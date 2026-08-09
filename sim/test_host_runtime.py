@@ -1142,6 +1142,33 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(retried.fault, "WRITE_CONFLICT")
         self.assertIsNone(runtime.service_adapter.outstanding)
 
+    def test_rejected_blake3_retire_clears_binding_after_endpoint_discard(self):
+        class WrongRetireRuntime(HostRuntime):
+            reject_next_retire = False
+
+            def _exchange(self, frame):
+                opcode = protocol.Opcode(frame.opcode)
+                if opcode is protocol.Opcode.SERVICE_RESPONSE:
+                    self.reject_next_retire = True
+                elif opcode is protocol.Opcode.RETIRE and self.reject_next_retire:
+                    frame = protocol.build_retire(
+                        txn_id=int.from_bytes(frame.payload[:4], "little"),
+                        result_crc=int.from_bytes(frame.payload[4:8], "little") ^ 1,
+                    )
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongRetireRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            session_epoch=1,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertEqual(result.records[-1].fault, "RETIRE_MISMATCH")
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
     def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
         expectations = {
             "Cell": 0x55,
