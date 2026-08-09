@@ -48,10 +48,17 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
 
     def test_induction_counterexamples_fail_closed(self) -> None:
         with self.assertRaisesRegex(SystemExit, "found a counterexample"):
-            full_lsc1_netlist.reject_induction_counterexample(
+            full_lsc1_netlist.classify_induction(
                 "whole-design", 1, "ERROR: proof did fail")
-        full_lsc1_netlist.reject_induction_counterexample(
-            "whole-design", 124, "HOST timeout without a proof result")
+        self.assertEqual(full_lsc1_netlist.classify_induction(
+            "whole-design", 124, "HOST timeout without a proof result"), "blocked")
+
+    def test_induction_tool_errors_fail_closed(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "tool failure"):
+            full_lsc1_netlist.classify_induction(
+                "whole-design", 1, "ERROR: parser failed before proof")
+        self.assertEqual(full_lsc1_netlist.classify_induction(
+            "whole-design", 1, "Reached maximum number of time steps"), "blocked")
 
     def test_mandatory_bound_includes_operational_post_reset_state(self) -> None:
         self.assertGreaterEqual(full_lsc1_netlist.BOUNDED_EDGES, 3)

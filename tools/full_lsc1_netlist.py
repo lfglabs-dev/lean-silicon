@@ -83,11 +83,18 @@ def bounded_sat_argv(read_script: str) -> list[str]:
             "-set-def-inputs"]
 
 
-def reject_induction_counterexample(name: str, returncode: int, output: str) -> None:
-    """Never downgrade a concrete induction failure to a resource blocker."""
-    if returncode != 0 and "proof did fail" in output.lower():
+def classify_induction(name: str, returncode: int, output: str) -> str:
+    """Classify only explicit resource exhaustion as blocked; fail closed otherwise."""
+    if returncode == 0:
+        return "pass"
+    lowered = output.lower()
+    if "proof did fail" in lowered:
         sys.stderr.write(output)
         raise SystemExit(f"{name}: temporal induction found a counterexample")
+    if returncode == 124 or "maximum number of time steps" in lowered:
+        return "blocked"
+    sys.stderr.write(output)
+    raise SystemExit(f"{name}: temporal induction tool failure (exit {returncode})")
 
 
 def main() -> None:
@@ -179,13 +186,13 @@ endmodule
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         induction_blocker = "15-second HOST limit expired during whole-design induction attempt\n" + tail
-    reject_induction_counterexample(
+    induction_status = classify_induction(
         "whole_design_temporal_induction_attempt", induction_rc,
         induction_blocker or "")
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
         "argv": induction_argv, "exit_code": induction_rc})
     receipt["proofs"]["whole_design_induction"] = {
-        "status": "pass" if induction_rc == 0 else "blocked",
+        "status": induction_status,
         "method": "temporal induction", "maxsteps": 32,
         "blocker": induction_blocker}
 
@@ -207,13 +214,14 @@ endmodule
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         controller_blocker = "15-second HOST limit expired during controller induction attempt\n" + tail
-    reject_induction_counterexample(
+    controller_status = classify_induction(
         "controller_invariants_induction_attempt", controller_rc,
         controller_blocker or "")
     receipt["commands"].append({"name": "controller_invariants_induction_attempt",
         "argv": controller_argv, "exit_code": controller_rc})
     receipt["proofs"]["controller_invariants"] = {
-        "status": "pass" if controller_rc == 0 else "bounded-pass-unbounded-blocked",
+        "status": ("pass" if controller_status == "pass"
+                   else "bounded-pass-unbounded-blocked"),
         "bounded_edges": BOUNDED_EDGES, "method": "temporal induction",
         "blocker": controller_blocker}
     run("opcode_reset_backpressure_fault_nonvacuity",
