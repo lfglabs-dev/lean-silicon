@@ -539,6 +539,7 @@ def endpointInitial : EndpointState := {
   activeProfile := .interpreterCompat }
 
 inductive EndpointCommand where
+  | negotiate (profile : Profile)
   | service (command : ServiceCommand)
   | retire (txnId : Transaction.TxnId) (checksum : Transaction.ResultChecksum)
 
@@ -549,6 +550,14 @@ structure EndpointOutcome where
 
 /-- Compose service completion with the atomic stage/RETIRE lifecycle. -/
 def endpointStep (state : EndpointState) : EndpointCommand -> EndpointOutcome
+  | .negotiate profile =>
+      match state.service with
+      | .pending _ _ => { state, decision := some (.fault .badState) }
+      | .idle _ =>
+          if state.transaction.state != .idle then
+            { state, decision := some (.fault .badState) }
+          else
+            { state := { state with activeProfile := profile } }
   | .service .reset => {
       state := endpointInitial
       transactionOutcome := some (Transaction.step state.transaction .reset) }
@@ -674,6 +683,11 @@ theorem successful_service_response_matching_retire_exactly_once
 
 theorem endpoint_reset_restores_protocol_initial (state : EndpointState) :
     (endpointStep state (.service .reset)).state = endpointInitial := by
+  rfl
+
+theorem endpoint_forward_only_profile_is_reachable :
+    (endpointStep endpointInitial (.negotiate .forwardOnly)).state.activeProfile =
+      .forwardOnly := by
   rfl
 
 theorem endpoint_noncanonical_blake3_cell_precedes_state_guards
@@ -1443,6 +1457,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms successful_service_response_stages
 #print axioms successful_service_response_matching_retire_exactly_once
 #print axioms endpoint_reset_restores_protocol_initial
+#print axioms endpoint_forward_only_profile_is_reachable
 #print axioms endpoint_noncanonical_blake3_cell_precedes_state_guards
 #print axioms endpoint_profile_mismatch_precedes_state_guards
 #print axioms service_start_requires_committed_control
