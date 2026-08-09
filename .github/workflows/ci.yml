@@ -52,6 +52,8 @@ jobs:
           build: true
       - name: Explicit Lean library target
         run: cd lean && lake build LeanVMBMinCore
+      - name: Full-profile semantic mutation sensitivity
+        run: cd lean && python3 check_full_profile_mutations.py
 
   formal-and-lint:
     runs-on: ubuntu-latest
