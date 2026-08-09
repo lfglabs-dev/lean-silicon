@@ -4,9 +4,17 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "gds.yaml"
+VIEWER = ROOT / ".github" / "viewer-index.html"
 
 
 class ViewerWorkflowTest(unittest.TestCase):
+    def test_model_url_is_relative_to_the_document_directory(self):
+        viewer = VIEWER.read_text()
+        self.assertIn(
+            'new URL("tinytapeout.oas", document.baseURI).href', viewer
+        )
+        self.assertNotIn('location.href + "/tinytapeout.oas"', viewer)
+
     def test_pages_upload_finishes_before_deployment_job(self):
         workflow = WORKFLOW.read_text()
         build = workflow.index("  viewer-build:")

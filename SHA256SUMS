@@ -1,4 +1,4 @@
-0db86a02fb3fc66a3aaca1dbf31849e0bedbb72bd2ca8aa24423da9565ef4c46  ./.github/viewer-index.html
+91308e9d5f422ba40d9ea2e7f1595eae18cecaaadde8e4209ad99a9a7c83722f  ./.github/viewer-index.html
 0f713a16fe074c40b3cc3c9b9976b0c4ed33f6b07a3398ac262ae907a295c9d8  ./.github/workflows/ci.yml
 91195d747b16476611be845bd50443536c12fa6c43d347f95e5c98df0cafeaf6  ./.github/workflows/fpga-asic-simulator.yaml
 df4e1d1edf946720575070a4e567b61046bfd985b3232cfa45a233ca48993e9f  ./.github/workflows/gds.yaml
@@ -434,7 +434,7 @@ b78b938f396ae20d1fdccde99281430778a879808e60a35788b6fe044151329c  ./test/tb_stre
 1cdfef46a813dd43f5700b5e3ed7ec0bfb07e07403c82f8ac8fa4fb4dfbd0d55  ./test/tb_uart_bridge.sv
 1a047bd2d21b30021b0f958b913f0a67a8740fc0732f4e1efaf3d56bc6de2ad5  ./test/test_select_exact_gds_run.py
 d32b66a8f2b5961f686b478f19f1b1a14bb638e2031c23cafb86575b68d5c8ea  ./test/test_tt.py
-f36018af23ff2946334e9aea3f901873498072a8c373fab418634ee3302b662c  ./test/test_viewer_workflow.py
+3e60c7c2c2b38cd4777381ff12cf38a8cc4e3d7d30fc3ad39b9799b5b25bd269  ./test/test_viewer_workflow.py
 d571f9ffc49ce4232c671d2535fa4862a4800134254230ca29daae74130147a9  ./test/tt_tb.sv
 e401ecd06a20a3f1e54de6e47ff6e12f61064bd2b9278517fe3d0db97933bd8a  ./tools/atomic_publish.py
 7894f75175f62edfd1ed33639a23d736ad6e57ddd9182e040f556502bff21a52  ./tools/blake3_reference/Cargo.lock

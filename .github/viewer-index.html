@@ -7,8 +7,9 @@
 </head>
 <body>
   <script>
+    const modelUrl = new URL("tinytapeout.oas", document.baseURI).href;
     location.href = "https://gds-viewer.tinytapeout.com/?pdk=__PDK__&model=" +
-      encodeURIComponent(location.href + "/tinytapeout.oas");
+      encodeURIComponent(modelUrl);
   </script>
 </body>
 </html>
