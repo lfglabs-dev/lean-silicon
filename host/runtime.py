@@ -289,8 +289,13 @@ class HostRuntime:
         self.lane_bytes = 0
         self.faulted = False
         self.blake3_service = blake3_service or SoftwareBlake3HostService()
-        epoch = session_epoch if session_epoch is not None else secrets.randbits(64)
-        self.service_adapter = ModelServiceAdapter(epoch or 1)
+        if session_epoch is None:
+            epoch = 0
+            while epoch == 0:
+                epoch = secrets.randbits(64)
+        else:
+            epoch = session_epoch
+        self.service_adapter = ModelServiceAdapter(epoch)
         self._negotiate()
 
     # --- byte lane ----------------------------------------------------------

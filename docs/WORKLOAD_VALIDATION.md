@@ -86,8 +86,8 @@ and trace fields. These exclusions bound generality explicitly.
 
 - **Functional/model:** a live pinned Rust compiler/executor is the oracle for
   bytecode, cycles and final memory. The leanSilicon Python host/model matches
-  only the field-division instance. Per-step upstream comparison is impossible
-  because `Execution::trace` is private at the pinned revision.
+  the field-division and BLAKE3-stack instances. Per-step upstream comparison is
+  impossible because `Execution::trace` is private at the pinned revision.
 - **RTL/FPGA:** no RTL simulation, synthesis, place-and-route, FPGA image, board
   exchange, timing, or resource-utilization evidence is produced by this lane.
   The repository's separate bounded RTL/FPGA evidence must not be attributed to

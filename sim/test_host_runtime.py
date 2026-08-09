@@ -347,6 +347,14 @@ class RuntimeTests(unittest.TestCase):
                 return protocol.ResponseFrame(protocol.Status.RETIRED, self.retire_payload)
             return protocol.ResponseFrame(protocol.Status.OK, self.result_payload)
 
+    def test_blake3_session_epoch_rejects_explicit_zero_and_retries_random_zero(self):
+        with self.assertRaisesRegex(ValueError, "session_epoch must be a nonzero u64"):
+            HostRuntime(program(set_slot(2, 1)), session_epoch=0)
+        with mock.patch("host.runtime.secrets.randbits", side_effect=(0, 7)) as randbits:
+            runtime = HostRuntime(program(set_slot(2, 1)))
+        self.assertEqual(runtime.service_adapter.session_epoch, 7)
+        self.assertEqual(randbits.call_count, 2)
+
     def test_negotiate_requires_every_schema_field(self):
         expected = (
             bytes((protocol.PROTOCOL_VERSION, int(protocol.Profile.INTERPRETER_COMPAT)))
