@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 VERIFY = ROOT / "tools" / "verify_fabrication_bundle.py"
 sys.path.insert(0, str(ROOT))
 
-from tools.verify_fabrication_bundle import validate_receipt
+from tools.verify_fabrication_bundle import RECEIPT_TESTS, validate_receipt
 
 
 class FabricationBundleTest(unittest.TestCase):
@@ -53,13 +53,36 @@ class FabricationBundleTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_skipped_required_receipt_fails(self) -> None:
-        spec = {"required_tests": ["required-case"]}
+        names = sorted(RECEIPT_TESTS["precheck"])
+        spec = {"required_tests": names}
+        cases = "".join(
+            f'<testcase name="{name}">{"<skipped/>" if index == 0 else ""}</testcase>'
+            for index, name in enumerate(names)
+        )
         with self.assertRaises(SystemExit):
             validate_receipt(
-                b'<testsuite><testcase name="required-case"><skipped/></testcase></testsuite>',
+                f"<testsuite>{cases}</testsuite>".encode(),
                 spec,
-                "test",
+                "precheck",
             )
+
+    def test_empty_receipt_case_set_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["receipts"]["precheck"].update(required_tests=[])
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_retained_archive_identity_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["retained_archive"].update(sha256="0" * 64)
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_external_payload_identity_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["external_exact_run_payload"].update(artifact_id=1)
+        )
+        self.assertNotEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":

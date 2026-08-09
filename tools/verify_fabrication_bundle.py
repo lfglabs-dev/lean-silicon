@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -13,6 +14,20 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE = ROOT / "release" / "v0.1.1"
+RECEIPT_TESTS = {
+    "precheck": {
+        "Magic DRC", "KLayout FEOL", "KLayout BEOL", "KLayout offgrid",
+        "KLayout pin label overlapping drawing", "KLayout zero area", "KLayout Checks",
+        "Pin check", "Boundary check", "Power pin check", "Layer check", "Cell name check",
+        "urpm/nwell check", "Analog pin check", "Verilog syntax check",
+    },
+    "gate_level": {
+        "lsc1u_all_retained_operations", "lsc1u_reset_ena_framing_and_backpressure",
+        "lsc1u_reset_ena_every_state_and_consecutive_commands",
+        "lsc1u_little_endian_polynomial_vectors",
+        "lsc1u_shared_mutation_corpus_and_latency",
+    },
+}
 
 
 def fail(message: str) -> None:
@@ -34,7 +49,10 @@ def validate_receipt(data: bytes, spec: dict, name: str) -> None:
     failures = root.findall(".//failure") + root.findall(".//error")
     skipped = root.findall(".//skipped")
     test_names = [test.get("name") for test in tests]
-    if len(test_names) != len(set(test_names)) or set(test_names) != set(spec["required_tests"]) or failures or skipped:
+    required = RECEIPT_TESTS[name]
+    if set(spec["required_tests"]) != required:
+        fail(f"{name} manifest case set is not canonical")
+    if not required or len(test_names) != len(set(test_names)) or set(test_names) != required or failures or skipped:
         fail(f"{name} is vacuous, incomplete, duplicated, unexpected, skipped, or records failures")
 
 
@@ -71,6 +89,7 @@ def main() -> None:
             fail(f"package checksum mismatch: {name}")
 
     release_manifest = json.loads((RELEASE / "MANIFEST.json").read_text())
+    canonical_manifest = json.loads((RELEASE / "FABRICATION_MANIFEST.json").read_text())
     authoritative_payload_sums = {
         item["path"]: item["sha256"] for item in release_manifest["payload_checksums"]
     }
@@ -86,6 +105,14 @@ def main() -> None:
         fail(f"commit/tree mismatch: {actual_tree} != {tree}")
 
     archive_spec = manifest["retained_archive"]
+    require_equal(archive_spec, canonical_manifest["retained_archive"], "retained archive identity")
+    canonical_archive = next(
+        item for item in release_manifest["physical_artifacts"]
+        if item.get("retained_path") == "release/v0.1.1/evidence/tt_submission-9004116698.zip"
+    )
+    require_equal(archive_spec["github_artifact_id"], canonical_archive["id"], "retained archive artifact ID")
+    require_equal(archive_spec["sha256"], canonical_archive["archive_sha256"], "retained archive authoritative checksum")
+    require_equal(archive_spec["workflow_run"], release_manifest["ci"]["physical_run"]["id"], "retained archive workflow run")
     archive = RELEASE / archive_spec["path"]
     archive_bytes = archive.read_bytes()
     if digest(archive_bytes) != archive_spec["sha256"]:
@@ -177,7 +204,16 @@ def main() -> None:
         validate_receipt(data, spec, name)
 
     external = manifest["external_exact_run_payload"]
-    if not external.get("artifact_id") or len(external["def"]["sha256"]) != 64 or not external.get("limitation"):
+    require_equal(external, canonical_manifest["external_exact_run_payload"], "external exact-run payload identity")
+    canonical_external = next(
+        item for item in release_manifest["physical_artifacts"] if item["id"] == external["artifact_id"]
+    )
+    require_equal(external["archive_sha256"], canonical_external["archive_sha256"], "external archive authoritative checksum")
+    if (
+        external["def"].get("path") != "runs/wokwi/final/def/tt_um_lfglabs_lsc1u.def"
+        or re.fullmatch(r"[0-9a-f]{64}", external["def"].get("sha256", "")) is None
+        or not external.get("limitation")
+    ):
         fail("external DEF identity/limitation is incomplete")
     receipt_count = sum(len(receipts[name]["required_tests"]) for name in ("precheck", "gate_level"))
     print(f"verified {manifest['candidate']}: {len(entries)} payload classes, {receipt_count} named receipt cases, zero required flow counters")
