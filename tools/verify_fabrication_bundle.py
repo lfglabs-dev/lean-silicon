@@ -90,6 +90,7 @@ def main() -> None:
 
     release_manifest = json.loads((RELEASE / "MANIFEST.json").read_text())
     canonical_manifest = json.loads((RELEASE / "FABRICATION_MANIFEST.json").read_text())
+    require_equal(manifest, canonical_manifest, "fabrication manifest identity")
     authoritative_payload_sums = {
         item["path"]: item["sha256"] for item in release_manifest["payload_checksums"]
     }

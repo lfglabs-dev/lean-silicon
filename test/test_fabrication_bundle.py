@@ -25,6 +25,12 @@ class FabricationBundleTest(unittest.TestCase):
     def test_fabrication_bundle_passes(self) -> None:
         subprocess.run([sys.executable, str(VERIFY)], cwd=ROOT, check=True)
 
+    def test_candidate_identity_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value.update(candidate="totally-different-run")
+        )
+        self.assertNotEqual(result.returncode, 0)
+
     def test_manifest_hash_mutation_fails(self) -> None:
         result = self.run_mutated_manifest(lambda value: value["payload"][0].update(sha256="0" * 64))
         self.assertNotEqual(result.returncode, 0)
