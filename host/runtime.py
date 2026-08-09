@@ -26,7 +26,10 @@ from .errors import (
 from .lean_compiler_adapter import Program
 from .blake3_service import (
     Blake3HostService,
+    KNOWN_FLAGS,
     ModelServiceAdapter,
+    ServiceInfrastructureError,
+    ServiceSemanticError,
     SoftwareBlake3HostService,
 )
 from .memory import HostMemory, field_inverse
@@ -430,6 +433,11 @@ class HostRuntime:
             }
 
         if operation.kind == "Blake3":
+            metadata = operation.operands["metadata"]
+            block_len = (metadata >> 64) & 0xFFFFFFFF
+            flags = metadata >> 96
+            if block_len > 64 or flags & ~KNOWN_FLAGS:
+                raise PreparationFault(protocol.Status.BAD_SERVICE)
             message_offsets = tuple(operation.operands["ins"])
             cv_offset = operation.operands["cv"]
             out_offset = operation.operands["out"]
@@ -441,7 +449,7 @@ class HostRuntime:
                 txn_id=self.txn_id, pc=self.pc, fp=self.fp,
                 profile=self.profile, message_offsets=message_offsets,
                 cv_offset=cv_offset, out_offset=out_offset,
-                metadata=operation.operands["metadata"],
+                metadata=metadata,
                 message_cells=cells[:4], cv_cells=cells[4:6], out_cells=cells[6:8],
             )
             return frame, addresses, None
@@ -505,11 +513,16 @@ class HostRuntime:
         reply = self._exchange(frame)
         service_key = None
         if operation.kind == "Blake3" and reply.status is protocol.Status.SERVICE_REQUIRED:
-            required = self.service_adapter.accept_required(reply.payload)
-            canonical_request = required.encode()
-            response = self.service_adapter.compute(
-                required, service=self.blake3_service.compress,
-            )
+            try:
+                required = self.service_adapter.accept_required(reply.payload)
+                canonical_request = required.encode()
+                response = self.service_adapter.compute(
+                    required, service=self.blake3_service.compress,
+                )
+            except (ServiceInfrastructureError, ServiceSemanticError):
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+                raise
             canonical_response = response.encode()
             record.service = {
                 "schema": "leansilicon.host.blake3-service/1",
@@ -522,6 +535,13 @@ class HostRuntime:
             }
             service_key = required.key
             reply = self._exchange(self.service_adapter.to_v1(response))
+        elif operation.kind == "Blake3" and int(reply.status) < 0x80:
+            self.endpoint.step(abort=True)
+            self.service_adapter.abort()
+            raise ProtocolViolation(
+                "BLAKE3_REQUEST must suspend with SERVICE_REQUIRED, got "
+                f"{reply.status.name}"
+            )
         if reply.status is not protocol.Status.OK:
             check_fault_response(reply, expected_txn_id=self.txn_id)
             record.status = reply.status.name

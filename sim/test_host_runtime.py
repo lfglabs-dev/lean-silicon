@@ -25,6 +25,7 @@ from host.errors import (  # noqa: E402
     UnsupportedCapability,
     WriteOnceViolation,
 )
+from host.blake3_service import ServiceInfrastructureError  # noqa: E402
 from host.memory import HostMemory, PointerMap, field_inverse  # noqa: E402
 from host.protocol import protocol  # noqa: E402
 from host.runtime import HostRuntime, decode_result_payload  # noqa: E402
@@ -1066,6 +1067,56 @@ class RuntimeTests(unittest.TestCase):
             "7f2015db62c1378f278100fb314c47e22f99a949e8892c714dc1e91b4df4740c",
         )
         self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E67)
+
+    def test_blake3_metadata_is_rejected_before_the_endpoint_is_staged(self):
+        for metadata in (65 << 64, 0x80 << 96):
+            with self.subTest(metadata=metadata):
+                slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                        "metadata": f"{metadata:#034x}"}
+                runtime = HostRuntime(program(slot), session_epoch=1)
+                result = runtime.run()
+                self.assertEqual(result.terminal, "fault")
+                self.assertIn("bad_service preparing", result.reason)
+                self.assertEqual(runtime.endpoint.state.name, "IDLE")
+                self.assertEqual(runtime.endpoint.abort_count, 0)
+                self.assertIsNone(runtime.service_adapter.outstanding)
+
+    def test_blake3_requires_service_required_and_aborts_an_unexpected_reply(self):
+        class WrongStatusRuntime(HostRuntime):
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST:
+                    return protocol.ResponseFrame(protocol.Status.OK, reply.payload)
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongStatusRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "must suspend with SERVICE_REQUIRED"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+    def test_exhausted_blake3_service_retries_abort_and_leave_runtime_reusable(self):
+        class UnavailableService:
+            def compress(self, request):
+                raise ServiceInfrastructureError("unavailable")
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=UnavailableService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(ServiceInfrastructureError, "unavailable"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
     def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
         expectations = {
