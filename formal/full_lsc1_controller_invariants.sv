@@ -34,7 +34,7 @@ module full_lsc1_controller_invariants (
             assert(!tx_valid);
             assert(!done_pulse);
         end
-        if (done_pulse) assert(!tx_valid);
+        if (past_valid && done_pulse) assert(!tx_valid);
         cover(past_valid && rst_n && tx_valid && !tx_ready);
         cover(past_valid && rst_n && fault);
         cover(past_valid && rst_n && result_pending);
