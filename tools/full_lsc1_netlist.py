@@ -83,7 +83,8 @@ def bounded_sat_argv(read_script: str) -> list[str]:
             "-set-def-inputs"]
 
 
-def classify_induction(name: str, returncode: int, output: str) -> str:
+def classify_induction(name: str, returncode: int, output: str, *,
+                       timed_out: bool = False) -> str:
     """Classify only explicit resource exhaustion as blocked; fail closed otherwise."""
     if returncode == 0:
         return "pass"
@@ -91,7 +92,7 @@ def classify_induction(name: str, returncode: int, output: str) -> str:
     if "proof did fail" in lowered:
         sys.stderr.write(output)
         raise SystemExit(f"{name}: temporal induction found a counterexample")
-    if returncode == 124 or "maximum number of time steps" in lowered:
+    if timed_out or "maximum number of time steps" in lowered:
         return "blocked"
     sys.stderr.write(output)
     raise SystemExit(f"{name}: temporal induction tool failure (exit {returncode})")
@@ -179,16 +180,18 @@ endmodule
         induction = subprocess.run(induction_argv, cwd=ROOT, text=True,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=15)
         induction_rc = induction.returncode
+        induction_timed_out = False
         induction_blocker = None if induction_rc == 0 else induction.stdout[-4000:]
     except subprocess.TimeoutExpired as error:
         induction_rc = 124
+        induction_timed_out = True
         captured = error.stdout or b""
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         induction_blocker = "15-second HOST limit expired during whole-design induction attempt\n" + tail
     induction_status = classify_induction(
         "whole_design_temporal_induction_attempt", induction_rc,
-        induction_blocker or "")
+        induction_blocker or "", timed_out=induction_timed_out)
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
         "argv": induction_argv, "exit_code": induction_rc})
     receipt["proofs"]["whole_design_induction"] = {
@@ -207,16 +210,18 @@ endmodule
         controller = subprocess.run(controller_argv, cwd=ROOT, text=True,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=15)
         controller_rc = controller.returncode
+        controller_timed_out = False
         controller_blocker = None if controller_rc == 0 else controller.stdout[-4000:]
     except subprocess.TimeoutExpired as error:
         controller_rc = 124
+        controller_timed_out = True
         captured = error.stdout or b""
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         controller_blocker = "15-second HOST limit expired during controller induction attempt\n" + tail
     controller_status = classify_induction(
         "controller_invariants_induction_attempt", controller_rc,
-        controller_blocker or "")
+        controller_blocker or "", timed_out=controller_timed_out)
     receipt["commands"].append({"name": "controller_invariants_induction_attempt",
         "argv": controller_argv, "exit_code": controller_rc})
     receipt["proofs"]["controller_invariants"] = {

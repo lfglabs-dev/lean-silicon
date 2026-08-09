@@ -51,12 +51,16 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
             full_lsc1_netlist.classify_induction(
                 "whole-design", 1, "ERROR: proof did fail")
         self.assertEqual(full_lsc1_netlist.classify_induction(
-            "whole-design", 124, "HOST timeout without a proof result"), "blocked")
+            "whole-design", 124, "HOST timeout without a proof result",
+            timed_out=True), "blocked")
 
     def test_induction_tool_errors_fail_closed(self) -> None:
         with self.assertRaisesRegex(SystemExit, "tool failure"):
             full_lsc1_netlist.classify_induction(
                 "whole-design", 1, "ERROR: parser failed before proof")
+        with self.assertRaisesRegex(SystemExit, "tool failure"):
+            full_lsc1_netlist.classify_induction(
+                "whole-design", 124, "launcher reserved exit code")
         self.assertEqual(full_lsc1_netlist.classify_induction(
             "whole-design", 1, "Reached maximum number of time steps"), "blocked")
 
