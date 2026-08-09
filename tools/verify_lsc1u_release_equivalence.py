@@ -52,15 +52,19 @@ def main():
     try: json.loads(witness.read_text())
     except (json.JSONDecodeError, OSError) as exc: raise SystemExit("reset-release SAT witness is invalid") from exc
     run(["sby","-f","lsc1u_release_netlist_eq.sby","bounded"],cwd=stage)
+    run(["sby","-f","lsc1u_release_netlist_eq.sby","induction"],cwd=stage)
+    run(["sby","-f","lsc1u_release_netlist_eq.sby","prove"],cwd=stage)
+    run(["sby","-f","lsc1u_release_netlist_eq.sby","cover"],cwd=stage)
     harness=stage/"lsc1u_release_netlist_eq_formal.sv"
     mutated=harness.read_text().replace("assert(rtl_uo == gate_uo);","assert(rtl_uo == (gate_uo ^ 8'h01));")
     if mutated==harness.read_text(): raise SystemExit("mutation was not applied")
     harness.write_text(mutated)
-    result=subprocess.run(["sby","-f","lsc1u_release_netlist_eq.sby","bounded"],cwd=stage)
-    status_path=stage/"lsc1u_release_netlist_eq_bounded"/"status"
+    result=subprocess.run(["sby","-f","lsc1u_release_netlist_eq.sby","induction"],cwd=stage)
+    status_path=stage/"lsc1u_release_netlist_eq_induction"/"status"
     status=status_path.read_text().strip() if status_path.is_file() else "MISSING"
     status_kind=status.split(maxsplit=1)[0]
     if result.returncode==0 or status_kind!="FAIL":
         raise SystemExit(f"mutation did not produce a property failure (status={status}, rc={result.returncode})")
-    print(f"PASS: pinned bounded equivalence, non-vacuity witness, and mutation counterexample (status={status})")
+    print("PASS: pinned 74-edge BMC, unbounded sequential equivalence, "
+          f"full-MUL/repeated-transaction witnesses, and mutation counterexample (status={status})")
 if __name__ == "__main__": main()

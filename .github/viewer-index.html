@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting to 3D Viewer...</title>
+</head>
+<body>
+  <script>
+    const modelUrl = new URL("tinytapeout.oas", document.baseURI).href;
+    location.href = "https://gds-viewer.tinytapeout.com/?pdk=__PDK__&model=" +
+      encodeURIComponent(modelUrl);
+  </script>
+</body>
+</html>

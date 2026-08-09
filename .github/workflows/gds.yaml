@@ -35,11 +35,59 @@ jobs:
       - name: GL test
         uses: TinyTapeout/tt-gds-action/gl_test@30d38a7dfc6fda561d452b196fc822af0332ec23 # ttsky26c
 
-  viewer:
+  viewer-build:
     needs: gds
+    runs-on: ubuntu-24.04
+    outputs:
+      pdk: ${{ steps.pdk.outputs.pdk }}
+    steps:
+      - name: Checkout viewer template
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Download GDS artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: tt_submission
+      - name: Read PDK information from submission
+        id: pdk
+        working-directory: tt_submission
+        run: |
+          pdk=$(jq -r '.PDK' pdk.json)
+          echo "PDK=$pdk" >> "$GITHUB_ENV"
+          echo "pdk=$pdk" >> "$GITHUB_OUTPUT"
+      - name: Download GDS render
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: gds_render
+          path: gh-pages
+      - name: Assemble viewer
+        run: |
+          cp tt_submission/*.gds gh-pages/tinytapeout.gds
+          cp tt_submission/*.oas gh-pages/tinytapeout.oas
+          sed "s/__PDK__/$PDK/g" .github/viewer-index.html > gh-pages/index.html
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: gh-pages
+
+  # Deployment is deliberately a separate job: deploy-pages can otherwise
+  # race the just-finalized github-pages artifact in the Actions API.
+  viewer:
+    needs: viewer-build
     runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
     steps:
-      - uses: TinyTapeout/tt-gds-action/viewer@30d38a7dfc6fda561d452b196fc822af0332ec23 # ttsky26c
+      - name: Deploy viewer to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+      - name: Display preview in workflow summary
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          PDK: ${{ needs.viewer-build.outputs.pdk }}
+        run: |
+          page_url="${PAGE_URL%/}"
+          printf '%s\n' '# 3D Viewer' \
+            "[Open 3D viewer](https://gds-viewer.tinytapeout.com/?model=$page_url/tinytapeout.oas&pdk=$PDK)" \
+            '' '# 2D Preview' "![png]($page_url/gds_render.png)" \
+            >> "$GITHUB_STEP_SUMMARY"

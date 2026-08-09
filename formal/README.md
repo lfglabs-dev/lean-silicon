@@ -15,7 +15,7 @@ them proves the full LSC-1 controller or ISA correspondence.  See
 | `gf128_mul_stream_refinement.sby` | Production GF(2^128) datapath refines the accepted-event polynomial specification, including arbitrary pauses and reset/abort | unbounded PDR + bounded covers |
 | `lsc1u_compositional_refinement.sby` | Cycle-accurate all-op transition refinement, including MUL_A/B/BITS/TX, arbitrary output stalls, reset/enable abort, and retirement | unbounded PDR |
 | `lsc1u_netlist_eq.sby` (`short`) | Fixed v0.1 SKY130 gate netlist versus RTL at all Tiny Tapeout observable pins, for every input sequence through 55 cycles after reset | bounded ABC BMC |
-| `lsc1u_release_netlist_eq.sby` (`bounded`) | Pinned v0.1.1 physical-run netlist versus its byte-identical RTL sources at all 24 Tiny Tapeout output pins, for every input sequence through 74 rising edges after an asserted initial reset | bounded ABC BMC; netlist is fetched and hash-checked by `make release-netlist-equivalence` |
+| `lsc1u_release_netlist_eq.sby` | Pinned v0.1.1 physical-run netlist versus its byte-identical RTL sources at all 24 Tiny Tapeout output pins, for every reset-reachable execution | unbounded k-induction over a complete 283-bit state correspondence, retained 74-edge ABC BMC, and covers for one full MUL plus two arbitrary valid-command retirements |
 
 ## Fixed release netlist equivalence
 
