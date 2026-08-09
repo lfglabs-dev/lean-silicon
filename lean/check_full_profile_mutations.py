@@ -71,8 +71,8 @@ mutations = {
         "let assigned := start.assignServiceId 0",
     ),
     "blake3-reset-reuses-service-id": (
-        "| .pending nextServiceId _, .reset => { state := .idle nextServiceId }",
-        "| .pending nextServiceId _, .reset => { state := .idle 1 }",
+        "| .pending _ _, .reset => { state := .idle 1 }",
+        "| .pending _ _, .reset => { state := .idle 2 }",
     ),
     "blake3-allows-three-message-words": (
         "inputWords : Fin 4 -> Word",
@@ -89,6 +89,34 @@ mutations = {
     "deref-profile-guard-precedes-pointer": (
         "else if !(input.memory input.prepared.pointerAddress).written ||",
         "else if false && !(input.memory input.prepared.pointerAddress).written ||",
+    ),
+    "blake3-accepts-malformed-metadata": (
+        "if validBlake3Metadata raw.metadata then prepareValidBlake3 raw",
+        "if true then prepareValidBlake3 raw",
+    ),
+    "blake3-second-output-reuses-first": (
+        "match CheckedIndex.add out0 1 with",
+        "match CheckedIndex.add out0 0 with",
+    ),
+    "blake3-response-drops-transaction-binding": (
+        "response.txnId == pending.request.common.txnId &&",
+        "true &&",
+    ),
+    "blake3-response-does-not-stage": (
+        "let transaction := Transaction.step state.transaction\n                    (.stage (transitionOf effect))",
+        "let transaction := Transaction.step state.transaction .abort",
+    ),
+    "blake3-reset-starts-at-two": (
+        "state := endpointInitial",
+        "state := { transaction := Transaction.initial, service := .idle 2 }",
+    ),
+    "blake3-id-overflow-wraps": (
+        "nextServiceId == 0 || nextServiceId == 0xffffffff",
+        "nextServiceId == 0 || false",
+    ),
+    "blake3-retire-never-commits": (
+        "Transaction.step state.transaction (.retire txnId checksum)",
+        "Transaction.step state.transaction .abort",
     ),
 }
 

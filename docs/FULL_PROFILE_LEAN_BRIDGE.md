@@ -4,8 +4,9 @@
 scalar instruction class to canonical Lean primitives and the existing
 atomic transaction lifecycle. It models host-owned memory/fetch/witness inputs
 as explicit request data. SET/XOR/MUL decide writes with `Memory.writeOnce` and
-`GHASH128.mul`; DEREF and JUMP call `ControlPrimitives`; BLAKE3 can only create
-an external service request and accepts a response bound to the same transaction
+`GHASH128.mul`; DEREF and JUMP call `ControlPrimitives`; BLAKE3 crosses an
+explicit raw-to-validated preparation boundary before it can create an external
+service request, and accepts a response bound to the same transaction
 and endpoint-assigned monotone service identifier. Its request type fixes the
 compression shape at four message words, two chaining-value words, and sixteen
 metadata bytes, so malformed arities are not representable.
@@ -13,7 +14,11 @@ Responses must also carry the BLAKE3 compression service kind. The staging
 bridge enforces the negotiated 16-bit control-index limit rather than merely
 the transport's wider `u32` representation.
 
-The service request retains the host-supplied memory view across suspension.
+Raw BLAKE3 preparation validates `block_len <= 64` and the known `0x7f` flags,
+then computes addresses in frozen access order: four message addresses,
+`fp+cv`, `fp+cv+1`, `fp+out`, and `fp+out+1`. Repeated supplied addresses must
+carry consistent cells. The service request retains this validated memory view
+across suspension.
 Both returned digest words pass through `Memory.writeOnce`; either collision is
 proved to fault, so external service ownership does not bypass canonical memory
 policy or imply that the endpoint computed BLAKE3.
@@ -21,12 +26,15 @@ policy or imply that the endpoint computed BLAKE3.
 The controller validates and retains the next control state before publishing a
 service request. Its service lifecycle is linear: exactly one response can be
 consumed only from a live pending state, and consumption, ABORT, or reset returns
-to idle. A wrongly bound response faults while retaining the pending request so
+to idle. IDs begin at 1 after reset, advance monotonically, and reject
+`0xffffffff` exhaustion rather than wrapping. A wrongly bound response faults while retaining the pending request so
 the correctly bound response can still arrive. Replayed responses and responses
 arriving after ABORT/reset are proved to fault without reconstructing a
 discarded effect.
 
-The proved bridge is deliberately transport-independent. A decided result is
+The proved bridge is deliberately transport-independent. A successful matching
+service response is composed with `Transaction.step`, so its effect enters
+`RESULT_PENDING` rather than merely returning while the service idles. A decided result is
 translated to `Transaction.Transition`, staged atomically, committed only by a
 matching RETIRE, and discarded without commit by ABORT. Existing `Packet`
 theorems establish envelope round trips and validation precedence. This PR does
@@ -82,9 +90,10 @@ through canonical XOR/MUL execution into atomic transaction staging.
    `asic_core/rtl/lsc1_packet_frontend.sv`, including receive/transmit buffers,
    backpressure, reset and ABORT dominance.
 4. Prove accepted-frame refinement from that cycle system to `FullProfile.decide`
-   for SET/XOR/MUL/DEREF/JUMP and to `serviceRequired` for BLAKE3.
+   for SET/XOR/MUL/DEREF/JUMP and to the proved raw BLAKE3 service path.
 5. Prove response serialization and staged-result CRC correspondence, then lift
-   `staged_result_matching_retire_commits` to the cycle system's DONE edge.
+   `successful_service_response_matching_retire_exactly_once` to the cycle
+   system's DONE edge.
 6. Bind the independent cycle system to authored SV with unbounded formal
    correspondence (or explicitly bounded results where induction cannot close).
 

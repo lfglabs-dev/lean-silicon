@@ -33,6 +33,19 @@ structure Common where
   resultChecksum : Transaction.ResultChecksum
   deriving DecidableEq, Repr
 
+inductive Fault where
+  | address
+  | stateMismatch
+  | unsupportedInProfile
+  | badInverse
+  | mulBacksolveZero
+  | aliasInconsistent
+  | writeConflict
+  | deref (reason : ControlPrimitives.Fault)
+  | jump (reason : ControlPrimitives.Fault)
+  | badService
+  deriving DecidableEq, Repr
+
 inductive Profile where
   | forwardOnly
   | interpreterCompat
@@ -83,6 +96,84 @@ structure Blake3Start where
   outputAddresses : Index × Index
   metadata : Fin 16 -> UInt8
 
+/-- Raw packet fields, before metadata and effective-address validation. -/
+structure RawBlake3Request where
+  common : Common
+  messageOffsets : Fin 4 -> Index
+  cvOffset : Index
+  outOffset : Index
+  metadata : Word
+  messageCells : Fin 4 -> Cell
+  cvCells : Fin 2 -> Cell
+  outCells : Fin 2 -> Cell
+
+def metadataByte (metadata : Word) (i : Fin 16) : UInt8 :=
+  UInt8.ofNat ((metadata.toNat / 2 ^ (8 * i.val)) % 256)
+
+def metadataBlockLength (metadata : Word) : Nat :=
+  (metadata.toNat / 2 ^ 64) % 2 ^ 32
+
+def metadataFlags (metadata : Word) : Nat :=
+  metadata.toNat / 2 ^ 96
+
+def validBlake3Metadata (metadata : Word) : Bool :=
+  metadataBlockLength metadata <= 64 && metadataFlags metadata < 128
+
+def putSuppliedCell (memory : Mem) (address : Index) (cell : Cell) : Mem :=
+  if cell.written then writeRaw memory address cell.value else memory
+
+def sameSuppliedCell (memory : Mem) (address : Index) (cell : Cell) : Bool :=
+  !(cell.written && (memory address).written && (memory address).value != cell.value)
+
+def supplyCell (memory : Mem) (address : Index) (cell : Cell) : Except Fault Mem :=
+  if sameSuppliedCell memory address cell then .ok (putSuppliedCell memory address cell)
+  else .error .aliasInconsistent
+
+abbrev Blake3Addresses := Index × Index × Index × Index × Index × Index × Index × Index
+
+def prepareBlake3Addresses (raw : RawBlake3Request) : Except Fault Blake3Addresses :=
+  match CheckedIndex.add raw.common.control.fp (raw.messageOffsets 0) with
+  | none => .error .address
+  | some in0 => match CheckedIndex.add raw.common.control.fp (raw.messageOffsets 1) with
+    | none => .error .address
+    | some in1 => match CheckedIndex.add raw.common.control.fp (raw.messageOffsets 2) with
+      | none => .error .address
+      | some in2 => match CheckedIndex.add raw.common.control.fp (raw.messageOffsets 3) with
+        | none => .error .address
+        | some in3 => match CheckedIndex.add raw.common.control.fp raw.cvOffset with
+          | none => .error .address
+          | some cv0 => match CheckedIndex.add cv0 1 with
+            | none => .error .address
+            | some cv1 => match CheckedIndex.add raw.common.control.fp raw.outOffset with
+              | none => .error .address
+              | some out0 => match CheckedIndex.add out0 1 with
+                | none => .error .address
+                | some out1 => .ok (in0, in1, in2, in3, cv0, cv1, out0, out1)
+
+def prepareValidBlake3 (raw : RawBlake3Request) : Except Fault Blake3Start :=
+  match prepareBlake3Addresses raw with
+  | .error fault => .error fault
+  | .ok (in0, in1, in2, in3, cv0, cv1, out0, out1) => do
+    let memory <- supplyCell Memory.empty in0 (raw.messageCells 0)
+    let memory <- supplyCell memory in1 (raw.messageCells 1)
+    let memory <- supplyCell memory in2 (raw.messageCells 2)
+    let memory <- supplyCell memory in3 (raw.messageCells 3)
+    let memory <- supplyCell memory cv0 (raw.cvCells 0)
+    let memory <- supplyCell memory cv1 (raw.cvCells 1)
+    let memory <- supplyCell memory out0 (raw.outCells 0)
+    let memory <- supplyCell memory out1 (raw.outCells 1)
+    pure {
+      common := raw.common
+      memory
+      inputWords := fun i => (memory ([in0, in1, in2, in3].get i)).value
+      chainingValue := fun i => (memory ([cv0, cv1].get i)).value
+      outputAddresses := (out0, out1)
+      metadata := metadataByte raw.metadata }
+
+def prepareBlake3 (raw : RawBlake3Request) : Except Fault Blake3Start :=
+  if validBlake3Metadata raw.metadata then prepareValidBlake3 raw
+  else .error .badService
+
 def Blake3Start.assignServiceId (start : Blake3Start)
     (serviceId : UInt32) : Blake3Request := {
   common := start.common
@@ -111,19 +202,6 @@ inductive Instruction where
   | deref (mode : DerefMode) (input : DerefInput)
   | jump (input : JumpInput)
   | blake3 (request : Blake3Request)
-
-inductive Fault where
-  | address
-  | stateMismatch
-  | unsupportedInProfile
-  | badInverse
-  | mulBacksolveZero
-  | aliasInconsistent
-  | writeConflict
-  | deref (reason : ControlPrimitives.Fault)
-  | jump (reason : ControlPrimitives.Fault)
-  | badService
-  deriving DecidableEq, Repr
 
 structure Effect where
   common : Common
@@ -247,7 +325,7 @@ inductive ServiceState where
   | pending (nextServiceId : UInt32) (request : ServicePending)
 
 inductive ServiceCommand where
-  | start (request : Blake3Start)
+  | start (request : RawBlake3Request)
   | respond (response : Blake3Response)
   | abort
   | reset
@@ -258,17 +336,22 @@ structure ServiceOutcome where
 
 /-- Linear service controller: only a live pending request may consume one response. -/
 def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
-  | .idle nextServiceId, .reset => { state := .idle nextServiceId }
-  | .pending nextServiceId _, .reset => { state := .idle nextServiceId }
+  | .idle _, .reset => { state := .idle 1 }
+  | .pending _ _, .reset => { state := .idle 1 }
   | .idle nextServiceId, .abort => { state := .idle nextServiceId }
   | .pending nextServiceId _, .abort => { state := .idle nextServiceId }
-  | .idle nextServiceId, .start start =>
-      let assigned := start.assignServiceId nextServiceId
-      match decide (.blake3 assigned) with
-      | .serviceRequired pending => {
-          state := .pending (nextServiceId + 1) pending,
-          decision := some (.serviceRequired pending) }
-      | decision => { state := .idle nextServiceId, decision := some decision }
+  | .idle nextServiceId, .start raw =>
+      if nextServiceId == 0 || nextServiceId == 0xffffffff then
+        { state := .idle nextServiceId, decision := some (.fault .badService) }
+      else match prepareBlake3 raw with
+        | .error fault => { state := .idle nextServiceId, decision := some (.fault fault) }
+        | .ok start =>
+          let assigned := start.assignServiceId nextServiceId
+          match decide (.blake3 assigned) with
+          | .serviceRequired pending => {
+              state := .pending (nextServiceId + 1) pending,
+              decision := some (.serviceRequired pending) }
+          | decision => { state := .idle nextServiceId, decision := some decision }
   | .pending nextServiceId pending, .respond response =>
       if serviceResponseMatches pending response then {
         state := .idle nextServiceId, decision := some (finishBlake3 pending response) }
@@ -298,6 +381,142 @@ def Representable (effect : Effect) : Prop :=
     ProtocolIndex effect.common.control.fp /\
     ProtocolIndex effect.nextControl.pc /\
     ProtocolIndex effect.nextControl.fp
+
+def representableB (effect : Effect) : Bool :=
+  effect.common.control.pc < protocolIndexLimit &&
+    effect.common.control.fp < protocolIndexLimit &&
+    effect.nextControl.pc < protocolIndexLimit &&
+    effect.nextControl.fp < protocolIndexLimit
+
+structure EndpointState where
+  transaction : Transaction.Model
+  service : ServiceState
+
+def endpointInitial : EndpointState := {
+  transaction := Transaction.initial, service := .idle 1 }
+
+inductive EndpointCommand where
+  | service (command : ServiceCommand)
+  | retire (txnId : Transaction.TxnId) (checksum : Transaction.ResultChecksum)
+
+structure EndpointOutcome where
+  state : EndpointState
+  decision : Option Decision := none
+  transactionOutcome : Option Transaction.Outcome := none
+
+/-- Compose service completion with the atomic stage/RETIRE lifecycle. -/
+def endpointStep (state : EndpointState) : EndpointCommand -> EndpointOutcome
+  | .service .reset => {
+      state := endpointInitial
+      transactionOutcome := some (Transaction.step state.transaction .reset) }
+  | .service .abort =>
+      let transaction := Transaction.step state.transaction .abort
+      let service := serviceStep state.service .abort
+      { state := { transaction := transaction.model, service := service.state }
+        decision := service.decision, transactionOutcome := some transaction }
+  | .service (.start raw) =>
+      if state.transaction.state != .idle then
+        { state, decision := some (.fault .stateMismatch) }
+      else
+        let service := serviceStep state.service (.start raw)
+        { state := { state with service := service.state }, decision := service.decision }
+  | .service (.respond response) =>
+      match state.service with
+      | .pending nextServiceId pending =>
+          if serviceResponseMatches pending response then
+            match finishBlake3 pending response with
+            | .result effect =>
+                if representableB effect then
+                  let transaction := Transaction.step state.transaction
+                    (.stage (transitionOf effect))
+                  match transaction.fault with
+                  | none =>
+                    { state := {
+                        transaction := transaction.model, service := .idle nextServiceId }
+                      decision := some (.result effect)
+                      transactionOutcome := some transaction }
+                  | some .indexRange =>
+                    { state := { state with service := .idle nextServiceId }
+                      decision := some (.fault .address)
+                      transactionOutcome := some transaction }
+                  | some _ =>
+                    { state := { state with service := .idle nextServiceId }
+                      decision := some (.fault .stateMismatch)
+                      transactionOutcome := some transaction }
+                else
+                  { state := { state with service := .idle nextServiceId }
+                    decision := some (.fault .address) }
+            | decision =>
+                { state := { state with service := .idle nextServiceId }
+                  decision := some decision }
+          else
+            { state, decision := some (.fault .badService) }
+      | .idle _ => { state, decision := some (.fault .badService) }
+  | .retire txnId checksum =>
+      let transaction := Transaction.step state.transaction (.retire txnId checksum)
+      { state := { state with transaction := transaction.model }
+        transactionOutcome := some transaction }
+
+theorem successful_service_response_stages (state : EndpointState)
+    (nextServiceId : UInt32) (pending : ServicePending) (response : Blake3Response)
+    (effect : Effect)
+    (hservice : state.service = .pending nextServiceId pending)
+    (hresponse : serviceResponseMatches pending response = true)
+    (hfinish : finishBlake3 pending response = .result effect)
+    (hrepresentable : representableB effect = true)
+    (hidle : state.transaction.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hstate : Transaction.stateMatches state.transaction (transitionOf effect) = true) :
+    let outcome := endpointStep state (.service (.respond response))
+    outcome.state.service = .idle nextServiceId /\
+      outcome.state.transaction.state = .resultPending (transitionOf effect) /\
+      outcome.decision = some (.result effect) := by
+  cases state with
+  | mk transaction service =>
+    simp only at hservice
+    subst service
+    change transaction.state = .idle at hidle
+    change Transaction.stateMatches transaction (transitionOf effect) = true at hstate
+    have hstage := Transaction.stage_is_atomic transaction (transitionOf effect)
+      hidle hrange hstate
+    simp only [endpointStep, hresponse, hfinish, hrepresentable, ↓reduceIte]
+    rw [hstage]
+    simp
+
+theorem successful_service_response_matching_retire_exactly_once
+    (state : EndpointState) (nextServiceId : UInt32) (pending : ServicePending)
+    (response : Blake3Response) (effect : Effect)
+    (hservice : state.service = .pending nextServiceId pending)
+    (hresponse : serviceResponseMatches pending response = true)
+    (hfinish : finishBlake3 pending response = .result effect)
+    (hrepresentable : representableB effect = true)
+    (hidle : state.transaction.state = .idle)
+    (hrange : Transaction.currentIndicesInRange (transitionOf effect) = true)
+    (hstate : Transaction.stateMatches state.transaction (transitionOf effect) = true) :
+    let completed := endpointStep state (.service (.respond response))
+    let first := endpointStep completed.state
+      (.retire effect.common.txnId effect.common.resultChecksum)
+    let second := endpointStep first.state
+      (.retire effect.common.txnId effect.common.resultChecksum)
+    first.transactionOutcome.map (fun o => o.retired) = some true /\
+      second.transactionOutcome.map (fun o => o.retired) = some false /\
+      second.transactionOutcome.bind (fun o => o.fault) = some .badState /\
+      second.state.transaction.committed = first.state.transaction.committed := by
+  cases state with
+  | mk transaction service =>
+    simp only at hservice
+    subst service
+    change transaction.state = .idle at hidle
+    change Transaction.stateMatches transaction (transitionOf effect) = true at hstate
+    have hstage := Transaction.stage_is_atomic transaction (transitionOf effect)
+      hidle hrange hstate
+    simp only [endpointStep, hresponse, hfinish, hrepresentable, ↓reduceIte]
+    rw [hstage]
+    simp [endpointStep, Transaction.step, transitionOf]
+
+theorem endpoint_reset_restores_protocol_initial (state : EndpointState) :
+    (endpointStep state (.service .reset)).state = endpointInitial := by
+  rfl
 
 theorem protocol_rejects_u16_boundary : ¬ ProtocolIndex (2 ^ 16) := by
   simp [ProtocolIndex, protocolIndexLimit]
@@ -417,21 +636,75 @@ theorem blake3_rejects_pc_overflow_before_service (request : Blake3Request)
     decide (.blake3 request) = .fault .address := by
   simp [decide, hoverflow]
 
-theorem service_start_assigns_endpoint_id (start : Blake3Start)
+theorem service_start_assigns_endpoint_id (raw : RawBlake3Request) (start : Blake3Start)
     (serviceId : UInt32) (nextControl : Control)
+    (hprepare : prepareBlake3 raw = .ok start)
+    (hnonzero : serviceId ≠ 0) (hnotmax : serviceId ≠ 0xffffffff)
     (hadvance : advance start.common = some nextControl) :
     let request := start.assignServiceId serviceId
     let pending : ServicePending := { request, nextControl }
-    serviceStep (.idle serviceId) (.start start) = {
+    serviceStep (.idle serviceId) (.start raw) = {
       state := .pending (serviceId + 1) pending
       decision := some (.serviceRequired pending) } := by
-  simp [serviceStep, Blake3Start.assignServiceId, decide, hadvance]
+  simp [serviceStep, hprepare, hnonzero, hnotmax, Blake3Start.assignServiceId,
+    decide, hadvance]
+
+theorem malformed_blake3_metadata_is_rejected (raw : RawBlake3Request)
+    (hbad : validBlake3Metadata raw.metadata = false) :
+    prepareBlake3 raw = .error .badService := by
+  simp [prepareBlake3, hbad]
+
+theorem blake3_output_base_overflow_is_rejected (raw : RawBlake3Request)
+    (hmeta : validBlake3Metadata raw.metadata = true)
+    (in0 in1 in2 in3 cv0 cv1 : Index)
+    (h0 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 0) = some in0)
+    (h1 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 1) = some in1)
+    (h2 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 2) = some in2)
+    (h3 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 3) = some in3)
+    (hcv0 : CheckedIndex.add raw.common.control.fp raw.cvOffset = some cv0)
+    (hcv1 : CheckedIndex.add cv0 1 = some cv1)
+    (hout : CheckedIndex.add raw.common.control.fp raw.outOffset = none) :
+    prepareBlake3 raw = .error .address := by
+  rw [prepareBlake3, if_pos hmeta]
+  simp [prepareValidBlake3, prepareBlake3Addresses, h0, h1, h2, h3, hcv0,
+    hcv1, hout]
+
+theorem blake3_second_output_overflow_is_rejected (raw : RawBlake3Request)
+    (hmeta : validBlake3Metadata raw.metadata = true)
+    (in0 in1 in2 in3 cv0 cv1 out0 : Index)
+    (h0 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 0) = some in0)
+    (h1 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 1) = some in1)
+    (h2 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 2) = some in2)
+    (h3 : CheckedIndex.add raw.common.control.fp (raw.messageOffsets 3) = some in3)
+    (hcv0 : CheckedIndex.add raw.common.control.fp raw.cvOffset = some cv0)
+    (hcv1 : CheckedIndex.add cv0 1 = some cv1)
+    (hout0 : CheckedIndex.add raw.common.control.fp raw.outOffset = some out0)
+    (hout1 : CheckedIndex.add out0 1 = none) :
+    prepareBlake3 raw = .error .address := by
+  rw [prepareBlake3, if_pos hmeta]
+  simp [prepareValidBlake3, prepareBlake3Addresses, h0, h1, h2, h3, hcv0,
+    hcv1, hout0, hout1]
+
+theorem service_reset_restarts_at_one (state : ServiceState) :
+    (serviceStep state .reset).state = .idle 1 := by
+  cases state <;> rfl
+
+theorem service_id_overflow_is_rejected (raw : RawBlake3Request) :
+    serviceStep (.idle 0xffffffff) (.start raw) = {
+      state := .idle 0xffffffff, decision := some (.fault .badService) } := by
+  simp [serviceStep]
 
 theorem blake3_rejects_wrong_transaction (pending : ServicePending)
     (response : Blake3Response)
     (h : response.txnId != pending.request.common.txnId) :
     finishBlake3 pending response = .fault .badService := by
   simp [finishBlake3, h]
+
+theorem service_match_rejects_wrong_transaction (pending : ServicePending)
+    (response : Blake3Response)
+    (h : response.txnId ≠ pending.request.common.txnId) :
+    serviceResponseMatches pending response = false := by
+  simp [serviceResponseMatches, h]
 
 theorem blake3_rejects_wrong_service (pending : ServicePending)
     (response : Blake3Response)
@@ -520,7 +793,7 @@ theorem service_reset_rejects_late_response (nextServiceId : UInt32)
 theorem service_reset_preserves_sequence (nextServiceId : UInt32)
     (pending : ServicePending) :
     (serviceStep (.pending nextServiceId pending) .reset).state =
-      .idle nextServiceId := by
+      .idle 1 := by
   rfl
 
 theorem xor_uses_supplied_operands (input : BinaryInput) :
@@ -634,6 +907,48 @@ theorem jump_success_preserves_memory (input : JumpInput) (control : Control)
 def witnessCommon : Common := {
   txnId := 7, control := { pc := 3, fp := 9 }, resultChecksum := 0x1234 }
 
+def witnessRawBlake3 : RawBlake3Request := {
+  common := witnessCommon
+  messageOffsets := fun i => i.val
+  cvOffset := 4
+  outOffset := 6
+  metadata := 64 * 2 ^ 64
+  messageCells := fun i => { written := true, value := BitVec.ofNat 128 (i.val + 1) }
+  cvCells := fun i => { written := true, value := BitVec.ofNat 128 (i.val + 5) }
+  outCells := fun _ => { written := false, value := 0#128 } }
+
+example : (prepareBlake3 witnessRawBlake3).isOk := by
+  decide
+
+def witnessBlake3Request : Blake3Request := {
+  common := witnessCommon
+  serviceId := 1
+  memory := writeRaw (writeRaw (writeRaw (writeRaw (writeRaw (writeRaw Memory.empty
+    9 (1#128)) 10 (2#128)) 11 (3#128)) 12 (4#128)) 13 (5#128)) 14 (6#128)
+  inputWords := fun i => BitVec.ofNat 128 (i.val + 1)
+  chainingValue := fun i => BitVec.ofNat 128 (i.val + 5)
+  outputAddresses := (15, 16)
+  metadata := fun i => if i.val = 8 then 64 else 0 }
+
+def witnessBlake3Pending : ServicePending := {
+  request := witnessBlake3Request, nextControl := { pc := 4, fp := 9 } }
+
+def witnessBlake3Response : Blake3Response := {
+  txnId := 7, serviceId := 1, serviceKind := 1, digest := (0xaa#128, 0xbb#128) }
+
+def witnessEndpointPending : EndpointState := {
+  transaction := Transaction.initial, service := .pending 2 witnessBlake3Pending }
+
+example :
+    (endpointStep witnessEndpointPending
+      (.service (.respond witnessBlake3Response))).state.transaction.state =
+        .resultPending (transitionOf {
+          common := witnessCommon
+          nextControl := { pc := 4, fp := 9 }
+          memory := writeRaw (writeRaw witnessBlake3Request.memory 15 (0xaa#128))
+            16 (0xbb#128) }) := by
+  decide
+
 def witnessSetEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
@@ -717,9 +1032,18 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms blake3_never_decides_digest
 #print axioms blake3_rejects_pc_overflow_before_service
 #print axioms service_start_assigns_endpoint_id
+#print axioms malformed_blake3_metadata_is_rejected
+#print axioms blake3_output_base_overflow_is_rejected
+#print axioms blake3_second_output_overflow_is_rejected
+#print axioms service_reset_restarts_at_one
+#print axioms service_id_overflow_is_rejected
+#print axioms successful_service_response_stages
+#print axioms successful_service_response_matching_retire_exactly_once
+#print axioms endpoint_reset_restores_protocol_initial
 #print axioms finishWrite_rejects_pc_overflow
 #print axioms finishWrite_conflict_precedes_pc_overflow
 #print axioms blake3_rejects_wrong_kind
+#print axioms service_match_rejects_wrong_transaction
 #print axioms blake3_rejects_first_output_conflict
 #print axioms blake3_rejects_second_output_conflict
 #print axioms service_response_consumes_pending
