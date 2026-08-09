@@ -549,6 +549,8 @@ class HostRuntime:
             )
         if reply.status is not protocol.Status.OK:
             check_fault_response(reply, expected_txn_id=self.txn_id)
+            if service_key is not None and reply.status is protocol.Status.WRITE_CONFLICT:
+                self.service_adapter.abort()
             record.status = reply.status.name
             record.fault = reply.status.name
             record.lane_cycles = (

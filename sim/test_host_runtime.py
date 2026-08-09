@@ -1126,6 +1126,22 @@ class RuntimeTests(unittest.TestCase):
         runtime.blake3_service = SoftwareBlake3HostService()
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 10)), slot),
+            session_epoch=1,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertEqual(result.records[-1].fault, "WRITE_CONFLICT")
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        retried = runtime.step()
+        self.assertEqual(retried.fault, "WRITE_CONFLICT")
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
     def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
         expectations = {
             "Cell": 0x55,

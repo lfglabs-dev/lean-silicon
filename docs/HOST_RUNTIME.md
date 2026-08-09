@@ -50,16 +50,11 @@ before the host has read it back.
 ## 3. What is integrated, and what is not
 
 Integrated through the host and executable packet model: `SET_CONSTANT`,
-`XOR`, `MUL_NATIVE`, `DEREF_CELL`, `DEREF_PC`, `DEREF_FP` and `JUMP`, including
-pointer re-encoding, deferred equality and inverse witnesses. The FPGA RTL
-integration status is tracked separately in `docs/STATUS.md`.
-
-Not integrated. Each raises `UnsupportedCapability` naming the missing piece;
-none of them silently degrade or skip an instruction:
-
-| Compiler opcode | Missing host capability |
-|---|---|
-| `Blake3` | a BLAKE3 compression implementation to answer `SERVICE_REQUIRED` |
+`XOR`, `MUL_NATIVE`, `DEREF_CELL`, `DEREF_PC`, `DEREF_FP`, `JUMP`, and the
+host-owned `BLAKE3` lifecycle through `SERVICE_REQUIRED`, software compression,
+bound response, result, and retirement. This is CPU/model integration only;
+there is no production BLAKE3 transport or RTL service path. FPGA RTL status is
+tracked separately in `docs/STATUS.md`.
 
 Index range is limited to `2**16` by the protocol (`INDEX_BITS`), and
 `PointerMap` refuses anything above it rather than extending the window.

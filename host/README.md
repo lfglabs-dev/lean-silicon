@@ -17,9 +17,8 @@ the upstream comparison.
 This package consumes the transaction protocol. It does not define wire
 formats, opcodes, status codes or profiles, and must not change them.
 
-`SET_CONSTANT`, `XOR`, `MUL_NATIVE`, `DEREF` and `JUMP` are integrated in the
-host runtime. `BLAKE3` program execution still raises `UnsupportedCapability`
-naming the missing compiler/runtime integration. The transport-independent
-service codecs, official-library compression adapter, epoch binding, and model
-tests are available in `host/blake3_service.py`; they intentionally do not
-claim a production transport or RTL service path.
+`SET_CONSTANT`, `XOR`, `MUL_NATIVE`, `DEREF`, `JUMP`, and the host-owned
+`BLAKE3` service lifecycle are integrated in the CPU/executable-model runtime.
+The transport-independent service codecs, software compression implementation,
+epoch binding, and model tests live in `host/blake3_service.py`; they
+intentionally do not claim a production transport or RTL service path.
