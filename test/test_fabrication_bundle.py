@@ -7,6 +7,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 VERIFY = ROOT / "tools" / "verify_fabrication_bundle.py"
+sys.path.insert(0, str(ROOT))
+
+from tools.verify_fabrication_bundle import validate_receipt
 
 
 class FabricationBundleTest(unittest.TestCase):
@@ -42,6 +45,21 @@ class FabricationBundleTest(unittest.TestCase):
     def test_required_receipt_name_mutation_fails(self) -> None:
         result = self.run_mutated_manifest(lambda value: value["receipts"]["precheck"]["required_tests"].__setitem__(0, "Not a real check"))
         self.assertNotEqual(result.returncode, 0)
+
+    def test_source_receipt_hash_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["receipts"]["precheck"].update(source_payload_sha256="0" * 64)
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_skipped_required_receipt_fails(self) -> None:
+        spec = {"required_tests": ["required-case"]}
+        with self.assertRaises(SystemExit):
+            validate_receipt(
+                b'<testsuite><testcase name="required-case"><skipped/></testcase></testsuite>',
+                spec,
+                "test",
+            )
 
 
 if __name__ == "__main__":

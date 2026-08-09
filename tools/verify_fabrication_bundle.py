@@ -28,6 +28,16 @@ def require_equal(actual: object, expected: object, label: str) -> None:
         fail(f"{label} mismatch: {actual!r} != {expected!r}")
 
 
+def validate_receipt(data: bytes, spec: dict, name: str) -> None:
+    root = ET.fromstring(data)
+    tests = root.findall(".//testcase")
+    failures = root.findall(".//failure") + root.findall(".//error")
+    skipped = root.findall(".//skipped")
+    test_names = [test.get("name") for test in tests]
+    if len(test_names) != len(set(test_names)) or set(test_names) != set(spec["required_tests"]) or failures or skipped:
+        fail(f"{name} is vacuous, incomplete, duplicated, unexpected, skipped, or records failures")
+
+
 def main() -> None:
     manifest_path = Path(sys.argv[1]) if len(sys.argv) == 2 else RELEASE / "FABRICATION_MANIFEST.json"
     if len(sys.argv) > 2:
@@ -59,6 +69,11 @@ def main() -> None:
     for name, expected in package_sums.items():
         if digest((RELEASE / name).read_bytes()) != expected:
             fail(f"package checksum mismatch: {name}")
+
+    release_manifest = json.loads((RELEASE / "MANIFEST.json").read_text())
+    authoritative_payload_sums = {
+        item["path"]: item["sha256"] for item in release_manifest["payload_checksums"]
+    }
 
     source = manifest["source"]
     commit = source["commit"]
@@ -151,12 +166,15 @@ def main() -> None:
         data = receipt.read_bytes()
         if digest(data) != spec["sha256"]:
             fail(f"{name} receipt checksum mismatch")
-        root = ET.fromstring(data)
-        tests = root.findall(".//testcase")
-        failures = root.findall(".//failure") + root.findall(".//error")
-        test_names = [test.get("name") for test in tests]
-        if len(test_names) != len(set(test_names)) or set(test_names) != set(spec["required_tests"]) or failures:
-            fail(f"{name} is vacuous, incomplete, duplicated, unexpected, or records failures")
+        authoritative_path = {
+            "precheck": "artifacts/precheck/results.xml",
+            "gate_level": "artifacts/gatelevel-results.xml",
+        }[name]
+        require_equal(
+            spec["source_payload_sha256"], authoritative_payload_sums.get(authoritative_path),
+            f"{name} source receipt identity",
+        )
+        validate_receipt(data, spec, name)
 
     external = manifest["external_exact_run_payload"]
     if not external.get("artifact_id") or len(external["def"]["sha256"]) != 64 or not external.get("limitation"):
