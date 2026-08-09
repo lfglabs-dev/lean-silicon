@@ -288,7 +288,9 @@ class HostRuntime:
         self.lane_cycles = 0
         self.lane_bytes = 0
         self.faulted = False
-        self.blake3_service = blake3_service or SoftwareBlake3HostService()
+        self.blake3_service = (
+            SoftwareBlake3HostService() if blake3_service is None else blake3_service
+        )
         if session_epoch is None:
             epoch = 0
             while epoch == 0:

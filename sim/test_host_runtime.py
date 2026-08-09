@@ -1076,6 +1076,29 @@ class RuntimeTests(unittest.TestCase):
         )
         self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E67)
 
+    def test_falsey_caller_supplied_blake3_service_is_preserved(self):
+        class FalseyService:
+            called = False
+
+            def __bool__(self):
+                return False
+
+            def compress(self, request):
+                self.called = True
+                from host.blake3_service import compress
+                return compress(request)
+
+        service = FalseyService()
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            blake3_service=service, session_epoch=1,
+        )
+        self.assertEqual(runtime.run().terminal, "halted")
+        self.assertIs(runtime.blake3_service, service)
+        self.assertTrue(service.called)
+
     def test_blake3_metadata_is_rejected_before_the_endpoint_is_staged(self):
         for metadata in (65 << 64, 0x80 << 96):
             with self.subTest(metadata=metadata):
