@@ -39,6 +39,15 @@ breaks the central relation itself. The companion theorem
 `finite_sequence_refines` projects completed transactions into an arbitrary
 finite command sequence.
 
+Transaction identifiers are supplied by acceptance occurrence index. The
+acceptance counter advances for every accepted idle command and is retained
+across reset/disable, while its selected ID stays fixed through the pending
+lifecycle. Thus repeated equal commands may carry distinct host-supplied IDs,
+including after an aborted occurrence. `coupled_final_beat_retires` directly proves that the coupled
+final beat extends both histories, returns the functional model to IDLE, and
+advances committed PC and retirement sequence; this makes abort, wrong-ID, and
+suppressed-retirement mutations contradict the coupled theorem itself.
+
 `ValidTrace` binds every receive to the correct operand byte. The relation
 requires the command sequence to equal the RTL trace's ordered retirement
 history. `ValidSequence` checks each functional STAGE at the state where it
@@ -48,8 +57,9 @@ functional IDLE state after every matching RETIRE.
 Supporting theorems pin the raw `0x01`/`0x02`/`0x03` decoder and `0xe0` fault
 precedence, one-command acceptance/staging/retirement, TX backpressure
 stutter, and reset/disable cleanup. General Lean witnesses reach synchronized
-acceptance and enable-disable abort; a concrete example reaches SET retirement
-and another theorem rejects a `retired = false` lifecycle mutation. The
+acceptance and enable-disable abort; concrete examples distinguish IDs for two
+equal command occurrences and reach SET retirement, while mutation theorems
+reject suppressed or mismatched final-beat retirement. The
 existing formal
 mutation gate terminal-fails result mutations (`xor_result`, `set_result`,
 `gf128_mul_accumulate`, `lsc1u_mul_output_mux`) and lifecycle mutations
@@ -57,9 +67,9 @@ mutation gate terminal-fails result mutations (`xor_result`, `set_result`,
 
 ## Assumptions and residual boundary
 
-The host supplies the transaction identifier and complete operand ghost value
-at the retained boundary; `ValidTrace` checks the subsequently received bytes
-against it. Functional commands must remain within the transaction model's
+The host supplies transaction identifiers by occurrence and the complete
+operand ghost value at the retained boundary; `ValidTrace` checks the
+subsequently received bytes against it. Functional commands must remain within the transaction model's
 16-bit current-index limit. No fairness is assumed, so infinite backpressure
 has no liveness claim. MUL bit cycles remain composed through the separately
 checked unbounded controller and multiplier SBY proofs.
