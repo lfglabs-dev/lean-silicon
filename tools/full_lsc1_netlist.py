@@ -100,11 +100,13 @@ def main() -> None:
  wire [7:0] r_uo,r_uio,r_oe,n_uo,n_uio,n_oe;
  lean_silicon_lsc1 rtl(ui_in,r_uo,uio_in,r_uio,r_oe,ena,clk,rst_n);
  lean_silicon_lsc1_netlist net(ui_in,n_uo,uio_in,n_uio,n_oe,ena,clk,rst_n);
- reg past_valid;
+ reg past_valid = 1'b0;
  always @(posedge clk) begin
    past_valid <= 1'b1;
    if (!past_valid) assume(!rst_n);
-   assert(r_uo == n_uo); assert(r_uio == n_uio); assert(r_oe == n_oe);
+   if (past_valid) begin
+     assert(r_uo == n_uo); assert(r_uio == n_uio); assert(r_oe == n_oe);
+   end
  end
 endmodule
 """)
