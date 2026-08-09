@@ -181,6 +181,7 @@ def main() -> None:
 
     metrics = dict(csv.reader(io.StringIO(extracted["metrics"].decode())))
     receipts = manifest["receipts"]
+    require_equal(receipts, canonical_manifest["receipts"], "receipt projections and metric assertions")
     require_equal(
         receipts["metrics_zero_keys"], canonical_manifest["receipts"]["metrics_zero_keys"],
         "required zero-metric set",

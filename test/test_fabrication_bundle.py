@@ -64,6 +64,15 @@ class FabricationBundleTest(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
 
+    def test_projected_receipt_identity_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["receipts"]["precheck"].update(
+                path="evidence/gatelevel-results.xml",
+                sha256=value["receipts"]["gate_level"]["sha256"],
+            )
+        )
+        self.assertNotEqual(result.returncode, 0)
+
     def test_skipped_required_receipt_fails(self) -> None:
         names = sorted(RECEIPT_TESTS["precheck"])
         spec = {"required_tests": names}
@@ -87,6 +96,15 @@ class FabricationBundleTest(unittest.TestCase):
     def test_empty_zero_metric_set_fails(self) -> None:
         result = self.run_mutated_manifest(
             lambda value: value["receipts"].update(metrics_zero_keys=[])
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_density_assertion_mutation_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["receipts"].update(
+                density_key="magic__drc_error__count",
+                density_expected=0,
+            )
         )
         self.assertNotEqual(result.returncode, 0)
 
