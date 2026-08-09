@@ -11,6 +11,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +39,18 @@ def run(name: str, argv: list[str], receipt: dict, *, cwd: Path = ROOT,
 
 
 def require_clean() -> None:
-    if capture(["git", "status", "--porcelain", "--untracked-files=no"]):
+    """Compare tracked working-tree bytes to HEAD despite index hint flags."""
+    index_fd, index_name = tempfile.mkstemp(prefix="full-lsc1-netlist-index-")
+    os.close(index_fd)
+    os.unlink(index_name)
+    try:
+        env = os.environ | {"GIT_INDEX_FILE": index_name}
+        subprocess.run(["git", "read-tree", "HEAD"], cwd=ROOT, env=env, check=True)
+        clean = subprocess.run(["git", "update-index", "--really-refresh", "-q"],
+                               cwd=ROOT, env=env).returncode == 0
+    finally:
+        Path(index_name).unlink(missing_ok=True)
+    if not clean:
         raise SystemExit("tracked checkout must match HEAD")
 
 
@@ -115,11 +127,12 @@ endmodule
         "sat -verify -prove-asserts -set-assumes -seq 20 -set-def-inputs"], receipt)
     receipt["proofs"]["whole_design_bmc"] = {"status": "pass", "edges": 20,
         "observables": plan["observables"], "post_reset_inputs": "unconstrained"}
-    induction = subprocess.run(["yosys", "-Q", "-p", eq_read +
-        "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"],
+    induction_argv = ["yosys", "-Q", "-p", eq_read +
+        "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"]
+    induction = subprocess.run(induction_argv,
         cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
-        "argv": ["yosys", "<pinned script>"], "exit_code": induction.returncode})
+        "argv": induction_argv, "exit_code": induction.returncode})
     receipt["proofs"]["whole_design_induction"] = {
         "status": "pass" if induction.returncode == 0 else "blocked",
         "method": "temporal induction", "maxsteps": 32,
@@ -146,11 +159,12 @@ endmodule
         raise SystemExit("failed to apply observable correspondence mutation")
     mutated_miter.write_text(changed)
     mutation_read = f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; prep -flatten -top whole_design_miter; "
-    mutation = subprocess.run(["yosys", "-Q", "-p", mutation_read +
-        "sat -verify -prove-asserts -set-assumes -seq 4 -set-def-inputs"],
+    mutation_argv = ["yosys", "-Q", "-p", mutation_read +
+        "sat -verify -prove-asserts -set-assumes -seq 4 -set-def-inputs"]
+    mutation = subprocess.run(mutation_argv,
         cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     receipt["commands"].append({"name": "observable_correspondence_mutation",
-        "argv": ["yosys", "<pinned mutated miter script>"], "exit_code": mutation.returncode})
+        "argv": mutation_argv, "exit_code": mutation.returncode})
     killed = mutation.returncode != 0 and "proof did fail" in mutation.stdout.lower()
     receipt["mutations"].append({"name": "invert RTL uo_out bit zero in correspondence property",
                                  "killed": killed})
