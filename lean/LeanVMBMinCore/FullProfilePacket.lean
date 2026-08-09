@@ -216,7 +216,8 @@ example : exists effect, preparedSetDecision witnessSetPacket = .result effect :
   refine ⟨{
     common := witnessCommon
     nextControl := { pc := 4, fp := 9 }
-    memory := writeRaw Memory.empty 12 (0x2a#128) }, ?_⟩
+    memory := writeRaw Memory.empty 12 (0x2a#128)
+    accesses := [12] }, ?_⟩
   rfl
 
 example : exists input, prepareBinary witnessPacket = .ok input := by
@@ -233,7 +234,9 @@ example : exists effect, preparedDecision true witnessPacket = .result effect :=
   refine ⟨{
     common := witnessCommon
     nextControl := { pc := 4, fp := 9 }
-    memory := writeRaw (suppliedMemory witnessPacket 10 11 12) 12 (0x26#128) }, ?_⟩
+    initialMemory := suppliedMemory witnessPacket 10 11 12
+    memory := writeRaw (suppliedMemory witnessPacket 10 11 12) 12 (0x26#128)
+    accesses := [10, 11, 12] }, ?_⟩
   rfl
 
 #print axioms left_address_overflow_precedes_alias

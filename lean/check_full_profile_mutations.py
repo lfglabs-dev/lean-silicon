@@ -43,8 +43,8 @@ mutations = {
         "if false then",
     ),
     "jump-drops-host-memory": (
-        "common := input.common, nextControl := control, memory := input.memory",
-        "common := input.common, nextControl := control, memory := Memory.empty",
+        "initialMemory := input.memory, memory := input.memory\n          accesses := List.ofFn input.accesses",
+        "initialMemory := input.memory, memory := Memory.empty\n          accesses := List.ofFn input.accesses",
     ),
     "forward-only-allows-missing-operands": (
         "if input.profile == .forwardOnly && (leftAbsent || rightAbsent) then",
@@ -145,6 +145,14 @@ mutations = {
     "blake3-retire-uses-preselected-checksum": (
         "common := completedBlake3Common pending response",
         "common := request.common",
+    ),
+    "ordinary-retire-uses-preselected-checksum": (
+        "resultChecksum := effectResultChecksum effect",
+        "resultChecksum := effect.common.resultChecksum",
+    ),
+    "deref-allows-out-of-range-base": (
+        "else if input.prepared.base >= 2 ^ 16 then",
+        "else if false then",
     ),
 }
 

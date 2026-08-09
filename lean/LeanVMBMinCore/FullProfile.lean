@@ -75,6 +75,8 @@ structure JumpInput where
   targetFpWord : Word
   inverseWitness : Word
   resolvedTargets : Option (Index × Index)
+  /-- Condition, destination, and frame addresses in frozen access order. -/
+  accesses : Fin 3 -> Index
 
 structure Blake3Request where
   common : Common
@@ -218,8 +220,12 @@ inductive Instruction where
 structure Effect where
   common : Common
   nextControl : Control
+  /-- Supplied memory before this instruction's write-once effects. -/
+  initialMemory : Mem := Memory.empty
   memory : Mem
   deferred : List (Index × Index) := []
+  /-- Addresses touched by the instruction in executable-model order. -/
+  accesses : List Index := []
 
 inductive Decision where
   | result (effect : Effect)
@@ -237,7 +243,9 @@ def finishWrite (common : Common) (memory : Mem) (address : Index)
   | some memory' =>
       match advance common with
       | none => .fault .address
-      | some next => .result { common, nextControl := next, memory := memory' }
+      | some next => .result {
+          common, nextControl := next, initialMemory := memory, memory := memory'
+          accesses := [address] }
 
 def finishBinary (isXor : Bool) (input : BinaryInput) : Decision :=
   let leftAbsent := !(input.memory input.left).written
@@ -275,7 +283,13 @@ def finishBinary (isXor : Bool) (input : BinaryInput) : Decision :=
           (memory input.left).value ^^^ (memory input.right).value
         else
           GHASH128.mul (memory input.left).value (memory input.right).value
-        finishWrite input.common memory input.output value
+        match finishWrite input.common memory input.output value with
+        | .result effect => .result {
+            common := effect.common, nextControl := effect.nextControl
+            initialMemory := input.memory, memory := effect.memory
+            deferred := effect.deferred
+            accesses := [input.left, input.right, input.output] }
+        | decision => decision
 
 /-- Pure endpoint decision for every full-profile instruction kind. -/
 def decide : Instruction -> Decision
@@ -285,6 +299,8 @@ def decide : Instruction -> Decision
   | .deref mode input =>
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if input.prepared.base >= 2 ^ 16 then
+        .fault .address
       else if !(input.memory input.prepared.pointerAddress).written ||
           (input.memory input.prepared.pointerAddress).value != encodeIndex input.prepared.base then
         .fault (.deref .unresolvedPointer)
@@ -294,17 +310,25 @@ def decide : Instruction -> Decision
       else
         match executeDeref encodeIndex mode input.memory input.prepared with
         | .ok control memory => .result {
-            common := input.common, nextControl := control, memory := memory }
+            common := input.common, nextControl := control
+            initialMemory := input.memory, memory := memory
+            accesses := [input.prepared.pointerAddress, input.prepared.target,
+              input.prepared.localAddress] }
         | .deferred control left right memory => .result {
-            common := input.common, nextControl := control, memory := memory
-            deferred := [(left, right)] }
+            common := input.common, nextControl := control
+            initialMemory := input.memory, memory := memory
+            deferred := [(left, right)]
+            accesses := [input.prepared.pointerAddress, input.prepared.target,
+              input.prepared.localAddress] }
         | .fault reason => .fault (.deref reason)
   | .jump input =>
       match ControlPrimitives.jump encodeIndex
           input.common.control input.condition input.targetPcWord input.targetFpWord
           input.inverseWitness input.resolvedTargets with
       | .ok control => .result {
-          common := input.common, nextControl := control, memory := input.memory }
+          common := input.common, nextControl := control
+          initialMemory := input.memory, memory := input.memory
+          accesses := List.ofFn input.accesses }
       | .fault reason => .fault (.jump reason)
   | .blake3 request =>
       match advance request.common with
@@ -371,7 +395,9 @@ def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decisi
         | none => .fault .writeConflict
         | some memory => .result {
             common := completedBlake3Common pending response
-            nextControl := pending.nextControl, memory := memory }
+            nextControl := pending.nextControl
+            initialMemory := request.memory, memory := memory
+            accesses := List.ofFn request.accesses }
 
 def serviceResponseMatches (pending : ServicePending) (response : Blake3Response) : Bool :=
   response.txnId == pending.request.common.txnId &&
@@ -422,13 +448,40 @@ def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
   | .pending nextServiceId pending, .start _ => {
       state := .pending nextServiceId pending, decision := some (.fault .badState) }
 
+def effectWrites (effect : Effect) : List (Index × Word) :=
+  effect.accesses.foldl (fun writes address =>
+    if writes.any (fun write => write.1 == address) then writes
+    else if !(effect.initialMemory address).written && (effect.memory address).written then
+      writes ++ [(address, (effect.memory address).value)]
+    else writes) []
+
+def encodeWrite (write : Index × Word) : List UInt8 :=
+  u32leBytes (UInt32.ofNat write.1) ++ wordLEBytes write.2
+
+def encodeDeferred (item : Index × Index) : List UInt8 :=
+  u32leBytes (UInt32.ofNat item.1) ++ u32leBytes (UInt32.ofNat item.2)
+
+/-- Byte-exact result payload shared by ordinary and service-completed effects. -/
+def effectResultPayload (effect : Effect) : List UInt8 :=
+  let writes := effectWrites effect
+  u32leBytes effect.common.txnId ++
+    u32leBytes (UInt32.ofNat effect.nextControl.pc) ++
+    u32leBytes (UInt32.ofNat effect.nextControl.fp) ++
+    [UInt8.ofNat writes.length] ++ writes.flatMap encodeWrite ++
+    [UInt8.ofNat effect.deferred.length] ++ effect.deferred.flatMap encodeDeferred ++
+    [UInt8.ofNat effect.accesses.length] ++ effect.accesses.flatMap
+      (fun address => u32leBytes (UInt32.ofNat address))
+
+def effectResultChecksum (effect : Effect) : Transaction.ResultChecksum :=
+  crc32 (effectResultPayload effect)
+
 def transitionOf (effect : Effect) : Transaction.Transition := {
   txnId := effect.common.txnId
   currentPc := UInt32.ofNat effect.common.control.pc
   currentFp := UInt32.ofNat effect.common.control.fp
   nextPc := UInt32.ofNat effect.nextControl.pc
   nextFp := UInt32.ofNat effect.nextControl.fp
-  resultChecksum := effect.common.resultChecksum
+  resultChecksum := effectResultChecksum effect
 }
 
 /-- Every canonical control index survives the packet lifecycle's `UInt32` boundary. -/
@@ -567,9 +620,9 @@ theorem successful_service_response_matching_retire_exactly_once
     (hstate : Transaction.stateMatches state.transaction (transitionOf effect) = true) :
     let completed := endpointStep state (.service (.respond response))
     let first := endpointStep completed.state
-      (.retire effect.common.txnId effect.common.resultChecksum)
+      (.retire effect.common.txnId (effectResultChecksum effect))
     let second := endpointStep first.state
-      (.retire effect.common.txnId effect.common.resultChecksum)
+      (.retire effect.common.txnId (effectResultChecksum effect))
     first.transactionOutcome.map (fun o => o.retired) = some true /\
       second.transactionOutcome.map (fun o => o.retired) = some false /\
       second.transactionOutcome.bind (fun o => o.fault) = some .badState /\
@@ -647,7 +700,7 @@ theorem staged_result_matching_retire_commits (model : Transaction.Model)
     (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
     let staged := Transaction.step model (.stage (transitionOf effect))
     let retired := Transaction.step staged.model
-      (.retire effect.common.txnId effect.common.resultChecksum)
+      (.retire effect.common.txnId (effectResultChecksum effect))
     stages model instruction staged /\
       retired.model.committed.pc = UInt32.ofNat effect.nextControl.pc /\
       retired.model.committed.fp = UInt32.ofNat effect.nextControl.fp /\
@@ -702,9 +755,9 @@ theorem staged_result_matching_retire_is_exactly_once (model : Transaction.Model
     (hmatch : Transaction.stateMatches model (transitionOf effect) = true) :
     let staged := Transaction.step model (.stage (transitionOf effect))
     let first := Transaction.step staged.model
-      (.retire effect.common.txnId effect.common.resultChecksum)
+      (.retire effect.common.txnId (effectResultChecksum effect))
     let second := Transaction.step first.model
-      (.retire effect.common.txnId effect.common.resultChecksum)
+      (.retire effect.common.txnId (effectResultChecksum effect))
     stages model instruction staged /\
       first.retired = true /\ second.retired = false /\
       second.fault = some .badState /\
@@ -831,7 +884,9 @@ theorem service_match_rejects_wrong_kind (pending : ServicePending)
     (hrequest : pending.request.serviceKind = 1)
     (h : response.serviceKind != 1) :
     serviceResponseMatches pending response = false := by
-  simp [serviceResponseMatches, hrequest, h]
+  by_cases hkind : response.serviceKind = 1
+  · simp [hkind] at h
+  · simp [serviceResponseMatches, hrequest, hkind]
 
 theorem completed_blake3_checksum_is_payload_crc (pending : ServicePending)
     (response : Blake3Response) :
@@ -956,9 +1011,16 @@ theorem mul_uses_canonical_ghash (input : BinaryInput) :
 theorem mul_forward_uses_canonical_ghash (input : BinaryInput)
     (hleft : (input.memory input.left).written = true)
     (hright : (input.memory input.right).written = true) :
-    decide (.mul input) = finishWrite input.common input.memory input.output
-      (GHASH128.mul (input.memory input.left).value
-        (input.memory input.right).value) := by
+    decide (.mul input) =
+      match finishWrite input.common input.memory input.output
+          (GHASH128.mul (input.memory input.left).value
+            (input.memory input.right).value) with
+      | .result effect => .result {
+          common := effect.common, nextControl := effect.nextControl
+          initialMemory := input.memory, memory := effect.memory
+          deferred := effect.deferred
+          accesses := [input.left, input.right, input.output] }
+      | decision => decision := by
   simp [decide, finishBinary, hleft, hright]
 
 theorem forward_only_rejects_absent_left (isXor : Bool) (input : BinaryInput)
@@ -996,6 +1058,8 @@ theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
     decide (.deref mode input) =
       if input.prepared.control != input.common.control then
         .fault .stateMismatch
+      else if input.prepared.base >= 2 ^ 16 then
+        .fault .address
       else if !(input.memory input.prepared.pointerAddress).written ||
           (input.memory input.prepared.pointerAddress).value != encodeIndex input.prepared.base then
         .fault (.deref .unresolvedPointer)
@@ -1005,10 +1069,16 @@ theorem deref_uses_canonical_control (mode : DerefMode) (input : DerefInput) :
       else
         match executeDeref encodeIndex mode input.memory input.prepared with
         | .ok control memory => .result {
-            common := input.common, nextControl := control, memory := memory }
+            common := input.common, nextControl := control
+            initialMemory := input.memory, memory := memory
+            accesses := [input.prepared.pointerAddress, input.prepared.target,
+              input.prepared.localAddress] }
         | .deferred control left right memory => .result {
-            common := input.common, nextControl := control, memory := memory
-            deferred := [(left, right)] }
+            common := input.common, nextControl := control
+            initialMemory := input.memory, memory := memory
+            deferred := [(left, right)]
+            accesses := [input.prepared.pointerAddress, input.prepared.target,
+              input.prepared.localAddress] }
         | .fault reason => .fault (.deref reason) := by
   rfl
 
@@ -1024,22 +1094,32 @@ theorem forward_only_deref_cell_requires_local (input : DerefInput)
     (hcontrol : input.prepared.control = input.common.control)
     (hpointer : (input.memory input.prepared.pointerAddress).written = true)
     (hvalue : (input.memory input.prepared.pointerAddress).value =
-      encodeIndex input.prepared.base) :
+      encodeIndex input.prepared.base)
+    (hbase : input.prepared.base < 2 ^ 16) :
     decide (.deref .cell input) = .fault .unsupportedInProfile := by
-  simp [decide, hprofile, hlocal, hcontrol, hpointer, hvalue]
+  simp [decide, hprofile, hlocal, hcontrol, hpointer, hvalue, hbase]
 
 theorem deref_pointer_fault_precedes_profile_guard (input : DerefInput)
     (hcontrol : input.prepared.control = input.common.control)
+    (hbase : input.prepared.base < 2 ^ 16)
     (hpointer : (input.memory input.prepared.pointerAddress).written = false) :
     decide (.deref .cell input) = .fault (.deref .unresolvedPointer) := by
-  simp [decide, hcontrol, hpointer]
+  simp [decide, hcontrol, hbase, hpointer]
+
+theorem deref_rejects_out_of_range_base (mode : DerefMode) (input : DerefInput)
+    (hcontrol : input.prepared.control = input.common.control)
+    (hbase : input.prepared.base >= 2 ^ 16) :
+    decide (.deref mode input) = .fault .address := by
+  simp [decide, hcontrol, hbase]
 
 theorem jump_uses_canonical_control (input : JumpInput) :
     decide (.jump input) =
       match ControlPrimitives.jump encodeIndex input.common.control input.condition
           input.targetPcWord input.targetFpWord input.inverseWitness input.resolvedTargets with
       | .ok control => .result {
-          common := input.common, nextControl := control, memory := input.memory }
+          common := input.common, nextControl := control
+          initialMemory := input.memory, memory := input.memory
+          accesses := List.ofFn input.accesses }
       | .fault reason => .fault (.jump reason) := by
   rfl
 
@@ -1048,7 +1128,9 @@ theorem jump_success_preserves_memory (input : JumpInput) (control : Control)
       input.targetPcWord input.targetFpWord input.inverseWitness
       input.resolvedTargets = .ok control) :
     decide (.jump input) = .result {
-      common := input.common, nextControl := control, memory := input.memory } := by
+      common := input.common, nextControl := control
+      initialMemory := input.memory, memory := input.memory
+      accesses := List.ofFn input.accesses } := by
   simp [decide, h]
 
 /-! Concrete reachability witnesses keep the relation observably non-empty. -/
@@ -1093,8 +1175,10 @@ def witnessEndpointPending : EndpointState := {
 def witnessBlake3Effect : Effect := {
   common := completedBlake3Common witnessBlake3Pending witnessBlake3Response
   nextControl := { pc := 4, fp := 9 }
+  initialMemory := witnessBlake3Request.memory
   memory := writeRaw (writeRaw witnessBlake3Request.memory 15 (0xaa#128))
-    16 (0xbb#128) }
+    16 (0xbb#128)
+  accesses := List.ofFn witnessBlake3Request.accesses }
 
 example : finishBlake3 witnessBlake3Pending witnessBlake3Response =
     .result witnessBlake3Effect := by
@@ -1108,6 +1192,22 @@ def witnessSetEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
   memory := writeRaw Memory.empty 12 (0x2a#128)
+  accesses := [12]
+
+example : (transitionOf witnessSetEffect).resultChecksum =
+    effectResultChecksum witnessSetEffect := by
+  rfl
+
+def witnessDerefOutOfRange : DerefInput := {
+  common := witnessCommon
+  profile := .interpreterCompat
+  memory := writeRaw Memory.empty 9 (encodeIndex (2 ^ 16))
+  prepared := {
+    control := witnessCommon.control, pointerAddress := 9, base := 2 ^ 16
+    target := 1, localAddress := 2, nextPc := 4 } }
+
+example : decide (.deref .cell witnessDerefOutOfRange) = .fault .address := by
+  rfl
 
 example : exists effect, decide (.set witnessCommon Memory.empty 12 (0x2a#128)) = .result effect := by
   refine ⟨witnessSetEffect, ?_⟩
@@ -1140,6 +1240,7 @@ def witnessZeroEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
   memory := writeRaw Memory.empty 3 (0#128)
+  accesses := [1, 2, 3]
 
 def witnessXorBacksolveMemory : Mem :=
   writeRaw (writeRaw Memory.empty 2 (0x12#128)) 3 (0x34#128)
@@ -1152,7 +1253,9 @@ def witnessXorBacksolve : BinaryInput := {
 def witnessXorBacksolveEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
+  initialMemory := witnessXorBacksolveMemory
   memory := writeRaw (writeRaw witnessXorBacksolveMemory 1 (0x26#128)) 3 (0x34#128)
+  accesses := [1, 2, 3]
 
 example : decide (.xor witnessXorBacksolve) = .result witnessXorBacksolveEffect := by
   rfl
@@ -1168,12 +1271,14 @@ example : exists effect, decide (.mul witnessBinary) = .result effect := by
 def witnessJump : JumpInput := {
   common := witnessCommon, memory := Memory.empty,
   condition := 0#128, targetPcWord := 0#128,
-  targetFpWord := 0#128, inverseWitness := 0#128, resolvedTargets := none }
+  targetFpWord := 0#128, inverseWitness := 0#128, resolvedTargets := none
+  accesses := fun i => i.val + 1 }
 
 def witnessJumpEffect : Effect where
   common := witnessCommon
   nextControl := { pc := 4, fp := 9 }
   memory := Memory.empty
+  accesses := [1, 2, 3]
 
 example : exists effect, decide (.jump witnessJump) = .result effect := by
   refine ⟨witnessJumpEffect, ?_⟩
@@ -1227,6 +1332,7 @@ example : exists effect, decide (.jump witnessJump) = .result effect := by
 #print axioms deref_rejects_prepared_control_mismatch
 #print axioms forward_only_deref_cell_requires_local
 #print axioms deref_pointer_fault_precedes_profile_guard
+#print axioms deref_rejects_out_of_range_base
 #print axioms jump_uses_canonical_control
 #print axioms jump_success_preserves_memory
 
