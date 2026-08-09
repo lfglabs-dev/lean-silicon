@@ -28,8 +28,6 @@ from .blake3_service import (
     Blake3HostService,
     KNOWN_FLAGS,
     ModelServiceAdapter,
-    ServiceInfrastructureError,
-    ServiceSemanticError,
     SoftwareBlake3HostService,
 )
 from .memory import HostMemory, field_inverse
@@ -526,7 +524,7 @@ class HostRuntime:
                 response = self.service_adapter.compute(
                     required, service=self.blake3_service.compress,
                 )
-            except (ServiceInfrastructureError, ServiceSemanticError):
+            except Exception:
                 self.endpoint.step(abort=True)
                 self.service_adapter.abort()
                 raise

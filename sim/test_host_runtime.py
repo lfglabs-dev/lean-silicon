@@ -1149,6 +1149,26 @@ class RuntimeTests(unittest.TestCase):
         runtime.blake3_service = SoftwareBlake3HostService()
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_unexpected_blake3_callback_failure_aborts_and_leaves_runtime_reusable(self):
+        class BrokenService:
+            def compress(self, request):
+                raise RuntimeError("backend bug")
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=BrokenService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(RuntimeError, "backend bug"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
         slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
                 "metadata": f"{64 << 64:#034x}"}
