@@ -71,6 +71,7 @@ def canonical_rtl_env(**updates: str) -> dict[str, str]:
     """Return an environment that cannot redirect tests away from pinned RTL."""
     env = os.environ.copy()
     env.pop("LSC1_RTL_DIR", None)
+    env.pop("LSC1_SYNTH_NETLIST", None)
     env.update(updates)
     return env
 
@@ -80,6 +81,13 @@ def bounded_sat_argv(read_script: str) -> list[str]:
     return ["yosys", "-Q", "-p", read_script +
             f"sat -verify -prove-asserts -set-assumes -seq {BOUNDED_EDGES} "
             "-set-def-inputs"]
+
+
+def reject_induction_counterexample(name: str, returncode: int, output: str) -> None:
+    """Never downgrade a concrete induction failure to a resource blocker."""
+    if returncode != 0 and "proof did fail" in output.lower():
+        sys.stderr.write(output)
+        raise SystemExit(f"{name}: temporal induction found a counterexample")
 
 
 def main() -> None:
@@ -171,6 +179,9 @@ endmodule
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         induction_blocker = "15-second HOST limit expired during whole-design induction attempt\n" + tail
+    reject_induction_counterexample(
+        "whole_design_temporal_induction_attempt", induction_rc,
+        induction_blocker or "")
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
         "argv": induction_argv, "exit_code": induction_rc})
     receipt["proofs"]["whole_design_induction"] = {
@@ -196,6 +207,9 @@ endmodule
         tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
                 else captured)[-4000:]
         controller_blocker = "15-second HOST limit expired during controller induction attempt\n" + tail
+    reject_induction_counterexample(
+        "controller_invariants_induction_attempt", controller_rc,
+        controller_blocker or "")
     receipt["commands"].append({"name": "controller_invariants_induction_attempt",
         "argv": controller_argv, "exit_code": controller_rc})
     receipt["proofs"]["controller_invariants"] = {
