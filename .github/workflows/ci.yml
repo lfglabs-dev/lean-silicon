@@ -68,6 +68,8 @@ jobs:
       - name: Install pinned assurance schema dependency
         run: python -m pip install jsonschema==4.25.1
       - uses: YosysHQ/setup-oss-cad-suite@aefa8397bbf8fc6670a0a62af9805a89738f3cde
+        with:
+          version: "2026-08-09"
       - name: Bounded GF(2^8) proof
         run: cd formal && sby -f gf8_mul.sby
       - name: WIDTH=128 byte-serialization order proof
@@ -117,6 +119,10 @@ jobs:
         env:
           LSC1_FULL_CACHE: ${{ runner.temp }}/lsc1-full-profile
         run: make full-profile-assurance
+      - name: Full LSC-1 generic netlist synthesis and formal correspondence
+        env:
+          LSC1_FULL_NETLIST_CACHE: ${{ runner.temp }}/full-lsc1-netlist
+        run: make full-lsc1-netlist-assurance
       - name: M2 controller lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv src/leanvm_b_m2_scalar_controller.sv;

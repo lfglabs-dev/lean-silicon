@@ -13,6 +13,7 @@ __pycache__/
 # Reviewed assurance plans are source; mutable receipts remain in private caches.
 !assurance/full-profile/plan.json
 !assurance/full-profile/schema.json
+!assurance/full-lsc1-netlist/plan.json
 lean/.lake/
 formal/gf8_mul/
 formal/gf128_serialize/
