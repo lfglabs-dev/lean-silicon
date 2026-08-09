@@ -17,6 +17,7 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as parent:
             cache = Path(parent) / "shared"
             cache.mkdir(mode=0o755)
+            cache.chmod(0o755)
             before = stat.S_IMODE(cache.stat().st_mode)
             with self.assertRaisesRegex(SystemExit, "deny group/other"):
                 full_lsc1_netlist.prepare_private_cache(cache)
