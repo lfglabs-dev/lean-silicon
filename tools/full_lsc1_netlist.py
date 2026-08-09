@@ -197,7 +197,7 @@ endmodule
     mutation_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
                      "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     mutation_argv = ["yosys", "-Q", "-p", mutation_read +
-        "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"]
+        "sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"]
     mutation = subprocess.run(mutation_argv,
         cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     receipt["commands"].append({"name": "observable_correspondence_mutation",
