@@ -971,7 +971,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(set(record.as_dict()), {
             "index", "txn_id", "source_op", "opcode", "pc", "fp", "next_pc", "next_fp",
             "addresses", "inputs", "writes", "branch", "deferred", "accesses",
-            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes",
+            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes", "service",
         })
         self.assertEqual(record.addresses, [2, 3, 4])
         self.assertEqual([entry["present"] for entry in record.inputs], [True, True, False])
@@ -1021,15 +1021,51 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result.terminal, "fault")
         self.assertEqual(result.records[-1].fault, "MUL_BACKSOLVE_ZERO")
 
-    def test_unintegrated_blake3_stops_the_run_and_says_what_is_missing(self):
-        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 7,
-                "metadata": f"{0:#034x}"}
-        runtime = HostRuntime(program(set_slot(2, 3), slot))
+    def test_blake3_service_completes_a_real_multi_transaction_workload(self):
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            session_epoch=0x1122334455667788,
+        )
         result = runtime.run()
-        self.assertEqual(result.terminal, "unsupported")
-        self.assertIn("Blake3", result.reason)
-        self.assertIn(adapter.DEFERRED_OPS["Blake3"].split(";")[0], result.reason)
-        self.assertEqual(len(result.records), 1)
+        self.assertEqual(result.terminal, "halted")
+        self.assertEqual(len(result.records), 7)
+        self.assertEqual([record.retire_seq for record in result.records], list(range(1, 8)))
+        service = result.records[-1].service
+        self.assertEqual(service, {
+            "schema": "leansilicon.host.blake3-service/1",
+            "session_epoch": "1122334455667788",
+            "txn_id": 7,
+            "service_id": 1,
+            "kind": 1,
+            "request_sha256": "e9a3ad0c73466f8abbb7d6c126288b2432efd80c5ebe20dde0ba97be6c71d291",
+            "response_sha256": "7f2015db62c1378f278100fb314c47e22f99a949e8892c714dc1e91b4df4740c",
+        })
+        self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E66)
+        self.assertEqual(runtime.memory.read(9), 0x8A3B1295ADFC65C8E35949C82DC5BBE3)
+
+    def test_blake3_service_mutation_changes_the_bound_payload_and_writes(self):
+        class MutatedService:
+            def compress(self, request):
+                from host.blake3_service import compress
+                digest = bytearray(compress(request))
+                digest[0] ^= 1
+                return bytes(digest)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            blake3_service=MutatedService(), session_epoch=0x1122334455667788,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "halted")
+        self.assertNotEqual(
+            result.records[-1].service["response_sha256"],
+            "7f2015db62c1378f278100fb314c47e22f99a949e8892c714dc1e91b4df4740c",
+        )
+        self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E67)
 
     def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
         expectations = {

@@ -6,14 +6,16 @@ transition may touch into a self-contained request, hands that request to the
 endpoint over the byte lane, and only then applies the writes the endpoint
 decided.  The endpoint is never asked to fetch, search or remember anything.
 
-Integrated in this scaffold: SET_CONSTANT, XOR and MUL_NATIVE, including the
-MUL inverse witness.  Everything else raises ``UnsupportedCapability`` naming
-what is missing.
+Integrated in this scaffold: every frozen scalar opcode. BLAKE3 remains a host
+service: the endpoint publishes immutable operands, a configured host service
+computes the compression, and the bound response is retired atomically.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
+import secrets
 
 from .errors import (
     PreparationFault,
@@ -22,6 +24,11 @@ from .errors import (
     UnsupportedCapability,
 )
 from .lean_compiler_adapter import Program
+from .blake3_service import (
+    Blake3HostService,
+    ModelServiceAdapter,
+    SoftwareBlake3HostService,
+)
 from .memory import HostMemory, field_inverse
 from .protocol import protocol
 
@@ -59,6 +66,7 @@ class StepRecord:
     retire_seq: int | None = None
     lane_cycles: int | None = 0
     lane_bytes: int = 0
+    service: dict | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -81,6 +89,7 @@ class StepRecord:
             "retire_seq": self.retire_seq,
             "lane_cycles": self.lane_cycles,
             "lane_bytes": self.lane_bytes,
+            "service": self.service,
         }
 
 
@@ -260,6 +269,8 @@ class HostRuntime:
         profile: "protocol.Profile" = protocol.Profile.INTERPRETER_COMPAT,
         rx_gaps: list[int] | None = None,
         tx_gaps: list[int] | None = None,
+        blake3_service: Blake3HostService | None = None,
+        session_epoch: int | None = None,
     ) -> None:
         self.program = program
         self.memory = memory or HostMemory.with_public_input(1, 0)
@@ -274,6 +285,9 @@ class HostRuntime:
         self.lane_cycles = 0
         self.lane_bytes = 0
         self.faulted = False
+        self.blake3_service = blake3_service or SoftwareBlake3HostService()
+        epoch = session_epoch if session_epoch is not None else secrets.randbits(64)
+        self.service_adapter = ModelServiceAdapter(epoch or 1)
         self._negotiate()
 
     # --- byte lane ----------------------------------------------------------
@@ -415,6 +429,23 @@ class HostRuntime:
                 "dest_fp": dest_fp,
             }
 
+        if operation.kind == "Blake3":
+            message_offsets = tuple(operation.operands["ins"])
+            cv_offset = operation.operands["cv"]
+            out_offset = operation.operands["out"]
+            addresses = [self._address(offset) for offset in message_offsets]
+            addresses.extend((self._address(cv_offset), self._address(cv_offset + 1)))
+            addresses.extend((self._address(out_offset), self._address(out_offset + 1)))
+            cells = self._cells(addresses)
+            frame = protocol.build_blake3(
+                txn_id=self.txn_id, pc=self.pc, fp=self.fp,
+                profile=self.profile, message_offsets=message_offsets,
+                cv_offset=cv_offset, out_offset=out_offset,
+                metadata=operation.operands["metadata"],
+                message_cells=cells[:4], cv_cells=cells[4:6], out_cells=cells[6:8],
+            )
+            return frame, addresses, None
+
         offsets = (operation.operands["a"], operation.operands["b"], operation.operands["c"])
         addresses = [self._address(offset) for offset in offsets]
         cells = self._cells(addresses)
@@ -472,6 +503,25 @@ class HostRuntime:
         before = self.lane_cycles
         before_bytes = self.lane_bytes
         reply = self._exchange(frame)
+        service_key = None
+        if operation.kind == "Blake3" and reply.status is protocol.Status.SERVICE_REQUIRED:
+            required = self.service_adapter.accept_required(reply.payload)
+            canonical_request = required.encode()
+            response = self.service_adapter.compute(
+                required, service=self.blake3_service.compress,
+            )
+            canonical_response = response.encode()
+            record.service = {
+                "schema": "leansilicon.host.blake3-service/1",
+                "session_epoch": f"{required.key.session_epoch:016x}",
+                "txn_id": required.key.txn_id,
+                "service_id": required.key.service_id,
+                "kind": required.key.kind,
+                "request_sha256": hashlib.sha256(canonical_request).hexdigest(),
+                "response_sha256": hashlib.sha256(canonical_response).hexdigest(),
+            }
+            service_key = required.key
+            reply = self._exchange(self.service_adapter.to_v1(response))
         if reply.status is not protocol.Status.OK:
             check_fault_response(reply, expected_txn_id=self.txn_id)
             record.status = reply.status.name
@@ -613,6 +663,8 @@ class HostRuntime:
         record.accesses = result["accesses"]
         record.status = protocol.Status.OK.name
         record.retire_seq = int.from_bytes(retire.payload[4:8], "little")
+        if service_key is not None:
+            self.service_adapter.complete(service_key)
         record.lane_cycles = (
             self.lane_cycles - before
             if self.lane_cycles is not None and before is not None

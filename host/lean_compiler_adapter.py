@@ -36,16 +36,11 @@ SCHEMA = "leansilicon.host.program/1"
 FROZEN_LEANVM_B = "c308034ab78619b39a59d26f3dc60e7df5b52649"
 
 #: Opcodes this scaffold prepares as LSC-1 transactions.
-INTEGRATED_OPS = ("Set", "Xor", "Mul", "Deref", "Jump")
+INTEGRATED_OPS = ("Set", "Xor", "Mul", "Deref", "Jump", "Blake3")
 
 #: Opcodes the artifact may legitimately contain that the host does not drive
 #: yet, with the reason each one is still out of scope.
-DEFERRED_OPS = {
-    "Blake3": (
-        "BLAKE3 is a host service (D-004) and this scaffold has no BLAKE3 "
-        "compression implementation to answer SERVICE_REQUIRED with"
-    ),
-}
+DEFERRED_OPS = {}
 
 
 @dataclass(frozen=True)

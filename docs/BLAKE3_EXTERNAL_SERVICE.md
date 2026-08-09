@@ -1,6 +1,7 @@
 # External BLAKE3 service prerequisites
 
-This document freezes the software/model boundary only. No production
+This document freezes the canonical host-service contract and software/model
+implementation boundary. No production
 SystemVerilog, ASIC/FPGA transport, UART, JTAG, or hardware path implements this
 service yet.
 
@@ -77,8 +78,17 @@ logical corpus and protocol interfaces stabilize.
 ## Executable evidence
 
 `host/blake3_service.py` supplies the codecs, epoch/replay adapter, bounded retry
-policy, and a direct compression implementation. `sim/test_blake3_service.py`
+policy, the `Blake3HostService` implementation protocol, and the default
+`SoftwareBlake3HostService` CPU implementation. `host/runtime.py` drives the
+complete request/service/result/retire lifecycle and records SHA-256 receipts
+for the exact 131-byte canonical request and 53-byte canonical response.
+`sim/test_blake3_service.py`
 compares it against the official `blake3_guts` low-level compression API using
 the exact dependency and registry checksum pinned by
 `tools/blake3_reference/Cargo.lock`. Oracle build/execution failures raise
 `ServiceInfrastructureError`; byte mismatches remain ordinary test failures.
+
+The runtime evidence is not an RTL BLAKE3 claim. The integrated packet RTL
+continues to advertise only its implemented scalar feature bit. CPU/model
+workloads may include BLAKE3; RTL workload replay stops at the supported
+SET/XOR/MUL/DEREF/JUMP boundary until the documented scatter/gather work lands.

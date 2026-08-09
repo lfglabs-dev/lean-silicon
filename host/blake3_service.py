@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable
+from typing import Callable, Protocol
 
 from .protocol import protocol
 
@@ -31,6 +31,20 @@ class ServiceStatus(IntEnum):
     OK = 0
     TRANSIENT_FAILURE = 1
     PERMANENT_FAILURE = 2
+
+
+class Blake3HostService(Protocol):
+    """Canonical implementation boundary for host-owned BLAKE3 compression."""
+
+    def compress(self, request: "ServiceRequired") -> bytes:
+        """Return exactly the 32-byte chaining value for ``request``."""
+
+
+class SoftwareBlake3HostService:
+    """Auditable CPU implementation of :class:`Blake3HostService`."""
+
+    def compress(self, request: "ServiceRequired") -> bytes:
+        return compress(request)
 
 
 def _u32(value: int) -> bytes:
