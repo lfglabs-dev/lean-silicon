@@ -169,15 +169,15 @@ mutations = {
 }
 
 for name, (old, new) in mutations.items():
-    if old not in text:
-        raise SystemExit(f"mutation anchor missing: {name}")
     if name == "blake3-accepts-noncanonical-absent-cells":
-        endpoint_anchor = "  | .service (.start raw) =>\n      " + old
+        endpoint_anchor = "  | .service (.start raw) =>\n      if !canonicalBlake3Cells raw then"
         if endpoint_anchor not in text:
             raise SystemExit(f"endpoint mutation anchor missing: {name}")
         mutated = text.replace(endpoint_anchor,
-            "  | .service (.start raw) =>\n      " + new, 1)
+            "  | .service (.start raw) =>\n      if false then", 1)
     else:
+        if old not in text:
+            raise SystemExit(f"mutation anchor missing: {name}")
         mutated = text.replace(old, new, 1)
     with tempfile.TemporaryDirectory(prefix="lsc1-lean-mutation-") as directory:
         candidate = Path(directory) / "FullProfile.lean"
