@@ -1239,6 +1239,30 @@ class RuntimeTests(unittest.TestCase):
         runtime.fail_response_exchange = False
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_rejected_blake3_service_response_aborts_and_is_reusable(self):
+        class RejectedResponseRuntime(HostRuntime):
+            corrupt_response = True
+
+            def _exchange(self, frame):
+                if (self.corrupt_response
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE):
+                    payload = bytearray(frame.payload)
+                    payload[0:4] = (self.txn_id + 1).to_bytes(4, "little")
+                    frame = protocol.RequestFrame(frame.opcode, bytes(payload))
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = RejectedResponseRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "fault echoed txn_id"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_response = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
         slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
                 "metadata": f"{64 << 64:#034x}"}
