@@ -263,8 +263,8 @@ class ModelServiceAdapter:
         for attempt in range(self.max_retries + 1):
             try:
                 digest = service(request)
-                if len(digest) != 32:
-                    raise ServiceSemanticError("service returned a wrong-length digest")
+                if not isinstance(digest, bytes) or len(digest) != 32:
+                    raise ServiceSemanticError("service returned a non-bytes or wrong-length digest")
                 return ServiceResponse(request.key, ServiceStatus.OK, digest)
             except ServiceInfrastructureError:
                 if attempt == self.max_retries:

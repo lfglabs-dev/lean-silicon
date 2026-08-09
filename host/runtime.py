@@ -28,6 +28,7 @@ from .blake3_service import (
     Blake3HostService,
     KNOWN_FLAGS,
     ModelServiceAdapter,
+    ServiceSemanticError,
     SoftwareBlake3HostService,
 )
 from .memory import HostMemory, field_inverse
@@ -520,6 +521,11 @@ class HostRuntime:
         if operation.kind == "Blake3" and reply.status is protocol.Status.SERVICE_REQUIRED:
             try:
                 required = self.service_adapter.accept_required(reply.payload)
+                if required.key.txn_id != self.txn_id:
+                    raise ServiceSemanticError(
+                        f"SERVICE_REQUIRED txn_id {required.key.txn_id} does not "
+                        f"match in-flight transaction {self.txn_id}"
+                    )
                 canonical_request = required.encode()
                 response = self.service_adapter.compute(
                     required, service=self.blake3_service.compress,

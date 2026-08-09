@@ -25,7 +25,10 @@ from host.errors import (  # noqa: E402
     UnsupportedCapability,
     WriteOnceViolation,
 )
-from host.blake3_service import ServiceInfrastructureError  # noqa: E402
+from host.blake3_service import (  # noqa: E402
+    ServiceInfrastructureError,
+    ServiceSemanticError,
+)
 from host.memory import HostMemory, PointerMap, field_inverse  # noqa: E402
 from host.protocol import protocol  # noqa: E402
 from host.runtime import HostRuntime, decode_result_payload  # noqa: E402
@@ -1160,6 +1163,51 @@ class RuntimeTests(unittest.TestCase):
             program(slot), blake3_service=BrokenService(), session_epoch=1,
         )
         with self.assertRaisesRegex(RuntimeError, "backend bug"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_blake3_service_required_must_match_the_in_flight_transaction(self):
+        class WrongTransactionRuntime(HostRuntime):
+            corrupt_service_key = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_service_key
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    payload = bytearray(reply.payload)
+                    payload[0:4] = (self.txn_id + 1).to_bytes(4, "little")
+                    return protocol.ResponseFrame(reply.status, bytes(payload))
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongTransactionRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ServiceSemanticError, "does not match in-flight"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_service_key = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_wrong_type_blake3_digest_aborts_and_leaves_runtime_reusable(self):
+        class WrongTypeService:
+            def compress(self, request):
+                return "x" * 32
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=WrongTypeService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(ServiceSemanticError, "non-bytes"):
             runtime.step()
         self.assertEqual(runtime.endpoint.state.name, "IDLE")
         self.assertEqual(runtime.endpoint.abort_count, 1)
