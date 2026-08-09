@@ -53,7 +53,7 @@ REQUIRED_WORKLOAD_IDS = frozenset(REQUIRED_WORKLOAD_INPUTS)
 REQUIRED_WORKLOAD_CLAIM_DIGESTS = {
     "field_division": "0dc1ce05f79073b6bfe6f3137bbc2c561c8db16429dcea09aca1380ec45a90b7",
     "heap_recurrence": "c551f7b25229a9c97cf01603428f540cdfe6586a6ebba8227384fcd79bde8af3",
-    "blake3_stack": "c38c09b27718ab365feaaedfa17eeb61e766b5b6c8289362b7805955f3a1d9a8",
+    "blake3_stack": "6f0967a5a5d2c52ce39f75873d2620204d340b02b5c0d187ddc07afaf8eb42b0",
 }
 WORKLOAD_CLAIM_KEYS = (
     "source_sha256", "artifact_sha256", "origin_sha256", "expected",
@@ -547,7 +547,7 @@ def main() -> None:
             "finite three-program sample is not representative of all zkDSL or leanVM-b programs",
             "host/model comparison is not Lean-to-RTL equivalence or a proof",
             "heap pointer preparation fails before representative DEREF coverage",
-            "BLAKE3 service integration is absent and the workload stops at the unsupported opcode",
+            "BLAKE3 evidence is CPU/model host-service execution, not RTL or FPGA execution",
             "no RTL simulation, synthesis, FPGA execution, place-and-route, or fabricated ASIC measurement is run",
             "upstream public trace fields are private, limiting the oracle to cycles and final memory",
             "timing of the Python/Rust validation command is deliberately not a benchmark",
