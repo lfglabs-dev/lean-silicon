@@ -154,6 +154,10 @@ mutations = {
         "else if input.prepared.base >= 2 ^ 16 then",
         "else if false then",
     ),
+    "blake3-reconstructs-writes-from-access-order": (
+        "orderedWrites := some (blake3ResultWrites pending response)",
+        "orderedWrites := none",
+    ),
 }
 
 for name, (old, new) in mutations.items():

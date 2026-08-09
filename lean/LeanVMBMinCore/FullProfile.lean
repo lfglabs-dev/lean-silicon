@@ -226,6 +226,8 @@ structure Effect where
   deferred : List (Index × Index) := []
   /-- Addresses touched by the instruction in executable-model order. -/
   accesses : List Index := []
+  /-- Explicit write order when it cannot be recovered from operand access order. -/
+  orderedWrites : Option (List (Index × Word)) := none
 
 inductive Decision where
   | result (effect : Effect)
@@ -397,7 +399,8 @@ def finishBlake3 (pending : ServicePending) (response : Blake3Response) : Decisi
             common := completedBlake3Common pending response
             nextControl := pending.nextControl
             initialMemory := request.memory, memory := memory
-            accesses := List.ofFn request.accesses }
+            accesses := List.ofFn request.accesses
+            orderedWrites := some (blake3ResultWrites pending response) }
 
 def serviceResponseMatches (pending : ServicePending) (response : Blake3Response) : Bool :=
   response.txnId == pending.request.common.txnId &&
@@ -449,11 +452,13 @@ def serviceStep : ServiceState -> ServiceCommand -> ServiceOutcome
       state := .pending nextServiceId pending, decision := some (.fault .badState) }
 
 def effectWrites (effect : Effect) : List (Index × Word) :=
-  effect.accesses.foldl (fun writes address =>
-    if writes.any (fun write => write.1 == address) then writes
-    else if !(effect.initialMemory address).written && (effect.memory address).written then
-      writes ++ [(address, (effect.memory address).value)]
-    else writes) []
+  match effect.orderedWrites with
+  | some writes => writes
+  | none => effect.accesses.foldl (fun writes address =>
+      if writes.any (fun write => write.1 == address) then writes
+      else if !(effect.initialMemory address).written && (effect.memory address).written then
+        writes ++ [(address, (effect.memory address).value)]
+      else writes) []
 
 def encodeWrite (write : Index × Word) : List UInt8 :=
   u32leBytes (UInt32.ofNat write.1) ++ wordLEBytes write.2
@@ -906,6 +911,19 @@ theorem finished_blake3_checksum_is_payload_crc (pending : ServicePending)
     cases hfinish
     rfl
 
+/-- Staging retains the executable digest-write order even when operand aliases are reversed. -/
+theorem finished_blake3_transition_checksum_is_payload_crc (pending : ServicePending)
+    (response : Blake3Response) (effect : Effect)
+    (hfinish : finishBlake3 pending response = .result effect) :
+    (transitionOf effect).resultChecksum = crc32 (blake3ResultPayload pending response) := by
+  simp only [finishBlake3] at hfinish
+  split at hfinish <;> try contradiction
+  split at hfinish <;> try contradiction
+  split at hfinish <;> try contradiction
+  next memory hfirst hsecond =>
+    cases hfinish
+    rfl
+
 theorem finishWrite_rejects_pc_overflow (common : Common) (memory : Mem)
     (address : Index) (value : Word) (memory' : Mem)
     (hwrite : writeOnce memory address value = some memory')
@@ -1178,7 +1196,8 @@ def witnessBlake3Effect : Effect := {
   initialMemory := witnessBlake3Request.memory
   memory := writeRaw (writeRaw witnessBlake3Request.memory 15 (0xaa#128))
     16 (0xbb#128)
-  accesses := List.ofFn witnessBlake3Request.accesses }
+  accesses := List.ofFn witnessBlake3Request.accesses
+  orderedWrites := some [(15, 0xaa#128), (16, 0xbb#128)] }
 
 example : finishBlake3 witnessBlake3Pending witnessBlake3Response =
     .result witnessBlake3Effect := by
