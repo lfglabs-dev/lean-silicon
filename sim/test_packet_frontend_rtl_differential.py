@@ -47,9 +47,12 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             raise unittest.SkipTest("Icarus Verilog is exercised by the systemverilog CI job")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "packet-vector.vvp"
+        netlist = os.environ.get("LSC1_SYNTH_NETLIST")
+        sources = ([netlist, str(ROOT / "test/packet_frontend/tb_lsc1_packet_vector_netlist.sv")]
+                   if netlist else [str(rtl_path(path)) for path in RTL])
         subprocess.run(
             ["iverilog", "-g2012", "-s", "tb_lsc1_packet_vector", "-o", str(cls.simulator)]
-            + [str(rtl_path(path)) for path in RTL],
+            + sources,
             cwd=ROOT,
             check=True,
             capture_output=True,

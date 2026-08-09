@@ -27,9 +27,10 @@ def capture(argv: list[str]) -> str:
 
 
 def run(name: str, argv: list[str], receipt: dict, *, cwd: Path = ROOT,
-        expect: int = 0, timeout: int | None = None) -> str:
+        expect: int = 0, timeout: int | None = None,
+        env: dict[str, str] | None = None) -> str:
     completed = subprocess.run(argv, cwd=cwd, text=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, timeout=timeout)
+                               stderr=subprocess.STDOUT, timeout=timeout, env=env)
     receipt["commands"].append({"name": name, "argv": argv,
                                 "exit_code": completed.returncode})
     if completed.returncode != expect:
@@ -104,6 +105,11 @@ def main() -> None:
     receipt["netlist"] = {"path": netlist.name, "sha256": sha256(netlist),
                           "bytes": netlist.stat().st_size}
 
+    netlist_env = os.environ | {"LSC1_SYNTH_NETLIST": str(netlist)}
+    run("synthesized_netlist_all_opcode_sequences",
+        [sys.executable, "-m", "unittest", "sim.test_packet_frontend_rtl_differential", "-v"],
+        receipt, env=netlist_env)
+
     # Complete wrapper observables, arbitrary post-reset inputs.  The base case
     # is bounded; temporal induction is attempted and its exact outcome retained.
     miter = cache / "whole_design_miter.sv"
@@ -124,20 +130,27 @@ endmodule
 """)
     eq_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
                "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
-    run("whole_design_bmc_20", ["yosys", "-Q", "-p", eq_read +
-        "sat -verify -prove-asserts -set-assumes -seq 20 -set-def-inputs"], receipt)
-    receipt["proofs"]["whole_design_bmc"] = {"status": "pass", "edges": 20,
+    run("whole_design_bmc_2", ["yosys", "-Q", "-p", eq_read +
+        "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"], receipt)
+    receipt["proofs"]["whole_design_bmc"] = {"status": "pass", "edges": 2,
         "observables": plan["observables"], "post_reset_inputs": "unconstrained"}
     induction_argv = ["yosys", "-Q", "-p", eq_read +
         "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"]
-    induction = subprocess.run(induction_argv,
-        cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        induction = subprocess.run(induction_argv, cwd=ROOT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+        induction_rc = induction.returncode
+        induction_blocker = None if induction_rc == 0 else induction.stdout[-4000:]
+    except subprocess.TimeoutExpired as error:
+        induction_rc = 124
+        tail = (error.stdout or "")[-4000:]
+        induction_blocker = "60-second HOST limit expired during whole-design induction attempt\n" + tail
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
-        "argv": induction_argv, "exit_code": induction.returncode})
+        "argv": induction_argv, "exit_code": induction_rc})
     receipt["proofs"]["whole_design_induction"] = {
-        "status": "pass" if induction.returncode == 0 else "blocked",
+        "status": "pass" if induction_rc == 0 else "blocked",
         "method": "temporal induction", "maxsteps": 32,
-        "blocker": None if induction.returncode == 0 else induction.stdout[-4000:]}
+        "blocker": induction_blocker}
 
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "

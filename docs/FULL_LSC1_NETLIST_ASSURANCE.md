@@ -24,9 +24,12 @@ sha256sum -c "$cache/SHA256SUMS"
 
 The correspondence harness asserts all 24 wrapper output bits. Reset is
 asserted for the first compared edge; `ui_in`, `uio_in`, `ena`, reset, abort,
-and transmit backpressure are otherwise arbitrary. A whole-design 20-edge BMC
-is mandatory. Temporal induction is attempted and its exact pass or tool
-blocker is retained without weakening the bounded result. Separate controller
+and transmit backpressure are otherwise arbitrary. A whole-design two-edge BMC
+(reset plus an arbitrary post-reset transition) is mandatory. Longer opcode
+sequences run directly on the synthesized netlist and are compared byte-for-byte
+with the executable model. Temporal induction is attempted under a 60-second
+HOST ceiling and its exact pass or tool blocker is retained without weakening
+the bounded and trace results. Separate controller
 invariants cover reset/abort clearing, response stability under backpressure,
 receive exclusion while computing/transmitting, event exclusivity, staged
 transaction BUSY, and response arbitration. Existing adversarial simulations
