@@ -530,22 +530,22 @@ class HostRuntime:
                 response = self.service_adapter.compute(
                     required, service=self.blake3_service.compress,
                 )
+                canonical_response = response.encode()
+                record.service = {
+                    "schema": "leansilicon.host.blake3-service/1",
+                    "session_epoch": f"{required.key.session_epoch:016x}",
+                    "txn_id": required.key.txn_id,
+                    "service_id": required.key.service_id,
+                    "kind": required.key.kind,
+                    "request_sha256": hashlib.sha256(canonical_request).hexdigest(),
+                    "response_sha256": hashlib.sha256(canonical_response).hexdigest(),
+                }
+                service_key = required.key
+                reply = self._exchange(self.service_adapter.to_v1(response))
             except Exception:
                 self.endpoint.step(abort=True)
                 self.service_adapter.abort()
                 raise
-            canonical_response = response.encode()
-            record.service = {
-                "schema": "leansilicon.host.blake3-service/1",
-                "session_epoch": f"{required.key.session_epoch:016x}",
-                "txn_id": required.key.txn_id,
-                "service_id": required.key.service_id,
-                "kind": required.key.kind,
-                "request_sha256": hashlib.sha256(canonical_request).hexdigest(),
-                "response_sha256": hashlib.sha256(canonical_response).hexdigest(),
-            }
-            service_key = required.key
-            reply = self._exchange(self.service_adapter.to_v1(response))
         elif operation.kind == "Blake3" and int(reply.status) < 0x80:
             self.endpoint.step(abort=True)
             self.service_adapter.abort()

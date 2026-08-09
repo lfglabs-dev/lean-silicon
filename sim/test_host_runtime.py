@@ -1217,6 +1217,28 @@ class RuntimeTests(unittest.TestCase):
         runtime.blake3_service = SoftwareBlake3HostService()
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_blake3_service_response_exchange_failure_aborts_and_is_reusable(self):
+        class FailingResponseExchangeRuntime(HostRuntime):
+            fail_response_exchange = True
+
+            def _exchange(self, frame):
+                if (self.fail_response_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE):
+                    raise TimeoutError("service response timeout")
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingResponseExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "service response timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_response_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
         slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
                 "metadata": f"{64 << 64:#034x}"}
