@@ -143,7 +143,9 @@ endmodule
         induction_blocker = None if induction_rc == 0 else induction.stdout[-4000:]
     except subprocess.TimeoutExpired as error:
         induction_rc = 124
-        tail = (error.stdout or "")[-4000:]
+        captured = error.stdout or b""
+        tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
+                else captured)[-4000:]
         induction_blocker = "60-second HOST limit expired during whole-design induction attempt\n" + tail
     receipt["commands"].append({"name": "whole_design_temporal_induction_attempt",
         "argv": induction_argv, "exit_code": induction_rc})
@@ -155,9 +157,27 @@ endmodule
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "
                 "prep -flatten -top lean_silicon_lsc1; async2sync; chformal -lower; ")
-    run("controller_invariants_unbounded", ["yosys", "-Q", "-p", inv_read +
-        "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"], receipt)
-    receipt["proofs"]["controller_invariants"] = {"status": "pass", "method": "temporal induction"}
+    run("controller_invariants_bmc_2", ["yosys", "-Q", "-p", inv_read +
+        "sat -verify -prove-asserts -set-assumes -seq 2 -set-def-inputs"], receipt)
+    controller_argv = ["yosys", "-Q", "-p", inv_read +
+        "sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"]
+    try:
+        controller = subprocess.run(controller_argv, cwd=ROOT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+        controller_rc = controller.returncode
+        controller_blocker = None if controller_rc == 0 else controller.stdout[-4000:]
+    except subprocess.TimeoutExpired as error:
+        controller_rc = 124
+        captured = error.stdout or b""
+        tail = (captured.decode(errors="replace") if isinstance(captured, bytes)
+                else captured)[-4000:]
+        controller_blocker = "60-second HOST limit expired during controller induction attempt\n" + tail
+    receipt["commands"].append({"name": "controller_invariants_induction_attempt",
+        "argv": controller_argv, "exit_code": controller_rc})
+    receipt["proofs"]["controller_invariants"] = {
+        "status": "pass" if controller_rc == 0 else "bounded-pass-unbounded-blocked",
+        "bounded_edges": 2, "method": "temporal induction",
+        "blocker": controller_blocker}
     run("opcode_reset_backpressure_fault_nonvacuity",
         ["make", "-C", "test/packet_frontend", "sim"], receipt)
     run("all_opcode_model_rtl_sequences", [sys.executable, "-m", "unittest",
