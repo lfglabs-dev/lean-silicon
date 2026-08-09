@@ -23,6 +23,11 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def require_equal(actual: object, expected: object, label: str) -> None:
+    if actual != expected:
+        fail(f"{label} mismatch: {actual!r} != {expected!r}")
+
+
 def main() -> None:
     manifest_path = Path(sys.argv[1]) if len(sys.argv) == 2 else RELEASE / "FABRICATION_MANIFEST.json"
     if len(sys.argv) > 2:
@@ -77,7 +82,10 @@ def main() -> None:
     if set(classes) != required or len(classes) != len(required):
         fail("payload classes are missing, duplicated, or unexpected")
     with zipfile.ZipFile(io.BytesIO(archive_bytes)) as bundle:
-        members = set(bundle.namelist())
+        member_list = bundle.namelist()
+        members = set(member_list)
+        if len(members) != len(member_list):
+            fail("retained archive has duplicate member names")
         extracted = {}
         for entry in entries:
             name = entry["member"]
@@ -90,6 +98,25 @@ def main() -> None:
                 fail(f"payload checksum mismatch: {name}")
             extracted[entry["class"]] = data
 
+        commit_record = json.loads(bundle.read("tt_submission/commit_id.json"))
+        require_equal(commit_record.get("repo"), "https://github.com/lfglabs-dev/lean-silicon", "archive source repository")
+        require_equal(commit_record.get("commit"), commit, "archive source commit")
+        require_equal(commit_record.get("workflow_url"), f"https://github.com/lfglabs-dev/lean-silicon/actions/runs/{archive_spec['workflow_run']}", "archive workflow")
+
+        source_members = {
+            "src/tt_um_lfglabs_lsc1u.sv": "src/tt_um_lfglabs_lsc1u.sv",
+            "src/lsc1u_core.sv": "src/lsc1u_core.sv",
+            "src/gf2n_mul_bitstream.sv": "src/gf2n_mul_bitstream.sv",
+            "src/gf128_mul_bitstream.sv": "src/gf128_mul_bitstream.sv",
+        }
+        for git_path, member in source_members.items():
+            committed = subprocess.run(
+                ["git", "show", f"{commit}:{git_path}"], cwd=ROOT,
+                check=True, capture_output=True,
+            ).stdout
+            if bundle.read(member) != committed:
+                fail(f"archive source does not match pinned commit: {member}")
+
     for kind in ("config", "config_merged", "user_config", "pdk"):
         try:
             value = json.loads(extracted[kind])
@@ -97,6 +124,13 @@ def main() -> None:
             fail(f"invalid {kind} JSON: {exc}")
         if not isinstance(value, dict) or not value:
             fail(f"vacuous {kind} JSON")
+        extracted[kind] = value
+    require_equal(extracted["pdk"].get("FLOW_NAME"), "LibreLane", "physical flow name")
+    require_equal(extracted["pdk"].get("FLOW_VERSION"), manifest["toolchain"]["physical_flow"].removeprefix("LibreLane "), "physical flow version")
+    pdk_identity = f"{extracted['pdk'].get('PDK')}/{extracted['pdk'].get('PDK_SOURCE')}@{extracted['pdk'].get('PDK_VERSION')}"
+    require_equal(pdk_identity, manifest["toolchain"]["pdk"], "PDK identity")
+    require_equal(extracted["config_merged"].get("DESIGN_NAME"), "tt_um_lfglabs_lsc1u", "top design")
+    require_equal(extracted["config_merged"].get("CLOCK_PERIOD"), 40, "clock period")
     pinout = extracted["pinout"].decode()
     for token in ("ui[0]", "ui[7]", "uo[0]", "uo[7]", "uio[0]", "uio[7]", "clock_hz:     25000000"):
         if token not in pinout:
@@ -120,13 +154,15 @@ def main() -> None:
         root = ET.fromstring(data)
         tests = root.findall(".//testcase")
         failures = root.findall(".//failure") + root.findall(".//error")
-        if len(tests) < spec["minimum_tests"] or failures:
-            fail(f"{name} is vacuous or records failures")
+        test_names = [test.get("name") for test in tests]
+        if len(test_names) != len(set(test_names)) or set(test_names) != set(spec["required_tests"]) or failures:
+            fail(f"{name} is vacuous, incomplete, duplicated, unexpected, or records failures")
 
     external = manifest["external_exact_run_payload"]
     if not external.get("artifact_id") or len(external["def"]["sha256"]) != 64 or not external.get("limitation"):
         fail("external DEF identity/limitation is incomplete")
-    print(f"verified {manifest['candidate']}: {len(entries)} payload classes, 20 executable receipt tests, zero signoff counters")
+    receipt_count = sum(len(receipts[name]["required_tests"]) for name in ("precheck", "gate_level"))
+    print(f"verified {manifest['candidate']}: {len(entries)} payload classes, {receipt_count} named receipt cases, zero required flow counters")
 
 
 if __name__ == "__main__":

@@ -22,10 +22,10 @@ not silently become part of this physical payload.
 
 | Question | Payload-tied receipt | Result and boundary |
 | --- | --- | --- |
-| Source identity | Commit/tree above; validator asks Git for the commit's actual tree | Exact object identity passes. This does not say current HEAD was fabricated. |
+| Source identity | Commit/tree above; validator asks Git for the commit's actual tree and byte-compares the four synthesized RTL inputs with the retained archive | Exact source/payload binding passes. This does not say current HEAD was fabricated. |
 | GDS/OAS/netlist/LEF | Hashes and minimum sizes in the canonical manifest; bytes in retained archive | Present and hash-valid. No foundry or shuttle acceptance is inferred. |
 | DEF | Exact-run `GDS_logs` artifact `9004115188`, archive hash and final DEF hash in manifest | Identified, but the DEF byte is not retained in Git or the submission ZIP. Re-download is required for byte verification. |
-| Pinout/config/PDK/toolchain | `info.yaml`, four config members, `pdk.json`, and pinned versions in manifest | Hash-valid and nonempty; validator also requires implemented pin endpoints and 25 MHz declaration. |
+| Pinout/config/PDK/toolchain | `info.yaml`, four config members, `pdk.json`, and pinned versions in manifest | Hash-valid and nonempty; validator also requires implemented pin endpoints, 25 MHz config/declaration, top identity, LibreLane version, and PDK commit. Non-physical tool versions remain documentary pins. |
 | Precheck/DRC | Physical job `92951964559`; 15-case normalized receipt; archive metrics require `magic__drc_error__count=0` | CPU flow evidence for this payload, not independent foundry DRC. |
 | LVS | Exact archive metrics require `design__lvs_error__count=0`; full Netgen report remains in `GDS_logs` | Flow LVS passed; extracted transistor-level behavior and analog effects are outside the claim. |
 | Antenna | Exact archive metrics require zero violating nets, pins, and route antenna count | Flow antenna check passed; fabrication outcome is unknown. |
