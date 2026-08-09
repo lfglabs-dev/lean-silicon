@@ -120,6 +120,7 @@ def main() -> None:
 
     required = {"gds", "oas", "netlist", "lef", "pinout", "config", "config_merged", "user_config", "user_config_tcl", "pdk", "metrics"}
     entries = manifest["payload"]
+    require_equal(entries, canonical_manifest["payload"], "payload class-to-member mapping")
     classes = [entry["class"] for entry in entries]
     if set(classes) != required or len(classes) != len(required):
         fail("payload classes are missing, duplicated, or unexpected")
@@ -180,6 +181,10 @@ def main() -> None:
 
     metrics = dict(csv.reader(io.StringIO(extracted["metrics"].decode())))
     receipts = manifest["receipts"]
+    require_equal(
+        receipts["metrics_zero_keys"], canonical_manifest["receipts"]["metrics_zero_keys"],
+        "required zero-metric set",
+    )
     for key in receipts["metrics_zero_keys"]:
         if key not in metrics or float(metrics[key]) != 0:
             fail(f"required zero metric failed: {key}={metrics.get(key)!r}")

@@ -29,6 +29,18 @@ class FabricationBundleTest(unittest.TestCase):
         result = self.run_mutated_manifest(lambda value: value["payload"][0].update(sha256="0" * 64))
         self.assertNotEqual(result.returncode, 0)
 
+    def test_payload_class_member_relabel_fails(self) -> None:
+        def relabel(value) -> None:
+            replacement = value["payload"][-1]
+            value["payload"][0].update(
+                member=replacement["member"],
+                sha256=replacement["sha256"],
+                min_bytes=0,
+            )
+
+        result = self.run_mutated_manifest(relabel)
+        self.assertNotEqual(result.returncode, 0)
+
     def test_source_commit_mutation_fails(self) -> None:
         result = self.run_mutated_manifest(
             lambda value: value["source"].update(
@@ -69,6 +81,12 @@ class FabricationBundleTest(unittest.TestCase):
     def test_empty_receipt_case_set_fails(self) -> None:
         result = self.run_mutated_manifest(
             lambda value: value["receipts"]["precheck"].update(required_tests=[])
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_empty_zero_metric_set_fails(self) -> None:
+        result = self.run_mutated_manifest(
+            lambda value: value["receipts"].update(metrics_zero_keys=[])
         )
         self.assertNotEqual(result.returncode, 0)
 
