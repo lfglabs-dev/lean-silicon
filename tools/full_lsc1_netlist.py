@@ -122,7 +122,7 @@ def main() -> None:
  end
 endmodule
 """)
-    eq_read = ("read_verilog -formal -lib +/simcells.v; "
+    eq_read = ("read_verilog -formal +/simcells.v; "
                f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
                "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     run("whole_design_bmc_20", ["yosys", "-Q", "-p", eq_read +
@@ -161,7 +161,7 @@ endmodule
     if changed == original_miter:
         raise SystemExit("failed to apply observable correspondence mutation")
     mutated_miter.write_text(changed)
-    mutation_read = ("read_verilog -formal -lib +/simcells.v; "
+    mutation_read = ("read_verilog -formal +/simcells.v; "
                      f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
                      "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     mutation_argv = ["yosys", "-Q", "-p", mutation_read +
