@@ -51,3 +51,21 @@ changing this lifecycle interface.
 
 The exact implementation files/hashes and the deliberate collapsed-execution
 boundary are recorded in `docs/P1B_ASSURANCE_SCOPE.md`.
+
+## `LeanVMBMinCore.RTLTransactionRefinement`
+
+| Declaration | Meaning |
+| --- | --- |
+| `decode_opcode_byte`, `decoder_fault_precedence` | The raw implemented opcode bytes decode distinctly; every other byte takes the retained fault path without a functional stage. |
+| `executeOne_refines` | An admissible decoded command stages its translated transition, retires once with the arithmetic checksum, advances PC/retire sequence, preserves FP, and returns IDLE. |
+| `execute_sequence_idle` | Every arbitrary finite state-dependently admissible command sequence ends with no pending transaction. |
+| `finite_sequence_refines` | A payload-valid retained RTL trace and the functional command sequence naming exactly its retirements have identical ordered SET/XOR/MUL results and an IDLE functional lifecycle. |
+| `coupled_finite_trace_refines` | Every prefix of an arbitrary finite valid retained interaction trace preserves exact-result history; synchronizes accepted STAGE, pending state, matching final-beat RETIRE, reset, and enable-disable abort; equates RTL retirements with successful functional retirement outcomes; and binds committed PC/retire sequence to final response beats in each reset epoch. |
+| `coupled_accept_reachable`, `coupled_disable_abort_reachable` | General non-vacuity witnesses reach synchronized pending state and then synchronized abort/IDLE for every implemented transaction. |
+| `coupled_final_beat_retires` | A related final response beat extends both ordered retirement histories, returns the functional model to IDLE, and advances committed PC and retirement sequence; abort, mismatch, and suppressed-retirement mutations cannot preserve it. |
+| `retired_false_mutation_falsified` | A lifecycle mutation that suppresses successful matching retirement contradicts the functional refinement. |
+| `tx_backpressure_preserves_relation` | Deasserted TX ready preserves the common trace/transaction relation. |
+| `reset_disable_abort_pending` | Reset and enable-disable abort clear a pending functional transaction. |
+
+The exact source and two-checker composition boundary are recorded in
+`docs/P1C_TRANSACTION_BRIDGE.md`.

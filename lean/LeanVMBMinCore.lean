@@ -13,3 +13,4 @@ import LeanVMBMinCore.ISA
 import LeanVMBMinCore.Optimality
 import LeanVMBMinCore.RTLRefinement
 import LeanVMBMinCore.RTLTraceRefinement
+import LeanVMBMinCore.RTLTransactionRefinement
