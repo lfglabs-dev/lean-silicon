@@ -96,9 +96,9 @@ def main() -> None:
     rtl_args = " ".join(str(path.relative_to(ROOT)) for path in rtl)
     synth_script = (
         f"read_verilog -sv {rtl_args}; hierarchy -check -top {plan['top']}; "
-        f"proc; flatten; opt; fsm; opt; memory; opt; techmap; opt; check; "
+        f"proc; flatten; opt; fsm; opt; memory; opt; check; "
         f"rename {plan['top']} lean_silicon_lsc1_netlist; "
-        f"write_verilog -noattr -noexpr {netlist}"
+        f"write_verilog -noattr {netlist}"
     )
     run("synthesize_generic_netlist", ["yosys", "-Q", "-p", synth_script], receipt)
     receipt["netlist"] = {"path": netlist.name, "sha256": sha256(netlist),
@@ -122,8 +122,7 @@ def main() -> None:
  end
 endmodule
 """)
-    eq_read = ("read_verilog -formal +/simcells.v; "
-               f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
+    eq_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
                "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     run("whole_design_bmc_20", ["yosys", "-Q", "-p", eq_read +
         "sat -verify -prove-asserts -set-assumes -seq 20 -set-def-inputs"], receipt)
@@ -161,8 +160,7 @@ endmodule
     if changed == original_miter:
         raise SystemExit("failed to apply observable correspondence mutation")
     mutated_miter.write_text(changed)
-    mutation_read = ("read_verilog -formal +/simcells.v; "
-                     f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
+    mutation_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
                      "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
     mutation_argv = ["yosys", "-Q", "-p", mutation_read +
         "sat -verify -prove-asserts -set-assumes -seq 4 -set-def-inputs"]
