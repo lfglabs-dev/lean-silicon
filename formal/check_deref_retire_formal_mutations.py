@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,39 +36,48 @@ MUTATIONS = [
 ]
 
 
+def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]:
+    name, filename, old, new = mutation
+    with tempfile.TemporaryDirectory(prefix=f"deref-formal-{name}-") as raw:
+        root = Path(raw)
+        work = root / "formal"
+        rtl_work = root / "asic_core" / "rtl"
+        work.mkdir(parents=True)
+        rtl_work.mkdir(parents=True)
+        shutil.copy2(FORMAL / "full_lsc1_deref_bridge.sby", work)
+        shutil.copy2(FORMAL / "full_lsc1_deref_bridge_checker.sv", work)
+        for source in SOURCES:
+            shutil.copy2(RTL / source, rtl_work / source)
+        target = rtl_work / filename
+        text = target.read_text()
+        if text.count(old) != 1:
+            return name, False, f"anchor count {text.count(old)}"
+        target.write_text(text.replace(old, new))
+        result = subprocess.run(
+            ["sby", "-f", "full_lsc1_deref_bridge.sby", "reachability"],
+            cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            timeout=12600,
+        )
+        assertion_failure = result.returncode != 0 and (
+            "assert failed" in result.stdout.lower() or
+            "assertion failed" in result.stdout.lower()
+        )
+        return name, assertion_failure, result.stdout[-4000:]
+
+
 def main() -> int:
     failures: list[str] = []
-    for name, filename, old, new in MUTATIONS:
-        with tempfile.TemporaryDirectory(prefix=f"deref-formal-{name}-") as raw:
-            root = Path(raw)
-            work = root / "formal"
-            rtl_work = root / "asic_core" / "rtl"
-            work.mkdir(parents=True)
-            rtl_work.mkdir(parents=True)
-            shutil.copy2(FORMAL / "full_lsc1_deref_bridge.sby", work)
-            shutil.copy2(FORMAL / "full_lsc1_deref_bridge_checker.sv", work)
-            for source in SOURCES:
-                shutil.copy2(RTL / source, rtl_work / source)
-            target = rtl_work / filename
-            text = target.read_text()
-            if text.count(old) != 1:
-                failures.append(f"{name}: anchor count {text.count(old)}")
-                continue
-            target.write_text(text.replace(old, new))
-            result = subprocess.run(
-                ["sby", "-f", "full_lsc1_deref_bridge.sby", "reachability"],
-                cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                timeout=7200,
-            )
-            assertion_failure = result.returncode != 0 and (
-                "assert failed" in result.stdout.lower() or
-                "assertion failed" in result.stdout.lower()
-            )
-            print(f"{name}: real_property_failure={str(assertion_failure).lower()}")
-            if not assertion_failure:
-                print(result.stdout[-4000:])
-                failures.append(f"{name}: no assertion failure")
+    # These proofs use disjoint temporary trees and have no ordering dependency.
+    # Parallel execution preserves every mutation and pass condition while keeping
+    # the deep, mutation-sensitive gate inside the Actions job wall-clock limit.
+    with ThreadPoolExecutor(max_workers=len(MUTATIONS)) as executor:
+        results = list(executor.map(check_mutation, MUTATIONS))
+    for name, assertion_failure, detail in results:
+        print(f"{name}: real_property_failure={str(assertion_failure).lower()}")
+        if not assertion_failure:
+            print(detail)
+            failures.append(f"{name}: no assertion failure")
     if failures:
         print("\n".join(f"ERROR: {failure}" for failure in failures))
         return 1
