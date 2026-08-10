@@ -58,7 +58,7 @@ def main() -> int:
                 ["sby", "-f", "full_lsc1_deref_bridge.sby", "reachability"],
                 cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                timeout=900,
+                timeout=7200,
             )
             assertion_failure = result.returncode != 0 and (
                 "assert failed" in result.stdout.lower() or

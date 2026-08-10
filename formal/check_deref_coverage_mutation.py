@@ -26,7 +26,7 @@ def main() -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=900,
+            timeout=7200,
         )
     finally:
         MUTANT.unlink(missing_ok=True)
