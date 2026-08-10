@@ -54,6 +54,8 @@ jobs:
         run: cd lean && lake build LeanVMBMinCore
       - name: Full-profile semantic mutation sensitivity
         run: cd lean && python3 check_full_profile_mutations.py
+      - name: Accepted DEREF premise-binding mutation sensitivity
+        run: cd lean && python3 check_accepted_deref_binding_mutations.py
 
   formal-and-lint:
     runs-on: ubuntu-latest

@@ -70,8 +70,9 @@ theorem accepted_fp_refines_prepared (wire : LeanVMBMinCore.Packet.RequestWire) 
 /-- An accepted successful effect retires with its own payload CRC exactly once. -/
 theorem accepted_effect_matching_retire_exactly_once
     (wire : LeanVMBMinCore.Packet.RequestWire) (accepted : Accepted) (effect : Effect)
-    (model : Transaction.Model) (_haccept : accept wire = .ok accepted)
-    (_heffect : decision accepted = .result effect) :
+    (model : Transaction.Model) (haccept : accept wire = .ok accepted)
+    (heffect : decision accepted = .result effect) :
+    (accept wire).map decision = .ok (.result effect) /\
     (transition effect).resultChecksum = FullProfile.crc32 (effectResultPayload effect) /\
     (let first := Transaction.step { model with state := .resultPending (transition effect) }
         (.retire (transition effect).txnId (transition effect).resultChecksum)
@@ -81,8 +82,10 @@ theorem accepted_effect_matching_retire_exactly_once
        second.fault = some .badState /\
        second.model.committed = first.model.committed) := by
   constructor
-  · rfl
-  · exact Transaction.matching_retire_is_exactly_once model (transition effect)
+  · simp only [haccept, Except.map, heffect]
+  · constructor
+    · rfl
+    · exact Transaction.matching_retire_is_exactly_once model (transition effect)
 
 def witnessRequest (opcode : Byte) (payload : List Byte) : LeanVMBMinCore.Packet.Request :=
   { opcode, flags := 0, payload }
@@ -92,6 +95,26 @@ def witnessWire (opcode : Byte) (payload : List Byte) : LeanVMBMinCore.Packet.Re
 
 example : accept (witnessWire 0x04 witnessDerefBytes) =
     .ok { mode := .cell, packet := decodedWitnessDerefPacket } := by rfl
+
+def witnessEffect : Effect := {
+  common := decodedWitnessDerefPacket.common
+  nextControl := { pc := 4, fp := 9 }
+  initialMemory := suppliedDerefMemory decodedWitnessDerefPacket 9 3 10
+  memory := Memory.writeRaw (suppliedDerefMemory decodedWitnessDerefPacket 9 3 10) 3 (0x2a#128)
+  accesses := [9, 3, 10] }
+
+/-- Non-vacuity: one concrete accepted frame produces the effect bound by the theorem. -/
+theorem accepted_effect_binding_reachable :
+    (accept (witnessWire 0x04 witnessDerefBytes)).map decision =
+      .ok (.result witnessEffect) := by
+  have haccept : accept (witnessWire 0x04 witnessDerefBytes) =
+      .ok { mode := .cell, packet := decodedWitnessDerefPacket } := by rfl
+  have heffect : decision { mode := .cell, packet := decodedWitnessDerefPacket } =
+      .result witnessEffect := by rfl
+  exact (accepted_effect_matching_retire_exactly_once
+    (witnessWire 0x04 witnessDerefBytes)
+    { mode := .cell, packet := decodedWitnessDerefPacket }
+    witnessEffect Transaction.initial haccept heffect).1
 
 def quadrantBytes (profile targetPresent localPresent : Bool) : List Byte :=
   let bytes := witnessDerefBytes.set 12 (if profile then 1 else 0)
@@ -130,5 +153,6 @@ theorem result_byte_mutation_changes_crc :
 #print axioms accepted_refines_prepared
 #print axioms transition_checksum_from_effect
 #print axioms accepted_effect_matching_retire_exactly_once
+#print axioms accepted_effect_binding_reachable
 
 end LeanVMBMinCore.AcceptedDeref

@@ -103,6 +103,7 @@ lean:
 	cd lean && lake build
 	cd lean && lake build LeanVMBMinCore
 	cd lean && python3 check_full_profile_mutations.py
+	cd lean && python3 check_accepted_deref_binding_mutations.py
 
 formal:
 	cd formal && sby -f full_lsc1_deref_bridge.sby
