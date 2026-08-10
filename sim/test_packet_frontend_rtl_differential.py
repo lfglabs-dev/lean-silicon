@@ -242,6 +242,18 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 target=protocol.ABSENT, local=protocol.ABSENT,
             ),
             protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=0x21, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.Cell(True, 0x99), local=protocol.ABSENT,
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=0x22, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.Cell(True, 0x99), local=protocol.Cell(True, 0x99),
+            ),
+            protocol.build_deref(
                 protocol.Opcode.DEREF_PC, txn_id=3, pc=5, fp=64,
                 profile=protocol.Profile.INTERPRETER_COMPAT,
                 alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
@@ -324,6 +336,18 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         base = 40
         pointer = protocol.Cell(True, protocol.field_encode(base))
         frames = [
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=0x40, pc=5, fp=64,
+                profile=protocol.Profile.INTERPRETER_COMPAT,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.Cell(False, 1), local=protocol.Cell(True, 1),
+            ),
+            protocol.build_deref(
+                protocol.Opcode.DEREF_CELL, txn_id=0, pc=5, fp=64,
+                profile=protocol.Profile.FORWARD_ONLY,
+                alpha=0, beta=2, gamma=3, pointer=pointer, base=base,
+                target=protocol.ABSENT, local=protocol.Cell(True, 1),
+            ),
             protocol.build_deref(
                 protocol.Opcode.DEREF_CELL, txn_id=1, pc=5, fp=64,
                 profile=protocol.Profile.INTERPRETER_COMPAT,

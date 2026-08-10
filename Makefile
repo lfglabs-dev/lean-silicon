@@ -103,8 +103,10 @@ lean:
 	cd lean && lake build
 	cd lean && lake build LeanVMBMinCore
 	cd lean && python3 check_full_profile_mutations.py
+	cd lean && python3 check_accepted_deref_binding_mutations.py
 
 formal:
+	cd formal && sby -f full_lsc1_deref_bridge.sby
 	cd formal && sby -f gf8_mul.sby
 	cd formal && sby -f lsc1u_protocol.sby
 	cd formal && sby -f lsc1u_reachability.sby
@@ -114,6 +116,10 @@ formal:
 
 formal-mutations:
 	$(PYTHON) formal/check_mutations.py
+	$(PYTHON) formal/check_deref_mutations.py
+
+formal-deref-coverage-mutation:
+	$(PYTHON) formal/check_deref_coverage_mutation.py
 
 # Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
 full-profile-assurance:

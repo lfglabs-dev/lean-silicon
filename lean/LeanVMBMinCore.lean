@@ -16,4 +16,5 @@ import LeanVMBMinCore.RTLTraceRefinement
 import LeanVMBMinCore.FullProfile
 import LeanVMBMinCore.FullProfilePacket
 import LeanVMBMinCore.FullProfilePayload
+import LeanVMBMinCore.AcceptedDeref
 import LeanVMBMinCore.RTLTransactionRefinement
