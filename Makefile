@@ -117,6 +117,9 @@ formal-mutations:
 	$(PYTHON) formal/check_mutations.py
 	$(PYTHON) formal/check_deref_mutations.py
 
+formal-deref-coverage-mutation:
+	$(PYTHON) formal/check_deref_coverage_mutation.py
+
 # Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
 full-profile-assurance:
 	@test -n "$(LSC1_FULL_CACHE)" || (echo "set LSC1_FULL_CACHE to a private directory outside the checkout" >&2; exit 2)

@@ -97,6 +97,10 @@ jobs:
         run: cd formal && sby -f lsc1u_xor_refinement.sby
       - name: GF(2^128) accepted-stream refinement
         run: cd formal && sby -f gf128_mul_stream_refinement.sby
+      - name: Full LSC-1 DEREF bounded safety and accepted-frame reachability
+        run: cd formal && sby -f full_lsc1_deref_bridge.sby
+      - name: Reject the vacuous depth-20 DEREF coverage mutation
+        run: make formal-deref-coverage-mutation
       - name: LSC-1u compositional all-operation refinement
         run: cd formal && sby -f lsc1u_compositional_refinement.sby
       - name: Tiny Tapeout wrapper/core composition proof

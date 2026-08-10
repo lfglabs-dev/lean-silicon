@@ -131,7 +131,7 @@ module lsc1_packet_frontend (
 `ifdef FORMAL_DEREF_BRIDGE
     full_lsc1_deref_bridge_checker deref_bridge_checker (
         .clk(clk), .rst_n(rst_n), .abort(abort),
-        .rx_valid(rx_valid), .rx_ready(rx_ready),
+        .rx_valid(rx_valid), .rx_ready(rx_ready), .rx_data(rx_data),
         .tx_valid(tx_valid), .tx_ready(tx_ready), .tx_data(tx_data),
         .frame_valid(frame_valid), .event_ready(event_ready),
         .frame_opcode(frame_opcode), .frame_length(frame_length),
