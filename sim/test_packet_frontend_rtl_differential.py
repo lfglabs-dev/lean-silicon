@@ -94,6 +94,55 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         return [bytes.fromhex(line.removeprefix("RESPONSE "))
                 for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
 
+    def rtl_workload(self, frames: list[protocol.RequestFrame]) -> list[bytes]:
+        paths = []
+        arguments = []
+        for index, frame in enumerate(frames, 1):
+            encoded = frame.encode()
+            path = Path(self.temporary.name) / f"workload{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in encoded) + "\n")
+            paths.append(path)
+            suffix = "" if index == 1 else str(index)
+            arguments.extend((f"+REQUEST{suffix}={path}", f"+LENGTH{suffix}={len(encoded)}"))
+        run = subprocess.run(
+            ["vvp", str(self.simulator), *arguments], cwd=ROOT, check=True,
+            capture_output=True, text=True,
+        )
+        return [bytes.fromhex(line.removeprefix("RESPONSE "))
+                for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+
+    def test_realistic_three_transaction_workload_matches_model_byte_exactly(self) -> None:
+        endpoint = protocol.Lsc1Endpoint()
+        frames = []
+        expected = []
+        operations = [
+            protocol.build_set_constant(
+                txn_id=1, pc=0, fp=0, profile=protocol.Profile.INTERPRETER_COMPAT,
+                offset=2, constant=0x123456789ABCDEF, cell=protocol.ABSENT),
+            protocol.build_set_constant(
+                txn_id=2, pc=1, fp=0, profile=protocol.Profile.INTERPRETER_COMPAT,
+                offset=3, constant=0xFEDCBA987654321, cell=protocol.ABSENT),
+            protocol.build_binary_op(
+                protocol.Opcode.XOR, txn_id=3, pc=2, fp=0,
+                profile=protocol.Profile.INTERPRETER_COMPAT, offsets=(2, 3, 4),
+                cells=(protocol.Cell(True, 0x123456789ABCDEF),
+                       protocol.Cell(True, 0xFEDCBA987654321), protocol.ABSENT)),
+        ]
+        for operation in operations:
+            raw, _ = protocol.drive(endpoint, operation.encode())
+            result = protocol.decode_response(raw)
+            retire = protocol.build_retire(
+                txn_id=int.from_bytes(result.payload[:4], "little"),
+                result_crc=protocol.crc32(result.payload),
+            )
+            retired, _ = protocol.drive(endpoint, retire.encode())
+            frames.extend((operation, retire))
+            expected.extend((raw, retired))
+        actual = self.rtl_workload(frames)
+        self.assertEqual(actual, expected)
+        self.assertEqual(protocol.decode_response(actual[-1]).payload.hex(),
+                         "03000000030000000300000000000000")
+
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
             profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)

@@ -18,9 +18,11 @@ module tb_lsc1_packet_vector;
     reg [7:0] request [0:511];
     reg [7:0] response [0:511];
     integer request_length, response_count = 0, total = 0;
-    integer request2_length = 0;
+    integer request2_length = 0, request3_length = 0, request4_length = 0;
+    integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
-    reg [1023:0] request_path, request2_path;
+    reg [1023:0] request_path, request2_path, request3_path, request4_path;
+    reg [1023:0] request5_path, request6_path, request7_path;
 
     lsc1_packet_frontend dut (
         .clk(clk), .rst_n(rst_n), .abort(abort),
@@ -52,26 +54,11 @@ module tb_lsc1_packet_vector;
         end
     endtask
 
-    initial begin
-        if (!$value$plusargs("REQUEST=%s", request_path) ||
-            !$value$plusargs("LENGTH=%d", request_length))
-            $fatal(1, "REQUEST and LENGTH plusargs are required");
-        $readmemh(request_path, request);
-        repeat (4) @(posedge clk);
-        rst_n = 1;
-        repeat (2) @(posedge clk);
-        for (i = 0; i < request_length; i = i + 1)
-            send_byte(request[i], i % 3);
-        wait (total != 0 && response_count == total);
-        $write("RESPONSE ");
-        for (i = 0; i < total; i = i + 1)
-            $write("%02x", response[i]);
-        $write("\n");
-        if ($value$plusargs("REQUEST2=%s", request2_path) &&
-            $value$plusargs("LENGTH2=%d", request2_length)) begin
-            $readmemh(request2_path, request);
+    task automatic run_request(input [1023:0] path, input integer length);
+        begin
+            $readmemh(path, request);
             response_count = 0; total = 0;
-            for (i = 0; i < request2_length; i = i + 1)
+            for (i = 0; i < length; i = i + 1)
                 send_byte(request[i], i % 3);
             wait (total != 0 && response_count == total);
             $write("RESPONSE ");
@@ -79,6 +66,28 @@ module tb_lsc1_packet_vector;
                 $write("%02x", response[i]);
             $write("\n");
         end
+    endtask
+
+    initial begin
+        if (!$value$plusargs("REQUEST=%s", request_path) ||
+            !$value$plusargs("LENGTH=%d", request_length))
+            $fatal(1, "REQUEST and LENGTH plusargs are required");
+        repeat (4) @(posedge clk);
+        rst_n = 1;
+        repeat (2) @(posedge clk);
+        run_request(request_path, request_length);
+        if ($value$plusargs("REQUEST2=%s", request2_path) &&
+            $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length);
+        if ($value$plusargs("REQUEST3=%s", request3_path) &&
+            $value$plusargs("LENGTH3=%d", request3_length)) run_request(request3_path, request3_length);
+        if ($value$plusargs("REQUEST4=%s", request4_path) &&
+            $value$plusargs("LENGTH4=%d", request4_length)) run_request(request4_path, request4_length);
+        if ($value$plusargs("REQUEST5=%s", request5_path) &&
+            $value$plusargs("LENGTH5=%d", request5_length)) run_request(request5_path, request5_length);
+        if ($value$plusargs("REQUEST6=%s", request6_path) &&
+            $value$plusargs("LENGTH6=%d", request6_length)) run_request(request6_path, request6_length);
+        if ($value$plusargs("REQUEST7=%s", request7_path) &&
+            $value$plusargs("LENGTH7=%d", request7_length)) run_request(request7_path, request7_length);
         $finish;
     end
 

@@ -25,6 +25,10 @@ from host.errors import (  # noqa: E402
     UnsupportedCapability,
     WriteOnceViolation,
 )
+from host.blake3_service import (  # noqa: E402
+    ServiceInfrastructureError,
+    ServiceSemanticError,
+)
 from host.memory import HostMemory, PointerMap, field_inverse  # noqa: E402
 from host.protocol import protocol  # noqa: E402
 from host.runtime import HostRuntime, decode_result_payload  # noqa: E402
@@ -345,6 +349,14 @@ class RuntimeTests(unittest.TestCase):
             if opcode is protocol.Opcode.RETIRE:
                 return protocol.ResponseFrame(protocol.Status.RETIRED, self.retire_payload)
             return protocol.ResponseFrame(protocol.Status.OK, self.result_payload)
+
+    def test_blake3_session_epoch_rejects_explicit_zero_and_retries_random_zero(self):
+        with self.assertRaisesRegex(ValueError, "session_epoch must be a nonzero u64"):
+            HostRuntime(program(set_slot(2, 1)), session_epoch=0)
+        with mock.patch("host.runtime.secrets.randbits", side_effect=(0, 7)) as randbits:
+            runtime = HostRuntime(program(set_slot(2, 1)))
+        self.assertEqual(runtime.service_adapter.session_epoch, 7)
+        self.assertEqual(randbits.call_count, 2)
 
     def test_negotiate_requires_every_schema_field(self):
         expected = (
@@ -971,7 +983,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(set(record.as_dict()), {
             "index", "txn_id", "source_op", "opcode", "pc", "fp", "next_pc", "next_fp",
             "addresses", "inputs", "writes", "branch", "deferred", "accesses",
-            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes",
+            "status", "fault", "retire_seq", "lane_cycles", "lane_bytes", "service",
         })
         self.assertEqual(record.addresses, [2, 3, 4])
         self.assertEqual([entry["present"] for entry in record.inputs], [True, True, False])
@@ -1021,15 +1033,372 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result.terminal, "fault")
         self.assertEqual(result.records[-1].fault, "MUL_BACKSOLVE_ZERO")
 
-    def test_unintegrated_blake3_stops_the_run_and_says_what_is_missing(self):
-        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 7,
-                "metadata": f"{0:#034x}"}
-        runtime = HostRuntime(program(set_slot(2, 3), slot))
+    def test_blake3_service_completes_a_real_multi_transaction_workload(self):
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            session_epoch=0x1122334455667788,
+        )
         result = runtime.run()
-        self.assertEqual(result.terminal, "unsupported")
-        self.assertIn("Blake3", result.reason)
-        self.assertIn(adapter.DEFERRED_OPS["Blake3"].split(";")[0], result.reason)
-        self.assertEqual(len(result.records), 1)
+        self.assertEqual(result.terminal, "halted")
+        self.assertEqual(len(result.records), 7)
+        self.assertEqual([record.retire_seq for record in result.records], list(range(1, 8)))
+        service = result.records[-1].service
+        self.assertEqual(service, {
+            "schema": "leansilicon.host.blake3-service/1",
+            "session_epoch": "1122334455667788",
+            "txn_id": 7,
+            "service_id": 1,
+            "kind": 1,
+            "request_sha256": "e9a3ad0c73466f8abbb7d6c126288b2432efd80c5ebe20dde0ba97be6c71d291",
+            "response_sha256": "7f2015db62c1378f278100fb314c47e22f99a949e8892c714dc1e91b4df4740c",
+        })
+        self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E66)
+        self.assertEqual(runtime.memory.read(9), 0x8A3B1295ADFC65C8E35949C82DC5BBE3)
+
+    def test_blake3_service_mutation_changes_the_bound_payload_and_writes(self):
+        class MutatedService:
+            def compress(self, request):
+                from host.blake3_service import compress
+                digest = bytearray(compress(request))
+                digest[0] ^= 1
+                return bytes(digest)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            blake3_service=MutatedService(), session_epoch=0x1122334455667788,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "halted")
+        self.assertNotEqual(
+            result.records[-1].service["response_sha256"],
+            "7f2015db62c1378f278100fb314c47e22f99a949e8892c714dc1e91b4df4740c",
+        )
+        self.assertEqual(runtime.memory.read(8), 0xB59E830F1B4CA1A10472453345BE3E67)
+
+    def test_falsey_caller_supplied_blake3_service_is_preserved(self):
+        class FalseyService:
+            called = False
+
+            def __bool__(self):
+                return False
+
+            def compress(self, request):
+                self.called = True
+                from host.blake3_service import compress
+                return compress(request)
+
+        service = FalseyService()
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            blake3_service=service, session_epoch=1,
+        )
+        self.assertEqual(runtime.run().terminal, "halted")
+        self.assertIs(runtime.blake3_service, service)
+        self.assertTrue(service.called)
+
+    def test_blake3_metadata_is_rejected_before_the_endpoint_is_staged(self):
+        for metadata in (65 << 64, 0x80 << 96):
+            with self.subTest(metadata=metadata):
+                slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                        "metadata": f"{metadata:#034x}"}
+                runtime = HostRuntime(program(slot), session_epoch=1)
+                result = runtime.run()
+                self.assertEqual(result.terminal, "fault")
+                self.assertIn("bad_service preparing", result.reason)
+                self.assertEqual(runtime.endpoint.state.name, "IDLE")
+                self.assertEqual(runtime.endpoint.abort_count, 0)
+                self.assertIsNone(runtime.service_adapter.outstanding)
+
+    def test_blake3_requires_service_required_and_aborts_an_unexpected_reply(self):
+        class WrongStatusRuntime(HostRuntime):
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST:
+                    return protocol.ResponseFrame(protocol.Status.OK, reply.payload)
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongStatusRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "must suspend with SERVICE_REQUIRED"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+    def test_exhausted_blake3_service_retries_abort_and_leave_runtime_reusable(self):
+        class UnavailableService:
+            def compress(self, request):
+                raise ServiceInfrastructureError("unavailable")
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=UnavailableService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(ServiceInfrastructureError, "unavailable"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_unexpected_blake3_callback_failure_aborts_and_leaves_runtime_reusable(self):
+        class BrokenService:
+            def compress(self, request):
+                raise RuntimeError("backend bug")
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=BrokenService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(RuntimeError, "backend bug"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_blake3_service_required_must_match_the_in_flight_transaction(self):
+        class WrongTransactionRuntime(HostRuntime):
+            corrupt_service_key = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_service_key
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    payload = bytearray(reply.payload)
+                    payload[0:4] = (self.txn_id + 1).to_bytes(4, "little")
+                    return protocol.ResponseFrame(reply.status, bytes(payload))
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongTransactionRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ServiceSemanticError, "does not match in-flight"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_service_key = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_blake3_service_required_must_match_the_prepared_operands(self):
+        class WrongOperandsRuntime(HostRuntime):
+            corrupt_service_operands = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_service_operands
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    payload = bytearray(reply.payload)
+                    payload[10] ^= 1
+                    return protocol.ResponseFrame(reply.status, bytes(payload))
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongOperandsRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ServiceSemanticError, "prepared BLAKE3_REQUEST"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_service_operands = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_wrong_type_blake3_digest_aborts_and_leaves_runtime_reusable(self):
+        class WrongTypeService:
+            def compress(self, request):
+                return "x" * 32
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(slot), blake3_service=WrongTypeService(), session_epoch=1,
+        )
+        with self.assertRaisesRegex(ServiceSemanticError, "non-bytes"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        from host.blake3_service import SoftwareBlake3HostService
+        runtime.blake3_service = SoftwareBlake3HostService()
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_blake3_service_response_exchange_failure_aborts_and_is_reusable(self):
+        class FailingResponseExchangeRuntime(HostRuntime):
+            fail_response_exchange = True
+
+            def _exchange(self, frame):
+                if (self.fail_response_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE):
+                    raise TimeoutError("service response timeout")
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingResponseExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "service response timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_response_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_rejected_blake3_service_response_aborts_and_is_reusable(self):
+        class RejectedResponseRuntime(HostRuntime):
+            corrupt_response = True
+
+            def _exchange(self, frame):
+                if (self.corrupt_response
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE):
+                    payload = bytearray(frame.payload)
+                    payload[0:4] = (self.txn_id + 1).to_bytes(4, "little")
+                    frame = protocol.RequestFrame(frame.opcode, bytes(payload))
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = RejectedResponseRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "fault echoed txn_id"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_response = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_initial_blake3_exchange_failure_aborts_and_is_reusable(self):
+        class FailingRequestExchangeRuntime(HostRuntime):
+            fail_request_exchange = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.fail_request_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    raise TimeoutError("service required timeout")
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingRequestExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "service required timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_request_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_malformed_blake3_result_aborts_and_is_reusable(self):
+        class MalformedResultRuntime(HostRuntime):
+            corrupt_result = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_result
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE
+                        and reply.status is protocol.Status.OK):
+                    return protocol.ResponseFrame(reply.status, reply.payload[:-1])
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = MalformedResultRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "truncated"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_result = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_blake3_retire_exchange_failure_aborts_and_is_reusable(self):
+        class FailingRetireExchangeRuntime(HostRuntime):
+            fail_retire_exchange = True
+
+            def _exchange(self, frame):
+                if (self.fail_retire_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.RETIRE):
+                    raise TimeoutError("retire pre-send timeout")
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingRetireExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "retire pre-send timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_retire_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = HostRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 10)), slot),
+            session_epoch=1,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertEqual(result.records[-1].fault, "WRITE_CONFLICT")
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        retried = runtime.step()
+        self.assertEqual(retried.fault, "WRITE_CONFLICT")
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+    def test_rejected_blake3_retire_clears_binding_after_endpoint_discard(self):
+        class WrongRetireRuntime(HostRuntime):
+            reject_next_retire = False
+
+            def _exchange(self, frame):
+                opcode = protocol.Opcode(frame.opcode)
+                if opcode is protocol.Opcode.SERVICE_RESPONSE:
+                    self.reject_next_retire = True
+                elif opcode is protocol.Opcode.RETIRE and self.reject_next_retire:
+                    frame = protocol.build_retire(
+                        txn_id=int.from_bytes(frame.payload[:4], "little"),
+                        result_crc=int.from_bytes(frame.payload[4:8], "little") ^ 1,
+                    )
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongRetireRuntime(
+            program(*(set_slot(index, index - 1) for index in range(2, 8)), slot),
+            session_epoch=1,
+        )
+        result = runtime.run()
+        self.assertEqual(result.terminal, "fault")
+        self.assertEqual(result.records[-1].fault, "RETIRE_MISMATCH")
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertIsNone(runtime.service_adapter.outstanding)
 
     def test_deref_modes_are_prepared_with_host_pointer_resolution(self):
         expectations = {

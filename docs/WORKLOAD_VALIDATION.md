@@ -63,20 +63,20 @@ at the pinned upstream source, not claims about a broad benchmark suite:
 | --- | --- | --- | --- |
 | `field_division` | `lean_compiler/tests/field_div.rs` | compiler back-solving, SET/MUL/XOR/JUMP, final memory and cycles | full functional/model match: 16 slots, 9 executed cycles/steps |
 | `heap_recurrence` | `rec_aggregation/src/fibonacci.rs` | HeapBuf, `mul_range`, pointer/DEREF-shaped recurrence | expected failure at pc 1 (`bad_pointer`): 64 slots, 1/58 steps reached |
-| `blake3_stack` | `lean_compiler/tests/stack_buf.rs` | StackBuf and a realistic BLAKE3 service request | expected unsupported stop at pc 4: 16 slots, 4/10 steps reached |
+| `blake3_stack` | `lean_compiler/tests/stack_buf.rs` | StackBuf and a realistic BLAKE3 service request | full CPU/model match through the host service: 16 slots, 10 executed cycles/steps |
 
 The receipt is successful only when all three outcomes reproduce. A lane pass
-therefore means one match plus two correctly detected limitations; it does not
-turn failures into conformance. Opcode coverage for the matched workload is
-SET_CONSTANT, MUL_NATIVE, XOR, and JUMP. The other sources demonstrate missing
-HeapBuf pointer preparation and BLAKE3 service integration before those paths
-can be credited as covered.
+therefore means two matches plus one correctly detected limitation; it does not
+turn the HeapBuf failure into conformance. CPU/model opcode coverage across the
+matched workloads is SET_CONSTANT, MUL_NATIVE, XOR, JUMP, and BLAKE3_REQUEST
+through SERVICE_REQUIRED. The heap source still demonstrates missing HeapBuf
+pointer preparation before its DEREF path can be credited as covered.
 
 Large XMSS aggregation and recursive-proof workloads from the upstream README
 are excluded: executing their prover/verification benchmarks would conflate VM
-workload validation with proof-system and machine benchmarking, take substantial
-resources, and cannot exercise unsupported BLAKE3 end to end here. The upstream
-Fibonacci default is scaled down from 200,000 iterations because this lane asks
+workload validation with proof-system and machine benchmarking and take
+substantial resources. The upstream Fibonacci default is scaled down from
+200,000 iterations because this lane asks
 whether interfaces accept the workload shape, not for a throughput claim.
 Witness-dependent, negative, and proof-generation tests are also excluded
 because the public export adapter cannot set or inspect upstream private witness
@@ -86,8 +86,8 @@ and trace fields. These exclusions bound generality explicitly.
 
 - **Functional/model:** a live pinned Rust compiler/executor is the oracle for
   bytecode, cycles and final memory. The leanSilicon Python host/model matches
-  only the field-division instance. Per-step upstream comparison is impossible
-  because `Execution::trace` is private at the pinned revision.
+  the field-division and BLAKE3-stack instances. Per-step upstream comparison is
+  impossible because `Execution::trace` is private at the pinned revision.
 - **RTL/FPGA:** no RTL simulation, synthesis, place-and-route, FPGA image, board
   exchange, timing, or resource-utilization evidence is produced by this lane.
   The repository's separate bounded RTL/FPGA evidence must not be attributed to
@@ -105,6 +105,6 @@ closure, power, area, or silicon performance claim is made.
 
 Residual limitations include the finite three-program sample, a fixed public
 input `[1, 0]`, no public upstream per-step trace, no Lean-to-model/RTL proof,
-the early HeapBuf pointer failure, absent BLAKE3 integration, and no RTL, FPGA,
-physical-design, or ASIC execution. Promotion into any release or SKY26c gate
-requires separate evidence and review.
+the early HeapBuf pointer failure, BLAKE3 limited to CPU/model service evidence,
+and no RTL, FPGA, physical-design, or ASIC execution. Promotion into any release
+or SKY26c gate requires separate evidence and review.

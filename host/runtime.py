@@ -6,14 +6,16 @@ transition may touch into a self-contained request, hands that request to the
 endpoint over the byte lane, and only then applies the writes the endpoint
 decided.  The endpoint is never asked to fetch, search or remember anything.
 
-Integrated in this scaffold: SET_CONSTANT, XOR and MUL_NATIVE, including the
-MUL inverse witness.  Everything else raises ``UnsupportedCapability`` naming
-what is missing.
+Integrated in this scaffold: every frozen scalar opcode. BLAKE3 remains a host
+service: the endpoint publishes immutable operands, a configured host service
+computes the compression, and the bound response is retired atomically.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
+import secrets
 
 from .errors import (
     PreparationFault,
@@ -22,6 +24,13 @@ from .errors import (
     UnsupportedCapability,
 )
 from .lean_compiler_adapter import Program
+from .blake3_service import (
+    Blake3HostService,
+    KNOWN_FLAGS,
+    ModelServiceAdapter,
+    ServiceSemanticError,
+    SoftwareBlake3HostService,
+)
 from .memory import HostMemory, field_inverse
 from .protocol import protocol
 
@@ -59,6 +68,7 @@ class StepRecord:
     retire_seq: int | None = None
     lane_cycles: int | None = 0
     lane_bytes: int = 0
+    service: dict | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -81,6 +91,7 @@ class StepRecord:
             "retire_seq": self.retire_seq,
             "lane_cycles": self.lane_cycles,
             "lane_bytes": self.lane_bytes,
+            "service": self.service,
         }
 
 
@@ -260,6 +271,8 @@ class HostRuntime:
         profile: "protocol.Profile" = protocol.Profile.INTERPRETER_COMPAT,
         rx_gaps: list[int] | None = None,
         tx_gaps: list[int] | None = None,
+        blake3_service: Blake3HostService | None = None,
+        session_epoch: int | None = None,
     ) -> None:
         self.program = program
         self.memory = memory or HostMemory.with_public_input(1, 0)
@@ -274,6 +287,16 @@ class HostRuntime:
         self.lane_cycles = 0
         self.lane_bytes = 0
         self.faulted = False
+        self.blake3_service = (
+            SoftwareBlake3HostService() if blake3_service is None else blake3_service
+        )
+        if session_epoch is None:
+            epoch = 0
+            while epoch == 0:
+                epoch = secrets.randbits(64)
+        else:
+            epoch = session_epoch
+        self.service_adapter = ModelServiceAdapter(epoch)
         self._negotiate()
 
     # --- byte lane ----------------------------------------------------------
@@ -415,6 +438,28 @@ class HostRuntime:
                 "dest_fp": dest_fp,
             }
 
+        if operation.kind == "Blake3":
+            metadata = operation.operands["metadata"]
+            block_len = (metadata >> 64) & 0xFFFFFFFF
+            flags = metadata >> 96
+            if block_len > 64 or flags & ~KNOWN_FLAGS:
+                raise PreparationFault(protocol.Status.BAD_SERVICE)
+            message_offsets = tuple(operation.operands["ins"])
+            cv_offset = operation.operands["cv"]
+            out_offset = operation.operands["out"]
+            addresses = [self._address(offset) for offset in message_offsets]
+            addresses.extend((self._address(cv_offset), self._address(cv_offset + 1)))
+            addresses.extend((self._address(out_offset), self._address(out_offset + 1)))
+            cells = self._cells(addresses)
+            frame = protocol.build_blake3(
+                txn_id=self.txn_id, pc=self.pc, fp=self.fp,
+                profile=self.profile, message_offsets=message_offsets,
+                cv_offset=cv_offset, out_offset=out_offset,
+                metadata=metadata,
+                message_cells=cells[:4], cv_cells=cells[4:6], out_cells=cells[6:8],
+            )
+            return frame, addresses, None
+
         offsets = (operation.operands["a"], operation.operands["b"], operation.operands["c"])
         addresses = [self._address(offset) for offset in offsets]
         cells = self._cells(addresses)
@@ -451,47 +496,8 @@ class HostRuntime:
             return protocol.ABSENT
         return protocol.Cell(True, field_inverse(known.value))
 
-    # --- transition ---------------------------------------------------------
-
-    def step(self) -> StepRecord:
-        operation = self.program.at(self.pc)
-        frame, addresses, branch = self._prepare(operation)
-        record = StepRecord(
-            index=self.step_index,
-            txn_id=self.txn_id,
-            source_op=operation.kind,
-            opcode=protocol.Opcode(frame.opcode).name,
-            pc=self.pc,
-            fp=self.fp,
-        )
-        self.step_index += 1
-        record.addresses = addresses
-        record.inputs = self._inputs(addresses)
-        record.branch = branch
-
-        before = self.lane_cycles
-        before_bytes = self.lane_bytes
-        reply = self._exchange(frame)
-        if reply.status is not protocol.Status.OK:
-            check_fault_response(reply, expected_txn_id=self.txn_id)
-            record.status = reply.status.name
-            record.fault = reply.status.name
-            record.lane_cycles = (
-                self.lane_cycles - before
-                if self.lane_cycles is not None and before is not None
-                else None
-            )
-            record.lane_bytes = self.lane_bytes - before_bytes
-            self.faulted = True
-            return record
-
+    def _decode_and_prevalidate_result(self, reply, addresses, record):
         result = decode_result_payload(reply.payload, expected_txn_id=self.txn_id)
-
-        # The whole write batch is checked before RETIRE goes out, because RETIRE is
-        # what makes the endpoint commit its pc/fp. Rejecting afterwards would leave
-        # the endpoint advanced against host state that never moved, and the retry
-        # would only ever see STATE_MISMATCH. Refusing first leaves the transaction
-        # RESULT_PENDING, which is recoverable.
         writes = result["writes"]
         proposed: dict[int, int] = {}
         for write in writes:
@@ -504,10 +510,6 @@ class HostRuntime:
             proposed[write["address"]] = write["value"]
             self.memory.prevalidate_write(write["address"], write["value"])
 
-        # Deferred equalities can also write cells while they are reconciled.
-        # Exercise the exact post-RETIRED order on isolated state before RETIRE
-        # commits the endpoint.  This includes deferred pairs from earlier steps:
-        # a new direct write may make one of those pairs contradictory.
         staged = HostMemory(
             cells=dict(self.memory.cells),
             deferred=list(self.memory.deferred),
@@ -518,15 +520,6 @@ class HostRuntime:
             staged.record_deferred(item["target"], item["local"])
         staged.resolve_deferred()
 
-        # The host packed this frame, so it knows every address the transition
-        # was handed. Section 14 leaves the transition *decision* to the
-        # endpoint, and none of this second-guesses it, but an effect on a cell
-        # that was never in the request is outside the frame rather than a
-        # decision about it: the host never sent that cell, so the endpoint
-        # cannot have reasoned about its current value, and applying it would
-        # corrupt a memory image section 14 makes the host's own.  A deferred
-        # equality is such an effect too, just a delayed one: resolving it writes
-        # whichever side is still unknown.
         in_frame = set(addresses)
         for write in writes:
             if write["address"] not in in_frame:
@@ -550,17 +543,131 @@ class HostRuntime:
                     f"{record.opcode} did not carry; frame addresses are "
                     f"{sorted(in_frame)}"
                 )
+        return result, writes
 
-        retire = self._exchange(
-            protocol.build_retire(
-                txn_id=result["txn_id"],
-                result_crc=protocol.crc32(reply.payload),
-            )
+    # --- transition ---------------------------------------------------------
+
+    def step(self) -> StepRecord:
+        operation = self.program.at(self.pc)
+        frame, addresses, branch = self._prepare(operation)
+        record = StepRecord(
+            index=self.step_index,
+            txn_id=self.txn_id,
+            source_op=operation.kind,
+            opcode=protocol.Opcode(frame.opcode).name,
+            pc=self.pc,
+            fp=self.fp,
         )
+        self.step_index += 1
+        record.addresses = addresses
+        record.inputs = self._inputs(addresses)
+        record.branch = branch
+
+        before = self.lane_cycles
+        before_bytes = self.lane_bytes
+        try:
+            reply = self._exchange(frame)
+        except Exception:
+            if operation.kind == "Blake3":
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
+        service_key = None
+        if operation.kind == "Blake3" and reply.status is protocol.Status.SERVICE_REQUIRED:
+            try:
+                required = self.service_adapter.accept_required(reply.payload)
+                if required.key.txn_id != self.txn_id:
+                    raise ServiceSemanticError(
+                        f"SERVICE_REQUIRED txn_id {required.key.txn_id} does not "
+                        f"match in-flight transaction {self.txn_id}"
+                    )
+                prepared = protocol.decode_request_payload(frame.opcode, frame.payload)
+                expected_message = b"".join(
+                    cell.value.to_bytes(16, "little") for cell in prepared.cells[:4]
+                )
+                expected_chaining_value = b"".join(
+                    cell.value.to_bytes(16, "little") for cell in prepared.cells[4:6]
+                )
+                if (
+                    required.message != expected_message
+                    or required.chaining_value != expected_chaining_value
+                    or required.counter != prepared.metadata & ((1 << 64) - 1)
+                    or required.block_len != (prepared.metadata >> 64) & 0xFFFFFFFF
+                    or required.flags != prepared.metadata >> 96
+                ):
+                    raise ServiceSemanticError(
+                        "SERVICE_REQUIRED operands do not match prepared BLAKE3_REQUEST"
+                    )
+                canonical_request = required.encode()
+                response = self.service_adapter.compute(
+                    required, service=self.blake3_service.compress,
+                )
+                canonical_response = response.encode()
+                record.service = {
+                    "schema": "leansilicon.host.blake3-service/1",
+                    "session_epoch": f"{required.key.session_epoch:016x}",
+                    "txn_id": required.key.txn_id,
+                    "service_id": required.key.service_id,
+                    "kind": required.key.kind,
+                    "request_sha256": hashlib.sha256(canonical_request).hexdigest(),
+                    "response_sha256": hashlib.sha256(canonical_response).hexdigest(),
+                }
+                service_key = required.key
+                reply = self._exchange(self.service_adapter.to_v1(response))
+            except Exception:
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+                raise
+        elif operation.kind == "Blake3" and int(reply.status) < 0x80:
+            self.endpoint.step(abort=True)
+            self.service_adapter.abort()
+            raise ProtocolViolation(
+                "BLAKE3_REQUEST must suspend with SERVICE_REQUIRED, got "
+                f"{reply.status.name}"
+            )
+        if reply.status is not protocol.Status.OK:
+            if service_key is not None:
+                if reply.status is not protocol.Status.WRITE_CONFLICT:
+                    self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            check_fault_response(reply, expected_txn_id=self.txn_id)
+            record.status = reply.status.name
+            record.fault = reply.status.name
+            record.lane_cycles = (
+                self.lane_cycles - before
+                if self.lane_cycles is not None and before is not None
+                else None
+            )
+            record.lane_bytes = self.lane_bytes - before_bytes
+            self.faulted = True
+            return record
+
+        try:
+            result, writes = self._decode_and_prevalidate_result(reply, addresses, record)
+        except Exception:
+            if service_key is not None:
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
+
+        try:
+            retire = self._exchange(
+                protocol.build_retire(
+                    txn_id=result["txn_id"],
+                    result_crc=protocol.crc32(reply.payload),
+                )
+            )
+        except Exception:
+            if service_key is not None:
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
         if retire.status is not protocol.Status.RETIRED:
             check_fault_response(
                 retire, expected_txn_id=self.txn_id, where="retire", staged=True
             )
+            if service_key is not None and retire.status is protocol.Status.RETIRE_MISMATCH:
+                self.service_adapter.abort()
             record.status = retire.status.name
             record.fault = retire.status.name
             record.lane_cycles = (
@@ -613,6 +720,8 @@ class HostRuntime:
         record.accesses = result["accesses"]
         record.status = protocol.Status.OK.name
         record.retire_seq = int.from_bytes(retire.payload[4:8], "little")
+        if service_key is not None:
+            self.service_adapter.complete(service_key)
         record.lane_cycles = (
             self.lane_cycles - before
             if self.lane_cycles is not None and before is not None

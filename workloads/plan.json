@@ -44,7 +44,7 @@
       "origin": "crates/lean_compiler/tests/stack_buf.rs",
       "origin_sha256": "a0f42f1944af4d079de7db02b0b30243db27fd9c42732f88f1fd86326a0cf1d1",
       "derivation": "stack_buf_blake3_self_hash with publication replaced by a local identity assertion",
-      "expected": {"comparison": "MISMATCH", "terminal": "unsupported", "cycles": 10, "model_steps": 4, "reason": "pc 4: Blake3 is not integrated. BLAKE3 is a host service (D-004) and this scaffold has no BLAKE3 compression implementation to answer SERVICE_REQUIRED with", "mismatches": [{"field": "coverage", "reason": "host run did not cover all upstream cells; gaps recorded in not_compared"}], "model_written": [0, 1, 6, 7, 8, 9], "bytecode_slots": 16}
+      "expected": {"comparison": "MATCH", "terminal": "halted", "cycles": 10, "model_steps": 10, "reason": "reached sentinel pc 15", "mismatches": [], "model_written": [0, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12], "bytecode_slots": 16}
     }
   ]
 }
