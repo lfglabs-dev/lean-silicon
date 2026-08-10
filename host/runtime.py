@@ -526,6 +526,23 @@ class HostRuntime:
                         f"SERVICE_REQUIRED txn_id {required.key.txn_id} does not "
                         f"match in-flight transaction {self.txn_id}"
                     )
+                prepared = protocol.decode_request_payload(frame.opcode, frame.payload)
+                expected_message = b"".join(
+                    cell.value.to_bytes(16, "little") for cell in prepared.cells[:4]
+                )
+                expected_chaining_value = b"".join(
+                    cell.value.to_bytes(16, "little") for cell in prepared.cells[4:6]
+                )
+                if (
+                    required.message != expected_message
+                    or required.chaining_value != expected_chaining_value
+                    or required.counter != prepared.metadata & ((1 << 64) - 1)
+                    or required.block_len != (prepared.metadata >> 64) & 0xFFFFFFFF
+                    or required.flags != prepared.metadata >> 96
+                ):
+                    raise ServiceSemanticError(
+                        "SERVICE_REQUIRED operands do not match prepared BLAKE3_REQUEST"
+                    )
                 canonical_request = required.encode()
                 response = self.service_adapter.compute(
                     required, service=self.blake3_service.compress,

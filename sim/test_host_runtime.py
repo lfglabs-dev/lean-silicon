@@ -1197,6 +1197,31 @@ class RuntimeTests(unittest.TestCase):
         runtime.corrupt_service_key = False
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_blake3_service_required_must_match_the_prepared_operands(self):
+        class WrongOperandsRuntime(HostRuntime):
+            corrupt_service_operands = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_service_operands
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    payload = bytearray(reply.payload)
+                    payload[10] ^= 1
+                    return protocol.ResponseFrame(reply.status, bytes(payload))
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = WrongOperandsRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ServiceSemanticError, "prepared BLAKE3_REQUEST"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_service_operands = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_wrong_type_blake3_digest_aborts_and_leaves_runtime_reusable(self):
         class WrongTypeService:
             def compress(self, request):
