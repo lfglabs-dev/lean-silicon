@@ -15,10 +15,10 @@ MUTANT = HERE / ".full_lsc1_deref_bridge_below_bound_mutation.sby"
 
 def main() -> int:
     text = SOURCE.read_text()
-    anchor = "reachability: depth 2787"
+    anchor = "reachability: depth 2788"
     if text.count(anchor) != 1:
         raise SystemExit(f"expected one {anchor!r} anchor")
-    MUTANT.write_text(text.replace(anchor, "reachability: depth 2786"))
+    MUTANT.write_text(text.replace(anchor, "reachability: depth 2787"))
     try:
         result = subprocess.run(
             ["sby", "-f", MUTANT.name, "reachability"],

@@ -6,7 +6,7 @@ reachability
 safety: mode bmc
 safety: depth 20
 reachability: mode cover
-reachability: depth 2787
+reachability: depth 2788
 multiclock off
 
 [engines]

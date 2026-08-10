@@ -9,9 +9,11 @@ payload CRC-32 from those emitted bytes, and uses that value in a matching
 RETIRE envelope.  Its cover requires the expected staged effect and exactly
 one `pc`/`fp`/`retire_seq` commit with one `done_pulse`, then reaches a
 quiescent cycle where both ghost counters equal one and `done_pulse` is low.
-Cycle-accurate RTL simulation derives the first completion at cycle 2784; the
-formal task uses depth 2787, and a depth-2786 mutant must report an unreached
-cover.
+Cycle-accurate RTL simulation derives the first completion at cycle 2784.  The
+quiescent cover is sampled at formal step 2787, so the formal task uses depth
+2788 (SymbiYosys checks steps `0..depth-1`), and a depth-2787 mutant must report
+an unreached cover.  This is a finite witness through step 2787, not an
+unbounded liveness claim.
 
 The separate depth-20 `safety` task retains arbitrary traffic and backpressure.
 Critical formal mutants corrupting the emitted-result CRC binding, retaining
