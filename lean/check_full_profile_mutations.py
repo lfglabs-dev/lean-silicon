@@ -198,6 +198,50 @@ for name, (old, new) in mutations.items():
 packet_source = source.with_name("FullProfilePacket.lean")
 packet_text = packet_source.read_text()
 packet_mutations = {
+    "deref-skips-canonical-cells": (
+        "if !canonicalDerefCells packet then .error .badCell",
+        "if false then .error .badCell",
+    ),
+    "deref-skips-pointer-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.alpha with",
+        "match some (packet.common.control.fp + packet.alpha) with",
+    ),
+    "deref-accepts-out-of-range-base": (
+        "if packet.base >= 2 ^ 16 then .error .address",
+        "if false then .error .address",
+    ),
+    "deref-skips-pointer-proposal": (
+        "else if !packet.pointerCell.written ||\n            packet.pointerCell.value != encodeIndex packet.base then",
+        "else if false then",
+    ),
+    "deref-accepts-inconsistent-alias": (
+        "if !suppliedAliasesAgree supplied then .error .aliasInconsistent",
+        "if false then .error .aliasInconsistent",
+    ),
+    "jump-skips-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.conditionOffset with",
+        "match some (packet.common.control.fp + packet.conditionOffset) with",
+    ),
+    "jump-skips-canonical-cells": (
+        "if !canonicalJumpCells packet then .error .badCell",
+        "if false then .error .badCell",
+    ),
+    "jump-accepts-inconsistent-alias": (
+        "(targetFp, packet.targetFpCell)]\n          if !suppliedAliasesAgree supplied then .error .aliasInconsistent",
+        "(targetFp, packet.targetFpCell)]\n          if false then .error .aliasInconsistent",
+    ),
+    "jump-trusts-taken-proposal": (
+        "if actualTaken != packet.taken then .error (.jump .invalidBranch)",
+        "if false then .error (.jump .invalidBranch)",
+    ),
+    "jump-allows-not-taken-targets": (
+        "else if !actualTaken && (packet.proposedPc != 0 || packet.proposedFp != 0) then",
+        "else if false then",
+    ),
+    "jump-drops-index-proposals": (
+        "some (packet.proposedPc, packet.proposedFp) else none",
+        "some (0, 0) else none",
+    ),
     "set-skips-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.outputOffset with",
         "match some (packet.common.control.fp + packet.outputOffset) with",

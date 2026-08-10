@@ -74,31 +74,36 @@ precedence over that profile guard. The
 remaining preparation obligations remain explicit edges,
 not assumptions promoted to a full-profile equivalence claim.
 
-`FullProfile.PacketPreparation` now covers SET and binary packet-to-functional
-boundaries. SET checks its effective output address, retains the supplied
+`FullProfile.PacketPreparation` now covers SET, binary, DEREF, and JUMP
+packet-to-functional boundaries. SET checks its effective output address, retains the supplied
 write-once cell, and refines through canonical SET execution into staging. The
 binary path computes all three `fp + offset` addresses with checked `u32`
 arithmetic before inspecting supplied cells, so address overflow has precedence
 over alias faults. Contradictory cells naming any repeated address are rejected;
 successful preparation materializes the finite host memory view and refines
 through canonical XOR/MUL execution into atomic transaction staging.
+Raw DEREF and JUMP preparation rejects noncanonical cells, performs checked
+address arithmetic, rejects contradictory cells at aliased addresses, and
+checks host pointer/index and branch proposals in the executable endpoint's
+fault order. Successful packets refine directly to the existing canonical
+control primitives. Concrete successful DEREF/JUMP decisions and competing-fault
+witnesses keep both the success paths and precedence claims non-vacuous; the
+mutation runner changes each validation edge and requires Lean to reject it.
 
 ## Remaining theorem graph
 
-1. Extend packet preparation to raw DEREF/JUMP fields, including pointer/index
-   proposals, supplied-cell aliases, and their exact fault precedence.
-2. Define a byte-exact Lean codec for every fixed full-profile payload and prove
+1. Define a byte-exact Lean codec for every fixed full-profile payload and prove
    decode/encode and malformed-field precedence into `FullProfile.Instruction`.
-3. Define an independent cycle transition system for
+2. Define an independent cycle transition system for
    `asic_core/rtl/lsc1_packet_frontend.sv`, including receive/transmit buffers,
    backpressure, reset and ABORT dominance.
-4. Prove accepted-frame refinement from that cycle system to `FullProfile.decide`
+3. Prove accepted-frame refinement from that cycle system to `FullProfile.decide`
    for SET/XOR/MUL/DEREF/JUMP and to the proved raw BLAKE3 service path.
-5. Lift the proved BLAKE3 staged-result CRC correspondence and
+4. Lift the proved BLAKE3 staged-result CRC correspondence and
    `successful_service_response_matching_retire_exactly_once` to the cycle system's
    DONE edge.
-6. Bind the independent cycle system to authored SV with unbounded formal
+5. Bind the independent cycle system to authored SV with unbounded formal
    correspondence (or explicitly bounded results where induction cannot close).
 
-Until all six edges exist, the correct claim is a canonical functional and
+Until all five edges exist, the correct claim is a canonical functional and
 transaction-lifecycle foundation, not full Lean-to-RTL equivalence.
