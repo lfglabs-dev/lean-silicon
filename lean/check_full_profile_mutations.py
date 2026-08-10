@@ -198,6 +198,78 @@ for name, (old, new) in mutations.items():
 packet_source = source.with_name("FullProfilePacket.lean")
 packet_text = packet_source.read_text()
 packet_mutations = {
+    "deref-skips-canonical-cells": (
+        "if !canonicalDerefCells packet then .error .badCell",
+        "if false then .error .badCell",
+    ),
+    "deref-skips-pointer-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.alpha with",
+        "match some (packet.common.control.fp + packet.alpha) with",
+    ),
+    "deref-accepts-out-of-range-base": (
+        "if packet.base >= 2 ^ 16 then .error .address",
+        "if false then .error .address",
+    ),
+    "deref-skips-pointer-proposal": (
+        "else if !packet.pointerCell.written ||\n            packet.pointerCell.value != encodeIndex packet.base then",
+        "else if false then",
+    ),
+    "deref-accepts-inconsistent-alias": (
+        "if !suppliedAliasesAgree supplied then .error .aliasInconsistent",
+        "if false then .error .aliasInconsistent",
+    ),
+    "deref-pc-accepts-out-of-range-return": (
+        "if mode == .pc && !derefPcReturnInRange packet then",
+        "if false then",
+    ),
+    "deref-pc-allows-limit-return": (
+        "packet.common.control.pc + 2 < protocolIndexLimit",
+        "packet.common.control.pc + 2 <= protocolIndexLimit",
+    ),
+    "deref-pc-rejects-last-valid-return": (
+        "packet.common.control.pc + 2 < protocolIndexLimit",
+        "packet.common.control.pc + 2 < protocolIndexLimit - 1",
+    ),
+    "jump-skips-address-check": (
+        "match CheckedIndex.add packet.common.control.fp packet.conditionOffset with",
+        "match some (packet.common.control.fp + packet.conditionOffset) with",
+    ),
+    "jump-skips-canonical-cells": (
+        "if !canonicalJumpCells packet then .error .badCell",
+        "if false then .error .badCell",
+    ),
+    "jump-accepts-inconsistent-alias": (
+        "(targetFp, packet.targetFpCell)]\n          if !suppliedAliasesAgree supplied then .error .aliasInconsistent",
+        "(targetFp, packet.targetFpCell)]\n          if false then .error .aliasInconsistent",
+    ),
+    "jump-trusts-taken-proposal": (
+        "if actualTaken != packet.taken then .error (.jump .invalidBranch)",
+        "if false then .error (.jump .invalidBranch)",
+    ),
+    "jump-allows-not-taken-targets": (
+        "else if packet.proposedPc != 0 || packet.proposedFp != 0 then",
+        "else if false then",
+    ),
+    "jump-accepts-out-of-range-pc": (
+        "else if !jumpTargetInRange packet.proposedPc then .error .address",
+        "else if false then .error .address",
+    ),
+    "jump-accepts-out-of-range-fp": (
+        "else if !jumpTargetInRange packet.proposedFp then .error .address",
+        "else if false then .error .address",
+    ),
+    "jump-allows-limit-target": (
+        "target < protocolIndexLimit",
+        "target <= protocolIndexLimit",
+    ),
+    "jump-rejects-last-valid-target": (
+        "target < protocolIndexLimit",
+        "target < protocolIndexLimit - 1",
+    ),
+    "jump-drops-index-proposals": (
+        "resolvedTargets := some (packet.proposedPc, packet.proposedFp)",
+        "resolvedTargets := some (0, 0)",
+    ),
     "set-skips-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.outputOffset with",
         "match some (packet.common.control.fp + packet.outputOffset) with",
