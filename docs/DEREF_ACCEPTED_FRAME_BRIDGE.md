@@ -15,13 +15,19 @@ the new accepted witnesses establish reachability of every opcode and all four
 Cell presence quadrants in both profile encodings.
 
 The `FORMAL_DEREF_BRIDGE` checker is instantiated inside the exact authored
-`asic_core/rtl/lsc1_packet_frontend.sv`. Its safety proof is unbounded induction:
-arbitrary RX/TX stalls, stalled-output stability, reset/ABORT dominance, staged
-metadata stability, matching RETIRE, and exactly-once retirement are not assigned
-a trace depth. Simulation and differential reachability are finite and therefore
-explicitly **bounded**. They include result/RETIRE CRC behavior and kill focused
+`asic_core/rtl/lsc1_packet_frontend.sv`. Its safety check is explicitly bounded
+to 20 cycles. It covers arbitrary RX/TX choices within that depth, stalled-output
+stability, reset/ABORT dominance, staged metadata stability, matching RETIRE, and
+exactly-once retirement. The checker also carries a ghost retirement-history
+invariant: reset establishes sequence zero and only an accepted matching RETIRE
+advances it. This is an asserted reachable-state relation, not an environment
+assumption. No unbounded RTL or netlist equivalence is claimed. Simulation and
+differential reachability are likewise finite. They include result/RETIRE CRC
+behavior and kill focused
 pointer-bypass, address-source, PC increment, profile, CRC, canonical-cell,
 same-edge ABORT, result-byte and duplicate-retirement mutations.
 
-This is a full-profile non-release assurance lane. It does not claim a physical
+This is a full-profile non-release assurance lane. The residual gap is an
+unbounded proof of the exact frontend transition system (or an independently
+checked sequential-equivalence certificate). It does not claim a physical
 netlist proof or BLAKE3 service refinement.

@@ -13,8 +13,16 @@ module full_lsc1_deref_bridge_checker (
     input wire [31:0] retire_seq, input wire done_pulse
 );
     reg past_valid;
+    reg [31:0] expected_retire_seq;
     initial past_valid = 1'b0;
-    always @(posedge clk) past_valid <= 1'b1;
+    initial expected_retire_seq = 32'b0;
+    always @(posedge clk) begin
+        past_valid <= 1'b1;
+        if (!rst_n)
+            expected_retire_seq <= 32'b0;
+        else if (!abort && retire_match)
+            expected_retire_seq <= expected_retire_seq + 1'b1;
+    end
 
     wire retire_accept = frame_valid && event_ready && frame_opcode == 8'h12 &&
         frame_length == 16'd8;
@@ -24,6 +32,14 @@ module full_lsc1_deref_bridge_checker (
 
     always @(posedge clk) begin
         if (!past_valid) assume(!rst_n);
+        // Canonical reachable-state invariant: reset establishes sequence zero
+        // and only an accepted, matching RETIRE advances it. This ghost state
+        // records protocol history; it does not constrain environment inputs.
+        assert(retire_seq == expected_retire_seq);
+        if (past_valid) begin
+            assert(done_pulse == ($past(rst_n) && !$past(abort) &&
+                                  $past(retire_match)));
+        end
         if (past_valid && $past(tx_valid && !tx_ready && rst_n && !abort)) begin
             assert(tx_valid);
             assert(tx_data == $past(tx_data));

@@ -1,9 +1,10 @@
 [options]
-mode prove
+mode bmc
+depth 20
 multiclock off
 
 [engines]
-abc pdr
+smtbmc boolector
 
 [script]
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_rx.sv
@@ -16,7 +17,7 @@ read -formal -D FORMAL_DEREF_BRIDGE lsc1_field_encoder.sv
 read -formal -D FORMAL_DEREF_BRIDGE full_lsc1_deref_bridge_checker.sv
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_frontend.sv
 prep -top lsc1_packet_frontend
-setundef -undriven -anyseq -params -init
+setundef -undriven -anyseq -params
 opt_clean
 
 [files]
