@@ -650,12 +650,18 @@ class HostRuntime:
                 self.service_adapter.abort()
             raise
 
-        retire = self._exchange(
-            protocol.build_retire(
-                txn_id=result["txn_id"],
-                result_crc=protocol.crc32(reply.payload),
+        try:
+            retire = self._exchange(
+                protocol.build_retire(
+                    txn_id=result["txn_id"],
+                    result_crc=protocol.crc32(reply.payload),
+                )
             )
-        )
+        except Exception:
+            if service_key is not None:
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
         if retire.status is not protocol.Status.RETIRED:
             check_fault_response(
                 retire, expected_txn_id=self.txn_id, where="retire", staged=True

@@ -1335,6 +1335,28 @@ class RuntimeTests(unittest.TestCase):
         runtime.corrupt_result = False
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_blake3_retire_exchange_failure_aborts_and_is_reusable(self):
+        class FailingRetireExchangeRuntime(HostRuntime):
+            fail_retire_exchange = True
+
+            def _exchange(self, frame):
+                if (self.fail_retire_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.RETIRE):
+                    raise TimeoutError("retire pre-send timeout")
+                return super()._exchange(frame)
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingRetireExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "retire pre-send timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_retire_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
         slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
                 "metadata": f"{64 << 64:#034x}"}
