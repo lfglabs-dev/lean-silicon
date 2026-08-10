@@ -195,6 +195,35 @@ for name, (old, new) in mutations.items():
         raise SystemExit(f"SURVIVED: {name}")
     print(f"KILLED: {name}")
 
+payload_source = source.with_name("FullProfilePayload.lean")
+payload_text = payload_source.read_text()
+payload_mutations = {
+    "payload-jump-uses-deref-width": ("if bytes.length != 103 then throw .badLength",
+        "if bytes.length != 81 then throw .badLength"),
+    "payload-deref-uses-jump-width": ("if bytes.length != 81 then throw .badLength",
+        "if bytes.length != 103 then throw .badLength"),
+    "payload-skips-hidden-absent-value": (
+        "if value == 0#128 then .ok { written := false, value } else .error .badCell",
+        ".ok { written := false, value }"),
+    "payload-accepts-nonboolean-branch": ("| _ => throw .badBranch", "| _ => pure false"),
+    "payload-shifts-branch-byte": ("match byteAt bytes 77 with", "match byteAt bytes 78 with"),
+}
+
+for name, (old, new) in payload_mutations.items():
+    if old not in payload_text:
+        raise SystemExit(f"mutation anchor missing: {name}")
+    mutated = payload_text.replace(old, new, 1)
+    with tempfile.TemporaryDirectory(prefix="lsc1-lean-payload-mutation-") as directory:
+        candidate = Path(directory) / "FullProfilePayload.lean"
+        candidate.write_text(mutated)
+        result = subprocess.run(
+            ["lake", "env", "lean", str(candidate)], cwd=payload_source.parent.parent,
+            env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, check=False)
+    if result.returncode == 0:
+        raise SystemExit(f"SURVIVED: {name}")
+    print(f"KILLED: {name}")
+
 packet_source = source.with_name("FullProfilePacket.lean")
 packet_text = packet_source.read_text()
 packet_mutations = {
