@@ -96,6 +96,24 @@ module full_lsc1_deref_bridge_checker (
         end
     endfunction
 
+    // CRC-32 of the complete expected RESULT envelope prefix (magic, version,
+    // status, length, and payload).  This is deliberately derived from the
+    // specified bytes rather than from tx_data or the packet TX's saved_crc.
+    function automatic [31:0] result_envelope_crc;
+        reg [31:0] work;
+        integer i;
+        begin
+            work = 32'hffffffff;
+            work = crc_byte(work, 8'h5a); work = crc_byte(work, 8'h01);
+            work = crc_byte(work, 8'h00); work = crc_byte(work, 8'h23);
+            work = crc_byte(work, 8'h00);
+            for (i = 0; i < 35; i = i + 1)
+                work = crc_byte(work, result_payload_byte(i));
+            result_envelope_crc = ~work;
+        end
+    endfunction
+    wire [31:0] expected_result_envelope_crc = result_envelope_crc();
+
     function automatic [31:0] retire_envelope_crc(input [31:0] payload_crc);
         reg [31:0] work;
         integer i;
@@ -172,7 +190,14 @@ module full_lsc1_deref_bridge_checker (
                 emitted_result_crc_work <= crc_byte(emitted_result_crc_work, tx_data);
                 if (result_beat == 39)
                     emitted_result_crc <= ~crc_byte(emitted_result_crc_work, tx_data);
-            end
+            end else if (result_beat == 40)
+                assert(tx_data == expected_result_envelope_crc[7:0]);
+            else if (result_beat == 41)
+                assert(tx_data == expected_result_envelope_crc[15:8]);
+            else if (result_beat == 42)
+                assert(tx_data == expected_result_envelope_crc[23:16]);
+            else if (result_beat == 43)
+                assert(tx_data == expected_result_envelope_crc[31:24]);
             if (result_beat == 43) begin
                 witness_phase <= W_CRC;
                 assert(staged_txn_id == 0);

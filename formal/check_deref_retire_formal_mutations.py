@@ -18,6 +18,9 @@ SOURCES = [
     "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
 ]
 MUTATIONS = [
+    ("corrupted_result_envelope_crc", "lsc1_packet_tx.sv",
+     "saved_crc <= ~crc_byte(envelope_crc_work, tx_data);",
+     "saved_crc <= ~crc_byte(envelope_crc_work, tx_data) ^ 32'h00000001;"),
     ("corrupted_result_crc_binding", "lsc1_packet_frontend.sv",
      "staged_result_crc <= tx_payload_crc;",
      "staged_result_crc <= tx_payload_crc ^ 32'h00000001;"),
