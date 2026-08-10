@@ -218,6 +218,10 @@ packet_mutations = {
         "if !suppliedAliasesAgree supplied then .error .aliasInconsistent",
         "if false then .error .aliasInconsistent",
     ),
+    "deref-pc-accepts-out-of-range-return": (
+        "if mode == .pc && packet.common.control.pc + 2 >= protocolIndexLimit then",
+        "if false then",
+    ),
     "jump-skips-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.conditionOffset with",
         "match some (packet.common.control.fp + packet.conditionOffset) with",
@@ -235,12 +239,20 @@ packet_mutations = {
         "if false then .error (.jump .invalidBranch)",
     ),
     "jump-allows-not-taken-targets": (
-        "else if !actualTaken && (packet.proposedPc != 0 || packet.proposedFp != 0) then",
+        "else if packet.proposedPc != 0 || packet.proposedFp != 0 then",
         "else if false then",
     ),
+    "jump-accepts-out-of-range-pc": (
+        "else if packet.proposedPc >= protocolIndexLimit then .error .address",
+        "else if false then .error .address",
+    ),
+    "jump-accepts-out-of-range-fp": (
+        "else if packet.proposedFp >= protocolIndexLimit then .error .address",
+        "else if false then .error .address",
+    ),
     "jump-drops-index-proposals": (
-        "some (packet.proposedPc, packet.proposedFp) else none",
-        "some (0, 0) else none",
+        "resolvedTargets := some (packet.proposedPc, packet.proposedFp)",
+        "resolvedTargets := some (0, 0)",
     ),
     "set-skips-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.outputOffset with",

@@ -124,7 +124,10 @@ def preparedDerefDecision (mode : ControlPrimitives.DerefMode)
     (packet : DerefPacket) : Decision :=
   match prepareDeref packet with
   | .error fault => .fault fault
-  | .ok input => decide (.deref mode input)
+  | .ok input =>
+      if mode == .pc && packet.common.control.pc + 2 >= protocolIndexLimit then
+        .fault .address
+      else decide (.deref mode input)
 
 /-- Raw JUMP preparation in endpoint fault order. -/
 def prepareJump (packet : JumpPacket) : Except Fault JumpInput :=
@@ -143,7 +146,26 @@ def prepareJump (packet : JumpPacket) : Except Fault JumpInput :=
             let memory := materializeSupplied supplied
             let actualTaken := (memory condition).value != 0#128
             if actualTaken != packet.taken then .error (.jump .invalidBranch)
-            else if !actualTaken && (packet.proposedPc != 0 || packet.proposedFp != 0) then
+            else if actualTaken then
+              if !ControlPrimitives.acceptsInverse (memory condition).value
+                  packet.proposedInverse.value then .error (.jump .invalidInverse)
+              else if packet.proposedPc >= protocolIndexLimit then .error .address
+              else if encodeIndex packet.proposedPc != (memory targetPc).value then
+                .error (.jump .unresolvedPointer)
+              else if packet.proposedFp >= protocolIndexLimit then .error .address
+              else if encodeIndex packet.proposedFp != (memory targetFp).value then
+                .error (.jump .unresolvedPointer)
+              else .ok {
+                common := packet.common, memory
+                condition := (memory condition).value
+                targetPcWord := (memory targetPc).value
+                targetFpWord := (memory targetFp).value
+                inverseWitness := packet.proposedInverse.value
+                resolvedTargets := some (packet.proposedPc, packet.proposedFp)
+                accesses := fun i => [condition, targetPc, targetFp].get i }
+            else if packet.proposedInverse.value != 0#128 then
+              .error (.jump .invalidInverse)
+            else if packet.proposedPc != 0 || packet.proposedFp != 0 then
               .error (.jump .invalidBranch)
             else .ok {
               common := packet.common, memory
@@ -151,8 +173,7 @@ def prepareJump (packet : JumpPacket) : Except Fault JumpInput :=
               targetPcWord := (memory targetPc).value
               targetFpWord := (memory targetFp).value
               inverseWitness := packet.proposedInverse.value
-              resolvedTargets := if packet.taken then
-                some (packet.proposedPc, packet.proposedFp) else none
+              resolvedTargets := none
               accesses := fun i => [condition, targetPc, targetFp].get i }
 
 def preparedJumpDecision (packet : JumpPacket) : Decision :=
@@ -162,9 +183,11 @@ def preparedJumpDecision (packet : JumpPacket) : Decision :=
 
 theorem prepared_deref_refines_decide (mode : ControlPrimitives.DerefMode)
     (packet : DerefPacket) (input : DerefInput)
-    (h : prepareDeref packet = .ok input) :
+    (h : prepareDeref packet = .ok input)
+    (hreturn : ¬(mode = .pc ∧
+      packet.common.control.pc + 2 >= protocolIndexLimit)) :
     preparedDerefDecision mode packet = decide (.deref mode input) := by
-  simp [preparedDerefDecision, h]
+  simp [preparedDerefDecision, h, hreturn]
 
 theorem prepared_jump_refines_decide (packet : JumpPacket) (input : JumpInput)
     (h : prepareJump packet = .ok input) :
@@ -448,6 +471,31 @@ example : prepareDeref { witnessDerefPacket with
     targetCell := { written := true, value := 0x2a#128 } } =
     .error .aliasInconsistent := by rfl
 
+/-- DEREF_PC cannot encode the first index outside the protocol domain. -/
+example : preparedDerefDecision .pc { witnessDerefPacket with
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } } } =
+    .fault .address := by rfl
+
+/-- The return-index bound is specific to DEREF_PC; DEREF_FP keeps this boundary packet. -/
+example : exists effect, preparedDerefDecision .fp { witnessDerefPacket with
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } } } =
+    .result effect := by
+  refine ⟨{
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } }
+    nextControl := { pc := protocolIndexLimit - 1, fp := 9 }
+    initialMemory := suppliedDerefMemory witnessDerefPacket 9 3 10
+    memory := writeRaw (suppliedDerefMemory witnessDerefPacket 9 3 10) 3 (encodeIndex 9)
+    accesses := [9, 3, 10] }, ?_⟩
+  rfl
+
+/-- Earlier supplied-cell alias faults still precede the DEREF_PC return bound. -/
+example : preparedDerefDecision .pc { witnessDerefPacket with
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } }
+    base := 9, beta := 0
+    pointerCell := { written := true, value := encodeIndex 9 }
+    targetCell := { written := true, value := 0x2a#128 } } =
+    .fault .aliasInconsistent := by rfl
+
 /-- Checked JUMP address arithmetic precedes supplied-cell alias reconciliation. -/
 example : prepareJump { witnessJumpPacket with
     conditionOffset := CheckedIndex.max } = .error .address := by rfl
@@ -476,6 +524,38 @@ example : preparedJumpDecision { witnessTakenJumpPacket with taken := false } =
 
 example : prepareJump { witnessJumpPacket with proposedPc := 1 } =
     .error (.jump .invalidBranch) := by rfl
+
+/-- The first taken JUMP destination is bounded by the protocol index domain. -/
+example : prepareJump { witnessTakenJumpPacket with
+    proposedPc := protocolIndexLimit
+    targetPcCell := { written := true, value := encodeIndex protocolIndexLimit } } =
+    .error .address := by rfl
+
+/-- The second taken JUMP destination is independently bounded. -/
+example : prepareJump { witnessTakenJumpPacket with
+    proposedFp := protocolIndexLimit
+    targetFpCell := { written := true, value := encodeIndex protocolIndexLimit } } =
+    .error .address := by rfl
+
+/-- Inverse validation precedes both taken-target range checks. -/
+example : prepareJump { witnessTakenJumpPacket with
+    proposedPc := protocolIndexLimit
+    targetPcCell := { written := true, value := encodeIndex protocolIndexLimit }
+    proposedInverse := { written := true, value := 2#128 } } =
+    .error (.jump .invalidInverse) := by rfl
+
+/-- PC re-encoding precedes the FP protocol-bound check. -/
+example : prepareJump { witnessTakenJumpPacket with
+    targetPcCell := { written := true, value := encodeIndex 7 }
+    proposedFp := protocolIndexLimit
+    targetFpCell := { written := true, value := encodeIndex protocolIndexLimit } } =
+    .error (.jump .unresolvedPointer) := by rfl
+
+/-- Non-taken inverse validation precedes the pinned-zero destination proposal. -/
+example : prepareJump { witnessJumpPacket with
+    proposedPc := 1
+    proposedInverse := { written := true, value := 2#128 } } =
+    .error (.jump .invalidInverse) := by rfl
 
 #print axioms left_address_overflow_precedes_alias
 #print axioms set_address_overflow_is_rejected
