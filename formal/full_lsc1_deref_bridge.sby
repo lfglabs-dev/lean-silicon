@@ -1,0 +1,31 @@
+[options]
+mode prove
+multiclock off
+
+[engines]
+abc pdr
+
+[script]
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_rx.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_tx.sv
+read -formal -D FORMAL_DEREF_BRIDGE gf2n_mul_bitstream.sv
+read -formal -D FORMAL_DEREF_BRIDGE gf128_mul_bitstream.sv
+read -formal -D FORMAL_DEREF_BRIDGE leanvm_b_stream_alu.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_stream_adapter.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_field_encoder.sv
+read -formal -D FORMAL_DEREF_BRIDGE full_lsc1_deref_bridge_checker.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_frontend.sv
+prep -top lsc1_packet_frontend
+setundef -undriven -anyseq -params -init
+opt_clean
+
+[files]
+full_lsc1_deref_bridge_checker.sv
+../asic_core/rtl/lsc1_packet_rx.sv
+../asic_core/rtl/lsc1_packet_tx.sv
+../asic_core/rtl/gf2n_mul_bitstream.sv
+../asic_core/rtl/gf128_mul_bitstream.sv
+../asic_core/rtl/leanvm_b_stream_alu.sv
+../asic_core/rtl/lsc1_stream_adapter.sv
+../asic_core/rtl/lsc1_field_encoder.sv
+../asic_core/rtl/lsc1_packet_frontend.sv

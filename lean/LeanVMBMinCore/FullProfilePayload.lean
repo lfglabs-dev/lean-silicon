@@ -4,8 +4,8 @@ import LeanVMBMinCore.FullProfilePacket
 Byte-exact payload decoding for the v1 raw DEREF/JUMP preparation boundary.
 
 The request wire does not contain the result checksum: the endpoint derives it
-from the response payload.  Consequently `decode` takes that transaction-layer
-value explicitly and does not pretend it was decoded from host bytes.
+from the response payload.  Raw decoding therefore initializes that field to
+zero; the accepted-frame bridge replaces it from the actual computed effect.
 -/
 
 namespace LeanVMBMinCore.FullProfile.Payload
@@ -59,13 +59,12 @@ def profileAt (bytes : List Byte) : Except Error Profile :=
   | 1 => .ok .interpreterCompat
   | _ => .error .badProfile
 
-def commonAt (bytes : List Byte) (resultChecksum : Transaction.ResultChecksum) : Common := {
+def commonAt (bytes : List Byte) : Common := {
   txnId := u32At bytes 0
   control := { pc := natLE bytes 4 4, fp := natLE bytes 8 4 }
-  resultChecksum }
+  resultChecksum := 0 }
 
-def decodeDeref (mode : ControlPrimitives.DerefMode) (bytes : List Byte)
-    (resultChecksum : Transaction.ResultChecksum) : Except Error Decoded := do
+def decodeDeref (mode : ControlPrimitives.DerefMode) (bytes : List Byte) : Except Error Decoded := do
   if bytes.length != 81 then throw .badLength
   let profile <- profileAt bytes
   if byteAt bytes 13 != 0 then throw .badFlags
@@ -73,12 +72,12 @@ def decodeDeref (mode : ControlPrimitives.DerefMode) (bytes : List Byte)
   let target <- cellAt bytes 47
   let localCell <- cellAt bytes 64
   return .deref mode {
-    common := commonAt bytes resultChecksum, profile
+    common := commonAt bytes, profile
     alpha := natLE bytes 14 4, beta := natLE bytes 18 4, gamma := natLE bytes 22 4
     pointerCell := pointer, base := natLE bytes 43 4
     targetCell := target, localCell }
 
-def decodeJump (bytes : List Byte) (resultChecksum : Transaction.ResultChecksum) :
+def decodeJump (bytes : List Byte) :
     Except Error Decoded := do
   if bytes.length != 103 then throw .badLength
   let _ <- profileAt bytes
@@ -92,7 +91,7 @@ def decodeJump (bytes : List Byte) (resultChecksum : Transaction.ResultChecksum)
     | 1 => pure true
     | _ => throw .badBranch
   return .jump {
-    common := commonAt bytes resultChecksum
+    common := commonAt bytes
     conditionOffset := natLE bytes 14 4
     targetPcOffset := natLE bytes 18 4
     targetFpOffset := natLE bytes 22 4
@@ -101,13 +100,12 @@ def decodeJump (bytes : List Byte) (resultChecksum : Transaction.ResultChecksum)
     proposedInverse := inverse }
 
 /-- Decode exactly the four v1 raw DEREF/JUMP request payload opcodes. -/
-def decode (opcode : Byte) (bytes : List Byte)
-    (resultChecksum : Transaction.ResultChecksum) : Except Error Decoded :=
+def decode (opcode : Byte) (bytes : List Byte) : Except Error Decoded :=
   match opcode with
-  | 0x04 => decodeDeref .cell bytes resultChecksum
-  | 0x05 => decodeDeref .pc bytes resultChecksum
-  | 0x06 => decodeDeref .fp bytes resultChecksum
-  | 0x07 => decodeJump bytes resultChecksum
+  | 0x04 => decodeDeref .cell bytes
+  | 0x05 => decodeDeref .pc bytes
+  | 0x06 => decodeDeref .fp bytes
+  | 0x07 => decodeJump bytes
   | _ => .error .badOpcode
 
 def decideDecoded : Decoded -> Decision
@@ -116,9 +114,8 @@ def decideDecoded : Decoded -> Decision
 
 /-- Successful byte decoding feeds the already-mechanized raw preparation path. -/
 theorem decode_refines_preparation (opcode : Byte) (bytes : List Byte)
-    (checksum : Transaction.ResultChecksum) (decoded : Decoded)
-    (h : decode opcode bytes checksum = .ok decoded) :
-    (decode opcode bytes checksum).map decideDecoded = .ok (decideDecoded decoded) := by
+    (decoded : Decoded) (h : decode opcode bytes = .ok decoded) :
+    (decode opcode bytes).map decideDecoded = .ok (decideDecoded decoded) := by
   rw [h]
   rfl
 
@@ -156,7 +153,7 @@ example : witnessJumpBytes.length = 103 := by decide
 
 example : witnessDerefBytes.length = 81 := by decide
 
-example : decode 0x04 witnessDerefBytes 0 =
+example : decode 0x04 witnessDerefBytes =
     .ok (.deref .cell decodedWitnessDerefPacket) := by
   rfl
 
@@ -170,7 +167,7 @@ example : exists effect,
     accesses := [9, 3, 10] }, by rfl⟩
 
 example : exists packet,
-    decode 0x07 witnessJumpBytes 0 = .ok (.jump packet) := by
+    decode 0x07 witnessJumpBytes = .ok (.jump packet) := by
   refine ⟨decodedWitnessJumpPacket, by rfl⟩
 
 example : exists effect,
@@ -183,15 +180,15 @@ example : exists effect,
     accesses := [9, 10, 11] }, by rfl⟩
 
 /-- A single-byte branch mutation is observed before packet preparation. -/
-example : decode 0x07 (witnessJumpBytes.set 77 2) 0 = .error .badBranch := by
+example : decode 0x07 (witnessJumpBytes.set 77 2) = .error .badBranch := by
   rfl
 
 /-- A hidden value in an absent cell is rejected at the byte boundary. -/
-example : decode 0x07 (witnessJumpBytes.set 27 1) 0 = .error .badCell := by
+example : decode 0x07 (witnessJumpBytes.set 27 1) = .error .badCell := by
   rfl
 
 /-- Deref and jump payload widths cannot be interchanged. -/
-example : decode 0x04 witnessJumpBytes 0 = .error .badLength := by
+example : decode 0x04 witnessJumpBytes = .error .badLength := by
   rfl
 
 #print axioms decode_refines_preparation

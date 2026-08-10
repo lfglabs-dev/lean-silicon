@@ -128,6 +128,22 @@ module lsc1_packet_frontend (
     );
 `endif
 
+`ifdef FORMAL_DEREF_BRIDGE
+    full_lsc1_deref_bridge_checker deref_bridge_checker (
+        .clk(clk), .rst_n(rst_n), .abort(abort),
+        .rx_valid(rx_valid), .rx_ready(rx_ready),
+        .tx_valid(tx_valid), .tx_ready(tx_ready), .tx_data(tx_data),
+        .frame_valid(frame_valid), .event_ready(event_ready),
+        .frame_opcode(frame_opcode), .frame_length(frame_length),
+        .frame_payload(frame_payload), .tx_start(tx_start),
+        .compute_state(compute_state), .result_pending(result_pending),
+        .capture_result_crc(capture_result_crc),
+        .staged_txn_id(staged_txn_id), .staged_next_pc(staged_next_pc),
+        .staged_next_fp(staged_next_fp), .staged_result_crc(staged_result_crc),
+        .retire_seq(retire_seq), .done_pulse(done_pulse)
+    );
+`endif
+
     task automatic emit_fault;
         input [7:0] status;
         input [31:0] txn;

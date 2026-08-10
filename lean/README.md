@@ -19,8 +19,13 @@ Modules:
   packet consumers.
 - `FullProfilePayload.lean` — byte-exact decoding of canonical 81-byte DEREF
   and 103-byte JUMP payloads into raw packet preparation, with explicit
-  malformed-field and mutation-sensitive witnesses. It does not model the
-  cycle-level receiver or derive the result checksum absent from request bytes.
+  malformed-field and mutation-sensitive witnesses. The absent request-side
+  result checksum is initialized to zero rather than supplied by a caller.
+- `AcceptedDeref.lean` — canonical v1 envelope acceptance using the reflected
+  IEEE CRC-32, exact DEREF 0x04--0x06 dispatch, refinement to
+  `preparedDerefDecision`, and result/RETIRE checksum derivation from the actual
+  effect payload. Its executable witnesses cover every mode and both profiles'
+  four Cell presence quadrants.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   v1 current-state index bounds, abort preservation, matching commit, mismatch
   rejection, reset, and exactly-once retirement theorems. Arithmetic and
