@@ -1288,6 +1288,53 @@ class RuntimeTests(unittest.TestCase):
         runtime.corrupt_response = False
         self.assertEqual(runtime.step().status, protocol.Status.OK.name)
 
+    def test_initial_blake3_exchange_failure_aborts_and_is_reusable(self):
+        class FailingRequestExchangeRuntime(HostRuntime):
+            fail_request_exchange = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.fail_request_exchange
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.BLAKE3_REQUEST):
+                    raise TimeoutError("service required timeout")
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = FailingRequestExchangeRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(TimeoutError, "service required timeout"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.fail_request_exchange = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
+    def test_malformed_blake3_result_aborts_and_is_reusable(self):
+        class MalformedResultRuntime(HostRuntime):
+            corrupt_result = True
+
+            def _exchange(self, frame):
+                reply = super()._exchange(frame)
+                if (self.corrupt_result
+                        and protocol.Opcode(frame.opcode) is protocol.Opcode.SERVICE_RESPONSE
+                        and reply.status is protocol.Status.OK):
+                    return protocol.ResponseFrame(reply.status, reply.payload[:-1])
+                return reply
+
+        slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
+                "metadata": f"{64 << 64:#034x}"}
+        runtime = MalformedResultRuntime(program(slot), session_epoch=1)
+        with self.assertRaisesRegex(ProtocolViolation, "truncated"):
+            runtime.step()
+        self.assertEqual(runtime.endpoint.state.name, "IDLE")
+        self.assertEqual(runtime.endpoint.abort_count, 1)
+        self.assertIsNone(runtime.service_adapter.outstanding)
+
+        runtime.corrupt_result = False
+        self.assertEqual(runtime.step().status, protocol.Status.OK.name)
+
     def test_rejected_blake3_digest_clears_binding_for_a_reusable_runtime(self):
         slot = {"op": "Blake3", "ins": [2, 3, 4, 5], "cv": 6, "out": 8,
                 "metadata": f"{64 << 64:#034x}"}

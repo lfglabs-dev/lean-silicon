@@ -496,6 +496,55 @@ class HostRuntime:
             return protocol.ABSENT
         return protocol.Cell(True, field_inverse(known.value))
 
+    def _decode_and_prevalidate_result(self, reply, addresses, record):
+        result = decode_result_payload(reply.payload, expected_txn_id=self.txn_id)
+        writes = result["writes"]
+        proposed: dict[int, int] = {}
+        for write in writes:
+            prior = proposed.get(write["address"])
+            if prior is not None and prior != write["value"]:
+                raise ProtocolViolation(
+                    "result payload contains conflicting writes to address "
+                    f"{write['address']}: {prior:#034x} != {write['value']:#034x}"
+                )
+            proposed[write["address"]] = write["value"]
+            self.memory.prevalidate_write(write["address"], write["value"])
+
+        staged = HostMemory(
+            cells=dict(self.memory.cells),
+            deferred=list(self.memory.deferred),
+        )
+        for write in writes:
+            staged.apply_write(write["address"], write["value"])
+        for item in result["deferred"]:
+            staged.record_deferred(item["target"], item["local"])
+        staged.resolve_deferred()
+
+        in_frame = set(addresses)
+        for write in writes:
+            if write["address"] not in in_frame:
+                raise ProtocolViolation(
+                    f"result writes address {write['address']}, which "
+                    f"{record.opcode} did not carry; frame addresses are "
+                    f"{sorted(in_frame)}"
+                )
+        for item in result["deferred"]:
+            for role in ("target", "local"):
+                if item[role] not in in_frame:
+                    raise ProtocolViolation(
+                        f"result defers an equality whose {role} is address "
+                        f"{item[role]}, which {record.opcode} did not carry; "
+                        f"frame addresses are {sorted(in_frame)}"
+                    )
+        for address in result["accesses"]:
+            if address not in in_frame:
+                raise ProtocolViolation(
+                    f"result counts an access to address {address}, which "
+                    f"{record.opcode} did not carry; frame addresses are "
+                    f"{sorted(in_frame)}"
+                )
+        return result, writes
+
     # --- transition ---------------------------------------------------------
 
     def step(self) -> StepRecord:
@@ -516,7 +565,13 @@ class HostRuntime:
 
         before = self.lane_cycles
         before_bytes = self.lane_bytes
-        reply = self._exchange(frame)
+        try:
+            reply = self._exchange(frame)
+        except Exception:
+            if operation.kind == "Blake3":
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
         service_key = None
         if operation.kind == "Blake3" and reply.status is protocol.Status.SERVICE_REQUIRED:
             try:
@@ -587,71 +642,13 @@ class HostRuntime:
             self.faulted = True
             return record
 
-        result = decode_result_payload(reply.payload, expected_txn_id=self.txn_id)
-
-        # The whole write batch is checked before RETIRE goes out, because RETIRE is
-        # what makes the endpoint commit its pc/fp. Rejecting afterwards would leave
-        # the endpoint advanced against host state that never moved, and the retry
-        # would only ever see STATE_MISMATCH. Refusing first leaves the transaction
-        # RESULT_PENDING, which is recoverable.
-        writes = result["writes"]
-        proposed: dict[int, int] = {}
-        for write in writes:
-            prior = proposed.get(write["address"])
-            if prior is not None and prior != write["value"]:
-                raise ProtocolViolation(
-                    "result payload contains conflicting writes to address "
-                    f"{write['address']}: {prior:#034x} != {write['value']:#034x}"
-                )
-            proposed[write["address"]] = write["value"]
-            self.memory.prevalidate_write(write["address"], write["value"])
-
-        # Deferred equalities can also write cells while they are reconciled.
-        # Exercise the exact post-RETIRED order on isolated state before RETIRE
-        # commits the endpoint.  This includes deferred pairs from earlier steps:
-        # a new direct write may make one of those pairs contradictory.
-        staged = HostMemory(
-            cells=dict(self.memory.cells),
-            deferred=list(self.memory.deferred),
-        )
-        for write in writes:
-            staged.apply_write(write["address"], write["value"])
-        for item in result["deferred"]:
-            staged.record_deferred(item["target"], item["local"])
-        staged.resolve_deferred()
-
-        # The host packed this frame, so it knows every address the transition
-        # was handed. Section 14 leaves the transition *decision* to the
-        # endpoint, and none of this second-guesses it, but an effect on a cell
-        # that was never in the request is outside the frame rather than a
-        # decision about it: the host never sent that cell, so the endpoint
-        # cannot have reasoned about its current value, and applying it would
-        # corrupt a memory image section 14 makes the host's own.  A deferred
-        # equality is such an effect too, just a delayed one: resolving it writes
-        # whichever side is still unknown.
-        in_frame = set(addresses)
-        for write in writes:
-            if write["address"] not in in_frame:
-                raise ProtocolViolation(
-                    f"result writes address {write['address']}, which "
-                    f"{record.opcode} did not carry; frame addresses are "
-                    f"{sorted(in_frame)}"
-                )
-        for item in result["deferred"]:
-            for role in ("target", "local"):
-                if item[role] not in in_frame:
-                    raise ProtocolViolation(
-                        f"result defers an equality whose {role} is address "
-                        f"{item[role]}, which {record.opcode} did not carry; "
-                        f"frame addresses are {sorted(in_frame)}"
-                    )
-        for address in result["accesses"]:
-            if address not in in_frame:
-                raise ProtocolViolation(
-                    f"result counts an access to address {address}, which "
-                    f"{record.opcode} did not carry; frame addresses are "
-                    f"{sorted(in_frame)}"
-                )
+        try:
+            result, writes = self._decode_and_prevalidate_result(reply, addresses, record)
+        except Exception:
+            if service_key is not None:
+                self.endpoint.step(abort=True)
+                self.service_adapter.abort()
+            raise
 
         retire = self._exchange(
             protocol.build_retire(
