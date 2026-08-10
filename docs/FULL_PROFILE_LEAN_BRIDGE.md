@@ -90,10 +90,21 @@ control primitives. Concrete successful DEREF/JUMP decisions and competing-fault
 witnesses keep both the success paths and precedence claims non-vacuous; the
 mutation runner changes each validation edge and requires Lean to reject it.
 
+`FullProfile.Payload` closes the next bounded host boundary for DEREF and JUMP:
+it decodes the canonical 81/103-byte payloads at the byte offsets fixed by the
+v1 transaction protocol, rejects malformed profile/reserved/cell/branch bytes,
+and feeds only successfully decoded packets to the preparation functions above.
+The ordinary-result checksum remains an explicit endpoint-derived argument
+because request payloads do not carry it. A concrete 103-byte not-taken JUMP
+witness reaches a canonical result, and byte-offset/width/cell/branch mutations
+must fail elaboration. This is a payload-to-functional theorem, not a parser for
+ready/valid cycles or a Lean-to-RTL correspondence result.
+
 ## Remaining theorem graph
 
-1. Define a byte-exact Lean codec for every fixed full-profile payload and prove
-   decode/encode and malformed-field precedence into `FullProfile.Instruction`.
+1. Extend the proved byte-exact DEREF/JUMP payload decoder across SET/XOR/MUL
+   and the BLAKE3/control payloads, then compose it with the checksum-parametric
+   envelope decoder and the endpoint-derived ordinary-result CRC.
 2. Define an independent cycle transition system for
    `asic_core/rtl/lsc1_packet_frontend.sv`, including receive/transmit buffers,
    backpressure, reset and ABORT dominance.

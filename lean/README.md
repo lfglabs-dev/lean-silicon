@@ -17,6 +17,10 @@ Modules:
   remain outside this model. The stable checksum seam is intended for a later
   proof that instantiates the protocol's CRC-32 implementation without changing
   packet consumers.
+- `FullProfilePayload.lean` — byte-exact decoding of canonical 81-byte DEREF
+  and 103-byte JUMP payloads into raw packet preparation, with explicit
+  malformed-field and mutation-sensitive witnesses. It does not model the
+  cycle-level receiver or derive the result checksum absent from request bytes.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   v1 current-state index bounds, abort preservation, matching commit, mismatch
   rejection, reset, and exactly-once retirement theorems. Arithmetic and
