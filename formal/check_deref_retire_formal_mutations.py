@@ -27,6 +27,11 @@ MUTATIONS = [
     ("duplicate_retirement", "lsc1_packet_frontend.sv",
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b0;",
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b1;"),
+    ("duplicate_completion_pulse", "lsc1_packet_frontend.sv",
+     "            encoder_start <= 1'b0;\n            done_pulse <= 1'b0;\n"
+     "            if (tx_done && capture_result_crc) begin",
+     "            encoder_start <= 1'b0;\n            done_pulse <= done_pulse;\n"
+     "            if (tx_done && capture_result_crc) begin"),
 ]
 
 

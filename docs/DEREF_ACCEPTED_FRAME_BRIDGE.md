@@ -7,14 +7,17 @@ envelope into the production `lsc1_packet_frontend`, checks and drains every
 byte of its 35-byte RESULT payload and envelope, independently accumulates the
 payload CRC-32 from those emitted bytes, and uses that value in a matching
 RETIRE envelope.  Its cover requires the expected staged effect and exactly
-one `pc`/`fp`/`retire_seq` commit with one `done_pulse`.  Cycle-accurate RTL
-simulation derives the first completion at cycle 2784; the formal task uses
-depth 2786, and a depth-2785 mutant must report an unreached cover.
+one `pc`/`fp`/`retire_seq` commit with one `done_pulse`, then reaches a
+quiescent cycle where both ghost counters equal one and `done_pulse` is low.
+Cycle-accurate RTL simulation derives the first completion at cycle 2784; the
+formal task uses depth 2787, and a depth-2786 mutant must report an unreached
+cover.
 
 The separate depth-20 `safety` task retains arbitrary traffic and backpressure.
-Critical formal mutants corrupting the emitted-result CRC binding or retaining
-the stage after retirement must terminate with assertion failures; missing
-covers, timeouts, tool errors, or surviving mutants fail the gate.
+Critical formal mutants corrupting the emitted-result CRC binding, retaining
+the stage after retirement, or holding the completion pulse high must terminate
+with assertion failures; missing covers, timeouts, tool errors, or surviving
+mutants fail the gate.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly
 81 payload bytes. No result checksum is accepted from the host or theorem caller.

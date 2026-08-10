@@ -47,7 +47,7 @@ module full_lsc1_deref_bridge_checker (
 
 `ifdef FORMAL_DEREF_REACHABILITY
     localparam [2:0] W_DEREF = 0, W_RESULT = 1, W_CRC = 2,
-                     W_RETIRE = 3, W_DONE = 4;
+                     W_RETIRE = 3, W_DONE = 4, W_QUIET = 5;
     reg [2:0] witness_phase;
     reg [6:0] deref_beat;
     reg [5:0] result_beat;
@@ -231,9 +231,19 @@ module full_lsc1_deref_bridge_checker (
                 assert(retire_seq == 1);
                 assert(committed_pc == 1 && committed_fp == 0);
                 assert(!result_pending);
+                witness_phase <= W_QUIET;
+            end
+            if (witness_phase == W_QUIET) begin
+                assert(!done_pulse);
+                assert(commit_updates == 1);
+                assert(done_count == 1);
+                assert(retire_seq == 1);
+                assert(committed_pc == 1 && committed_fp == 0);
+                assert(!result_pending);
             end
         end
-        cover(witness_phase == W_DONE && done_pulse && retire_seq == 1 &&
+        cover(witness_phase == W_QUIET && !done_pulse &&
+              commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
               committed_pc == 1 && committed_fp == 0 && !result_pending);
     end
 `else
