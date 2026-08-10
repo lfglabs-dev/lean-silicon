@@ -140,6 +140,7 @@ module lsc1_packet_frontend (
         .capture_result_crc(capture_result_crc),
         .staged_txn_id(staged_txn_id), .staged_next_pc(staged_next_pc),
         .staged_next_fp(staged_next_fp), .staged_result_crc(staged_result_crc),
+        .committed_pc(committed_pc), .committed_fp(committed_fp),
         .retire_seq(retire_seq), .done_pulse(done_pulse)
     );
 `endif
