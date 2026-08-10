@@ -89,6 +89,12 @@ def canonicalJumpCells (packet : JumpPacket) : Bool :=
   canonicalCell packet.conditionCell && canonicalCell packet.targetPcCell &&
     canonicalCell packet.targetFpCell && canonicalCell packet.proposedInverse
 
+def derefPcReturnInRange (packet : DerefPacket) : Bool :=
+  packet.common.control.pc + 2 < protocolIndexLimit
+
+def jumpTargetInRange (target : Index) : Bool :=
+  target < protocolIndexLimit
+
 /-- Raw DEREF preparation in endpoint fault order. -/
 def prepareDeref (packet : DerefPacket) : Except Fault DerefInput :=
   if !canonicalDerefCells packet then .error .badCell
@@ -125,7 +131,7 @@ def preparedDerefDecision (mode : ControlPrimitives.DerefMode)
   match prepareDeref packet with
   | .error fault => .fault fault
   | .ok input =>
-      if mode == .pc && packet.common.control.pc + 2 >= protocolIndexLimit then
+      if mode == .pc && !derefPcReturnInRange packet then
         .fault .address
       else decide (.deref mode input)
 
@@ -149,10 +155,10 @@ def prepareJump (packet : JumpPacket) : Except Fault JumpInput :=
             else if actualTaken then
               if !ControlPrimitives.acceptsInverse (memory condition).value
                   packet.proposedInverse.value then .error (.jump .invalidInverse)
-              else if packet.proposedPc >= protocolIndexLimit then .error .address
+              else if !jumpTargetInRange packet.proposedPc then .error .address
               else if encodeIndex packet.proposedPc != (memory targetPc).value then
                 .error (.jump .unresolvedPointer)
-              else if packet.proposedFp >= protocolIndexLimit then .error .address
+              else if !jumpTargetInRange packet.proposedFp then .error .address
               else if encodeIndex packet.proposedFp != (memory targetFp).value then
                 .error (.jump .unresolvedPointer)
               else .ok {
@@ -184,8 +190,7 @@ def preparedJumpDecision (packet : JumpPacket) : Decision :=
 theorem prepared_deref_refines_decide (mode : ControlPrimitives.DerefMode)
     (packet : DerefPacket) (input : DerefInput)
     (h : prepareDeref packet = .ok input)
-    (hreturn : ¬(mode = .pc ∧
-      packet.common.control.pc + 2 >= protocolIndexLimit)) :
+    (hreturn : ¬(mode = .pc ∧ derefPcReturnInRange packet = false)) :
     preparedDerefDecision mode packet = decide (.deref mode input) := by
   simp [preparedDerefDecision, h, hreturn]
 
@@ -476,6 +481,15 @@ example : preparedDerefDecision .pc { witnessDerefPacket with
     common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } } } =
     .fault .address := by rfl
 
+/-- The immediately preceding DEREF_PC return index remains admissible. -/
+example : derefPcReturnInRange { witnessDerefPacket with
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 3, fp := 9 } } } :=
+  by decide
+
+example : !derefPcReturnInRange { witnessDerefPacket with
+    common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } } } :=
+  by decide
+
 /-- The return-index bound is specific to DEREF_PC; DEREF_FP keeps this boundary packet. -/
 example : exists effect, preparedDerefDecision .fp { witnessDerefPacket with
     common := { witnessCommon with control := { pc := protocolIndexLimit - 2, fp := 9 } } } =
@@ -536,6 +550,11 @@ example : prepareJump { witnessTakenJumpPacket with
     proposedFp := protocolIndexLimit
     targetFpCell := { written := true, value := encodeIndex protocolIndexLimit } } =
     .error .address := by rfl
+
+/-- The shared taken-target predicate admits exactly the last protocol index. -/
+example : jumpTargetInRange (protocolIndexLimit - 1) := by decide
+
+example : !jumpTargetInRange protocolIndexLimit := by decide
 
 /-- Inverse validation precedes both taken-target range checks. -/
 example : prepareJump { witnessTakenJumpPacket with

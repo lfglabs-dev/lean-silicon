@@ -219,8 +219,16 @@ packet_mutations = {
         "if false then .error .aliasInconsistent",
     ),
     "deref-pc-accepts-out-of-range-return": (
-        "if mode == .pc && packet.common.control.pc + 2 >= protocolIndexLimit then",
+        "if mode == .pc && !derefPcReturnInRange packet then",
         "if false then",
+    ),
+    "deref-pc-allows-limit-return": (
+        "packet.common.control.pc + 2 < protocolIndexLimit",
+        "packet.common.control.pc + 2 <= protocolIndexLimit",
+    ),
+    "deref-pc-rejects-last-valid-return": (
+        "packet.common.control.pc + 2 < protocolIndexLimit",
+        "packet.common.control.pc + 2 < protocolIndexLimit - 1",
     ),
     "jump-skips-address-check": (
         "match CheckedIndex.add packet.common.control.fp packet.conditionOffset with",
@@ -243,12 +251,20 @@ packet_mutations = {
         "else if false then",
     ),
     "jump-accepts-out-of-range-pc": (
-        "else if packet.proposedPc >= protocolIndexLimit then .error .address",
+        "else if !jumpTargetInRange packet.proposedPc then .error .address",
         "else if false then .error .address",
     ),
     "jump-accepts-out-of-range-fp": (
-        "else if packet.proposedFp >= protocolIndexLimit then .error .address",
+        "else if !jumpTargetInRange packet.proposedFp then .error .address",
         "else if false then .error .address",
+    ),
+    "jump-allows-limit-target": (
+        "target < protocolIndexLimit",
+        "target <= protocolIndexLimit",
+    ),
+    "jump-rejects-last-valid-target": (
+        "target < protocolIndexLimit",
+        "target < protocolIndexLimit - 1",
     ),
     "jump-drops-index-proposals": (
         "resolvedTargets := some (packet.proposedPc, packet.proposedFp)",
