@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -40,11 +41,20 @@ def run_bounded(
         output, _ = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as error:
         _signal_group(process.pid, signal.SIGTERM)
+        kill_deadline = time.monotonic() + TERMINATION_GRACE_SECONDS
         try:
             output, _ = process.communicate(timeout=TERMINATION_GRACE_SECONDS)
         except subprocess.TimeoutExpired:
-            _signal_group(process.pid, signal.SIGKILL)
-            output, _ = process.communicate()
+            pass
+        else:
+            # The direct child may exit while a solver descendant survives with
+            # its output redirected. Preserve the full TERM grace period before
+            # escalating the process group in that case as well.
+            remaining_grace = kill_deadline - time.monotonic()
+            if remaining_grace > 0:
+                time.sleep(remaining_grace)
+        _signal_group(process.pid, signal.SIGKILL)
+        output, _ = process.communicate()
         raise subprocess.TimeoutExpired(
             list(command), timeout, output=output
         ) from error

@@ -17,6 +17,20 @@ except ModuleNotFoundError:
 
 
 class SubprocessTreeTest(unittest.TestCase):
+    def assert_process_stopped(self, pid: int, message: str) -> None:
+        status = Path(f"/proc/{pid}/status")
+        reap_deadline = time.monotonic() + 1.0
+        while status.exists():
+            try:
+                contents = status.read_text()
+            except FileNotFoundError:
+                return
+            if "State:\tZ" in contents:
+                return
+            if time.monotonic() >= reap_deadline:
+                self.fail(message)
+            time.sleep(0.01)
+
     def test_timeout_kills_term_resistant_descendant_within_bound(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             pid_file = Path(raw) / "btormc.pid"
@@ -42,16 +56,43 @@ class SubprocessTreeTest(unittest.TestCase):
 
             self.assertLess(elapsed, 0.5 + TERMINATION_GRACE_SECONDS + 1.0)
             descendant_pid = int(pid_file.read_text())
-            status = Path(f"/proc/{descendant_pid}/status")
-            reap_deadline = time.monotonic() + 1.0
-            while status.exists() and "State:\tZ" not in status.read_text():
-                if time.monotonic() >= reap_deadline:
-                    self.fail("descendant remained executable after process-group SIGKILL")
-                time.sleep(0.01)
-            if status.exists():
-                # A killed orphan may briefly remain as a zombie until PID 1
-                # reaps it; that state cannot execute or retain solver memory.
-                self.assertIn("State:\tZ", status.read_text())
+            self.assert_process_stopped(
+                descendant_pid,
+                "descendant remained executable after process-group SIGKILL",
+            )
+
+    def test_timeout_kills_redirected_descendant_after_parent_exits(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            pid_file = Path(raw) / "btormc-redirected.pid"
+            descendant = (
+                "import os,signal,time,pathlib; "
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                f"pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+                "time.sleep(60)"
+            )
+            parent = (
+                "import subprocess,sys,time; "
+                "subprocess.Popen("
+                f"[sys.executable, '-c', {descendant!r}], "
+                "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+                "time.sleep(60)"
+            )
+            started = time.monotonic()
+            with self.assertRaises(subprocess.TimeoutExpired):
+                run_bounded(
+                    [sys.executable, "-c", parent],
+                    cwd=Path(raw),
+                    timeout=0.5,
+                )
+            elapsed = time.monotonic() - started
+
+            self.assertGreaterEqual(elapsed, 0.5 + TERMINATION_GRACE_SECONDS)
+            self.assertLess(elapsed, 0.5 + TERMINATION_GRACE_SECONDS + 1.0)
+            descendant_pid = int(pid_file.read_text())
+            self.assert_process_stopped(
+                descendant_pid,
+                "redirected descendant survived process-group SIGKILL",
+            )
 
 
 if __name__ == "__main__":
