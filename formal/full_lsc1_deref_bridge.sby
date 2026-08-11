@@ -15,11 +15,11 @@ reachability: depth 2788
 accepted_result_reachability: mode cover
 accepted_result_reachability: depth 2767
 matching_retire_reachability: mode cover
-matching_retire_reachability: depth 2786
+matching_retire_reachability: depth 2787
 accepted_result_safety: mode bmc
 accepted_result_safety: depth 2767
 matching_retire_safety: mode bmc
-matching_retire_safety: depth 2786
+matching_retire_safety: depth 2787
 post_retire_safety: mode bmc
 post_retire_safety: depth 2788
 multiclock off

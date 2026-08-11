@@ -32,7 +32,7 @@ split at observable lifecycle boundaries, without adding assumptions or
 changing the byte-exact environment: `accepted_result_{reachability,safety}`
 checks the complete RESULT and stable staged CRC at depth 2767,
 `matching_retire_{reachability,safety}` checks the matching RETIRE commit at
-depth 2786, and `post_retire_safety` checks the following exactly-once and
+depth 2787, and `post_retire_safety` checks the following exactly-once and
 quiescent state at depth 2788.  Each reachability task is a non-vacuity mate for
 its safety task; the same end-to-end harness prefix reaches every checkpoint.
 The tasks intentionally use different engines: BTOR/`btormc` checks the one
@@ -55,8 +55,10 @@ The executable trace now records the intermediate boundaries as well as the
 unchanged endpoints: RESULT beat 43 transfers at cycle 2763, matching RETIRE is
 accepted at cycle 2783, and the first completion remains cycle 2784.  Accounting
 for registered capture and formal sampling places the stable RESULT checkpoint
-at the last step of depth 2767, the matching commit at the last step of depth
-2786, and final quiescence at the last step of depth 2788.  The focused
+at the last step of depth 2767, the matching commit at formal step 2786
+(therefore depth 2787), and final quiescence at the last step of depth 2788.
+The prior depth 2786 stopped at step 2785, one sample before `done_pulse` and
+the nonblocking commit updates are observable together.  The focused
 below-bound mutation checks all three reachability tasks one step lower.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly

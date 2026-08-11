@@ -7,7 +7,10 @@ import subprocess
 import shutil
 from pathlib import Path
 
-from subprocess_tree import run_bounded
+try:
+    from formal.subprocess_tree import run_bounded
+except ModuleNotFoundError:
+    from subprocess_tree import run_bounded
 
 
 HERE = Path(__file__).resolve().parent
@@ -16,7 +19,7 @@ MUTANT = HERE / ".full_lsc1_deref_bridge_below_bound_mutation.sby"
 SOLVER_TIMEOUT_SECONDS = 540
 CHECKPOINTS = [
     ("accepted_result_reachability", 2767),
-    ("matching_retire_reachability", 2786),
+    ("matching_retire_reachability", 2787),
     ("reachability", 2788),
 ]
 

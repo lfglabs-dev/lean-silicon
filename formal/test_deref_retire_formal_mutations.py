@@ -7,9 +7,20 @@ import unittest
 from unittest.mock import patch
 
 from formal import check_deref_retire_formal_mutations as mutation_check
+from formal import check_deref_coverage_mutation as coverage_check
 
 
 class MutationLifecycleTest(unittest.TestCase):
+    def test_checkpoint_depths_encode_exclusive_sby_boundaries(self) -> None:
+        self.assertEqual(
+            coverage_check.CHECKPOINTS,
+            [
+                ("accepted_result_reachability", 2767),
+                ("matching_retire_reachability", 2787),
+                ("reachability", 2788),
+            ],
+        )
+
     def test_mutants_are_assigned_to_the_first_observable_lifecycle_goal(self) -> None:
         assignments = {item[0]: item[1] for item in mutation_check.MUTATIONS}
         self.assertEqual(assignments["corrupted_result_crc_binding"], "accepted_result_safety")
