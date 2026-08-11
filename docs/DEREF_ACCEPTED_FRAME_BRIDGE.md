@@ -43,6 +43,10 @@ the completion pulse high, as well as publishing committed `pc` while capturing
 the RESULT CRC, then run through `witness_safety` and must terminate with
 assertion failures; missing covers, timeouts, tool errors, or surviving mutants
 fail the gate.
+Each solver subprocess has a 60-minute fail-closed timeout.  Because the
+pristine baseline completes before the parallel mutant batch starts, the
+baseline-plus-batch worst case remains below the formal job's 180-minute limit
+and can report its own actionable timeout instead of being cancelled by CI.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly
 81 payload bytes. No result checksum is accepted from the host or theorem caller.

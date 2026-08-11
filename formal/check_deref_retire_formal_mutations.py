@@ -18,6 +18,7 @@ SOURCES = [
     "gf128_mul_bitstream.sv", "leanvm_b_stream_alu.sv", "lsc1_stream_adapter.sv",
     "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
 ]
+SOLVER_TIMEOUT_SECONDS = 3600
 MUTATIONS = [
     ("corrupted_result_envelope_crc", "lsc1_packet_tx.sv",
      "saved_crc <= ~crc_byte(envelope_crc_work, tx_data);",
@@ -67,7 +68,7 @@ def run_formal(
             ["sby", "-f", "full_lsc1_deref_bridge.sby", "witness_safety"],
             cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-            timeout=12600,
+            timeout=SOLVER_TIMEOUT_SECONDS,
         )
 
 

@@ -11,6 +11,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "full_lsc1_deref_bridge.sby"
 MUTANT = HERE / ".full_lsc1_deref_bridge_below_bound_mutation.sby"
+SOLVER_TIMEOUT_SECONDS = 3600
 
 
 def main() -> int:
@@ -26,7 +27,7 @@ def main() -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=12600,
+            timeout=SOLVER_TIMEOUT_SECONDS,
         )
     finally:
         MUTANT.unlink(missing_ok=True)
