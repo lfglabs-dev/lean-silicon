@@ -7,6 +7,8 @@ import subprocess
 import shutil
 from pathlib import Path
 
+from subprocess_tree import run_bounded
+
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "full_lsc1_deref_bridge.sby"
@@ -21,12 +23,9 @@ def main() -> int:
         raise SystemExit(f"expected one {anchor!r} anchor")
     MUTANT.write_text(text.replace(anchor, "reachability: depth 2787"))
     try:
-        result = subprocess.run(
+        result = run_bounded(
             ["sby", "-f", MUTANT.name, "reachability"],
             cwd=HERE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
             timeout=SOLVER_TIMEOUT_SECONDS,
         )
     finally:

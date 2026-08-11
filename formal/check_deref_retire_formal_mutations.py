@@ -10,6 +10,8 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from subprocess_tree import run_bounded
+
 ROOT = Path(__file__).resolve().parents[1]
 FORMAL = ROOT / "formal"
 RTL = ROOT / "asic_core" / "rtl"
@@ -68,10 +70,9 @@ def run_formal(
             if source_text.count(old) != 1:
                 raise ValueError(f"{name}: mutation anchor count {source_text.count(old)}")
             target.write_text(source_text.replace(old, new))
-        return subprocess.run(
+        return run_bounded(
             ["sby", "-f", "full_lsc1_deref_bridge.sby", "witness_safety"],
             cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             timeout=SOLVER_TIMEOUT_SECONDS,
         )
 
