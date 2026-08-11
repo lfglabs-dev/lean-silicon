@@ -1,49 +1,30 @@
 #!/usr/bin/env python3
-"""Focused regression for the depth-2788 mutation gate's resource bound."""
+"""Focused regressions for lifecycle task selection and fail-closed bounds."""
 
 from __future__ import annotations
 
-import threading
-import time
 import unittest
-from math import ceil
 from unittest.mock import patch
 
 from formal import check_deref_retire_formal_mutations as mutation_check
 
 
-class MutationConcurrencyTest(unittest.TestCase):
-    def test_depth_2788_mutants_never_exceed_worker_bound(self) -> None:
-        lock = threading.Lock()
-        active = 0
-        peak = 0
+class MutationLifecycleTest(unittest.TestCase):
+    def test_mutants_are_assigned_to_the_first_observable_lifecycle_goal(self) -> None:
+        assignments = {item[0]: item[1] for item in mutation_check.MUTATIONS}
+        self.assertEqual(assignments["corrupted_result_crc_binding"], "accepted_result_safety")
+        self.assertEqual(assignments["duplicate_retirement"], "matching_retire_safety")
+        self.assertEqual(assignments["duplicate_completion_pulse"], "post_retire_safety")
 
-        def observe(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]:
-            nonlocal active, peak
-            with lock:
-                active += 1
-                peak = max(peak, active)
-            time.sleep(0.05)
-            with lock:
-                active -= 1
-            return mutation[0], True, ""
+    def test_each_solver_is_strictly_inside_outer_bound(self) -> None:
+        self.assertEqual(mutation_check.SOLVER_TIMEOUT_SECONDS, 540)
+        self.assertLess(mutation_check.SOLVER_TIMEOUT_SECONDS, 600)
 
-        mutations = [
-            (f"mutant_{index}", "source.sv", "old", "new")
-            for index in range(7)
-        ]
-        with patch.object(mutation_check, "check_mutation", side_effect=observe):
-            results = mutation_check.check_mutations(mutations)
-
-        self.assertEqual(peak, mutation_check.MAX_PARALLEL_MUTATIONS)
-        self.assertEqual(
-            [result[0] for result in results],
-            [item[0] for item in mutations],
-        )
-        worst_case_seconds = mutation_check.SOLVER_TIMEOUT_SECONDS * (
-            1 + ceil(len(mutations) / mutation_check.MAX_PARALLEL_MUTATIONS)
-        )
-        self.assertLessEqual(worst_case_seconds, 75 * 60)
+    def test_selected_task_is_passed_to_sby(self) -> None:
+        completed = mutation_check.subprocess.CompletedProcess([], 0, "PASS")
+        with patch.object(mutation_check, "run_bounded", return_value=completed) as run:
+            mutation_check.run_formal("baseline", "matching_retire_safety")
+        self.assertEqual(run.call_args.args[0][-1], "matching_retire_safety")
 
 
 if __name__ == "__main__":

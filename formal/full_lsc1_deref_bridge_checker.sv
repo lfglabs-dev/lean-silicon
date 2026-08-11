@@ -217,6 +217,7 @@ module full_lsc1_deref_bridge_checker (
                 result_beat <= result_beat + 1'b1;
         end
 
+`ifndef FORMAL_DEREF_ACCEPTED_RESULT
         // This binds the internal retirement check to CRC-32 of the emitted
         // RESULT payload, independently accumulated above.
         if (past_valid && reset_seen && witness_phase == W_CRC) begin
@@ -230,13 +231,35 @@ module full_lsc1_deref_bridge_checker (
             (witness_phase == W_CRC || witness_phase == W_RETIRE) &&
             !capture_result_crc)
             assert(staged_result_crc == emitted_result_crc);
+`endif
 
+`ifdef FORMAL_DEREF_ACCEPTED_RESULT
+        // Lifecycle sub-goal 1 ends at the first stable post-RESULT state.
+        // The end-to-end cover below remains unchanged and separately proves
+        // that this exact checkpoint continues through matching retirement.
+        if (past_valid && reset_seen && witness_phase == W_CRC) begin
+            assert(!tx_valid);
+            assert(staged_txn_id == 1);
+            assert(staged_next_pc == 1);
+            assert(staged_next_fp == 1);
+            assert(committed_pc == 0);
+            assert(committed_fp == 0);
+            if (!capture_result_crc)
+                assert(staged_result_crc == emitted_result_crc);
+        end
+        cover(witness_phase == W_CRC && !capture_result_crc &&
+              staged_result_crc == emitted_result_crc);
+`endif
+
+`ifndef FORMAL_DEREF_ACCEPTED_RESULT
         if (past_valid && reset_seen && $past(reset_seen) &&
             retire_seq != $past(retire_seq))
             commit_updates <= commit_updates + 1'b1;
         if (past_valid && reset_seen && done_pulse)
             done_count <= done_count + 1'b1;
+`endif
 
+`ifndef FORMAL_DEREF_ACCEPTED_RESULT
         if (past_valid && reset_seen) begin
             assert(commit_updates <= 1);
             assert(done_count <= 1);
@@ -265,9 +288,21 @@ module full_lsc1_deref_bridge_checker (
                 assert(!result_pending);
             end
         end
+`endif
+`ifdef FORMAL_DEREF_MATCHING_RETIRE
+        cover(witness_phase == W_DONE && done_pulse && retire_seq == 1 &&
+              committed_pc == 1 && committed_fp == 1 && !result_pending);
+`elsif FORMAL_DEREF_POST_RETIRE
         cover(witness_phase == W_QUIET && !done_pulse &&
               commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
               committed_pc == 1 && committed_fp == 1 && !result_pending);
+`elsif FORMAL_DEREF_ACCEPTED_RESULT
+        // The sub-goal-specific cover is above.
+`else
+        cover(witness_phase == W_QUIET && !done_pulse &&
+              commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
+              committed_pc == 1 && committed_fp == 1 && !result_pending);
+`endif
     end
 `else
     // The arbitrary-traffic depth-20 safety task keeps no witness assumptions.

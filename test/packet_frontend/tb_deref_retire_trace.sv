@@ -5,7 +5,8 @@ module tb_deref_retire_trace;
     wire rx_ready, tx_valid, busy, fault, done_pulse;
     wire [7:0] tx_data;
     integer cycle = 0, i, tx_count = 0, done_count = 0;
-    integer accept_cycle = 0, done_cycle = 0;
+    integer accept_cycle = 0, result_last_cycle = 0;
+    integer retire_accept_cycle = 0, done_cycle = 0;
     reg [7:0] request [0:90];
     reg [7:0] retire [0:17];
 
@@ -13,13 +14,18 @@ module tb_deref_retire_trace;
     always #5 clk = ~clk;
     always @(posedge clk) begin
         cycle <= cycle + 1;
-        if (tx_valid && tx_ready) tx_count <= tx_count + 1;
+        if (tx_valid && tx_ready) begin
+            tx_count <= tx_count + 1;
+            if (tx_count == 43) result_last_cycle <= cycle;
+        end
         if (done_pulse) begin
             done_count <= done_count + 1;
             if (done_cycle == 0) done_cycle <= cycle;
         end
-        if (dut.frame_valid && dut.event_ready && accept_cycle == 0)
-            accept_cycle <= cycle;
+        if (dut.frame_valid && dut.event_ready) begin
+            if (accept_cycle == 0) accept_cycle <= cycle;
+            else if (retire_accept_cycle == 0) retire_accept_cycle <= cycle;
+        end
     end
 
     task send_byte(input [7:0] value);
@@ -58,7 +64,10 @@ module tb_deref_retire_trace;
         if (done_count !== 1) $fatal(1, "done count %0d", done_count);
         if (accept_cycle !== 92 || done_cycle !== 2784)
             $fatal(1, "witness timing changed accept=%0d done=%0d", accept_cycle, done_cycle);
+        if (result_last_cycle !== 2763 || retire_accept_cycle !== 2783)
+            $fatal(1, "lifecycle timing changed result=%0d retire=%0d", result_last_cycle, retire_accept_cycle);
         $display("DEREF_RETIRE_FIRST_DONE_CYCLE=%0d", done_cycle);
+        $display("DEREF_LIFECYCLE_CYCLES result_last=%0d retire_accept=%0d", result_last_cycle, retire_accept_cycle);
         $display("DEREF_RETIRE_TRACE_PASS accept_cycle=%0d result_envelope_bytes=44 done_count=%0d", accept_cycle, done_count);
         $finish;
     end

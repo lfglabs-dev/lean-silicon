@@ -102,7 +102,7 @@ jobs:
         run: cd formal && sby -f lsc1u_xor_refinement.sby
       - name: GF(2^128) accepted-stream refinement
         run: cd formal && sby -f gf128_mul_stream_refinement.sby
-      - name: Full LSC-1 DEREF bounded safety and accepted-frame reachability
+      - name: Full LSC-1 DEREF lifecycle safety and end-to-end reachability
         run: cd formal && sby -f full_lsc1_deref_bridge.sby
       - name: Formal subprocess-tree timeout regression
         run: python3 -m unittest formal/test_subprocess_tree.py -v

@@ -26,9 +26,15 @@ depth-2787 mutant must report an unreached cover.  This is a finite witness
 through step 2787, not an unbounded liveness claim.
 
 The separate depth-20 `safety` task retains arbitrary traffic and backpressure.
-The constrained witness is checked twice at the same depth: `reachability`
-must reach the final cover, while `witness_safety` must satisfy every byte,
-CRC, staged-effect, retirement, and quiescence assertion along that path.
+The depth-2788 `reachability` task remains the end-to-end claim and must still
+reach the final quiescent cover.  Its former monolithic `witness_safety` task is
+split at observable lifecycle boundaries, without adding assumptions or
+changing the byte-exact environment: `accepted_result_{reachability,safety}`
+checks the complete RESULT and stable staged CRC at depth 2767,
+`matching_retire_{reachability,safety}` checks the matching RETIRE commit at
+depth 2786, and `post_retire_safety` checks the following exactly-once and
+quiescent state at depth 2788.  Each reachability task is a non-vacuity mate for
+its safety task; the same end-to-end harness prefix reaches every checkpoint.
 The tasks intentionally use different engines: BTOR/`btormc` checks the one
 long concrete cover and the same-depth witness assertions and their mutants as
 bit-vector transition systems, while SMTBMC/Boolector is kept
@@ -36,17 +42,22 @@ only for the shallow arbitrary-traffic safety task.  This avoids 2,788
 incremental SMT queries for a witness whose cycle is already fixed by the
 byte-exact environment; it does not change the depth, assumptions, assertions,
 or cover condition.
-The pristine `witness_safety` baseline must pass before any long mutation job
-starts.  Critical formal mutants corrupting the emitted-result CRC binding,
-emitting a 45th RESULT beat, retaining the stage after retirement, or holding
-the completion pulse high, as well as publishing committed `pc` while capturing
-the RESULT CRC, then run through `witness_safety` and must terminate with
-assertion failures; missing covers, timeouts, tool errors, or surviving mutants
-fail the gate.
-Each solver subprocess has a 60-minute fail-closed timeout.  Because the
-pristine baseline completes before the parallel mutant batch starts, the
-baseline-plus-batch worst case remains below the formal job's 180-minute limit
-and can report its own actionable timeout instead of being cancelled by CI.
+Critical mutants run only in the first sub-goal that can observe them.  RESULT
+envelope/CRC and early-publication mutants use `accepted_result_safety`, stage
+retention uses `matching_retire_safety`, and a retained completion pulse uses
+`post_retire_safety`.  A pristine baseline for each sub-goal must pass before
+its mutants run.  The mutations remain individual (not combined), and only a
+completed assertion failure counts as a kill; missing covers, timeouts, tool
+errors, or surviving mutants fail closed.  Every solver subprocess has a
+540-second timeout, strictly inside the 600-second outer bound.
+
+The executable trace now records the intermediate boundaries as well as the
+unchanged endpoints: RESULT beat 43 transfers at cycle 2763, matching RETIRE is
+accepted at cycle 2783, and the first completion remains cycle 2784.  Accounting
+for registered capture and formal sampling places the stable RESULT checkpoint
+at the last step of depth 2767, the matching commit at the last step of depth
+2786, and final quiescence at the last step of depth 2788.  The focused
+below-bound mutation checks all three reachability tasks one step lower.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly
 81 payload bytes. No result checksum is accepted from the host or theorem caller.
