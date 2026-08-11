@@ -15,7 +15,9 @@ multiclock off
 [engines]
 safety: smtbmc boolector
 reachability: btor btormc
-witness_safety: abc bmc3
+# Keep arbitrary RTL power-up state symbolic; the AIG backend rejects it
+# before the required sampled reset can establish the witness invariants.
+witness_safety: btor btormc
 
 [script]
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_rx.sv
@@ -30,11 +32,7 @@ reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY f
 witness_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY full_lsc1_deref_bridge_checker.sv
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_frontend.sv
 prep -top lsc1_packet_frontend
-# The ABC witness engine requires a two-state AIG.  Preserve the RTL's
-# unconstrained power-up semantics by making unknown flop initial values
-# symbolic; the witness still has to establish every assertion from an
-# arbitrary initial state before its required sampled reset edge.
-setundef -undriven -init -anyseq -params
+setundef -undriven -anyseq -params
 opt_clean
 
 [files]
