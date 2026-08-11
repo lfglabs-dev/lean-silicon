@@ -11,6 +11,9 @@ first state after envelope beat 43, excluding a 45th RESULT transfer.  Its
 cover requires the expected staged effect and exactly
 one `pc`/`fp`/`retire_seq` commit with one `done_pulse`, then reaches a
 quiescent cycle where both ghost counters equal one and `done_pulse` is low.
+Before the matching RETIRE completion, assertions keep committed `pc` and `fp`
+at their reset values so the staged effect cannot become architecturally
+visible early.
 Cycle-accurate RTL simulation, with reset released away from a sampling edge,
 derives request acceptance at cycle 92 and the first completion at cycle 2784.
 The formal harness requires the
@@ -36,9 +39,10 @@ or cover condition.
 The pristine `witness_safety` baseline must pass before any long mutation job
 starts.  Critical formal mutants corrupting the emitted-result CRC binding,
 emitting a 45th RESULT beat, retaining the stage after retirement, or holding
-the completion pulse high then run through `witness_safety` and must terminate
-with assertion failures; missing covers, timeouts, tool errors, or surviving
-mutants fail the gate.
+the completion pulse high, as well as publishing committed `pc` while capturing
+the RESULT CRC, then run through `witness_safety` and must terminate with
+assertion failures; missing covers, timeouts, tool errors, or surviving mutants
+fail the gate.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly
 81 payload bytes. No result checksum is accepted from the host or theorem caller.

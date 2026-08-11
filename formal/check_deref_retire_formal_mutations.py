@@ -28,6 +28,10 @@ MUTATIONS = [
     ("corrupted_result_crc_binding", "lsc1_packet_frontend.sv",
      "staged_result_crc <= tx_payload_crc;",
      "staged_result_crc <= tx_payload_crc ^ 32'h00000001;"),
+    ("early_committed_pc", "lsc1_packet_frontend.sv",
+     "staged_result_crc <= tx_payload_crc;",
+     "staged_result_crc <= tx_payload_crc;\n"
+     "                committed_pc <= staged_next_pc;"),
     ("duplicate_retirement", "lsc1_packet_frontend.sv",
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b0;",
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b1;"),

@@ -234,6 +234,14 @@ module full_lsc1_deref_bridge_checker (
         if (past_valid && reset_seen) begin
             assert(commit_updates <= 1);
             assert(done_count <= 1);
+            // The architectural pc/fp commit is atomic with the matching
+            // RETIRE.  Before its completion pulse, neither field may expose
+            // the staged effect early.
+            if (witness_phase != W_QUIET &&
+                !(witness_phase == W_DONE && done_pulse)) begin
+                assert(committed_pc == 0);
+                assert(committed_fp == 0);
+            end
             if (witness_phase == W_DONE && done_pulse) begin
                 assert(commit_updates == 0); // counters update after this edge
                 assert(done_count == 0);
