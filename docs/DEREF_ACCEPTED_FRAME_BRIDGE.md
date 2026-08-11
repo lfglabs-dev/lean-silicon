@@ -21,10 +21,13 @@ depth-2787 mutant must report an unreached cover.  This is a finite witness
 through step 2787, not an unbounded liveness claim.
 
 The separate depth-20 `safety` task retains arbitrary traffic and backpressure.
+The constrained witness is checked twice at the same depth: `reachability`
+must reach the final cover, while `witness_safety` must satisfy every byte,
+CRC, staged-effect, retirement, and quiescence assertion along that path.
 Critical formal mutants corrupting the emitted-result CRC binding, retaining
-the stage after retirement, or holding the completion pulse high must terminate
-with assertion failures; missing covers, timeouts, tool errors, or surviving
-mutants fail the gate.
+the stage after retirement, or holding the completion pulse high run through
+`witness_safety` and must terminate with assertion failures; missing covers,
+timeouts, tool errors, or surviving mutants fail the gate.
 `LeanVMBMinCore.AcceptedDeref.accept` validates the complete asymmetric LSC-1 v1
 request envelope with the production reflected IEEE CRC-32, then decodes exactly
 81 payload bytes. No result checksum is accepted from the host or theorem caller.

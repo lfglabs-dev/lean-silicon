@@ -54,7 +54,7 @@ def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]
             return name, False, f"anchor count {text.count(old)}"
         target.write_text(text.replace(old, new))
         result = subprocess.run(
-            ["sby", "-f", "full_lsc1_deref_bridge.sby", "reachability"],
+            ["sby", "-f", "full_lsc1_deref_bridge.sby", "witness_safety"],
             cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             timeout=12600,
