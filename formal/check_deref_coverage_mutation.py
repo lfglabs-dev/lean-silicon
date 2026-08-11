@@ -33,7 +33,10 @@ def main() -> int:
         shutil.rmtree(HERE / ".full_lsc1_deref_bridge_below_bound_mutation", ignore_errors=True)
         shutil.rmtree(HERE / ".full_lsc1_deref_bridge_below_bound_mutation_reachability", ignore_errors=True)
 
-    rejected = result.returncode != 0 and "Unreached cover statement" in result.stdout
+    output = result.stdout.lower()
+    # An unreached cover is a completed SBY FAIL. Engines differ in whether
+    # they also print the legacy "Unreached cover statement" diagnostic.
+    rejected = result.returncode != 0 and "done (fail, rc=2)" in output
     print("below_first_reachable_bound_rejected=" + str(rejected).lower())
     if not rejected:
         print(result.stdout)
