@@ -33,24 +33,26 @@ module tb_deref_retire_trace;
     initial begin
         for (i = 0; i < 91; i = i + 1) request[i] = 0;
         request[0]=8'ha1; request[1]=1; request[2]=4; request[4]=8'h51;
-        request[18]=1; request[24]=1; request[28]=2; request[32]=1; request[33]=1;
-        request[87]=8'hb0; request[88]=8'h5f;
-        request[89]=8'h6e; request[90]=8'hf9;
+        request[6]=1; request[14]=1; request[18]=1; request[24]=1;
+        request[24]=2; request[28]=2; request[32]=1; request[33]=1;
+        request[87]=8'ha9; request[88]=8'h7f;
+        request[89]=8'hb6; request[90]=8'h92;
         for (i = 0; i < 18; i = i + 1) retire[i] = 0;
         retire[0]=8'ha1; retire[1]=1; retire[2]=8'h12; retire[4]=8'h08;
         // CRC-32 of the 35 bytes emitted by this concrete RESULT.
-        retire[10]=8'ha4; retire[11]=8'h6c; retire[12]=8'hb8; retire[13]=8'h80;
-        retire[14]=8'h1f; retire[15]=8'hfe; retire[16]=8'ha1; retire[17]=8'h6e;
+        retire[6]=1;
+        retire[10]=8'h64; retire[11]=8'h05; retire[12]=8'h84; retire[13]=8'h70;
+        retire[14]=8'hcb; retire[15]=8'h6b; retire[16]=8'h0e; retire[17]=8'h5d;
         // Match the formal startup contract without racing DUT sampling: one
         // complete rising edge in reset, then release on the falling edge.
         @(posedge clk); @(negedge clk); rst_n = 1;
         for (i = 0; i < 91; i = i + 1) send_byte(request[i]);
         wait (tx_count == 44); @(posedge clk); #1;
-        if (dut.staged_result_crc !== 32'h80b86ca4) $fatal(1, "result CRC mismatch got=%08x", dut.staged_result_crc);
+        if (dut.staged_result_crc !== 32'h70840564) $fatal(1, "result CRC mismatch got=%08x", dut.staged_result_crc);
         for (i = 0; i < 18; i = i + 1) send_byte(retire[i]);
         wait (done_pulse); #1;
         if (dut.retire_seq !== 1 || dut.committed_pc !== 1 ||
-            dut.committed_fp !== 0 || dut.result_pending !== 0)
+            dut.committed_fp !== 1 || dut.result_pending !== 0)
             $fatal(1, "commit mismatch");
         repeat (3) @(posedge clk);
         if (done_count !== 1) $fatal(1, "done count %0d", done_count);

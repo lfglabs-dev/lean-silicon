@@ -72,10 +72,11 @@ assumption.
 
 A separate cover task establishes the complete byte-exact witness. It drives
 all 91 accepted request-envelope bytes (81-byte payload, profile byte 1,
-distinct addresses 0/1/2, pointer witness 1, reflected IEEE request CRC-32
-`0xf96e5fb0`), drains the 44-byte RESULT envelope, and supplies the 18-byte
+distinct addresses 0/1/2, pointer witness 1, nonzero transaction id and frame
+pointer, reflected IEEE request CRC-32 `0x92b67fa9`), drains the 44-byte RESULT
+envelope, and supplies the 18-byte
 RETIRE envelope. The RETIRE payload uses the independently accumulated RESULT
-payload CRC-32 `0x80b86ca4`; the checker never assumes that value or obtains it
+payload CRC-32 `0x70840564`; the checker never assumes that value or obtains it
 from `staged_result_crc`.
 
 No unbounded RTL or netlist equivalence is claimed. Simulation and differential

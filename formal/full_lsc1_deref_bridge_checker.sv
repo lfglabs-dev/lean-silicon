@@ -73,28 +73,32 @@ module full_lsc1_deref_bridge_checker (
             case (beat)
                 0: deref_byte = 8'ha1; 1: deref_byte = 8'h01;
                 2: deref_byte = 8'h04; 4: deref_byte = 8'h51;
+                6: deref_byte = 8'h01; 14: deref_byte = 8'h01;
                 18: deref_byte = 8'h01;
-                24: deref_byte = 8'h01; 28: deref_byte = 8'h02;
+                24: deref_byte = 8'h02; 28: deref_byte = 8'h02;
                 32: deref_byte = 8'h01; 33: deref_byte = 8'h01;
-                87: deref_byte = 8'hb0; 88: deref_byte = 8'h5f;
-                89: deref_byte = 8'h6e; 90: deref_byte = 8'hf9;
+                87: deref_byte = 8'ha9; 88: deref_byte = 8'h7f;
+                89: deref_byte = 8'hb6; 90: deref_byte = 8'h92;
                 default: deref_byte = 8'h00;
             endcase
         end
     endfunction
 
     // Expected 35-byte RESULT payload for the concrete zero-state DEREF_CELL:
-    // txn=0, next_pc=1, next_fp=0, no write, one deferred equality, three reads.
+    // txn=1, next_pc=1, next_fp=1, no write, one deferred equality, three reads.
     function automatic [7:0] result_payload_byte(input [5:0] beat);
         begin
             case (beat)
+                0: result_payload_byte = 8'h01;
                 4: result_payload_byte = 8'h01;
+                8: result_payload_byte = 8'h01;
                 13: result_payload_byte = 8'h01;
-                14: result_payload_byte = 8'h01;
-                18: result_payload_byte = 8'h02;
+                14: result_payload_byte = 8'h02;
+                18: result_payload_byte = 8'h03;
                 22: result_payload_byte = 8'h03;
-                27: result_payload_byte = 8'h01;
-                31: result_payload_byte = 8'h02;
+                23: result_payload_byte = 8'h01;
+                27: result_payload_byte = 8'h02;
+                31: result_payload_byte = 8'h03;
                 default: result_payload_byte = 8'h00;
             endcase
         end
@@ -126,7 +130,8 @@ module full_lsc1_deref_bridge_checker (
             work = crc_byte(work, 8'ha1); work = crc_byte(work, 8'h01);
             work = crc_byte(work, 8'h12); work = crc_byte(work, 8'h00);
             work = crc_byte(work, 8'h08); work = crc_byte(work, 8'h00);
-            for (i = 0; i < 4; i = i + 1) work = crc_byte(work, 8'h00);
+            work = crc_byte(work, 8'h01);
+            for (i = 1; i < 4; i = i + 1) work = crc_byte(work, 8'h00);
             for (i = 0; i < 4; i = i + 1)
                 work = crc_byte(work, payload_crc[i*8 +: 8]);
             retire_envelope_crc = ~work;
@@ -140,6 +145,7 @@ module full_lsc1_deref_bridge_checker (
             case (beat)
                 0: retire_byte = 8'ha1; 1: retire_byte = 8'h01;
                 2: retire_byte = 8'h12; 4: retire_byte = 8'h08;
+                6: retire_byte = 8'h01;
                 10: retire_byte = payload_crc[7:0];
                 11: retire_byte = payload_crc[15:8];
                 12: retire_byte = payload_crc[23:16];
@@ -204,9 +210,9 @@ module full_lsc1_deref_bridge_checker (
                 assert(tx_data == expected_result_envelope_crc[31:24]);
             if (result_beat == 43) begin
                 witness_phase <= W_CRC;
-                assert(staged_txn_id == 0);
+                assert(staged_txn_id == 1);
                 assert(staged_next_pc == 1);
-                assert(staged_next_fp == 0);
+                assert(staged_next_fp == 1);
             end else
                 result_beat <= result_beat + 1'b1;
         end
@@ -246,7 +252,7 @@ module full_lsc1_deref_bridge_checker (
                 assert(commit_updates == 0); // counters update after this edge
                 assert(done_count == 0);
                 assert(retire_seq == 1);
-                assert(committed_pc == 1 && committed_fp == 0);
+                assert(committed_pc == 1 && committed_fp == 1);
                 assert(!result_pending);
                 witness_phase <= W_QUIET;
             end
@@ -255,13 +261,13 @@ module full_lsc1_deref_bridge_checker (
                 assert(commit_updates == 1);
                 assert(done_count == 1);
                 assert(retire_seq == 1);
-                assert(committed_pc == 1 && committed_fp == 0);
+                assert(committed_pc == 1 && committed_fp == 1);
                 assert(!result_pending);
             end
         end
         cover(witness_phase == W_QUIET && !done_pulse &&
               commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
-              committed_pc == 1 && committed_fp == 0 && !result_pending);
+              committed_pc == 1 && committed_fp == 1 && !result_pending);
     end
 `else
     // The arbitrary-traffic depth-20 safety task keeps no witness assumptions.
