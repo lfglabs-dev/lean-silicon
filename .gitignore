@@ -28,6 +28,7 @@ formal/lsc1u_protocol_cover/
 formal/full_lsc1_deref_bridge/
 formal/full_lsc1_deref_bridge_safety/
 formal/full_lsc1_deref_bridge_reachability/
+formal/full_lsc1_deref_bridge_witness_safety/
 test/results.xml
 test/sim_build/
 .venv/
