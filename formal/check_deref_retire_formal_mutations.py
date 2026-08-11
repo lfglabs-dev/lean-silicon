@@ -70,9 +70,12 @@ def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]
         result = run_formal(name, (filename, old, new))
     except (OSError, subprocess.TimeoutExpired, ValueError) as error:
         return name, False, str(error)
-    assertion_failure = result.returncode != 0 and (
-        "assert failed" in result.stdout.lower() or
-        "assertion failed" in result.stdout.lower()
+    output = result.stdout.lower()
+    # SymbiYosys reports a falsified assertion as a completed FAIL independently
+    # of the selected engine. Require that terminal result so synthesis/tool
+    # errors cannot count as mutation kills merely because they returned nonzero.
+    assertion_failure = (
+        result.returncode != 0 and "done (fail, rc=2)" in output
     )
     return name, assertion_failure, result.stdout[-4000:]
 
