@@ -279,7 +279,11 @@ module full_lsc1_deref_bridge_checker (
             if (!$past(capture_result_crc))
                 assert(staged_result_crc == $past(staged_result_crc));
         end
-        if (past_valid && reset_seen && retire_seq != $past(retire_seq)) begin
+        // The first post-reset value may differ from the arbitrary pre-reset
+        // initial state.  Only classify deltas once both samples are known to
+        // follow the sampled reset edge.
+        if (past_valid && reset_seen && $past(reset_seen) &&
+            retire_seq != $past(retire_seq)) begin
             assert($past(rst_n) && !$past(abort));
             assert(retire_seq == $past(retire_seq) + 1'b1);
             assert($past(retire_match)); assert(done_pulse); assert(!result_pending);
