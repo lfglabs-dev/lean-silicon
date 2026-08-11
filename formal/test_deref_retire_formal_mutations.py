@@ -6,6 +6,7 @@ from __future__ import annotations
 import threading
 import time
 import unittest
+from math import ceil
 from unittest.mock import patch
 
 from formal import check_deref_retire_formal_mutations as mutation_check
@@ -39,6 +40,10 @@ class MutationConcurrencyTest(unittest.TestCase):
             [result[0] for result in results],
             [item[0] for item in mutations],
         )
+        worst_case_seconds = mutation_check.SOLVER_TIMEOUT_SECONDS * (
+            1 + ceil(len(mutations) / mutation_check.MAX_PARALLEL_MUTATIONS)
+        )
+        self.assertLessEqual(worst_case_seconds, 75 * 60)
 
 
 if __name__ == "__main__":

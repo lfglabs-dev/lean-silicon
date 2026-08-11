@@ -23,7 +23,7 @@ SOURCES = [
     "gf128_mul_bitstream.sv", "leanvm_b_stream_alu.sv", "lsc1_stream_adapter.sv",
     "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
 ]
-SOLVER_TIMEOUT_SECONDS = 3600
+SOLVER_TIMEOUT_SECONDS = 900
 MAX_PARALLEL_MUTATIONS = 2
 MUTATIONS = [
     ("corrupted_result_envelope_crc", "lsc1_packet_tx.sv",

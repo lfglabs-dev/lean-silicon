@@ -120,12 +120,8 @@ formal-mutations:
 
 formal-deref-coverage-mutation:
 	$(PYTHON) -m unittest formal/test_deref_retire_formal_mutations.py -v
-	@status=0; \
-	  $(PYTHON) formal/check_deref_coverage_mutation.py & coverage_pid=$$!; \
-	  $(PYTHON) formal/check_deref_retire_formal_mutations.py & retire_pid=$$!; \
-	  wait $$coverage_pid || status=1; \
-	  wait $$retire_pid || status=1; \
-	  exit $$status
+	$(PYTHON) formal/check_deref_coverage_mutation.py
+	$(PYTHON) formal/check_deref_retire_formal_mutations.py
 
 # Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
 full-profile-assurance:

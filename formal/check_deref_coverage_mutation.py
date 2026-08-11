@@ -13,7 +13,7 @@ from subprocess_tree import run_bounded
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "full_lsc1_deref_bridge.sby"
 MUTANT = HERE / ".full_lsc1_deref_bridge_below_bound_mutation.sby"
-SOLVER_TIMEOUT_SECONDS = 3600
+SOLVER_TIMEOUT_SECONDS = 900
 
 
 def main() -> int:
