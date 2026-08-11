@@ -5,7 +5,7 @@ module tb_deref_retire_trace;
     wire rx_ready, tx_valid, busy, fault, done_pulse;
     wire [7:0] tx_data;
     integer cycle = 0, i, tx_count = 0, done_count = 0;
-    integer accept_cycle = 0;
+    integer accept_cycle = 0, done_cycle = 0;
     reg [7:0] request [0:90];
     reg [7:0] retire [0:17];
 
@@ -14,7 +14,10 @@ module tb_deref_retire_trace;
     always @(posedge clk) begin
         cycle <= cycle + 1;
         if (tx_valid && tx_ready) tx_count <= tx_count + 1;
-        if (done_pulse) done_count <= done_count + 1;
+        if (done_pulse) begin
+            done_count <= done_count + 1;
+            if (done_cycle == 0) done_cycle <= cycle;
+        end
         if (dut.frame_valid && dut.event_ready && accept_cycle == 0)
             accept_cycle <= cycle;
     end
@@ -38,7 +41,9 @@ module tb_deref_retire_trace;
         // CRC-32 of the 35 bytes emitted by this concrete RESULT.
         retire[10]=8'ha4; retire[11]=8'h6c; retire[12]=8'hb8; retire[13]=8'h80;
         retire[14]=8'h1f; retire[15]=8'hfe; retire[16]=8'ha1; retire[17]=8'h6e;
-        repeat (2) @(posedge clk); rst_n = 1;
+        // Match the formal startup contract without racing DUT sampling: one
+        // complete rising edge in reset, then release on the falling edge.
+        @(posedge clk); @(negedge clk); rst_n = 1;
         for (i = 0; i < 91; i = i + 1) send_byte(request[i]);
         wait (tx_count == 44); @(posedge clk); #1;
         if (dut.staged_result_crc !== 32'h80b86ca4) $fatal(1, "result CRC mismatch got=%08x", dut.staged_result_crc);
@@ -49,7 +54,9 @@ module tb_deref_retire_trace;
             $fatal(1, "commit mismatch");
         repeat (3) @(posedge clk);
         if (done_count !== 1) $fatal(1, "done count %0d", done_count);
-        $display("DEREF_RETIRE_FIRST_DONE_CYCLE=%0d", cycle-3);
+        if (accept_cycle !== 92 || done_cycle !== 2784)
+            $fatal(1, "witness timing changed accept=%0d done=%0d", accept_cycle, done_cycle);
+        $display("DEREF_RETIRE_FIRST_DONE_CYCLE=%0d", done_cycle);
         $display("DEREF_RETIRE_TRACE_PASS accept_cycle=%0d result_envelope_bytes=44 done_count=%0d", accept_cycle, done_count);
         $finish;
     end

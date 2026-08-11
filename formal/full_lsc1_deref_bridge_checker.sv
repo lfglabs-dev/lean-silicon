@@ -27,7 +27,11 @@ module full_lsc1_deref_bridge_checker (
 
     always @(posedge clk) begin
         past_valid <= 1'b1;
-        reset_seen <= past_valid;
+        // One sampled reset edge initializes every production register.  Mark
+        // that edge directly; delaying through past_valid needlessly inserted
+        // a second reset cycle and put the quiescent witness one step beyond
+        // the bound derived from the executable trace.
+        reset_seen <= 1'b1;
         if (!rst_n)
             expected_retire_seq <= 32'b0;
         else if (!abort && retire_match)
