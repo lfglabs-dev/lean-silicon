@@ -36,8 +36,9 @@ MUTATIONS = [
 ]
 
 
-def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]:
-    name, filename, old, new = mutation
+def run_formal(
+    name: str, mutation: tuple[str, str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     with tempfile.TemporaryDirectory(prefix=f"deref-formal-{name}-") as raw:
         root = Path(raw)
         work = root / "formal"
@@ -48,31 +49,55 @@ def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]
         shutil.copy2(FORMAL / "full_lsc1_deref_bridge_checker.sv", work)
         for source in SOURCES:
             shutil.copy2(RTL / source, rtl_work / source)
-        target = rtl_work / filename
-        text = target.read_text()
-        if text.count(old) != 1:
-            return name, False, f"anchor count {text.count(old)}"
-        target.write_text(text.replace(old, new))
-        result = subprocess.run(
+        if mutation is not None:
+            filename, old, new = mutation
+            target = rtl_work / filename
+            source_text = target.read_text()
+            if source_text.count(old) != 1:
+                raise ValueError(f"{name}: mutation anchor count {source_text.count(old)}")
+            target.write_text(source_text.replace(old, new))
+        return subprocess.run(
             ["sby", "-f", "full_lsc1_deref_bridge.sby", "witness_safety"],
             cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             timeout=12600,
         )
-        assertion_failure = result.returncode != 0 and (
-            "assert failed" in result.stdout.lower() or
-            "assertion failed" in result.stdout.lower()
-        )
-        return name, assertion_failure, result.stdout[-4000:]
+
+
+def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]:
+    name, filename, old, new = mutation
+    try:
+        result = run_formal(name, (filename, old, new))
+    except (OSError, subprocess.TimeoutExpired, ValueError) as error:
+        return name, False, str(error)
+    assertion_failure = result.returncode != 0 and (
+        "assert failed" in result.stdout.lower() or
+        "assertion failed" in result.stdout.lower()
+    )
+    return name, assertion_failure, result.stdout[-4000:]
 
 
 def main() -> int:
     failures: list[str] = []
     # These proofs use disjoint temporary trees and have no ordering dependency.
-    # Parallel execution preserves every mutation and pass condition while keeping
-    # the deep, mutation-sensitive gate inside the Actions job wall-clock limit.
-    with ThreadPoolExecutor(max_workers=len(MUTATIONS)) as executor:
-        results = list(executor.map(check_mutation, MUTATIONS))
+    # Run the pristine design alongside the mutants to preserve the Actions
+    # wall-clock budget, but do not inspect or count any mutant result until the
+    # baseline has independently passed.
+    with ThreadPoolExecutor(max_workers=len(MUTATIONS) + 1) as executor:
+        baseline_future = executor.submit(run_formal, "baseline")
+        mutation_futures = [executor.submit(check_mutation, item) for item in MUTATIONS]
+        try:
+            baseline = baseline_future.result()
+        except (OSError, subprocess.TimeoutExpired, ValueError) as error:
+            print(f"baseline_pass=false\nERROR: baseline could not complete: {error}")
+            return 1
+        baseline_pass = baseline.returncode == 0
+        print(f"baseline_pass={str(baseline_pass).lower()}")
+        if not baseline_pass:
+            print(baseline.stdout[-4000:])
+            print("ERROR: refusing to count mutation failures until the unmodified baseline passes")
+            return 1
+        results = [future.result() for future in mutation_futures]
     for name, assertion_failure, detail in results:
         print(f"{name}: real_property_failure={str(assertion_failure).lower()}")
         if not assertion_failure:

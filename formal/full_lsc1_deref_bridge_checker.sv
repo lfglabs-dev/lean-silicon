@@ -221,7 +221,8 @@ module full_lsc1_deref_bridge_checker (
             !capture_result_crc)
             assert(staged_result_crc == emitted_result_crc);
 
-        if (past_valid && reset_seen && retire_seq != $past(retire_seq))
+        if (past_valid && reset_seen && $past(reset_seen) &&
+            retire_seq != $past(retire_seq))
             commit_updates <= commit_updates + 1'b1;
         if (past_valid && reset_seen && done_pulse)
             done_count <= done_count + 1'b1;
