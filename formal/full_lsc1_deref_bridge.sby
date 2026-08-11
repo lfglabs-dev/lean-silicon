@@ -32,7 +32,11 @@ reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY f
 witness_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY full_lsc1_deref_bridge_checker.sv
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_frontend.sv
 prep -top lsc1_packet_frontend
-setundef -undriven -anyseq -params
+# `prep` has already concretized every parameter in this closed hierarchy.
+# Rewriting parameter constants is therefore unnecessary, and Yosys 0.57
+# aborts in setundef.cc when the witness harness is present.  Keep undriven
+# nets symbolic; this does not change RTL initialization or witness bounds.
+setundef -undriven -anyseq
 opt_clean
 
 [files]
