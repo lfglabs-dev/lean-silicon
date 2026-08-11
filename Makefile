@@ -119,6 +119,7 @@ formal-mutations:
 	$(PYTHON) formal/check_deref_mutations.py
 
 formal-deref-coverage-mutation:
+	$(PYTHON) -m unittest formal/test_deref_retire_formal_mutations.py -v
 	@status=0; \
 	  $(PYTHON) formal/check_deref_coverage_mutation.py & coverage_pid=$$!; \
 	  $(PYTHON) formal/check_deref_retire_formal_mutations.py & retire_pid=$$!; \

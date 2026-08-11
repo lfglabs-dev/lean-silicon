@@ -10,7 +10,10 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from subprocess_tree import run_bounded
+try:
+    from formal.subprocess_tree import run_bounded
+except ModuleNotFoundError:
+    from subprocess_tree import run_bounded
 
 ROOT = Path(__file__).resolve().parents[1]
 FORMAL = ROOT / "formal"
@@ -21,6 +24,7 @@ SOURCES = [
     "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
 ]
 SOLVER_TIMEOUT_SECONDS = 3600
+MAX_PARALLEL_MUTATIONS = 2
 MUTATIONS = [
     ("corrupted_result_envelope_crc", "lsc1_packet_tx.sv",
      "saved_crc <= ~crc_byte(envelope_crc_work, tx_data);",
@@ -93,6 +97,15 @@ def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]
     return name, assertion_failure, result.stdout[-4000:]
 
 
+def check_mutations(
+    mutations: list[tuple[str, str, str, str]],
+) -> list[tuple[str, bool, str]]:
+    """Run every mutant while bounding simultaneous depth-2788 model builds."""
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_MUTATIONS) as executor:
+        futures = [executor.submit(check_mutation, item) for item in mutations]
+        return [future.result() for future in futures]
+
+
 def main() -> int:
     failures: list[str] = []
     # Fail closed before starting any long mutant.  In particular, a pristine
@@ -111,9 +124,7 @@ def main() -> int:
 
     # After the baseline gate passes, the disjoint temporary trees are safe to
     # check concurrently within the Actions wall-clock budget.
-    with ThreadPoolExecutor(max_workers=len(MUTATIONS)) as executor:
-        mutation_futures = [executor.submit(check_mutation, item) for item in MUTATIONS]
-        results = [future.result() for future in mutation_futures]
+    results = check_mutations(MUTATIONS)
     for name, assertion_failure, detail in results:
         print(f"{name}: real_property_failure={str(assertion_failure).lower()}")
         if not assertion_failure:
