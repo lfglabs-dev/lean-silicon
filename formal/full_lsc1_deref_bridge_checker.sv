@@ -214,6 +214,10 @@ module full_lsc1_deref_bridge_checker (
         // This binds the internal retirement check to CRC-32 of the emitted
         // RESULT payload, independently accumulated above.
         if (past_valid && reset_seen && witness_phase == W_CRC) begin
+            // Beat 43 must be the final RESULT transfer.  Checking the first
+            // post-envelope state rejects a serializer that emits a 45th byte
+            // before capture_result_crc clears.
+            assert(!tx_valid);
             if (!capture_result_crc) witness_phase <= W_RETIRE;
         end
         if (past_valid && reset_seen &&

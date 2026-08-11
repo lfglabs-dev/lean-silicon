@@ -22,6 +22,9 @@ MUTATIONS = [
     ("corrupted_result_envelope_crc", "lsc1_packet_tx.sv",
      "saved_crc <= ~crc_byte(envelope_crc_work, tx_data);",
      "saved_crc <= ~crc_byte(envelope_crc_work, tx_data) ^ 32'h00000001;"),
+    ("extra_result_envelope_beat", "lsc1_packet_tx.sv",
+     "if (index == saved_length + 8) begin",
+     "if (index == saved_length + 9) begin"),
     ("corrupted_result_crc_binding", "lsc1_packet_frontend.sv",
      "staged_result_crc <= tx_payload_crc;",
      "staged_result_crc <= tx_payload_crc ^ 32'h00000001;"),
@@ -82,24 +85,24 @@ def check_mutation(mutation: tuple[str, str, str, str]) -> tuple[str, bool, str]
 
 def main() -> int:
     failures: list[str] = []
-    # These proofs use disjoint temporary trees and have no ordering dependency.
-    # Run the pristine design alongside the mutants to preserve the Actions
-    # wall-clock budget, but do not inspect or count any mutant result until the
-    # baseline has independently passed.
-    with ThreadPoolExecutor(max_workers=len(MUTATIONS) + 1) as executor:
-        baseline_future = executor.submit(run_formal, "baseline")
+    # Fail closed before starting any long mutant.  In particular, a pristine
+    # failure must not enter an executor whose shutdown waits for mutant jobs.
+    try:
+        baseline = run_formal("baseline")
+    except (OSError, subprocess.TimeoutExpired, ValueError) as error:
+        print(f"baseline_pass=false\nERROR: baseline could not complete: {error}")
+        return 1
+    baseline_pass = baseline.returncode == 0
+    print(f"baseline_pass={str(baseline_pass).lower()}")
+    if not baseline_pass:
+        print(baseline.stdout[-4000:])
+        print("ERROR: refusing to start mutations until the unmodified baseline passes")
+        return 1
+
+    # After the baseline gate passes, the disjoint temporary trees are safe to
+    # check concurrently within the Actions wall-clock budget.
+    with ThreadPoolExecutor(max_workers=len(MUTATIONS)) as executor:
         mutation_futures = [executor.submit(check_mutation, item) for item in MUTATIONS]
-        try:
-            baseline = baseline_future.result()
-        except (OSError, subprocess.TimeoutExpired, ValueError) as error:
-            print(f"baseline_pass=false\nERROR: baseline could not complete: {error}")
-            return 1
-        baseline_pass = baseline.returncode == 0
-        print(f"baseline_pass={str(baseline_pass).lower()}")
-        if not baseline_pass:
-            print(baseline.stdout[-4000:])
-            print("ERROR: refusing to count mutation failures until the unmodified baseline passes")
-            return 1
         results = [future.result() for future in mutation_futures]
     for name, assertion_failure, detail in results:
         print(f"{name}: real_property_failure={str(assertion_failure).lower()}")
