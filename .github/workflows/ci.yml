@@ -59,6 +59,9 @@ jobs:
 
   formal-and-lint:
     runs-on: ubuntu-latest
+    # Solver regressions must terminate as an actionable failed check instead
+    # of consuming the platform's six-hour default and encouraging rerun loops.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

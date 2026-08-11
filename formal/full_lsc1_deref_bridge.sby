@@ -13,7 +13,9 @@ witness_safety: depth 2788
 multiclock off
 
 [engines]
-smtbmc boolector
+safety: smtbmc boolector
+reachability: btor btormc
+witness_safety: abc bmc3
 
 [script]
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_rx.sv

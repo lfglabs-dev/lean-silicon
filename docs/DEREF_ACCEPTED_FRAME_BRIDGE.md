@@ -24,6 +24,13 @@ The separate depth-20 `safety` task retains arbitrary traffic and backpressure.
 The constrained witness is checked twice at the same depth: `reachability`
 must reach the final cover, while `witness_safety` must satisfy every byte,
 CRC, staged-effect, retirement, and quiescence assertion along that path.
+The tasks intentionally use different engines: BTOR/`btormc` checks the one
+long concrete cover as a bit-vector transition system, ABC `bmc3` checks the
+same-depth witness assertions and their mutants, and SMTBMC/Boolector is kept
+only for the shallow arbitrary-traffic safety task.  This avoids 2,788
+incremental SMT queries for a witness whose cycle is already fixed by the
+byte-exact environment; it does not change the depth, assumptions, assertions,
+or cover condition.
 Critical formal mutants corrupting the emitted-result CRC binding, retaining
 the stage after retirement, or holding the completion pulse high run through
 `witness_safety` and must terminate with assertion failures; missing covers,
