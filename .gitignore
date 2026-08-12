@@ -26,6 +26,13 @@ formal/stream_alu_mul_pulse_cover/
 formal/lsc1u_protocol_bmc/
 formal/lsc1u_protocol_cover/
 formal/full_lsc1_deref_bridge/
+formal/full_lsc1_deref_bridge_safety/
+formal/full_lsc1_deref_bridge_reachability/
+formal/full_lsc1_deref_bridge_accepted_result_reachability/
+formal/full_lsc1_deref_bridge_matching_retire_reachability/
+formal/full_lsc1_deref_bridge_accepted_result_safety/
+formal/full_lsc1_deref_bridge_matching_retire_safety/
+formal/full_lsc1_deref_bridge_post_retire_safety/
 test/results.xml
 test/sim_build/
 .venv/

@@ -14,6 +14,8 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
 sim:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
 	vvp tb_lsc1_packet_frontend.vvp
+	iverilog -g2012 -Wall -s tb_deref_retire_trace -o tb_deref_retire_trace.vvp $(RTL) tb_deref_retire_trace.sv
+	vvp tb_deref_retire_trace.vvp
 
 mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -79,4 +81,4 @@ differential-mutation:
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_deref_retire_trace.vvp

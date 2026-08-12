@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean formal formal-mutations formal-deref-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -106,7 +106,7 @@ lean:
 	cd lean && python3 check_accepted_deref_binding_mutations.py
 
 formal:
-	cd formal && sby -f full_lsc1_deref_bridge.sby
+	$(PYTHON) formal/run_deref_bridge_tasks.py
 	cd formal && sby -f gf8_mul.sby
 	cd formal && sby -f lsc1u_protocol.sby
 	cd formal && sby -f lsc1u_reachability.sby
@@ -119,7 +119,10 @@ formal-mutations:
 	$(PYTHON) formal/check_deref_mutations.py
 
 formal-deref-coverage-mutation:
+	$(PYTHON) -m unittest formal/test_deref_task_serialization.py -v
+	$(PYTHON) -m unittest formal/test_deref_retire_formal_mutations.py -v
 	$(PYTHON) formal/check_deref_coverage_mutation.py
+	$(PYTHON) formal/check_deref_retire_formal_mutations.py
 
 # Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
 full-profile-assurance:
