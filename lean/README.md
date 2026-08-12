@@ -26,6 +26,9 @@ Modules:
   `preparedDerefDecision`, and result/RETIRE checksum derivation from the actual
   effect payload. Its executable witnesses cover every mode and both profiles'
   four Cell presence quadrants.
+- `AcceptedJump.lean` — canonical JUMP envelope acceptance, exact 103-byte
+  decoding into `preparedJumpDecision`, effect-derived RESULT checksum,
+  exactly-once matching retirement, non-vacuity, and mutation witnesses.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   v1 current-state index bounds, abort preservation, matching commit, mismatch
   rejection, reset, and exactly-once retirement theorems. Arithmetic and

@@ -24,6 +24,8 @@ SOURCES = [
     "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
 ]
 SOLVER_TIMEOUT_SECONDS = 540
+SBY_NAME = "full_lsc1_deref_bridge.sby"
+TEMP_PREFIX = "deref"
 MUTATIONS = [
     ("corrupted_result_envelope_crc", "accepted_result_safety", "lsc1_packet_tx.sv",
      "saved_crc <= ~crc_byte(envelope_crc_work, tx_data);",
@@ -56,13 +58,13 @@ MUTATIONS = [
 def run_formal(
     name: str, task: str, mutation: tuple[str, str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
-    with tempfile.TemporaryDirectory(prefix=f"deref-formal-{name}-") as raw:
+    with tempfile.TemporaryDirectory(prefix=f"{TEMP_PREFIX}-formal-{name}-") as raw:
         root = Path(raw)
         work = root / "formal"
         rtl_work = root / "asic_core" / "rtl"
         work.mkdir(parents=True)
         rtl_work.mkdir(parents=True)
-        shutil.copy2(FORMAL / "full_lsc1_deref_bridge.sby", work)
+        shutil.copy2(FORMAL / SBY_NAME, work)
         shutil.copy2(FORMAL / "full_lsc1_deref_bridge_checker.sv", work)
         for source in SOURCES:
             shutil.copy2(RTL / source, rtl_work / source)
@@ -74,7 +76,7 @@ def run_formal(
                 raise ValueError(f"{name}: mutation anchor count {source_text.count(old)}")
             target.write_text(source_text.replace(old, new))
         return run_bounded(
-            ["sby", "-f", "full_lsc1_deref_bridge.sby", task],
+            ["sby", "-f", SBY_NAME, task],
             cwd=work, env=os.environ | {"PYTHONDONTWRITEBYTECODE": "1"},
             timeout=SOLVER_TIMEOUT_SECONDS,
         )
