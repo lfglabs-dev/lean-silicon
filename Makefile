@@ -106,7 +106,7 @@ lean:
 	cd lean && python3 check_accepted_deref_binding_mutations.py
 
 formal:
-	cd formal && sby -f full_lsc1_deref_bridge.sby
+	$(PYTHON) formal/run_deref_bridge_tasks.py
 	cd formal && sby -f gf8_mul.sby
 	cd formal && sby -f lsc1u_protocol.sby
 	cd formal && sby -f lsc1u_reachability.sby
@@ -119,6 +119,7 @@ formal-mutations:
 	$(PYTHON) formal/check_deref_mutations.py
 
 formal-deref-coverage-mutation:
+	$(PYTHON) -m unittest formal/test_deref_task_serialization.py -v
 	$(PYTHON) -m unittest formal/test_deref_retire_formal_mutations.py -v
 	$(PYTHON) formal/check_deref_coverage_mutation.py
 	$(PYTHON) formal/check_deref_retire_formal_mutations.py

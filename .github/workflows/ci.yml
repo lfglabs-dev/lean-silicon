@@ -103,7 +103,7 @@ jobs:
       - name: GF(2^128) accepted-stream refinement
         run: cd formal && sby -f gf128_mul_stream_refinement.sby
       - name: Full LSC-1 DEREF lifecycle safety and end-to-end reachability
-        run: cd formal && sby -f full_lsc1_deref_bridge.sby
+        run: python3 formal/run_deref_bridge_tasks.py
       - name: Formal subprocess-tree timeout regression
         run: python3 -m unittest formal/test_subprocess_tree.py -v
       - name: Reject below-bound and critical DEREF-to-RETIRE mutations
