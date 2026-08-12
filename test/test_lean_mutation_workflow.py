@@ -34,7 +34,10 @@ class LeanMutationWorkflowTest(unittest.TestCase):
         self.assertIn("releases/download/v4.2.3/", lean_steps)
         self.assertIn("ELAN_ARCHIVE_SHA256:", lean_steps)
         self.assertIn("sha256sum --check --status", lean_steps)
+        self.assertIn("--connect-timeout 30", lean_steps)
+        self.assertIn("--max-time 120", lean_steps)
         self.assertIn("--retry-all-errors", lean_steps)
+        self.assertIn("--retry-max-time 600", lean_steps)
         self.assertIn("run: cd lean && lake build\n", lean_steps)
 
 

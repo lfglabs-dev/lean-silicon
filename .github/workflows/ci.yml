@@ -51,7 +51,8 @@ jobs:
           ELAN_ARCHIVE_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
         run: |
           curl --fail --location --silent --show-error \
-            --retry 5 --retry-all-errors --retry-delay 2 \
+            --connect-timeout 30 --max-time 120 \
+            --retry 5 --retry-all-errors --retry-delay 2 --retry-max-time 600 \
             --output elan-init.tar.gz \
             https://github.com/leanprover/elan/releases/download/v4.2.3/elan-x86_64-unknown-linux-gnu.tar.gz
           printf '%s  %s\n' "$ELAN_ARCHIVE_SHA256" elan-init.tar.gz | sha256sum --check --status
