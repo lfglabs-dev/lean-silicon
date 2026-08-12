@@ -9,6 +9,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 try:
     from formal.subprocess_tree import TERMINATION_GRACE_SECONDS, run_bounded
@@ -23,13 +24,23 @@ class SubprocessTreeTest(unittest.TestCase):
         while status.exists():
             try:
                 contents = status.read_text()
-            except FileNotFoundError:
+            except (FileNotFoundError, ProcessLookupError):
                 return
             if "State:\tZ" in contents:
                 return
             if time.monotonic() >= reap_deadline:
                 self.fail(message)
             time.sleep(0.01)
+
+    def test_process_disappearing_during_status_read_is_stopped(self) -> None:
+        with (
+            mock.patch.object(Path, "exists", return_value=True),
+            mock.patch.object(Path, "read_text", side_effect=ProcessLookupError),
+        ):
+            self.assert_process_stopped(
+                123456789,
+                "a process that disappeared during observation was not stopped",
+            )
 
     def test_timeout_kills_term_resistant_descendant_within_bound(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
