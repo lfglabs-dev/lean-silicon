@@ -121,9 +121,9 @@ module full_lsc1_deref_bridge_checker (
                 4: result_payload_byte = 8'h01;
 `ifdef FORMAL_JUMP_WITNESS
                 8: result_payload_byte = 8'h02;
-                13: result_payload_byte = 8'h03;
-                18: result_payload_byte = 8'h01;
-                22: result_payload_byte = 8'h02;
+                14: result_payload_byte = 8'h03;
+                19: result_payload_byte = 8'h01;
+                23: result_payload_byte = 8'h02;
 `else
                 8: result_payload_byte = 8'h01;
                 13: result_payload_byte = 8'h01;
