@@ -12,6 +12,13 @@ ACTION = ROOT / ".github" / "actions" / "setup-oss-cad-suite" / "action.yml"
 
 
 class OssCadSuiteWorkflowTest(unittest.TestCase):
+    def test_feature_branch_sha_enters_deep_formal_workflow_once(self):
+        workflow = WORKFLOW.read_text()
+        trigger = workflow[workflow.index("on:\n") : workflow.index("\npermissions:")]
+
+        self.assertIn("push:\n    branches:\n      - main", trigger)
+        self.assertIn("pull_request:", trigger)
+
     def test_every_formal_lane_uses_the_verified_local_action(self):
         workflow = WORKFLOW.read_text()
         self.assertNotIn("YosysHQ/setup-oss-cad-suite", workflow)

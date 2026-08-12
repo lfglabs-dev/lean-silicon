@@ -1,7 +1,11 @@
 name: CI
 
 on:
+  # Feature-branch commits are checked by pull_request. Limiting push to the
+  # default branch prevents two identical deep-formal runs for the same SHA.
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
