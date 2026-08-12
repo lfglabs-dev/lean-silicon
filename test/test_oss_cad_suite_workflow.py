@@ -2,6 +2,7 @@
 """Regress the fail-closed, shared OSS CAD Suite acquisition path."""
 
 from pathlib import Path
+import re
 import unittest
 
 
@@ -48,6 +49,22 @@ class OssCadSuiteWorkflowTest(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, action)
+
+    def test_toolchain_deadline_retains_verification_and_extraction_headroom(self):
+        action = ACTION.read_text()
+        workflow = WORKFLOW.read_text()
+        retry_seconds = int(re.search(r"--retry-max-time (\d+)", action).group(1))
+        transfer_seconds = int(re.search(r"--max-time (\d+)", action).group(1))
+        toolchain_job = workflow[workflow.index("  formal-toolchain:\n") :]
+        deadline_minutes = int(
+            re.search(r"timeout-minutes: (\d+)", toolchain_job).group(1)
+        )
+
+        # curl permits a request crossing retry-max-time to run to max-time.
+        self.assertGreaterEqual(
+            deadline_minutes * 60 - retry_seconds - transfer_seconds,
+            15 * 60,
+        )
 
 
 if __name__ == "__main__":
