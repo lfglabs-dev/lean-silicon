@@ -3,7 +3,10 @@
 
 from pathlib import Path
 
-from formal.subprocess_tree import run_bounded
+try:
+    from formal.subprocess_tree import run_bounded
+except ModuleNotFoundError:
+    from subprocess_tree import run_bounded
 
 
 HERE = Path(__file__).resolve().parent

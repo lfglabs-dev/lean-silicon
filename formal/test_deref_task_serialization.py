@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,6 +52,24 @@ class DerefTaskSerializationTest(unittest.TestCase):
             config.write_text("[tasks]\n\n[options]\nmode bmc\n")
             with self.assertRaisesRegex(RuntimeError, "no tasks found"):
                 runner.tasks(config)
+
+    def test_direct_script_context_can_import_timeout_helper(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    (
+                        "import runpy, sys; "
+                        f"sys.path.insert(0, {str(runner.HERE)!r}); "
+                        f"runpy.run_path({str(runner.__file__)!r})"
+                    ),
+                ],
+                cwd=directory,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
