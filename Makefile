@@ -11,6 +11,7 @@ python:
 workflow-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_select_exact_gds_run.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_viewer_workflow.py -v
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lean_mutation_workflow.py -v
 
 fabrication-bundle:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/verify_fabrication_bundle.py
