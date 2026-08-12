@@ -20,6 +20,9 @@ EXPECTED_TASKS = [
 
 
 class DerefTaskSerializationTest(unittest.TestCase):
+    def test_canonical_task_bound_matches_lifecycle_baselines(self):
+        self.assertEqual(runner.TASK_TIMEOUT_SECONDS, 540)
+
     def test_discovers_every_declared_task(self):
         self.assertEqual(runner.tasks(), EXPECTED_TASKS)
 
@@ -45,6 +48,20 @@ class DerefTaskSerializationTest(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             runner.main()
         self.assertEqual(run.call_count, 1)
+
+    @mock.patch.object(runner, "run_bounded")
+    def test_runs_one_selected_task_for_independent_ci_check(self, run):
+        run.return_value = subprocess.CompletedProcess(["sby"], 0, "", None)
+        runner.main(["matching_retire_safety"])
+        run.assert_called_once_with(
+            ["sby", "-f", runner.SBY.name, "matching_retire_safety"],
+            cwd=runner.HERE,
+            timeout=runner.TASK_TIMEOUT_SECONDS,
+        )
+
+    def test_rejects_unknown_selected_task(self):
+        with self.assertRaisesRegex(ValueError, "unknown task"):
+            runner.main(["not_a_task"])
 
     def test_rejects_an_empty_task_section(self):
         with tempfile.TemporaryDirectory() as directory:

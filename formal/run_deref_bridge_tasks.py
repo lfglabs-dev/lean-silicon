@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Run every full DEREF bridge task serially."""
+"""Run selected full DEREF bridge tasks serially with a fail-closed bound."""
+
+import argparse
 
 from pathlib import Path
 
@@ -11,9 +13,9 @@ except ModuleNotFoundError:
 
 HERE = Path(__file__).resolve().parent
 SBY = HERE / "full_lsc1_deref_bridge.sby"
-# Seven serialized deep tasks leave room for the later 117-minute fail-closed
-# mutation ceiling inside the workflow's 180-minute job timeout.
-TASK_TIMEOUT_SECONDS = 180
+# Match the independently checked lifecycle baselines. CI gives each canonical
+# task its own matrix job, so this bound cannot accumulate across seven tasks.
+TASK_TIMEOUT_SECONDS = 540
 
 
 def tasks(config: Path = SBY) -> list[str]:
@@ -32,8 +34,13 @@ def tasks(config: Path = SBY) -> list[str]:
     return discovered
 
 
-def main() -> None:
-    for task in tasks():
+def main(selected_tasks: list[str] | None = None) -> None:
+    declared_tasks = tasks()
+    chosen_tasks = declared_tasks if selected_tasks is None else selected_tasks
+    unknown = sorted(set(chosen_tasks) - set(declared_tasks))
+    if unknown:
+        raise ValueError(f"unknown task(s): {', '.join(unknown)}")
+    for task in chosen_tasks:
         result = run_bounded(
             ["sby", "-f", SBY.name, task],
             cwd=HERE,
@@ -44,4 +51,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--task", action="append", dest="selected_tasks",
+        help="run only this declared task (repeatable); default: every task",
+    )
+    arguments = parser.parse_args()
+    main(arguments.selected_tasks)
