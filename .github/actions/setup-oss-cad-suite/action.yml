@@ -53,7 +53,7 @@ runs:
 
         rm -rf "$SUITE_DIR"
         mkdir -p "$SUITE_DIR"
-        tar -xJf "$ARCHIVE" --strip-components=1 -C "$SUITE_DIR"
+        tar -xzf "$ARCHIVE" --strip-components=1 -C "$SUITE_DIR"
         test -x "$SUITE_DIR/bin/yosys"
         test -x "$SUITE_DIR/bin/sby"
         printf '%s\n' "$SUITE_DIR/bin" >> "$GITHUB_PATH"

@@ -42,7 +42,7 @@ class OssCadSuiteWorkflowTest(unittest.TestCase):
             "EXPECTED_BYTES",
             "EXPECTED_SHA256",
             "sha256sum --check --status",
-            "tar -xJf",
+            "tar -xzf",
             'test -x "$SUITE_DIR/bin/yosys"',
             'test -x "$SUITE_DIR/bin/sby"',
         ):
