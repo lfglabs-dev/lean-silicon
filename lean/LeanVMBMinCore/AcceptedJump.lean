@@ -84,8 +84,12 @@ def witnessTakenBytes : List Byte :=
   (bytes.set 86 1).set 87 1
 
 def decodedWitnessTakenJumpPacket : JumpPacket := {
-  witnessTakenJumpPacket with
-  common := decodedWitnessJumpPacket.common }
+  decodedWitnessJumpPacket with
+  conditionCell := { written := true, value := 1#128 }
+  targetPcCell := { written := true, value := encodeIndex 1 }
+  targetFpCell := { written := true, value := encodeIndex 2 }
+  taken := true, proposedPc := 1, proposedFp := 2
+  proposedInverse := { written := true, value := 1#128 } }
 
 def witnessEffect : Effect := {
   common := decodedWitnessTakenJumpPacket.common
