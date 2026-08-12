@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 SBY = HERE / "full_lsc1_deref_bridge.sby"
 # Seven serialized deep tasks leave room for the later 117-minute fail-closed
 # mutation ceiling inside the workflow's 180-minute job timeout.
-TASK_TIMEOUT_SECONDS = 300
+TASK_TIMEOUT_SECONDS = 180
 
 
 def tasks(config: Path = SBY) -> list[str]:
