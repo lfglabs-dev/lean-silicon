@@ -11,17 +11,17 @@ post_retire_safety
 safety: mode bmc
 safety: depth 20
 reachability: mode cover
-reachability: depth 176
+reachability: depth 5592
 accepted_result_reachability: mode cover
-accepted_result_reachability: depth 155
+accepted_result_reachability: depth 5571
 matching_retire_reachability: mode cover
-matching_retire_reachability: depth 175
+matching_retire_reachability: depth 5591
 accepted_result_safety: mode bmc
-accepted_result_safety: depth 155
+accepted_result_safety: depth 5571
 matching_retire_safety: mode bmc
-matching_retire_safety: depth 175
+matching_retire_safety: depth 5591
 post_retire_safety: mode bmc
-post_retire_safety: depth 176
+post_retire_safety: depth 5592
 multiclock off
 
 [engines]

@@ -13,9 +13,9 @@ HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "full_lsc1_jump_bridge.sby"
 MUTANT = HERE / ".full_lsc1_jump_below_bound.sby"
 CHECKPOINTS = [
-    ("accepted_result_reachability", 155),
-    ("matching_retire_reachability", 175),
-    ("reachability", 176),
+    ("accepted_result_reachability", 5571),
+    ("matching_retire_reachability", 5591),
+    ("reachability", 5592),
 ]
 
 

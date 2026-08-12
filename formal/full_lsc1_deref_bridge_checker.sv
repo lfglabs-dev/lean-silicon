@@ -55,7 +55,7 @@ module full_lsc1_deref_bridge_checker (
     localparam [5:0] W_RESULT_LAST = 35;
     localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 32;
     localparam [15:0] W_RESULT_LENGTH = 27;
-    localparam [31:0] W_NEXT_FP = 0;
+    localparam [31:0] W_NEXT_FP = 2;
 `else
     localparam [6:0] W_REQUEST_LAST = 90;
     localparam [5:0] W_RESULT_LAST = 43;
@@ -89,8 +89,14 @@ module full_lsc1_deref_bridge_checker (
                 2: deref_byte = 8'h07; 4: deref_byte = 8'h67;
                 6: deref_byte = 8'h01; 18: deref_byte = 8'h01;
                 24: deref_byte = 8'h01; 28: deref_byte = 8'h02;
-                109: deref_byte = 8'h0c; 110: deref_byte = 8'h0d;
-                111: deref_byte = 8'hf9; 112: deref_byte = 8'h49;
+                32: deref_byte = 8'h01; 33: deref_byte = 8'h01;
+                49: deref_byte = 8'h01; 50: deref_byte = 8'h02;
+                66: deref_byte = 8'h01; 67: deref_byte = 8'h04;
+                83: deref_byte = 8'h01; 84: deref_byte = 8'h01;
+                88: deref_byte = 8'h02; 92: deref_byte = 8'h01;
+                93: deref_byte = 8'h01;
+                109: deref_byte = 8'hf3; 110: deref_byte = 8'he4;
+                111: deref_byte = 8'he5; 112: deref_byte = 8'h3f;
 `else
                 0: deref_byte = 8'ha1; 1: deref_byte = 8'h01;
                 2: deref_byte = 8'h04; 4: deref_byte = 8'h51;
@@ -114,6 +120,7 @@ module full_lsc1_deref_bridge_checker (
                 0: result_payload_byte = 8'h01;
                 4: result_payload_byte = 8'h01;
 `ifdef FORMAL_JUMP_WITNESS
+                8: result_payload_byte = 8'h02;
                 13: result_payload_byte = 8'h03;
                 18: result_payload_byte = 8'h01;
                 22: result_payload_byte = 8'h02;

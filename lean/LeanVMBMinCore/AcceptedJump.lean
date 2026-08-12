@@ -75,34 +75,47 @@ def witnessRequest (payload : List Byte) : LeanVMBMinCore.Packet.Request :=
 def witnessWire (payload : List Byte) : LeanVMBMinCore.Packet.RequestWire :=
   LeanVMBMinCore.Packet.encodeRequest requestCrc32 (witnessRequest payload)
 
+def witnessTakenBytes : List Byte :=
+  let bytes := (witnessJumpBytes.set 26 1).set 27 1
+  let bytes := (bytes.set 43 1).set 44 2
+  let bytes := (bytes.set 60 1).set 61 4
+  let bytes := (bytes.set 77 1).set 78 1
+  let bytes := bytes.set 82 2
+  (bytes.set 86 1).set 87 1
+
+def decodedWitnessTakenJumpPacket : JumpPacket := {
+  witnessTakenJumpPacket with
+  common := decodedWitnessJumpPacket.common }
+
 def witnessEffect : Effect := {
-  common := decodedWitnessJumpPacket.common
-  nextControl := { pc := 4, fp := 9 }
-  initialMemory := suppliedJumpMemory decodedWitnessJumpPacket 9 10 11
-  memory := suppliedJumpMemory decodedWitnessJumpPacket 9 10 11
+  common := decodedWitnessTakenJumpPacket.common
+  nextControl := { pc := 1, fp := 2 }
+  initialMemory := suppliedJumpMemory decodedWitnessTakenJumpPacket 9 10 11
+  memory := suppliedJumpMemory decodedWitnessTakenJumpPacket 9 10 11
   accesses := [9, 10, 11] }
 
-/-- Non-vacuity: a complete accepted not-taken JUMP reaches the bound effect. -/
+/-- Non-vacuity: a complete accepted taken JUMP reaches the bound effect. -/
 theorem accepted_effect_binding_reachable :
-    (accept (witnessWire witnessJumpBytes)).map decision =
+    (accept (witnessWire witnessTakenBytes)).map decision =
       .ok (.result witnessEffect) := by
-  have haccept : accept (witnessWire witnessJumpBytes) =
-      .ok { packet := decodedWitnessJumpPacket } := by rfl
-  have heffect : decision { packet := decodedWitnessJumpPacket } =
+  have haccept : accept (witnessWire witnessTakenBytes) =
+      .ok { packet := decodedWitnessTakenJumpPacket } := by rfl
+  have heffect : decision { packet := decodedWitnessTakenJumpPacket } =
       .result witnessEffect := by rfl
   exact (accepted_effect_matching_retire_exactly_once
-    (witnessWire witnessJumpBytes) { packet := decodedWitnessJumpPacket }
+    (witnessWire witnessTakenBytes) { packet := decodedWitnessTakenJumpPacket }
     witnessEffect Transaction.initial haccept heffect).1
 
 /-- Taken and not-taken branches both reach the accepted-frame seam. -/
 example : (accept (witnessWire witnessJumpBytes)).isOk := by decide
+example : (accept (witnessWire witnessTakenBytes)).isOk := by decide
 
 /-- CRC bypass is mutation-sensitive. -/
 example : acceptEnvelope { witnessWire witnessJumpBytes with
     payload := witnessJumpBytes.set 14 1 } = .error .badChecksum := by rfl
 
 /-- A branch-decision mutation is observed with a freshly valid CRC. -/
-example : accept (witnessWire (witnessJumpBytes.set 77 2)) =
+example : accept (witnessWire (witnessTakenBytes.set 77 2)) =
     .error (.payload .badBranch) := by rfl
 
 /-- Result-byte mutation changes the checksum derived from the effect. -/

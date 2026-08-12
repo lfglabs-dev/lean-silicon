@@ -174,7 +174,7 @@ jobs:
   jump-lifecycle:
     name: jump-lifecycle (${{ matrix.task }})
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
