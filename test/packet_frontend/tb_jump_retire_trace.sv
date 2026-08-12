@@ -9,12 +9,16 @@ module tb_jump_retire_trace;
     integer retire_accept_cycle = 0, done_cycle = 0;
     reg [7:0] request [0:112];
     reg [7:0] retire [0:17];
+    reg [7:0] result_trace [0:35];
+    reg [7:0] expected_result [0:35];
 
     lsc1_packet_frontend dut(.*);
     always #5 clk = ~clk;
     always @(posedge clk) begin
         cycle <= cycle + 1;
         if (tx_valid && tx_ready) begin
+            if (tx_count < 36)
+                result_trace[tx_count] <= tx_data;
             tx_count <= tx_count + 1;
             if (tx_count == 35) result_last_cycle <= cycle;
         end
@@ -48,9 +52,20 @@ module tb_jump_retire_trace;
         retire[0]=8'ha1; retire[1]=1; retire[2]=8'h12; retire[4]=8'h08;
         retire[6]=1; retire[10]=8'h0c; retire[11]=8'h01; retire[12]=8'h58; retire[13]=8'h40;
         retire[14]=8'h44; retire[15]=8'ha6; retire[16]=8'hc1; retire[17]=8'haf;
+        for (i = 0; i < 36; i = i + 1) expected_result[i] = 0;
+        expected_result[0]=8'h5a; expected_result[1]=1;
+        expected_result[3]=27;
+        expected_result[5]=1; expected_result[9]=1; expected_result[13]=2;
+        expected_result[19]=3; expected_result[24]=1; expected_result[28]=2;
+        expected_result[32]=8'h04; expected_result[33]=8'h21;
+        expected_result[34]=8'h3e; expected_result[35]=8'h73;
         @(posedge clk); @(negedge clk); rst_n = 1;
         for (i = 0; i < 113; i = i + 1) send_byte(request[i]);
         wait (tx_count == 36); @(posedge clk); #1;
+        for (i = 0; i < 36; i = i + 1)
+            if (result_trace[i] !== expected_result[i])
+                $fatal(1, "RESULT trace byte %0d got=%02x expected=%02x",
+                       i, result_trace[i], expected_result[i]);
         if (dut.staged_result_crc !== 32'h4058010c) $fatal(1, "result CRC mismatch got=%08x", dut.staged_result_crc);
         for (i = 0; i < 18; i = i + 1) send_byte(retire[i]);
         wait (done_pulse); #1;

@@ -25,7 +25,8 @@ tasks use the same byte-exact environment but are decomposed into
 `accepted_result`, `matching_retire`, and `post_retire` obligations. BTOR and
 `btormc` check the fixed witness and same-depth assertions; SMTBMC/Boolector is
 used only for shallow arbitrary-traffic safety. Every solver subprocess has a
-540-second fail-closed timeout, inside the 600-second outer job bound.
+540-second fail-closed timeout, inside the 900-second outer job bound, leaving
+360 seconds for checkout, toolchain setup, and teardown.
 
 Critical RESULT-envelope, payload-CRC, early-publication, stage-retention,
 duplicate-retirement, and retained-completion mutations run only against the
