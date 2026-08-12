@@ -15,15 +15,27 @@ MUTATION_GUARDS = (
 
 
 class LeanMutationWorkflowTest(unittest.TestCase):
-    def test_lean_job_invokes_every_mutation_guard(self):
+    def lean_steps(self):
         workflow = WORKFLOW.read_text()
         lean_job = workflow.index("  lean:\n")
-        next_job = workflow.index("\n  formal-and-lint:\n", lean_job)
-        lean_steps = workflow[lean_job:next_job]
+        next_job = workflow.index("\n  formal-toolchain:\n", lean_job)
+        return workflow[lean_job:next_job]
+
+    def test_lean_job_invokes_every_mutation_guard(self):
+        lean_steps = self.lean_steps()
 
         for guard in MUTATION_GUARDS:
             with self.subTest(guard=guard):
                 self.assertEqual(lean_steps.count(guard), 1)
+
+    def test_lean_bootstrap_is_pinned_integrity_checked_and_retried(self):
+        lean_steps = self.lean_steps()
+
+        self.assertIn("releases/download/v4.2.3/", lean_steps)
+        self.assertIn("ELAN_ARCHIVE_SHA256:", lean_steps)
+        self.assertIn("sha256sum --check --status", lean_steps)
+        self.assertIn("--retry-all-errors", lean_steps)
+        self.assertIn("run: cd lean && lake build\n", lean_steps)
 
 
 if __name__ == "__main__":
