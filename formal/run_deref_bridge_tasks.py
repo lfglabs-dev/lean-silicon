@@ -2,11 +2,15 @@
 """Run every full DEREF bridge task serially."""
 
 from pathlib import Path
-import subprocess
+
+from formal.subprocess_tree import run_bounded
 
 
 HERE = Path(__file__).resolve().parent
 SBY = HERE / "full_lsc1_deref_bridge.sby"
+# Seven serialized deep tasks leave room for the later 117-minute fail-closed
+# mutation ceiling inside the workflow's 180-minute job timeout.
+TASK_TIMEOUT_SECONDS = 300
 
 
 def tasks(config: Path = SBY) -> list[str]:
@@ -27,7 +31,13 @@ def tasks(config: Path = SBY) -> list[str]:
 
 def main() -> None:
     for task in tasks():
-        subprocess.run(["sby", "-f", SBY.name, task], cwd=HERE, check=True)
+        result = run_bounded(
+            ["sby", "-f", SBY.name, task],
+            cwd=HERE,
+            timeout=TASK_TIMEOUT_SECONDS,
+        )
+        print(result.stdout, end="")
+        result.check_returncode()
 
 
 if __name__ == "__main__":

@@ -22,8 +22,9 @@ class DerefTaskSerializationTest(unittest.TestCase):
     def test_discovers_every_declared_task(self):
         self.assertEqual(runner.tasks(), EXPECTED_TASKS)
 
-    @mock.patch.object(runner.subprocess, "run")
+    @mock.patch.object(runner, "run_bounded")
     def test_runs_one_explicit_task_at_a_time_in_declaration_order(self, run):
+        run.return_value = subprocess.CompletedProcess(["sby"], 0, "", None)
         runner.main()
         self.assertEqual(
             run.call_args_list,
@@ -31,15 +32,15 @@ class DerefTaskSerializationTest(unittest.TestCase):
                 mock.call(
                     ["sby", "-f", runner.SBY.name, task],
                     cwd=runner.HERE,
-                    check=True,
+                    timeout=runner.TASK_TIMEOUT_SECONDS,
                 )
                 for task in EXPECTED_TASKS
             ],
         )
 
-    @mock.patch.object(runner.subprocess, "run")
+    @mock.patch.object(runner, "run_bounded")
     def test_stops_before_later_tasks_after_failure(self, run):
-        run.side_effect = subprocess.CalledProcessError(1, "sby")
+        run.return_value = subprocess.CompletedProcess(["sby"], 1, "failed\n", None)
         with self.assertRaises(subprocess.CalledProcessError):
             runner.main()
         self.assertEqual(run.call_count, 1)
