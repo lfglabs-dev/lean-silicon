@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lean-silicon-conformance-v3",
+  "title": "leanSilicon BLAKE3 service lifecycle conformance corpus v3",
+  "type": "object",
+  "required": ["schema", "scope", "base_commit", "cases"],
+  "properties": {
+    "schema": {"const": "lean-silicon-conformance-v3"},
+    "scope": {"type": "string", "minLength": 1},
+    "base_commit": {"const": "3beb2cb7da772f3c819c8055249c787ea92185d1"},
+    "cases": {
+      "type": "array",
+      "minItems": 11,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hex": {"type": "string", "pattern": "^(?:[0-9a-f]{2})*$"},
+    "case": {
+      "type": "object",
+      "required": ["case_id", "description", "coverage", "detected", "fingerprint"],
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^blake3\\.[a-z0-9_.-]+$"},
+        "description": {"type": "string", "minLength": 1},
+        "coverage": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "detected": {"const": true},
+        "fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "statuses": {"type": "array", "items": {"type": "string"}},
+        "service_required": {"$ref": "#/$defs/service_required"},
+        "service_response": {"$ref": "#/$defs/service_response"},
+        "wire": {"$ref": "#/$defs/wire"},
+        "final": {"type": "object"},
+        "evidence": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "service_required": {
+      "type": "object",
+      "required": ["internal_payload_hex", "host_envelope_hex"],
+      "properties": {
+        "internal_payload_hex": {"$ref": "#/$defs/hex"},
+        "host_envelope_hex": {"$ref": "#/$defs/hex"}
+      },
+      "additionalProperties": false
+    },
+    "service_response": {
+      "type": "object",
+      "required": ["digest_hex", "host_envelope_hex"],
+      "properties": {
+        "digest_hex": {"$ref": "#/$defs/hex"},
+        "host_envelope_hex": {"$ref": "#/$defs/hex"}
+      },
+      "additionalProperties": false
+    },
+    "wire": {
+      "type": "object",
+      "required": ["blake3_request_hex", "service_required_frame_hex", "service_response_frame_hex", "result_frame_hex", "retire_request_hex", "retire_response_hex"],
+      "properties": {
+        "blake3_request_hex": {"$ref": "#/$defs/hex"},
+        "service_required_frame_hex": {"$ref": "#/$defs/hex"},
+        "service_response_frame_hex": {"$ref": "#/$defs/hex"},
+        "result_frame_hex": {"$ref": "#/$defs/hex"},
+        "retire_request_hex": {"$ref": "#/$defs/hex"},
+        "retire_response_hex": {"$ref": "#/$defs/hex"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
