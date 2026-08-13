@@ -95,7 +95,8 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
 
     def rtl_workload(self, frames: list[protocol.RequestFrame],
-                     control_after_first: str | None = None) -> list[bytes]:
+                     control_after_first: str | None = None,
+                     service_seq: int | None = None) -> list[bytes]:
         paths = []
         arguments = []
         for index, frame in enumerate(frames, 1):
@@ -107,6 +108,8 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             arguments.extend((f"+REQUEST{suffix}={path}", f"+LENGTH{suffix}={len(encoded)}"))
         if control_after_first is not None:
             arguments.append(f"+{control_after_first}")
+        if service_seq is not None:
+            arguments.append(f"+SERVICE_SEQ={service_seq:08x}")
         run = subprocess.run(
             ["vvp", str(self.simulator), *arguments], cwd=ROOT, check=True,
             capture_output=True, text=True,
@@ -151,7 +154,7 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             txn_id=0x10203040, pc=2, fp=64,
             profile=protocol.Profile.INTERPRETER_COMPAT,
             message_offsets=(0, 3, 1, 7), cv_offset=8, out_offset=10,
-            metadata=0x7F000000400000001122334455667788,
+            metadata=0x0000007F000000401122334455667788,
             message_cells=tuple(protocol.Cell(True, value) for value in (11, 22, 33, 44)),
             cv_cells=(protocol.Cell(True, 55), protocol.Cell(True, 66)),
             out_cells=(protocol.ABSENT, protocol.ABSENT),
@@ -229,6 +232,68 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 finished, _ = protocol.drive(endpoint, response.encode())
                 self.assertEqual(self.rtl_workload([request, response]),
                                  [required, finished])
+
+    def test_blake3_terminal_pc_is_rejected_without_suspending(self) -> None:
+        for pc in (0xFFFE, 0xFFFF):
+            with self.subTest(pc=pc):
+                request = protocol.build_blake3(
+                    txn_id=1, pc=pc, fp=0,
+                    profile=protocol.Profile.INTERPRETER_COMPAT,
+                    message_offsets=(0, 1, 2, 3), cv_offset=4, out_offset=6,
+                    metadata=0,
+                    message_cells=tuple(protocol.Cell(True, value)
+                                        for value in (1, 2, 3, 4)),
+                    cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+                    out_cells=(protocol.ABSENT, protocol.ABSENT))
+                expected = model_exchange(request)
+                self.assertEqual(self.rtl_exchange(request), expected)
+                self.assertIs(protocol.decode_response(expected).status,
+                              protocol.Status.SERVICE_REQUIRED if pc == 0xFFFE
+                              else protocol.Status.INDEX_RANGE)
+
+    def test_blake3_invalid_metadata_is_rejected_before_service_admission(self) -> None:
+        invalid_metadata = (
+            65 << 64,
+            0xFFFFFFFF << 64,
+            0x80 << 96,
+            0xFFFFFFFF << 96,
+        )
+        for metadata in invalid_metadata:
+            with self.subTest(metadata=f"{metadata:#034x}"):
+                request = protocol.build_blake3(
+                    txn_id=1, pc=0, fp=0,
+                    profile=protocol.Profile.INTERPRETER_COMPAT,
+                    message_offsets=(0, 1, 2, 3), cv_offset=4, out_offset=6,
+                    metadata=metadata,
+                    message_cells=tuple(protocol.Cell(True, value)
+                                        for value in (1, 2, 3, 4)),
+                    cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+                    out_cells=(protocol.ABSENT, protocol.ABSENT))
+                expected = model_exchange(request)
+                self.assertEqual(self.rtl_exchange(request), expected)
+                self.assertIs(protocol.decode_response(expected).status,
+                              protocol.Status.BAD_SERVICE)
+
+    def test_blake3_reserved_service_id_exhaustion_is_rejected_without_wrap(self) -> None:
+        if os.environ.get("LSC1_SYNTH_NETLIST"):
+            self.skipTest("generic netlist has no public service-sequence test hook")
+        request = protocol.build_blake3(
+            txn_id=1, pc=0, fp=0, profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 1, 2, 3), cv_offset=4, out_offset=6,
+            metadata=0,
+            message_cells=tuple(protocol.Cell(True, value) for value in (1, 2, 3, 4)),
+            cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+            out_cells=(protocol.ABSENT, protocol.ABSENT))
+        for service_seq in (0xFFFFFFFE, 0xFFFFFFFF):
+            with self.subTest(service_seq=f"{service_seq:#010x}"):
+                endpoint = protocol.Lsc1Endpoint()
+                endpoint.service_seq = service_seq
+                expected, _ = protocol.drive(endpoint, request.encode())
+                self.assertEqual(self.rtl_workload([request], service_seq=service_seq),
+                                 [expected])
+                self.assertIs(protocol.decode_response(expected).status,
+                              protocol.Status.BAD_SERVICE)
+                self.assertEqual(endpoint.service_seq, service_seq)
 
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(

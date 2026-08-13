@@ -21,6 +21,7 @@ module tb_lsc1_packet_vector;
     integer request2_length = 0, request3_length = 0, request4_length = 0;
     integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
+    reg [31:0] initial_service_seq;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
 
@@ -75,6 +76,8 @@ module tb_lsc1_packet_vector;
         repeat (4) @(posedge clk);
         rst_n = 1;
         repeat (2) @(posedge clk);
+        if ($value$plusargs("SERVICE_SEQ=%h", initial_service_seq))
+            dut.service_seq = initial_service_seq;
         run_request(request_path, request_length);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
             @(negedge clk); abort = 1;

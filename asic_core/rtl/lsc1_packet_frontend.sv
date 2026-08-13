@@ -34,6 +34,7 @@ module lsc1_packet_frontend (
                      MUL_BACKSOLVE_ZERO = 8'h8e,
                      BAD_BRANCH_PROPOSAL = 8'h8f,
                      UNSUPPORTED_IN_PROFILE = 8'h90,
+                     BAD_SERVICE = 8'h91,
                      RETIRE_MISMATCH = 8'h92,
                      STATE_MISMATCH = 8'h94, INDEX_RANGE = 8'h95,
                      ALIAS_INCONSISTENT = 8'h96;
@@ -823,6 +824,13 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
                         end else if (blake_alias_inconsistent) begin
                             decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
+                        end else if (frame_payload[46*8 +: 32] > 32'd64 ||
+                                     (frame_payload[50*8 +: 32] & ~32'h0000007f) != 0) begin
+                            decision_ok = 0; decision_fault = BAD_SERVICE;
+                        end else if (pc == 32'h0000ffff) begin
+                            decision_ok = 0; decision_fault = INDEX_RANGE;
+                        end else if (service_seq >= 32'hfffffffe) begin
+                            decision_ok = 0; decision_fault = BAD_SERVICE;
                         end
                         if (decision_ok) begin
                             staged_message[0] <= frame_payload[55*8 +: 128];
