@@ -11,6 +11,8 @@ MUTATION_GUARDS = (
     "check_full_profile_mutations.py",
     "check_accepted_deref_binding_mutations.py",
     "check_accepted_jump_binding_mutations.py",
+    "check_accepted_scalar_binding_mutations.py",
+    "check_accepted_sequence_mutations.py",
 )
 
 

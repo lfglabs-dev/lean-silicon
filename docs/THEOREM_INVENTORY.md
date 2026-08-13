@@ -38,6 +38,21 @@ The module also contains executable stage/retire and stage/abort examples.
 Later arithmetic and DEREF/JUMP lanes can produce `Transition` values without
 changing this lifecycle interface.
 
+## `LeanVMBMinCore.AcceptedSequence`
+
+| Declaration | Meaning |
+| --- | --- |
+| `result_wire_byte_exact` | Every arbitrary accepted successful DEREF/JUMP/SET/XOR/MUL effect encodes and decodes the exact RESULT payload under reflected IEEE CRC-32. |
+| `complete_retires_once` | A legal accepted item stages from idle, accepts its matching RETIRE, commits its exact next control and increments the sequence once. |
+| `duplicate_retire_rejected` | Replaying that matching RETIRE produces `badState`, no retirement, and no committed-state change. |
+| `legal_sequence_exact` | Every arbitrary finite state-dependent legal mixed sequence produces precisely the recursively ordered receipt list; receipts are created only by successful retirement. |
+| `legal_sequence_no_loss` | Receipt count equals accepted-operation count for every legal mixed sequence. |
+| `legal_sequence_finishes_idle` | Every such sequence ends with no pending transaction. |
+
+`Item.accepted` binds each quantified effect to complete opcode-specific
+envelope acceptance and successful decision. `Legal` binds each item to the
+committed state and v1 index range produced by its predecessor.
+
 ## `LeanVMBMinCore.RTLTraceRefinement`
 
 | Declaration | Meaning |
