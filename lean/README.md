@@ -31,7 +31,8 @@ Modules:
   exactly-once matching retirement, non-vacuity, and mutation witnesses.
 - `AcceptedSequence.lean` — arbitrary finite state-dependent legal sequences
   mixing DEREF, JUMP, SET, XOR, and MUL. Every item carries its complete
-  accepted-frame/decision premise; the sequence theorem preserves acceptance
+  accepted-frame/decision premise and v1-representable current/next control;
+  the sequence theorem preserves acceptance
   order, emits one byte-exact CRC-protected RESULT receipt per item, accepts
   the matching RETIRE exactly once, rejects its replay, and finishes idle.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,

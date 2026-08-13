@@ -74,6 +74,7 @@ def Legal : Transaction.Model → List Item → Prop
   | model, [] => model.state = .idle
   | model, item :: rest =>
       model.state = .idle ∧
+      Representable item.effect ∧
       Transaction.currentIndicesInRange (transition item) = true ∧
       Transaction.stateMatches model (transition item) = true ∧
       Legal (complete model item).model rest
@@ -132,7 +133,7 @@ theorem legal_sequence_exact (model : Transaction.Model) (items : List Item)
   induction items generalizing model with
   | nil => rfl
   | cons item rest ih =>
-      rcases hlegal with ⟨hidle, hrange, hmatch, hrest⟩
+      rcases hlegal with ⟨hidle, _, hrange, hmatch, hrest⟩
       have hcomplete := complete_retires_once model item hidle hrange hmatch
       have hretired : (complete model item).retired = true := hcomplete.1
       simp only [run, expectedReceipts, hretired, if_true, List.cons.injEq, true_and]
@@ -145,7 +146,7 @@ theorem legal_sequence_no_loss (model : Transaction.Model) (items : List Item)
   induction items generalizing model with
   | nil => rfl
   | cons item rest ih =>
-      rcases hlegal with ⟨_, _, _, hrest⟩
+      rcases hlegal with ⟨_, _, _, _, hrest⟩
       simpa [expectedReceipts] using
         congrArg Nat.succ (ih (model := (complete model item).model) hrest)
 
@@ -154,8 +155,18 @@ theorem legal_sequence_finishes_idle (model : Transaction.Model) (items : List I
   induction items generalizing model with
   | nil => exact hlegal
   | cons item rest ih =>
-      rcases hlegal with ⟨_, _, _, hrest⟩
+      rcases hlegal with ⟨_, _, _, _, hrest⟩
       exact ih (model := (complete model item).model) hrest
+
+/-- Every item admitted by `Legal` stays within the v1 current and next
+control-index boundary used by the opcode-specific lifecycle bridges. -/
+theorem legal_sequence_representable (model : Transaction.Model) (items : List Item)
+    (hlegal : Legal model items) : List.Forall (fun item => Representable item.effect) items := by
+  induction items generalizing model with
+  | nil => exact .nil
+  | cons item rest ih =>
+      rcases hlegal with ⟨_, hrepresentable, _, _, hrest⟩
+      exact .cons hrepresentable (ih (model := (complete model item).model) hrest)
 
 #print axioms result_wire_byte_exact
 #print axioms complete_retires_once
@@ -163,5 +174,6 @@ theorem legal_sequence_finishes_idle (model : Transaction.Model) (items : List I
 #print axioms legal_sequence_exact
 #print axioms legal_sequence_no_loss
 #print axioms legal_sequence_finishes_idle
+#print axioms legal_sequence_representable
 
 end LeanVMBMinCore.AcceptedSequence

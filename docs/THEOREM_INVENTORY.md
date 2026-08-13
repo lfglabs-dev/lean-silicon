@@ -48,10 +48,11 @@ changing this lifecycle interface.
 | `legal_sequence_exact` | Every arbitrary finite state-dependent legal mixed sequence produces precisely the recursively ordered receipt list; receipts are created only by successful retirement. |
 | `legal_sequence_no_loss` | Receipt count equals accepted-operation count for every legal mixed sequence. |
 | `legal_sequence_finishes_idle` | Every such sequence ends with no pending transaction. |
+| `legal_sequence_representable` | Every item in a legal sequence has v1-representable current and next PC/FP indices. |
 
 `Item.accepted` binds each quantified effect to complete opcode-specific
 envelope acceptance and successful decision. `Legal` binds each item to the
-committed state and v1 index range produced by its predecessor.
+committed state and requires v1-representable current and next indices.
 
 ## `LeanVMBMinCore.RTLTraceRefinement`
 

@@ -9,6 +9,10 @@ import tempfile
 source = Path(__file__).with_name("LeanVMBMinCore") / "AcceptedSequence.lean"
 text = source.read_text()
 mutations = {
+    "legal-representability-loss": (
+        "Representable item.effect ∧",
+        "True ∧",
+    ),
     "result-payload-byte-loss": (
         "Packet.encodeResponse crc32 (resultResponse item)",
         "Packet.encodeResponse crc32 { status := 0, payload := [] }",
