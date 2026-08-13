@@ -127,6 +127,17 @@ module tb_lsc1_packet_tx_service_required;
         @(posedge clk); #1;
         if (tx_valid || payload_external_valid || busy || done_pulse)
             $fatal(1, "abort did not invalidate external payload transfer");
+
+        // Reset has the same immediate invalidation contract while active.
+        @(negedge clk); abort = 0; start = 1; tx_ready = 1;
+        @(posedge clk);
+        @(negedge clk); start = 0; rst_n = 0;
+        #1;
+        if (tx_valid || payload_external_valid)
+            $fatal(1, "reset did not invalidate same-edge transfer/source reference");
+        @(posedge clk); #1;
+        if (tx_valid || payload_external_valid || busy || done_pulse)
+            $fatal(1, "reset did not invalidate active external payload transfer");
         $display("PASS: immutable 122-byte SERVICE_REQUIRED transport, CRC, and every-beat stalls");
         $finish;
     end
