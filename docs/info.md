@@ -48,8 +48,9 @@ Hold `ena=1`, assert `rst_n=0` for a clock edge, then deassert it. Present an
 opcode on `ui_in[7:0]` with `RX_VALID=1` and wait for `RX_READY=1` at a rising
 edge. Send each payload byte in the table order, observing the same handshake.
 For every response byte, wait for `TX_VALID=1`, sample `uo_out[7:0]`, and
-raise `TX_READY=1` for a rising edge. You may introduce stalls by withholding
-either ready signal; data must remain stable during a stalled valid transfer.
+raise `TX_READY=1` for a rising edge. To introduce request stalls, deassert
+`RX_VALID`; to stall a response, withhold `TX_READY`. Data must remain stable
+during a stalled valid transfer.
 
 SET and XOR stream their response while their payload is being accepted. Drain
 each response byte before sending the next SET byte or next XOR A/B pair;
