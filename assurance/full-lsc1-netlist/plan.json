@@ -27,6 +27,13 @@
     "ena is functionally unused by the canonical top"
   ],
   "unbounded_experiments": {
+    "provenance": {
+      "evidence_kind": "historical-plan-evidence",
+      "receipt_run": false,
+      "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09",
+      "subject_source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+      "subject_source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476"
+    },
     "whole_design_reset_prefix": {
       "classification": "bounded-evidence-only",
       "solver": "Yosys SAT",

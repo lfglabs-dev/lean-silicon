@@ -63,6 +63,9 @@ edges reached 15.9 GiB RSS at depth 5 after 3 minutes 15 seconds without a
 result. A synthesis-aware matched-point decomposition held near 1.9 GiB and
 proved thousands of state bits, but one direct-SAT receiver/controller state
 point (`packet_core.addr_c[20]`) remained unresolved after more than 9 minutes.
+These are retained historical plan observations for the pinned source
+commit/tree and toolchain, not measurements made by each receipt run; the
+machine-readable provenance copied into the receipt marks `receipt_run` false.
 The ordinary lane therefore keeps the mandatory depth-3 gate and records its
 bounded temporal-induction attempt; neither resource outcome is converted into
 a pass.

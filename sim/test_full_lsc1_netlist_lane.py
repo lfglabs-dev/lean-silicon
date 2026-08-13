@@ -84,6 +84,16 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
     def test_unbounded_resource_blocker_is_machine_readable(self) -> None:
         plan = json.loads(full_lsc1_netlist.PLAN_PATH.read_text())
         evidence = plan["unbounded_experiments"]
+        provenance = evidence["provenance"]
+        self.assertEqual(provenance["evidence_kind"],
+                         "historical-plan-evidence")
+        self.assertFalse(provenance["receipt_run"])
+        self.assertEqual(provenance["toolchain_distribution"],
+                         plan["toolchain_distribution"])
+        self.assertEqual(provenance["subject_source_commit"],
+                         plan["source_commit"])
+        self.assertEqual(provenance["subject_source_tree"],
+                         plan["source_tree"])
         monolithic = evidence["whole_design_reset_prefix"]
         self.assertEqual(monolithic["solver"], "Yosys SAT")
         self.assertEqual(monolithic["depth_edges"], 5)
