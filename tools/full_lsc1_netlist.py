@@ -170,7 +170,8 @@ def main() -> None:
 endmodule
 """)
     eq_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {miter}; "
-               "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
+               "prep -flatten -top whole_design_miter; memory_map; opt; "
+               "async2sync; chformal -lower; ")
     run("whole_design_bmc_3", bounded_sat_argv(eq_read), receipt)
     receipt["proofs"]["whole_design_bmc"] = {"status": "pass",
         "edges": BOUNDED_EDGES,
@@ -210,7 +211,7 @@ endmodule
 
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "
-                "prep -flatten -top lean_silicon_lsc1; async2sync; "
+                "prep -flatten -top lean_silicon_lsc1; memory_map; opt; async2sync; "
                 "chformal -cover -remove; chformal -lower; ")
     run("controller_invariants_bmc_3", bounded_sat_argv(inv_read), receipt)
     controller_argv = ["yosys", "-Q", "-p", inv_read +
@@ -257,7 +258,8 @@ endmodule
         raise SystemExit("failed to apply observable correspondence mutation")
     mutated_miter.write_text(changed)
     mutation_read = (f"read_verilog -formal -sv {rtl_args} {netlist} {mutated_miter}; "
-                     "prep -flatten -top whole_design_miter; async2sync; chformal -lower; ")
+                     "prep -flatten -top whole_design_miter; memory_map; opt; "
+                     "async2sync; chformal -lower; ")
     mutation_argv = ["yosys", "-Q", "-p", mutation_read +
         "sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"]
     mutation = subprocess.run(mutation_argv,
