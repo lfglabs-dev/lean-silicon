@@ -31,8 +31,9 @@ framing, length field, delimiter, or CRC in this interface.
 Values use least-significant-byte-first ordering. MUL uses GF(2^128) with
 polynomial `x^128 + x^7 + x^2 + x + 1` (reduction constant `0x87`). SET
 copies its value unchanged, and XOR is bitwise. An unsupported opcode returns
-one `0xe0` byte and asserts `FAULT` until that byte is accepted or a supported
-command is accepted.
+one `0xe0` byte and asserts `FAULT` until that byte is accepted. Before
+sending another command, accept that response with `TX_READY`, or reset or
+deselect the core to abort it.
 
 `BUSY` is high while the enabled core has work or a response pending. One
 `DONE_PULSE` is emitted when the final response byte is accepted. `rst_n` is a
