@@ -35,7 +35,7 @@ def accept (wire : LeanVMBMinCore.Packet.RequestWire) : Except Error Accepted :=
   let decoded <- (Payload.decode request.opcode request.payload).mapError .payload
   match decoded with
   | .jump packet => return { packet }
-  | .deref _ _ => throw .notJump
+  | _ => throw .notJump
 
 def decision (accepted : Accepted) : Decision := preparedJumpDecision accepted.packet
 

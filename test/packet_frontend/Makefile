@@ -18,6 +18,8 @@ sim:
 	vvp tb_deref_retire_trace.vvp
 	iverilog -g2012 -Wall -s tb_jump_retire_trace -o tb_jump_retire_trace.vvp $(RTL) tb_jump_retire_trace.sv
 	vvp tb_jump_retire_trace.vvp
+	iverilog -g2012 -Wall -s tb_scalar_retire_trace -o tb_scalar_retire_trace.vvp $(RTL) tb_scalar_retire_trace.sv
+	vvp tb_scalar_retire_trace.vvp
 
 mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -83,4 +85,4 @@ differential-mutation:
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp

@@ -37,7 +37,7 @@ def accept (wire : LeanVMBMinCore.Packet.RequestWire) : Except Error Accepted :=
   let decoded <- (Payload.decode request.opcode request.payload).mapError .payload
   match decoded with
   | .deref mode packet => return { mode, packet }
-  | .jump _ => throw .notDeref
+  | _ => throw .notDeref
 
 /-- Preparation is exactly the established DEREF decision, with no alternate semantics. -/
 def decision (accepted : Accepted) : Decision :=

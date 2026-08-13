@@ -1,7 +1,8 @@
 `default_nettype none
 
-// Safety plus a dedicated accepted-DEREF-to-matching-RETIRE witness, bound
-// inside the exact production lsc1_packet_frontend.
+// Safety plus byte-exact accepted-operation-to-matching-RETIRE witnesses,
+// bound inside the exact production lsc1_packet_frontend.  DEREF remains the
+// default configuration; JUMP and scalar lanes select explicit witness macros.
 module full_lsc1_deref_bridge_checker (
     input wire clk, rst_n, abort, rx_valid, rx_ready, input wire [7:0] rx_data,
     input wire tx_valid, tx_ready, input wire [7:0] tx_data,
@@ -50,7 +51,31 @@ module full_lsc1_deref_bridge_checker (
     endfunction
 
 `ifdef FORMAL_DEREF_REACHABILITY
-`ifdef FORMAL_JUMP_WITNESS
+`ifdef FORMAL_SCALAR_SET
+    localparam [6:0] W_REQUEST_LAST = 60;
+    localparam [5:0] W_RESULT_LAST = 47;
+    localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 44;
+    localparam [15:0] W_RESULT_LENGTH = 39;
+    localparam [31:0] W_NEXT_FP = 0;
+    localparam [487:0] W_REQUEST_BITS = 488'ha101030033000100000000000000000000000100030000002a0000000000000000000000000000000000000000000000000000000000000000a817d891;
+    localparam [311:0] W_PAYLOAD_BITS = 312'h01000000010000000000000001030000002a000000000000000000000000000000000103000000;
+`elsif FORMAL_SCALAR_XOR
+    localparam [6:0] W_REQUEST_LAST = 86;
+    localparam [5:0] W_RESULT_LAST = 55;
+    localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 52;
+    localparam [15:0] W_RESULT_LENGTH = 47;
+    localparam [31:0] W_NEXT_FP = 0;
+    localparam [695:0] W_REQUEST_BITS = 696'ha10101004d000100000000000000000000000100010000000200000003000000011200000000000000000000000000000001340000000000000000000000000000000000000000000000000000000000000000dbc3b18e;
+    localparam [375:0] W_PAYLOAD_BITS = 376'h0100000001000000000000000103000000260000000000000000000000000000000003010000000200000003000000;
+`elsif FORMAL_SCALAR_MUL
+    localparam [6:0] W_REQUEST_LAST = 103;
+    localparam [5:0] W_RESULT_LAST = 55;
+    localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 52;
+    localparam [15:0] W_RESULT_LENGTH = 47;
+    localparam [31:0] W_NEXT_FP = 0;
+    localparam [831:0] W_REQUEST_BITS = 832'ha10102005e00010000000000000000000000010001000000020000000300000001120000000000000000000000000000000101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009f22a3b7;
+    localparam [375:0] W_PAYLOAD_BITS = 376'h0100000001000000000000000103000000120000000000000000000000000000000003010000000200000003000000;
+`elsif FORMAL_JUMP_WITNESS
     localparam [6:0] W_REQUEST_LAST = 112;
     localparam [5:0] W_RESULT_LAST = 35;
     localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 32;
@@ -83,6 +108,13 @@ module full_lsc1_deref_bridge_checker (
 
     function automatic [7:0] deref_byte(input [6:0] beat);
         begin
+`ifdef FORMAL_SCALAR_SET
+            deref_byte = W_REQUEST_BITS[(W_REQUEST_LAST-beat)*8 +: 8];
+`elsif FORMAL_SCALAR_XOR
+            deref_byte = W_REQUEST_BITS[(W_REQUEST_LAST-beat)*8 +: 8];
+`elsif FORMAL_SCALAR_MUL
+            deref_byte = W_REQUEST_BITS[(W_REQUEST_LAST-beat)*8 +: 8];
+`else
             case (beat)
 `ifdef FORMAL_JUMP_WITNESS
                 0: deref_byte = 8'ha1; 1: deref_byte = 8'h01;
@@ -109,6 +141,7 @@ module full_lsc1_deref_bridge_checker (
 `endif
                 default: deref_byte = 8'h00;
             endcase
+`endif
         end
     endfunction
 
@@ -116,6 +149,13 @@ module full_lsc1_deref_bridge_checker (
     // txn=1, next_pc=1, next_fp=1, no write, one deferred equality, three reads.
     function automatic [7:0] result_payload_byte(input [5:0] beat);
         begin
+`ifdef FORMAL_SCALAR_SET
+            result_payload_byte = W_PAYLOAD_BITS[(W_RESULT_LENGTH-1-beat)*8 +: 8];
+`elsif FORMAL_SCALAR_XOR
+            result_payload_byte = W_PAYLOAD_BITS[(W_RESULT_LENGTH-1-beat)*8 +: 8];
+`elsif FORMAL_SCALAR_MUL
+            result_payload_byte = W_PAYLOAD_BITS[(W_RESULT_LENGTH-1-beat)*8 +: 8];
+`else
             case (beat)
                 0: result_payload_byte = 8'h01;
                 4: result_payload_byte = 8'h01;
@@ -136,6 +176,7 @@ module full_lsc1_deref_bridge_checker (
 `endif
                 default: result_payload_byte = 8'h00;
             endcase
+`endif
         end
     endfunction
 
@@ -343,7 +384,13 @@ module full_lsc1_deref_bridge_checker (
 `else
     // The arbitrary-traffic depth-20 safety task keeps no witness assumptions.
     always @(posedge clk)
-`ifdef FORMAL_JUMP_WITNESS
+`ifdef FORMAL_SCALAR_SET
+        cover(rst_n && frame_valid && event_ready && frame_opcode == 8'h03 && frame_length == 16'd51);
+`elsif FORMAL_SCALAR_XOR
+        cover(rst_n && frame_valid && event_ready && frame_opcode == 8'h01 && frame_length == 16'd77);
+`elsif FORMAL_SCALAR_MUL
+        cover(rst_n && frame_valid && event_ready && frame_opcode == 8'h02 && frame_length == 16'd94);
+`elsif FORMAL_JUMP_WITNESS
         cover(rst_n && frame_valid && event_ready &&
               frame_opcode == 8'h07 && frame_length == 16'd103);
 `else

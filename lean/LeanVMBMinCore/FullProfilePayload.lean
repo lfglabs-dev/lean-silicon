@@ -29,6 +29,8 @@ inductive Error where
   deriving DecidableEq, Repr
 
 inductive Decoded where
+  | set (packet : SetPacket)
+  | binary (isXor : Bool) (packet : BinaryPacket)
   | deref (mode : ControlPrimitives.DerefMode) (packet : DerefPacket)
   | jump (packet : JumpPacket)
 
@@ -99,9 +101,40 @@ def decodeJump (bytes : List Byte) :
     taken, proposedPc := natLE bytes 78 4, proposedFp := natLE bytes 82 4
     proposedInverse := inverse }
 
+def decodeSet (bytes : List Byte) : Except Error Decoded := do
+  if bytes.length != 51 then throw .badLength
+  let _ <- profileAt bytes
+  if byteAt bytes 13 != 0 then throw .badFlags
+  let output <- cellAt bytes 34
+  return .set {
+    common := commonAt bytes
+    outputOffset := natLE bytes 14 4
+    constant := wordAt bytes 18
+    outputCell := output }
+
+def decodeBinary (isXor : Bool) (bytes : List Byte) : Except Error Decoded := do
+  if bytes.length != (if isXor then 77 else 94) then throw .badLength
+  let profile <- profileAt bytes
+  if byteAt bytes 13 != 0 then throw .badFlags
+  let left <- cellAt bytes 26
+  let right <- cellAt bytes 43
+  let output <- cellAt bytes 60
+  let inverse <- if isXor then pure { written := false, value := 0#128 }
+    else cellAt bytes 77
+  return .binary isXor {
+    common := commonAt bytes, profile
+    leftOffset := natLE bytes 14 4
+    rightOffset := natLE bytes 18 4
+    outputOffset := natLE bytes 22 4
+    leftCell := left, rightCell := right, outputCell := output
+    proposedInverse := inverse }
+
 /-- Decode exactly the four v1 raw DEREF/JUMP request payload opcodes. -/
 def decode (opcode : Byte) (bytes : List Byte) : Except Error Decoded :=
   match opcode with
+  | 0x01 => decodeBinary true bytes
+  | 0x02 => decodeBinary false bytes
+  | 0x03 => decodeSet bytes
   | 0x04 => decodeDeref .cell bytes
   | 0x05 => decodeDeref .pc bytes
   | 0x06 => decodeDeref .fp bytes
@@ -109,6 +142,8 @@ def decode (opcode : Byte) (bytes : List Byte) : Except Error Decoded :=
   | _ => .error .badOpcode
 
 def decideDecoded : Decoded -> Decision
+  | .set packet => preparedSetDecision packet
+  | .binary isXor packet => preparedDecision isXor packet
   | .deref mode packet => preparedDerefDecision mode packet
   | .jump packet => preparedJumpDecision packet
 
