@@ -109,13 +109,16 @@ class SchemaTests(unittest.TestCase):
 
 
 class ScatterGatherDesignContractTests(unittest.TestCase):
-    def test_documented_direction_preserves_current_rtl_boundary(self):
+    def test_authored_rtl_exposes_bounded_external_payload_contract(self):
         tx = (ROOT / "asic_core" / "rtl" / "lsc1_packet_tx.sv").read_text()
         design = (ROOT / "docs" / "BLAKE3_EXTERNAL_SERVICE.md").read_text()
         self.assertIn("[543:0]", tx)
         self.assertGreater(122, 544 // 8)
+        self.assertIn("payload_external", tx)
+        self.assertIn("payload_index", tx)
+        self.assertIn("immutable until done_pulse or", tx)
         self.assertIn("scatter/gather", design)
-        self.assertIn("Production SystemVerilog", design)
+        self.assertIn("BLAKE3 service controller/FSM is deliberately not implemented", design)
 
 
 class OfficialDifferentialTests(unittest.TestCase):

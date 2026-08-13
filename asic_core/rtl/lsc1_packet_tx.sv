@@ -9,6 +9,13 @@ module lsc1_packet_tx (
     input  wire [7:0]    status,
     input  wire [15:0]   payload_length,
     input  wire [543:0]  payload,
+    // Bounded scatter/gather contract.  When asserted with start, payload bytes
+    // are read through payload_index instead of copied into saved_payload.  The
+    // caller must keep payload_external_data immutable until done_pulse or
+    // abort.  payload_index is stable whenever tx_valid is stalled.
+    input  wire          payload_external,
+    output wire [15:0]   payload_index,
+    input  wire [7:0]    payload_external_data,
     output wire          busy,
     output reg           done_pulse,
     output reg  [31:0]   payload_crc,
@@ -21,6 +28,7 @@ module lsc1_packet_tx (
     reg [15:0] saved_length;
     reg [7:0] saved_status;
     reg [543:0] saved_payload;
+    reg saved_external;
     reg [31:0] saved_crc;
     reg [31:0] envelope_crc_work;
     reg [31:0] payload_crc_work;
@@ -40,6 +48,7 @@ module lsc1_packet_tx (
 
     assign busy = active;
     assign tx_valid = active;
+    assign payload_index = index >= 5 ? index - 5 : 0;
 
     always @(*) begin
         if (index == 0) tx_data = 8'h5a;
@@ -48,7 +57,8 @@ module lsc1_packet_tx (
         else if (index == 3) tx_data = saved_length[7:0];
         else if (index == 4) tx_data = saved_length[15:8];
         else if (index < 5 + saved_length)
-            tx_data = saved_payload[(index-5)*8 +: 8];
+            tx_data = saved_external ? payload_external_data :
+                saved_payload[(index-5)*8 +: 8];
         else begin
             case (index - 5 - saved_length)
                 0: tx_data = saved_crc[7:0];
@@ -66,6 +76,7 @@ module lsc1_packet_tx (
             saved_length <= 0;
             saved_status <= 0;
             saved_payload <= 0;
+            saved_external <= 1'b0;
             saved_crc <= 0;
             envelope_crc_work <= 32'hffffffff;
             payload_crc_work <= 32'hffffffff;
@@ -79,6 +90,7 @@ module lsc1_packet_tx (
                 saved_length <= payload_length;
                 saved_status <= status;
                 saved_payload <= payload;
+                saved_external <= payload_external;
                 saved_crc <= 0;
                 envelope_crc_work <= 32'hffffffff;
                 payload_crc_work <= 32'hffffffff;
