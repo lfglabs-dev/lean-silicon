@@ -820,8 +820,6 @@ module lsc1_packet_frontend (
                         end else if (frame_payload[46*8 +: 32] > 32'd64 ||
                                      (frame_payload[50*8 +: 32] & ~32'h0000007f) != 0) begin
                             decision_ok = 0; decision_fault = BAD_SERVICE;
-                        end else if (pc == 32'h0000ffff) begin
-                            decision_ok = 0; decision_fault = INDEX_RANGE;
                         end else if (frame_payload[14*8 +: 32] > 32'hffffffff-fp ||
                             frame_payload[18*8 +: 32] > 32'hffffffff-fp ||
                             frame_payload[22*8 +: 32] > 32'hffffffff-fp ||
@@ -831,6 +829,8 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
                         end else if (blake_alias_inconsistent) begin
                             decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
+                        end else if (pc == 32'h0000ffff) begin
+                            decision_ok = 0; decision_fault = INDEX_RANGE;
                         end
                         if (decision_ok) begin
                             staged_message[0] <= frame_payload[55*8 +: 128];

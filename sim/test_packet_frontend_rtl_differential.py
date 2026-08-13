@@ -341,6 +341,37 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                                   protocol.Status.BAD_SERVICE)
                     self.assertEqual(endpoint.service_seq, service_seq)
 
+    def test_blake3_overflow_precedes_terminal_pc_rejection(self) -> None:
+        request = protocol.build_blake3(
+            txn_id=1, pc=0xFFFF, fp=1,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0xFFFFFFFF, 0, 1, 2), cv_offset=4, out_offset=6,
+            metadata=0,
+            message_cells=tuple(protocol.Cell(True, v) for v in (10, 20, 30, 40)),
+            cv_cells=(protocol.Cell(True, 50), protocol.Cell(True, 60)),
+            out_cells=(protocol.ABSENT, protocol.ABSENT))
+        expected = model_exchange(request)
+        self.assertEqual(self.rtl_exchange(request), expected)
+        self.assertIs(protocol.decode_response(expected).status,
+                      protocol.Status.U32_OVERFLOW)
+
+    def test_blake3_alias_inconsistent_precedes_terminal_pc_rejection(self) -> None:
+        request = protocol.build_blake3(
+            txn_id=1, pc=0xFFFF, fp=0,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 0, 1, 2), cv_offset=4, out_offset=6,
+            metadata=0,
+            message_cells=(protocol.Cell(True, 111),
+                           protocol.Cell(True, 222),
+                           protocol.Cell(True, 333),
+                           protocol.Cell(True, 444)),
+            cv_cells=(protocol.Cell(True, 555), protocol.Cell(True, 666)),
+            out_cells=(protocol.ABSENT, protocol.ABSENT))
+        expected = model_exchange(request)
+        self.assertEqual(self.rtl_exchange(request), expected)
+        self.assertIs(protocol.decode_response(expected).status,
+                      protocol.Status.ALIAS_INCONSISTENT)
+
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
             profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)
