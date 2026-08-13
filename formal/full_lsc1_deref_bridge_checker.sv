@@ -50,6 +50,19 @@ module full_lsc1_deref_bridge_checker (
     endfunction
 
 `ifdef FORMAL_DEREF_REACHABILITY
+`ifdef FORMAL_JUMP_WITNESS
+    localparam [6:0] W_REQUEST_LAST = 112;
+    localparam [5:0] W_RESULT_LAST = 35;
+    localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 32;
+    localparam [15:0] W_RESULT_LENGTH = 27;
+    localparam [31:0] W_NEXT_FP = 2;
+`else
+    localparam [6:0] W_REQUEST_LAST = 90;
+    localparam [5:0] W_RESULT_LAST = 43;
+    localparam [5:0] W_PAYLOAD_FIRST = 5, W_PAYLOAD_LIMIT = 40;
+    localparam [15:0] W_RESULT_LENGTH = 35;
+    localparam [31:0] W_NEXT_FP = 1;
+`endif
     localparam [2:0] W_DEREF = 0, W_RESULT = 1, W_CRC = 2,
                      W_RETIRE = 3, W_DONE = 4, W_QUIET = 5;
     reg [2:0] witness_phase;
@@ -71,6 +84,20 @@ module full_lsc1_deref_bridge_checker (
     function automatic [7:0] deref_byte(input [6:0] beat);
         begin
             case (beat)
+`ifdef FORMAL_JUMP_WITNESS
+                0: deref_byte = 8'ha1; 1: deref_byte = 8'h01;
+                2: deref_byte = 8'h07; 4: deref_byte = 8'h67;
+                6: deref_byte = 8'h01; 18: deref_byte = 8'h01;
+                24: deref_byte = 8'h01; 28: deref_byte = 8'h02;
+                32: deref_byte = 8'h01; 33: deref_byte = 8'h01;
+                49: deref_byte = 8'h01; 50: deref_byte = 8'h02;
+                66: deref_byte = 8'h01; 67: deref_byte = 8'h04;
+                83: deref_byte = 8'h01; 84: deref_byte = 8'h01;
+                88: deref_byte = 8'h02; 92: deref_byte = 8'h01;
+                93: deref_byte = 8'h01;
+                109: deref_byte = 8'hf3; 110: deref_byte = 8'he4;
+                111: deref_byte = 8'he5; 112: deref_byte = 8'h3f;
+`else
                 0: deref_byte = 8'ha1; 1: deref_byte = 8'h01;
                 2: deref_byte = 8'h04; 4: deref_byte = 8'h51;
                 6: deref_byte = 8'h01; 14: deref_byte = 8'h01;
@@ -79,6 +106,7 @@ module full_lsc1_deref_bridge_checker (
                 32: deref_byte = 8'h01; 33: deref_byte = 8'h01;
                 87: deref_byte = 8'ha9; 88: deref_byte = 8'h7f;
                 89: deref_byte = 8'hb6; 90: deref_byte = 8'h92;
+`endif
                 default: deref_byte = 8'h00;
             endcase
         end
@@ -91,6 +119,12 @@ module full_lsc1_deref_bridge_checker (
             case (beat)
                 0: result_payload_byte = 8'h01;
                 4: result_payload_byte = 8'h01;
+`ifdef FORMAL_JUMP_WITNESS
+                8: result_payload_byte = 8'h02;
+                14: result_payload_byte = 8'h03;
+                19: result_payload_byte = 8'h01;
+                23: result_payload_byte = 8'h02;
+`else
                 8: result_payload_byte = 8'h01;
                 13: result_payload_byte = 8'h01;
                 14: result_payload_byte = 8'h02;
@@ -99,6 +133,7 @@ module full_lsc1_deref_bridge_checker (
                 23: result_payload_byte = 8'h01;
                 27: result_payload_byte = 8'h02;
                 31: result_payload_byte = 8'h03;
+`endif
                 default: result_payload_byte = 8'h00;
             endcase
         end
@@ -113,9 +148,10 @@ module full_lsc1_deref_bridge_checker (
         begin
             work = 32'hffffffff;
             work = crc_byte(work, 8'h5a); work = crc_byte(work, 8'h01);
-            work = crc_byte(work, 8'h00); work = crc_byte(work, 8'h23);
             work = crc_byte(work, 8'h00);
-            for (i = 0; i < 35; i = i + 1)
+            work = crc_byte(work, W_RESULT_LENGTH[7:0]);
+            work = crc_byte(work, W_RESULT_LENGTH[15:8]);
+            for (i = 0; i < W_RESULT_LENGTH; i = i + 1)
                 work = crc_byte(work, result_payload_byte(i));
             result_envelope_crc = ~work;
         end
@@ -170,7 +206,7 @@ module full_lsc1_deref_bridge_checker (
                 assume(rx_valid);
                 assume(rx_data == deref_byte(deref_beat));
                 if (rx_ready) begin
-                    if (deref_beat == 90)
+                    if (deref_beat == W_REQUEST_LAST)
                         witness_phase <= W_RESULT;
                     else
                         deref_beat <= deref_beat + 1'b1;
@@ -193,26 +229,26 @@ module full_lsc1_deref_bridge_checker (
             if (result_beat == 0) assert(tx_data == 8'h5a);
             else if (result_beat == 1) assert(tx_data == 8'h01);
             else if (result_beat == 2) assert(tx_data == 8'h00);
-            else if (result_beat == 3) assert(tx_data == 8'h23);
-            else if (result_beat == 4) assert(tx_data == 8'h00);
-            else if (result_beat < 40) begin
+            else if (result_beat == 3) assert(tx_data == W_RESULT_LENGTH[7:0]);
+            else if (result_beat == 4) assert(tx_data == W_RESULT_LENGTH[15:8]);
+            else if (result_beat < W_PAYLOAD_LIMIT) begin
                 assert(tx_data == result_payload_byte(result_beat - 5));
                 emitted_result_crc_work <= crc_byte(emitted_result_crc_work, tx_data);
-                if (result_beat == 39)
+                if (result_beat == W_PAYLOAD_LIMIT - 1)
                     emitted_result_crc <= ~crc_byte(emitted_result_crc_work, tx_data);
-            end else if (result_beat == 40)
+            end else if (result_beat == W_PAYLOAD_LIMIT)
                 assert(tx_data == expected_result_envelope_crc[7:0]);
-            else if (result_beat == 41)
+            else if (result_beat == W_PAYLOAD_LIMIT + 1)
                 assert(tx_data == expected_result_envelope_crc[15:8]);
-            else if (result_beat == 42)
+            else if (result_beat == W_PAYLOAD_LIMIT + 2)
                 assert(tx_data == expected_result_envelope_crc[23:16]);
-            else if (result_beat == 43)
+            else if (result_beat == W_PAYLOAD_LIMIT + 3)
                 assert(tx_data == expected_result_envelope_crc[31:24]);
-            if (result_beat == 43) begin
+            if (result_beat == W_RESULT_LAST) begin
                 witness_phase <= W_CRC;
                 assert(staged_txn_id == 1);
                 assert(staged_next_pc == 1);
-                assert(staged_next_fp == 1);
+                assert(staged_next_fp == W_NEXT_FP);
             end else
                 result_beat <= result_beat + 1'b1;
         end
@@ -241,7 +277,7 @@ module full_lsc1_deref_bridge_checker (
             assert(!tx_valid);
             assert(staged_txn_id == 1);
             assert(staged_next_pc == 1);
-            assert(staged_next_fp == 1);
+            assert(staged_next_fp == W_NEXT_FP);
             assert(committed_pc == 0);
             assert(committed_fp == 0);
             if (!capture_result_crc)
@@ -275,7 +311,7 @@ module full_lsc1_deref_bridge_checker (
                 assert(commit_updates == 0); // counters update after this edge
                 assert(done_count == 0);
                 assert(retire_seq == 1);
-                assert(committed_pc == 1 && committed_fp == 1);
+                assert(committed_pc == 1 && committed_fp == W_NEXT_FP);
                 assert(!result_pending);
                 witness_phase <= W_QUIET;
             end
@@ -284,32 +320,37 @@ module full_lsc1_deref_bridge_checker (
                 assert(commit_updates == 1);
                 assert(done_count == 1);
                 assert(retire_seq == 1);
-                assert(committed_pc == 1 && committed_fp == 1);
+                assert(committed_pc == 1 && committed_fp == W_NEXT_FP);
                 assert(!result_pending);
             end
         end
 `endif
 `ifdef FORMAL_DEREF_MATCHING_RETIRE
         cover(witness_phase == W_DONE && done_pulse && retire_seq == 1 &&
-              committed_pc == 1 && committed_fp == 1 && !result_pending);
+              committed_pc == 1 && committed_fp == W_NEXT_FP && !result_pending);
 `elsif FORMAL_DEREF_POST_RETIRE
         cover(witness_phase == W_QUIET && !done_pulse &&
               commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
-              committed_pc == 1 && committed_fp == 1 && !result_pending);
+              committed_pc == 1 && committed_fp == W_NEXT_FP && !result_pending);
 `elsif FORMAL_DEREF_ACCEPTED_RESULT
         // The sub-goal-specific cover is above.
 `else
         cover(witness_phase == W_QUIET && !done_pulse &&
               commit_updates == 1 && done_count == 1 && retire_seq == 1 &&
-              committed_pc == 1 && committed_fp == 1 && !result_pending);
+              committed_pc == 1 && committed_fp == W_NEXT_FP && !result_pending);
 `endif
     end
 `else
     // The arbitrary-traffic depth-20 safety task keeps no witness assumptions.
     always @(posedge clk)
+`ifdef FORMAL_JUMP_WITNESS
+        cover(rst_n && frame_valid && event_ready &&
+              frame_opcode == 8'h07 && frame_length == 16'd103);
+`else
         cover(rst_n && frame_valid && event_ready &&
               (frame_opcode == 8'h04 || frame_opcode == 8'h05 ||
                frame_opcode == 8'h06) && frame_length == 16'd81);
+`endif
 `endif
 
     always @(posedge clk) begin

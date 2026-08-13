@@ -1,0 +1,59 @@
+name: Setup pinned OSS CAD Suite
+description: Restore or boundedly acquire and verify the pinned formal toolchain
+
+runs:
+  using: composite
+  steps:
+    - name: Restore immutable OSS CAD Suite archive
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.tool_cache }}/oss-cad-suite-linux-x64-20260809.tgz
+        key: oss-cad-suite-linux-x64-20260809-7c0f1bb619d03fdf
+
+    - name: Verify or boundedly acquire OSS CAD Suite
+      shell: bash
+      env:
+        ARCHIVE: ${{ runner.tool_cache }}/oss-cad-suite-linux-x64-20260809.tgz
+        EXPECTED_BYTES: "737556153"
+        EXPECTED_SHA256: 7c0f1bb619d03fdf1614b73d84a95a88c64671685c364f87fe0827b7fffc6c4e
+        OSS_CAD_SUITE_URL: https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-08-09/oss-cad-suite-linux-x64-20260809.tgz
+        SUITE_DIR: ${{ runner.temp }}/oss-cad-suite
+      run: |
+        set -euo pipefail
+        mkdir -p "$(dirname "$ARCHIVE")"
+
+        archive_is_valid() {
+          test -f "$ARCHIVE" &&
+            test "$(stat -c %s "$ARCHIVE")" = "$EXPECTED_BYTES" &&
+            printf '%s  %s\n' "$EXPECTED_SHA256" "$ARCHIVE" | sha256sum --check --status
+        }
+
+        if ! archive_is_valid; then
+          rm -f "$ARCHIVE"
+          partial="${ARCHIVE}.partial"
+          rm -f "$partial"
+          echo "OSS CAD Suite cache miss or integrity failure; acquiring pinned archive"
+          if ! curl --fail --location --show-error \
+            --connect-timeout 30 --max-time 900 \
+            --retry 4 --retry-all-errors --retry-delay 10 --retry-max-time 1800 \
+            --output "$partial" "$OSS_CAD_SUITE_URL"; then
+            rm -f "$partial"
+            echo "OSS CAD Suite acquisition exhausted bounded retries" >&2
+            exit 1
+          fi
+          mv "$partial" "$ARCHIVE"
+        fi
+
+        actual_bytes="$(stat -c %s "$ARCHIVE")"
+        actual_sha256="$(sha256sum "$ARCHIVE" | cut -d ' ' -f 1)"
+        if test "$actual_bytes" != "$EXPECTED_BYTES" || test "$actual_sha256" != "$EXPECTED_SHA256"; then
+          echo "OSS CAD Suite integrity failure: bytes=$actual_bytes sha256=$actual_sha256" >&2
+          exit 1
+        fi
+
+        rm -rf "$SUITE_DIR"
+        mkdir -p "$SUITE_DIR"
+        tar -xzf "$ARCHIVE" --strip-components=1 -C "$SUITE_DIR"
+        test -x "$SUITE_DIR/bin/yosys"
+        test -x "$SUITE_DIR/bin/sby"
+        printf '%s\n' "$SUITE_DIR/bin" >> "$GITHUB_PATH"
