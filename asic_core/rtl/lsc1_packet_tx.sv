@@ -11,10 +11,12 @@ module lsc1_packet_tx (
     input  wire [543:0]  payload,
     // Bounded scatter/gather contract.  When asserted with start, payload bytes
     // are read through payload_index instead of copied into saved_payload.  The
-    // caller must keep payload_external_data immutable until done_pulse or
-    // abort.  payload_index is stable whenever tx_valid is stalled.
+    // caller must keep payload_external_data immutable while
+    // payload_external_valid is asserted.  payload_index is valid only then
+    // and is stable whenever tx_valid is stalled.
     input  wire          payload_external,
     output wire [15:0]   payload_index,
+    output wire          payload_external_valid,
     input  wire [7:0]    payload_external_data,
     output wire          busy,
     output reg           done_pulse,
@@ -47,8 +49,12 @@ module lsc1_packet_tx (
     endfunction
 
     assign busy = active;
-    assign tx_valid = active;
-    assign payload_index = index >= 5 ? index - 5 : 0;
+    // Reset and ABORT invalidate the transfer on their sampling edge rather
+    // than relying on the sequential active update observed one cycle later.
+    assign tx_valid = active && rst_n && !abort;
+    assign payload_external_valid = tx_valid && saved_external &&
+        index >= 5 && index < 5 + saved_length;
+    assign payload_index = payload_external_valid ? index - 5 : 0;
 
     always @(*) begin
         if (index == 0) tx_data = 8'h5a;

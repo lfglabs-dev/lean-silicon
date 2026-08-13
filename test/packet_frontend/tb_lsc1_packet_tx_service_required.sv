@@ -11,6 +11,7 @@ module tb_lsc1_packet_tx_service_required;
     reg [543:0] payload = 0;
     reg payload_external = 1;
     wire [15:0] payload_index;
+    wire payload_external_valid;
     reg [7:0] source [0:PAYLOAD_BYTES-1];
     wire [7:0] payload_external_data =
         payload_index < PAYLOAD_BYTES ? source[payload_index] : 8'h00;
@@ -28,6 +29,7 @@ module tb_lsc1_packet_tx_service_required;
         .clk(clk), .rst_n(rst_n), .abort(abort), .start(start),
         .status(status), .payload_length(payload_length), .payload(payload),
         .payload_external(payload_external), .payload_index(payload_index),
+        .payload_external_valid(payload_external_valid),
         .payload_external_data(payload_external_data), .busy(busy),
         .done_pulse(done_pulse), .payload_crc(payload_crc),
         .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready)
@@ -60,6 +62,8 @@ module tb_lsc1_packet_tx_service_required;
         for (i = 0; i < PAYLOAD_BYTES; i = i + 1)
             source[i] = (i * 8'h3d) ^ (i >> 1) ^ 8'ha7;
         repeat (3) @(posedge clk);
+        if (tx_valid || payload_external_valid)
+            $fatal(1, "reset exposed a transfer or external source reference");
         rst_n = 1;
         @(negedge clk); start = 1;
         @(negedge clk); start = 0;
@@ -71,11 +75,19 @@ module tb_lsc1_packet_tx_service_required;
             @(negedge clk);
             stalled_data = tx_data;
             stalled_index = payload_index;
+            if (count >= 5 && count < 5 + PAYLOAD_BYTES) begin
+                if (!payload_external_valid || payload_index != count - 5)
+                    $fatal(1, "missing/bad external source reference at beat %0d", count);
+            end else if (payload_external_valid || payload_index != 0) begin
+                $fatal(1, "external source referenced outside payload at beat %0d", count);
+            end
             tx_ready = 0;
             repeat ((count % 5) + 1) begin
                 @(posedge clk); #1;
                 if (!tx_valid || tx_data !== stalled_data ||
-                    payload_index !== stalled_index)
+                    payload_index !== stalled_index ||
+                    payload_external_valid !==
+                        (count >= 5 && count < 5 + PAYLOAD_BYTES))
                     $fatal(1, "external payload changed under stall at beat %0d", count);
             end
             @(negedge clk); tx_ready = 1;
@@ -109,8 +121,11 @@ module tb_lsc1_packet_tx_service_required;
         @(negedge clk); start = 1; tx_ready = 1;
         @(posedge clk);
         @(negedge clk); start = 0; abort = 1;
+        #1;
+        if (tx_valid || payload_external_valid)
+            $fatal(1, "abort did not invalidate same-edge transfer/source reference");
         @(posedge clk); #1;
-        if (tx_valid || busy || done_pulse)
+        if (tx_valid || payload_external_valid || busy || done_pulse)
             $fatal(1, "abort did not invalidate external payload transfer");
         $display("PASS: immutable 122-byte SERVICE_REQUIRED transport, CRC, and every-beat stalls");
         $finish;

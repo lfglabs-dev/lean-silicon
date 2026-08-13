@@ -116,7 +116,8 @@ class ScatterGatherDesignContractTests(unittest.TestCase):
         self.assertGreater(122, 544 // 8)
         self.assertIn("payload_external", tx)
         self.assertIn("payload_index", tx)
-        self.assertIn("immutable until done_pulse or", tx)
+        self.assertIn("payload_external_valid", tx)
+        self.assertIn("immutable while", tx)
         self.assertIn("scatter/gather", design)
         self.assertIn("BLAKE3 service controller/FSM is deliberately not implemented", design)
 

@@ -95,6 +95,7 @@ module lsc1_packet_frontend (
         .clk(clk), .rst_n(rst_n), .abort(abort),
         .start(tx_start), .status(tx_status), .payload_length(tx_length),
         .payload(tx_payload), .payload_external(1'b0), .payload_index(),
+        .payload_external_valid(),
         .payload_external_data(8'b0),
         .busy(tx_busy), .done_pulse(tx_done),
         .payload_crc(tx_payload_crc),

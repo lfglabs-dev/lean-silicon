@@ -62,8 +62,9 @@ abort.
 
 `lsc1_packet_tx.sv` supports one logical 122-byte v1 `SERVICE_REQUIRED`
 payload through its bounded external byte-source mode. The controller selects
-that mode at `start`, presents the byte named by `payload_index`, and keeps the
-source immutable through `done_pulse` or `abort`. This is the transport-side
+that mode at `start`, asserts `payload_external_valid` only for payload beats,
+and then presents the byte named by `payload_index`. The source byte must remain
+immutable while that valid signal is asserted. This is the transport-side
 scatter/gather contract: it avoids duplicating another 122-byte register bank
 and avoids transport-level fragmentation. The existing 68-byte locally staged
 path remains the path used by the integrated scalar controller. Focused RTL
