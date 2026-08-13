@@ -1,6 +1,7 @@
 5a1028691dd2ebb2bb24b882045cbecc6222bd8fa405591fea36ab3afa9104d6  ./.github/actions/setup-oss-cad-suite/action.yml
 91308e9d5f422ba40d9ea2e7f1595eae18cecaaadde8e4209ad99a9a7c83722f  ./.github/viewer-index.html
 bc6c8cac59dd097817ff8f48a442b1062f2a51c7e259415ed233d3b74723108a  ./.github/workflows/ci.yml
+b9281ac2016a10a8e4a1049cbb345c2f9f34ba0451c8837054060fc52bf5b5b5  ./.github/workflows/docs.yaml
 91195d747b16476611be845bd50443536c12fa6c43d347f95e5c98df0cafeaf6  ./.github/workflows/fpga-asic-simulator.yaml
 df4e1d1edf946720575070a4e567b61046bfd985b3232cfa45a233ca48993e9f  ./.github/workflows/gds.yaml
 02aaec17b225fbca77453ae4cd08184bc82b7e01342a84671f81a0a999b375d0  ./.github/workflows/release-bundle.yml
@@ -73,6 +74,7 @@ a08743f1a3cf4af68683cdaac5b00ca624ac875dbeef9f78614bda7297579df8  ./docs/USE_CAS
 20aa56b3f69c28c9639e9bd16b8239f0ef511d8fded9340185814b3257e25f01  ./docs/VALIDATION.md
 932bf68d37b0be287c21129844eaec17ae6bdbffca859eb7726e02e27f2e93e0  ./docs/WORKLOAD_VALIDATION.md
 b3527350d4e4067009b2c1426072ddb3dbf34196aa0325ed2c030e0177888ba4  ./docs/assets/lean-silicon-logo.png
+7702b37584a52d2bb143a9540deceb7874c7dbf14aa9278ba7ee53e80a6f819d  ./docs/info.md
 c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semantics/reference/README.md
 3e896ee33e3804876f6e169c872746146c1b3d773811683616986a4148b9f785  ./docs/semantics/reference/oracle.py
 c49a013eb503060394007d07395e625024d7c1ff0e9b177bc71e691e1a4efec8  ./docs/semantics/reference/vectors.json
