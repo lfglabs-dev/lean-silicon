@@ -156,7 +156,7 @@ jobs:
       - name: M2 controller lint and synthesis
         run: >-
           yosys -p 'read_verilog -sv src/leanvm_b_m2_scalar_controller.sv;
-          hierarchy -check -top leanvm_b_m2_scalar_controller; proc; check; synth -top leanvm_b_m2_scalar_controller; stat'
+          synth -top leanvm_b_m2_scalar_controller; stat'
 
   deref-lifecycle:
     needs: formal-toolchain
