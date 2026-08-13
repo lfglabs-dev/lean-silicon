@@ -75,6 +75,8 @@ jobs:
         run: cd lean && python3 check_accepted_jump_binding_mutations.py
       - name: Accepted scalar premise-binding mutation sensitivity
         run: cd lean && python3 check_accepted_scalar_binding_mutations.py
+      - name: Arbitrary mixed-sequence mutation sensitivity
+        run: cd lean && python3 check_accepted_sequence_mutations.py
 
   formal-toolchain:
     runs-on: ubuntu-latest

@@ -108,6 +108,7 @@ lean:
 	cd lean && python3 check_accepted_deref_binding_mutations.py
 	cd lean && python3 check_accepted_jump_binding_mutations.py
 	cd lean && python3 check_accepted_scalar_binding_mutations.py
+	cd lean && python3 check_accepted_sequence_mutations.py
 
 formal:
 	$(PYTHON) formal/run_deref_bridge_tasks.py
