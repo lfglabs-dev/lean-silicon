@@ -113,18 +113,44 @@ def witnessBinaryEffect (right result : Nat) : Effect := {
     3 (BitVec.ofNat 128 result)
   accesses := [1, 2, 3] }
 
-/-- Non-vacuity: accepted witness decoders and all three successful decisions are reachable. -/
+/-- Non-vacuity: the concrete encoded SET request reaches its successful decision. -/
 theorem set_decision_reachable :
-    decision { operation := .set, decoded := .set witnessSetPacket } =
+    (accept (wire 0x03 setBytes)).map decision = .ok (.result witnessSetEffect) := by
+  have haccept : accept (wire 0x03 setBytes) =
+      .ok { operation := .set, decoded := .set witnessSetPacket } := by rfl
+  have heffect : decision { operation := .set, decoded := .set witnessSetPacket } =
       .result witnessSetEffect := by rfl
+  exact (accepted_effect_matching_retire_exactly_once
+    (wire 0x03 setBytes) { operation := .set, decoded := .set witnessSetPacket }
+    witnessSetEffect Transaction.initial haccept heffect).1
 
+/-- Non-vacuity: the concrete encoded XOR request reaches its successful decision. -/
 theorem xor_decision_reachable :
-    decision { operation := .xor, decoded := .binary true (witnessBinaryPacket 52) } =
+    (accept (wire 0x01 (binaryBytes 52 false))).map decision =
+      .ok (.result (witnessBinaryEffect 52 38)) := by
+  have haccept : accept (wire 0x01 (binaryBytes 52 false)) =
+      .ok { operation := .xor, decoded := .binary true (witnessBinaryPacket 52) } := by rfl
+  have heffect : decision
+      { operation := .xor, decoded := .binary true (witnessBinaryPacket 52) } =
       .result (witnessBinaryEffect 52 38) := by rfl
+  exact (accepted_effect_matching_retire_exactly_once
+    (wire 0x01 (binaryBytes 52 false))
+    { operation := .xor, decoded := .binary true (witnessBinaryPacket 52) }
+    (witnessBinaryEffect 52 38) Transaction.initial haccept heffect).1
 
+/-- Non-vacuity: the concrete encoded MUL request reaches its successful decision. -/
 theorem mul_decision_reachable :
-    decision { operation := .mul, decoded := .binary false (witnessBinaryPacket 1) } =
+    (accept (wire 0x02 (binaryBytes 1 true))).map decision =
+      .ok (.result (witnessBinaryEffect 1 18)) := by
+  have haccept : accept (wire 0x02 (binaryBytes 1 true)) =
+      .ok { operation := .mul, decoded := .binary false (witnessBinaryPacket 1) } := by rfl
+  have heffect : decision
+      { operation := .mul, decoded := .binary false (witnessBinaryPacket 1) } =
       .result (witnessBinaryEffect 1 18) := by rfl
+  exact (accepted_effect_matching_retire_exactly_once
+    (wire 0x02 (binaryBytes 1 true))
+    { operation := .mul, decoded := .binary false (witnessBinaryPacket 1) }
+    (witnessBinaryEffect 1 18) Transaction.initial haccept heffect).1
 
 theorem result_byte_mutation_changes_crc :
     FullProfile.crc32 [0] != FullProfile.crc32 [1] := by decide
