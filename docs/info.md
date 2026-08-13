@@ -13,11 +13,12 @@ described below.
 # How it works
 
 `ui_in[7:0]` supplies request bytes and `uo_out[7:0]` supplies response bytes.
-An input byte is accepted on a rising clock edge only when `RX_VALID` and
-`RX_READY` are both high. The sender must keep the request byte stable while
+An input byte is accepted on a rising clock edge only when `rst_n`, `RX_VALID`,
+and `RX_READY` are all high. The sender must keep the request byte stable while
 `RX_VALID` is high and `RX_READY` is low. A response byte is accepted only
-when `TX_VALID` and `TX_READY` are both high; the core keeps the response byte
-stable while it is stalled.
+when `rst_n`, `TX_VALID`, and `TX_READY` are all high; the core keeps the
+response byte stable while it is stalled. No request or response transfer
+commits on an edge with `rst_n=0`.
 
 First send one opcode, then its fixed-size payload. There is no packet
 framing, length field, delimiter, or CRC in this interface.
