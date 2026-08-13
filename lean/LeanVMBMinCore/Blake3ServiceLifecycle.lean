@@ -74,8 +74,41 @@ def encodeServiceRequired (req : WireServiceRequired) : List UInt8 :=
 
 theorem encodeServiceRequired_length (req : WireServiceRequired) :
     (encodeServiceRequired req).length = 131 := by
-  simp [encodeServiceRequired, u8leBytes, u64leBytes, u32leBytes, u16leBytes,
+  simp [encodeServiceRequired, u8leBytes, u64leBytes, u32leBytes,
     req.hMessage, req.hChaining]
+
+def bytesNatLE (bytes : List UInt8) : Nat :=
+  ((List.range bytes.length).zip bytes).foldl (fun value item =>
+    value + item.2.toNat * 2 ^ (8 * item.1)) 0
+
+/-- Construct the external request from the canonical suspended request.  The
+epoch is supplied by the trusted host adapter, while every operand and binding
+field comes from `FullProfile.ServicePending`. -/
+def wireServiceRequiredOfPending (sessionEpoch : UInt64)
+    (pending : ServicePending) : WireServiceRequired := {
+  schemaVersion := 1
+  key := {
+    sessionEpoch
+    txnId := pending.request.common.txnId
+    serviceId := pending.request.serviceId
+    kind := pending.request.serviceKind }
+  reserved := 0
+  messageBlock := (List.ofFn pending.request.inputWords).flatMap wordLEBytes
+  chainingValue := (List.ofFn pending.request.chainingValue).flatMap wordLEBytes
+  counter := UInt64.ofNat (bytesNatLE ((List.ofFn pending.request.metadata).take 8))
+  blockLength := UInt32.ofNat
+    (bytesNatLE (((List.ofFn pending.request.metadata).drop 8).take 4))
+  flags := UInt32.ofNat (bytesNatLE ((List.ofFn pending.request.metadata).drop 12))
+  hMessage := by simp [wordLEBytes]
+  hChaining := by simp [wordLEBytes] }
+
+theorem wire_required_binding_is_canonical (sessionEpoch : UInt64)
+    (pending : ServicePending) :
+    let wire := wireServiceRequiredOfPending sessionEpoch pending
+    wire.key.txnId = pending.request.common.txnId ∧
+      wire.key.serviceId = pending.request.serviceId ∧
+      wire.key.kind = pending.request.serviceKind := by
+  simp [wireServiceRequiredOfPending]
 
 /-- 53-byte SERVICE_RESPONSE wire encoding per protocol section 2. -/
 structure WireServiceResponse where
@@ -85,6 +118,52 @@ structure WireServiceResponse where
   digestLength : UInt16
   digest : List UInt8
   hDigest : digest.length = 32
+
+/-- A response admitted at the external wire boundary.  Unlike the raw wire
+structure, this type records every v1 semantic condition needed before a
+digest may enter the canonical endpoint model. -/
+structure ValidatedWireServiceResponse where
+  wire : WireServiceResponse
+  hSchema : wire.schemaVersion = 1
+  hStatus : wire.status = 0
+  hDigestLength : wire.digestLength = 32
+
+/-- Validate the semantic fields which are not expressed by the fixed-size
+wire structure itself. -/
+def validateWireServiceResponse (wire : WireServiceResponse) :
+    Option ValidatedWireServiceResponse :=
+  if hSchema : wire.schemaVersion = 1 then
+    if hStatus : wire.status = 0 then
+      if hDigestLength : wire.digestLength = 32 then
+        some { wire, hSchema, hStatus, hDigestLength }
+      else none
+    else none
+  else none
+
+theorem validateWireServiceResponse_rejects_schema (wire : WireServiceResponse)
+    (h : wire.schemaVersion ≠ 1) : validateWireServiceResponse wire = none := by
+  simp [validateWireServiceResponse, h]
+
+theorem validateWireServiceResponse_rejects_status (wire : WireServiceResponse)
+    (hSchema : wire.schemaVersion = 1) (h : wire.status ≠ 0) :
+    validateWireServiceResponse wire = none := by
+  simp [validateWireServiceResponse, hSchema, h]
+
+theorem validateWireServiceResponse_rejects_digest_length (wire : WireServiceResponse)
+    (hSchema : wire.schemaVersion = 1) (hStatus : wire.status = 0)
+    (h : wire.digestLength ≠ 32) : validateWireServiceResponse wire = none := by
+  simp [validateWireServiceResponse, hSchema, hStatus, h]
+
+theorem validateWireServiceResponse_preserves_wire (wire : WireServiceResponse)
+    (validated : ValidatedWireServiceResponse)
+    (h : validateWireServiceResponse wire = some validated) :
+    validated.wire = wire := by
+  unfold validateWireServiceResponse at h
+  split at h <;> try contradiction
+  split at h <;> try contradiction
+  split at h <;> try contradiction
+  cases h
+  rfl
 
 def encodeServiceResponse (resp : WireServiceResponse) : List UInt8 :=
   u8leBytes resp.schemaVersion ++
@@ -112,18 +191,24 @@ def keyMatches (a b : ServiceKey) : Bool :=
 theorem keyMatches_refl (k : ServiceKey) : keyMatches k k = true := by
   simp [keyMatches]
 
+structure BoundServicePending where
+  sessionEpoch : UInt64
+  hEpoch : sessionEpoch ≠ 0
+  pending : ServicePending
+
 def wireBindingMatches (wireKey : ServiceKey)
-    (pending : ServicePending) : Bool :=
-  wireKey.txnId == pending.request.common.txnId &&
-    wireKey.serviceId == pending.request.serviceId &&
-    wireKey.kind == pending.request.serviceKind &&
-    pending.request.serviceKind == 1
+    (bound : BoundServicePending) : Bool :=
+  wireKey.sessionEpoch == bound.sessionEpoch &&
+    wireKey.txnId == bound.pending.request.common.txnId &&
+    wireKey.serviceId == bound.pending.request.serviceId &&
+    wireKey.kind == bound.pending.request.serviceKind &&
+    bound.pending.request.serviceKind == 1
 
 theorem wireBinding_implies_serviceResponseMatches
     (wireKey : ServiceKey)
-    (pending : ServicePending)
-    (hwire : wireBindingMatches wireKey pending = true) :
-    serviceResponseMatches pending {
+    (bound : BoundServicePending)
+    (hwire : wireBindingMatches wireKey bound = true) :
+    serviceResponseMatches bound.pending {
       txnId := wireKey.txnId
       serviceId := wireKey.serviceId
       serviceKind := wireKey.kind
@@ -131,7 +216,79 @@ theorem wireBinding_implies_serviceResponseMatches
     } = true := by
   simp only [wireBindingMatches, Bool.and_eq_true] at hwire
   simp only [serviceResponseMatches, Bool.and_eq_true]
-  exact hwire
+  rcases hwire with ⟨⟨⟨⟨_hepoch, htxn⟩, hservice⟩, hkind⟩, hrequest⟩
+  exact ⟨⟨⟨htxn, hservice⟩, hkind⟩, hrequest⟩
+
+theorem wireBinding_rejects_wrong_epoch (wireKey : ServiceKey)
+    (bound : BoundServicePending) (h : wireKey.sessionEpoch ≠ bound.sessionEpoch) :
+    wireBindingMatches wireKey bound = false := by
+  simp [wireBindingMatches, h]
+
+/-- Interpret sixteen little-endian digest bytes as one canonical word. -/
+def digestWord (bytes : List UInt8) : FullProfile.Word :=
+  ByteSerialization.deserialize (bytes.map fun byte => BitVec.ofNat 8 byte.toNat)
+
+def validatedResponseToFullProfile (response : ValidatedWireServiceResponse) :
+    Blake3Response := {
+  txnId := response.wire.key.txnId
+  serviceId := response.wire.key.serviceId
+  serviceKind := response.wire.key.kind
+  digest := (digestWord (response.wire.digest.take 16),
+    digestWord (response.wire.digest.drop 16)) }
+
+theorem validated_response_digest_is_byte_exact
+    (response : ValidatedWireServiceResponse) :
+    (validatedResponseToFullProfile response).digest =
+      (digestWord (response.wire.digest.take 16),
+        digestWord (response.wire.digest.drop 16)) := by
+  rfl
+
+theorem validated_wire_binding_enters_canonical_model
+    (response : ValidatedWireServiceResponse) (bound : BoundServicePending)
+    (hbind : wireBindingMatches response.wire.key bound = true) :
+    serviceResponseMatches bound.pending
+      (validatedResponseToFullProfile response) = true := by
+  exact wireBinding_implies_serviceResponseMatches response.wire.key bound hbind
+
+/-- The sole wire-to-model admission function: malformed semantic fields and
+binding mismatches are rejected before a `FullProfile.Blake3Response` exists. -/
+def admitWireResponse (wire : WireServiceResponse) (bound : BoundServicePending) :
+    Option Blake3Response :=
+  match validateWireServiceResponse wire with
+  | none => none
+  | some response =>
+      if wireBindingMatches response.wire.key bound then
+        some (validatedResponseToFullProfile response)
+      else none
+
+theorem admitted_wire_response_matches_canonical
+    (wire : WireServiceResponse) (bound : BoundServicePending)
+    (response : Blake3Response)
+    (hadmit : admitWireResponse wire bound = some response) :
+    serviceResponseMatches bound.pending response = true := by
+  simp only [admitWireResponse] at hadmit
+  split at hadmit
+  · contradiction
+  · rename_i validated hvalidated
+    split at hadmit
+    · rename_i hbind
+      cases hadmit
+      exact validated_wire_binding_enters_canonical_model validated bound hbind
+    · contradiction
+
+theorem admitWireResponse_rejects_wrong_epoch (wire : WireServiceResponse)
+    (bound : BoundServicePending)
+    (h : wire.key.sessionEpoch ≠ bound.sessionEpoch) :
+    admitWireResponse wire bound = none := by
+  cases hvalidated : validateWireServiceResponse wire with
+  | none => simp [admitWireResponse, hvalidated]
+  | some validated =>
+      have hwire := validateWireServiceResponse_preserves_wire wire validated hvalidated
+      have hkey : validated.wire.key.sessionEpoch ≠ bound.sessionEpoch := by
+        rw [hwire]
+        exact h
+      simp [admitWireResponse, hvalidated,
+        wireBinding_rejects_wrong_epoch validated.wire.key bound hkey]
 
 /-! ## Validation precedence -/
 
@@ -261,25 +418,37 @@ theorem binding_mismatched_response_preserves_state (nextServiceId : UInt32)
       .pending nextServiceId pending :=
   by simp [serviceStep, hmismatch]
 
-/-! ## Stall invariance
+/-! ## Stall invariance -/
 
-Ready/valid data remains stable under arbitrary stalls. The functional model
-is cycle-free: any endpoint state produces the same decision regardless of
-how many idle cycles (stalls) precede or follow. -/
+/-- Minimal ready/valid output state.  A cycle advances only on a handshake;
+otherwise both the serialized bytes and current byte index are held. -/
+structure WireOutputState where
+  bytes : List UInt8
+  index : Nat
+  deriving DecidableEq
 
-theorem stall_invariance_service_step (state : ServiceState) (cmd : ServiceCommand) :
-    serviceStep state cmd = serviceStep state cmd := rfl
+def wireOutputCycle (state : WireOutputState) (ready : Bool) : WireOutputState :=
+  if ready && state.index < state.bytes.length then
+    { state with index := state.index + 1 }
+  else state
 
-theorem stall_invariance_endpoint_step (state : EndpointState) (cmd : EndpointCommand) :
-    endpointStep state cmd = endpointStep state cmd := rfl
+@[simp] theorem wire_output_stall_holds_state (state : WireOutputState) :
+    wireOutputCycle state false = state := by
+  simp [wireOutputCycle]
 
-theorem stall_service_start_idempotent (state : ServiceState) (raw : RawBlake3Request) :
-    let first := serviceStep state (.start raw)
-    serviceStep state (.start raw) = first := rfl
+theorem wire_output_stalls_hold_state (state : WireOutputState) (count : Nat) :
+    (List.replicate count false).foldl wireOutputCycle state = state := by
+  induction count with
+  | zero => rfl
+  | succ count ih => simp [List.replicate_succ, ih]
 
-theorem stall_invariance_finishBlake3 (pending : ServicePending)
-    (response : Blake3Response) :
-    finishBlake3 pending response = finishBlake3 pending response := rfl
+theorem wire_output_stall_holds_bytes (state : WireOutputState) :
+    (wireOutputCycle state false).bytes = state.bytes := by
+  rw [wire_output_stall_holds_state]
+
+theorem wire_output_stall_holds_index (state : WireOutputState) :
+    (wireOutputCycle state false).index = state.index := by
+  rw [wire_output_stall_holds_state]
 
 /-! ## Abort/reset: invalidate outstanding, restore protocol -/
 
@@ -510,8 +679,18 @@ theorem lifecycle_service_id_overflow_rejected (raw : RawBlake3Request) :
 
 #print axioms encodeServiceRequired_length
 #print axioms encodeServiceResponse_length
+#print axioms wire_required_binding_is_canonical
+#print axioms validateWireServiceResponse_rejects_schema
+#print axioms validateWireServiceResponse_rejects_status
+#print axioms validateWireServiceResponse_rejects_digest_length
+#print axioms validateWireServiceResponse_preserves_wire
 #print axioms keyMatches_refl
 #print axioms wireBinding_implies_serviceResponseMatches
+#print axioms wireBinding_rejects_wrong_epoch
+#print axioms validated_wire_binding_enters_canonical_model
+#print axioms validated_response_digest_is_byte_exact
+#print axioms admitted_wire_response_matches_canonical
+#print axioms admitWireResponse_rejects_wrong_epoch
 #print axioms validation_canonical_cells_first
 #print axioms validation_profile_before_state
 #print axioms validation_metadata_rejects_block_length_over_64
@@ -524,6 +703,10 @@ theorem lifecycle_service_id_overflow_rejected (raw : RawBlake3Request) :
 #print axioms binding_wrong_service_id_rejected
 #print axioms binding_wrong_kind_rejected
 #print axioms binding_mismatched_response_preserves_state
+#print axioms wire_output_stall_holds_state
+#print axioms wire_output_stalls_hold_state
+#print axioms wire_output_stall_holds_bytes
+#print axioms wire_output_stall_holds_index
 #print axioms abort_invalidates_pending_preserves_sequence
 #print axioms abort_rejects_late_response
 #print axioms reset_restores_endpoint_initial
