@@ -107,6 +107,7 @@ lean:
 	cd lean && python3 check_full_profile_mutations.py
 	cd lean && python3 check_accepted_deref_binding_mutations.py
 	cd lean && python3 check_accepted_jump_binding_mutations.py
+	cd lean && python3 check_accepted_scalar_binding_mutations.py
 
 formal:
 	$(PYTHON) formal/run_deref_bridge_tasks.py
@@ -130,6 +131,9 @@ formal-deref-coverage-mutation:
 formal-jump-coverage-mutation:
 	$(PYTHON) formal/check_jump_coverage_mutation.py
 	$(PYTHON) formal/check_jump_retire_formal_mutations.py
+
+formal-scalar-mutations:
+	$(PYTHON) formal/check_scalar_retire_formal_mutations.py
 
 # Non-release, non-SKY26c lane. The cache must remain private and outside the checkout.
 full-profile-assurance:

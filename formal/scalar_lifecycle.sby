@@ -1,0 +1,103 @@
+[tasks]
+set_accepted_result_reachability
+set_accepted_result_safety
+set_matching_retire_reachability
+set_matching_retire_safety
+set_post_retire_reachability
+set_post_retire_safety
+xor_accepted_result_reachability
+xor_accepted_result_safety
+xor_matching_retire_reachability
+xor_matching_retire_safety
+xor_post_retire_reachability
+xor_post_retire_safety
+mul_accepted_result_reachability
+mul_accepted_result_safety
+mul_matching_retire_reachability
+mul_matching_retire_safety
+mul_post_retire_reachability
+mul_post_retire_safety
+
+[options]
+set_accepted_result_reachability: mode cover
+set_accepted_result_safety: mode bmc
+set_accepted_result_reachability: depth 136
+set_accepted_result_safety: depth 136
+set_matching_retire_reachability: mode cover
+set_matching_retire_safety: mode bmc
+set_matching_retire_reachability: depth 156
+set_matching_retire_safety: depth 156
+set_post_retire_reachability: mode cover
+set_post_retire_safety: mode bmc
+set_post_retire_reachability: depth 157
+set_post_retire_safety: depth 157
+xor_accepted_result_reachability: mode cover
+xor_accepted_result_safety: mode bmc
+xor_accepted_result_reachability: depth 186
+xor_accepted_result_safety: depth 186
+xor_matching_retire_reachability: mode cover
+xor_matching_retire_safety: mode bmc
+xor_matching_retire_reachability: depth 206
+xor_matching_retire_safety: depth 206
+xor_post_retire_reachability: mode cover
+xor_post_retire_safety: mode bmc
+xor_post_retire_reachability: depth 207
+xor_post_retire_safety: depth 207
+mul_accepted_result_reachability: mode cover
+mul_accepted_result_safety: mode bmc
+mul_accepted_result_reachability: depth 331
+mul_accepted_result_safety: depth 331
+mul_matching_retire_reachability: mode cover
+mul_matching_retire_safety: mode bmc
+mul_matching_retire_reachability: depth 351
+mul_matching_retire_safety: depth 351
+mul_post_retire_reachability: mode cover
+mul_post_retire_safety: mode bmc
+mul_post_retire_reachability: depth 352
+mul_post_retire_safety: depth 352
+multiclock off
+
+[engines]
+btor btormc
+
+[script]
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_rx.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_tx.sv
+read -formal -D FORMAL_DEREF_BRIDGE gf2n_mul_bitstream.sv
+read -formal -D FORMAL_DEREF_BRIDGE gf128_mul_bitstream.sv
+read -formal -D FORMAL_DEREF_BRIDGE leanvm_b_stream_alu.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_stream_adapter.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_field_encoder.sv
+set_accepted_result_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+set_accepted_result_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+set_matching_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+set_matching_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+set_post_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+set_post_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_SET full_lsc1_deref_bridge_checker.sv
+xor_accepted_result_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+xor_accepted_result_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+xor_matching_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+xor_matching_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+xor_post_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+xor_post_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_XOR full_lsc1_deref_bridge_checker.sv
+mul_accepted_result_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+mul_accepted_result_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+mul_matching_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+mul_matching_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+mul_post_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+mul_post_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_packet_frontend.sv
+prep -top lsc1_packet_frontend
+setundef -undriven -anyseq
+opt_clean
+
+[files]
+full_lsc1_deref_bridge_checker.sv
+../asic_core/rtl/lsc1_packet_rx.sv
+../asic_core/rtl/lsc1_packet_tx.sv
+../asic_core/rtl/gf2n_mul_bitstream.sv
+../asic_core/rtl/gf128_mul_bitstream.sv
+../asic_core/rtl/leanvm_b_stream_alu.sv
+../asic_core/rtl/lsc1_stream_adapter.sv
+../asic_core/rtl/lsc1_field_encoder.sv
+../asic_core/rtl/lsc1_packet_frontend.sv

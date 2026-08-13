@@ -73,6 +73,8 @@ jobs:
         run: cd lean && python3 check_accepted_deref_binding_mutations.py
       - name: Accepted JUMP premise-binding mutation sensitivity
         run: cd lean && python3 check_accepted_jump_binding_mutations.py
+      - name: Accepted scalar premise-binding mutation sensitivity
+        run: cd lean && python3 check_accepted_scalar_binding_mutations.py
 
   formal-toolchain:
     runs-on: ubuntu-latest
@@ -233,6 +235,55 @@ jobs:
       - uses: ./.github/actions/setup-oss-cad-suite
       - name: Reject below-bound and critical JUMP-to-RETIRE mutations
         run: make formal-jump-coverage-mutation
+
+  scalar-lifecycle:
+    needs: formal-toolchain
+    name: scalar-lifecycle (${{ matrix.task }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - set_accepted_result_reachability
+          - set_accepted_result_safety
+          - set_matching_retire_reachability
+          - set_matching_retire_safety
+          - set_post_retire_reachability
+          - set_post_retire_safety
+          - xor_accepted_result_reachability
+          - xor_accepted_result_safety
+          - xor_matching_retire_reachability
+          - xor_matching_retire_safety
+          - xor_post_retire_reachability
+          - xor_post_retire_safety
+          - mul_accepted_result_reachability
+          - mul_accepted_result_safety
+          - mul_matching_retire_reachability
+          - mul_matching_retire_safety
+          - mul_post_retire_reachability
+          - mul_post_retire_safety
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+      - uses: ./.github/actions/setup-oss-cad-suite
+      - name: Check one scalar lifecycle sub-goal
+        run: python3 formal/run_scalar_lifecycle_tasks.py --task "${{ matrix.task }}"
+
+  scalar-lifecycle-mutations:
+    needs: formal-toolchain
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+      - uses: ./.github/actions/setup-oss-cad-suite
+      - name: Reject critical scalar lifecycle mutations
+        run: make formal-scalar-mutations
 
   full-lsc1-netlist:
     needs: formal-toolchain

@@ -18,4 +18,5 @@ import LeanVMBMinCore.FullProfilePacket
 import LeanVMBMinCore.FullProfilePayload
 import LeanVMBMinCore.AcceptedDeref
 import LeanVMBMinCore.AcceptedJump
+import LeanVMBMinCore.AcceptedScalar
 import LeanVMBMinCore.RTLTransactionRefinement
