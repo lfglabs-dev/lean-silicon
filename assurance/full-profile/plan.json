@@ -10,9 +10,10 @@
   "elaboration_top": "lsc1_packet_frontend",
   "implemented_requests": [
     "XOR", "MUL_NATIVE", "SET_CONSTANT", "DEREF_CELL", "DEREF_PC",
-    "DEREF_FP", "JUMP", "NEGOTIATE", "RETIRE", "STATUS_QUERY"
+    "DEREF_FP", "JUMP", "BLAKE3_REQUEST", "SERVICE_RESPONSE", "NEGOTIATE",
+    "RETIRE", "STATUS_QUERY"
   ],
-  "model_only_requests": ["BLAKE3_REQUEST", "SERVICE_RESPONSE"],
+  "model_only_requests": [],
   "claims": {
     "unbounded": [],
     "bounded": [

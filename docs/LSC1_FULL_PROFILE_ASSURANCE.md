@@ -37,12 +37,12 @@ profile; and last status/fault. Reset and ABORT dominate transfers. Exactly one
 result may be pending, and only a matching RETIRE commits staged scalar state.
 
 The implemented request surface is XOR, MUL_NATIVE, SET_CONSTANT, DEREF_CELL,
-DEREF_PC, DEREF_FP, JUMP, NEGOTIATE, RETIRE, and STATUS_QUERY, including frame
-faults, profile checks, absent/present cells, back-solving, pointer and inverse
-checks, branch proposals, stalls, abort, and retirement. BLAKE3_REQUEST and
-SERVICE_RESPONSE exist only in the executable model and are explicit gaps in
-the RTL. Host memory, program fetch, trace/proof persistence, and multi-step VM
-execution remain outside the endpoint.
+DEREF_PC, DEREF_FP, JUMP, BLAKE3_REQUEST, SERVICE_RESPONSE, NEGOTIATE, RETIRE,
+and STATUS_QUERY, including frame faults, profile checks, absent/present cells,
+back-solving, pointer and inverse checks, branch proposals, delegated BLAKE3
+service lifecycle, stalls, abort, and retirement. BLAKE3 compression remains
+host-owned. Host memory, program fetch, trace/proof persistence, and multi-step
+VM execution remain outside the endpoint.
 
 ## Classification and assumptions
 
@@ -65,10 +65,10 @@ uses Yosys generic cells and Icarus; the seeded finite corpus is not exhaustive.
 No fairness or hostile-host assumption is converted into a proof.
 
 An unbounded claim is blocked because the repository has no complete independent
-formal transition specification for the packet executor, no formal relation to
-the frozen Lean/Rust semantics, and no RTL implementation of BLAKE3 service
-exchange. Sequential RTL-to-gate equivalence for a physical full-profile
-netlist is also blocked because no pinned physical full-profile netlist exists.
+formal transition specification for the packet executor and no formal relation
+to the frozen Lean/Rust semantics. Sequential RTL-to-gate equivalence for a
+physical full-profile netlist is also blocked because no pinned physical
+full-profile netlist exists.
 
 ## Non-vacuity and mutations
 
@@ -92,7 +92,7 @@ to the named boundaries; they do not imply completeness.
 
 - no full opcode exhaustive proof or liveness proof;
 - no Lean-to-packet-RTL refinement;
-- BLAKE3 service packets are model-only;
+- BLAKE3 compression remains a host-side datapath;
 - no physical-cell full-profile netlist, place-and-route, FPGA byte log, or
   silicon evidence;
 - bounded vectors do not cover the full 128-bit/state/packet space;

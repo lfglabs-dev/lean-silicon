@@ -121,7 +121,7 @@ def main() -> None:
         "classification": {"unbounded": [], "bounded": plan["claims"]["bounded"]},
         "commands": [], "mutations": [], "residual_gaps": [
             "no complete independent formal packet transition specification",
-            "no Lean-to-RTL relation", "BLAKE3 request/service response are model-only",
+            "no Lean-to-RTL relation", "host-side BLAKE3 compression datapath",
             "no synthesized or pinned physical full-profile netlist", "finite corpus is not exhaustive",
         ],
     }
