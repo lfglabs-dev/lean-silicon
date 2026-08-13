@@ -8,10 +8,11 @@ import json
 import pathlib
 import unittest
 
-import lsc1_transaction as lsc1
+from sim import lsc1_transaction as lsc1
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "conformance/corpus-v2.json"
+CORPUS_V3 = ROOT / "conformance/corpus-v3.json"
 FROZEN_V1_DIGESTS = {
     "corpus-v1.json": "76ba2ea25dd2f20ea3e50c6d25c774d1fbf45b2960b65d233680c284c0c111d7",
     "schema-v1.json": "69e83e18dac54c6271758a759e28ed60697aa5db906a1f51f2c2bc310ba33876",
@@ -121,6 +122,50 @@ class ConformanceCorpusTests(unittest.TestCase):
         self.assertEqual(reset["initial_state"]["last_fault"], "ABORTED")
         self.assertEqual(reset["initial_state"]["abort_count"], 1)
         self.assertEqual(reset["final_state"]["abort_count"], 0)
+
+
+class Blake3ServiceLifecycleV3Tests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.corpus = json.loads(CORPUS_V3.read_text())
+
+    def test_generator_is_byte_reproducible(self) -> None:
+        path = ROOT / "tools/generate_conformance_corpus_v3.py"
+        spec = importlib.util.spec_from_file_location("_corpus_generator_v3", path)
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(CORPUS_V3.read_bytes(), module.render_corpus())
+
+    def test_v2_remains_immutable(self) -> None:
+        self.assertEqual(
+            hashlib.sha256(CORPUS.read_bytes()).hexdigest(),
+            "0c07b8592dbc4212076092ebb8aba81403b50ddd22daa51e91f4fcb4320c7e75",
+        )
+
+    def test_nominal_exchange_is_byte_exact(self) -> None:
+        nominal = next(case for case in self.corpus["cases"] if case["case_id"] == "blake3.lifecycle.nominal")
+        self.assertEqual(nominal["statuses"], ["SERVICE_REQUIRED", "OK", "RETIRED"])
+        self.assertEqual(len(bytes.fromhex(nominal["service_required"]["internal_payload_hex"])), 122)
+        self.assertEqual(len(bytes.fromhex(nominal["service_required"]["host_envelope_hex"])), 131)
+        self.assertEqual(len(bytes.fromhex(nominal["service_response"]["host_envelope_hex"])), 53)
+        for field in ("blake3_request_hex", "service_required_frame_hex", "service_response_frame_hex", "result_frame_hex", "retire_request_hex", "retire_response_hex"):
+            self.assertTrue(nominal["wire"][field])
+
+    def test_binding_mutations_and_controls_are_frozen(self) -> None:
+        by_id = {case["case_id"]: case for case in self.corpus["cases"]}
+        required = {
+            "blake3.reject.txn_id", "blake3.reject.service_id",
+            "blake3.reject.kind", "blake3.reject.digest",
+            "blake3.reject.metadata.counter", "blake3.reject.metadata.block_len",
+            "blake3.reject.metadata.flags", "blake3.reject.replay",
+            "blake3.control.abort", "blake3.control.reset",
+        }
+        self.assertFalse(required - by_id.keys())
+        for case_id in required:
+            with self.subTest(case_id=case_id):
+                self.assertTrue(by_id[case_id]["detected"])
+                self.assertTrue(by_id[case_id]["fingerprint"].startswith("sha256:"))
 
 
 if __name__ == "__main__":

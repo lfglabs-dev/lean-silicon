@@ -1,0 +1,205 @@
+{
+  "base_commit": "3beb2cb7da772f3c819c8055249c787ea92185d1",
+  "cases": [
+    {
+      "case_id": "blake3.lifecycle.nominal",
+      "coverage": [
+        "BLAKE3_REQUEST",
+        "SERVICE_REQUIRED",
+        "SERVICE_RESPONSE",
+        "RESULT",
+        "RETIRE"
+      ],
+      "description": "Byte-exact BLAKE3_REQUEST through SERVICE_REQUIRED, SERVICE_RESPONSE, RESULT, and RETIRE.",
+      "detected": true,
+      "final": {
+        "committed_fp": 64,
+        "committed_pc": 3,
+        "retire_seq": 1,
+        "state": "idle"
+      },
+      "fingerprint": "sha256:2c91b7d6997e625f7cb75c206afadf18d622503b68d6a32ca51c3b3f5f562895",
+      "service_required": {
+        "host_envelope_hex": "018877665544332211403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000004000000000000000",
+        "internal_payload_hex": "403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000004000000000000000"
+      },
+      "service_response": {
+        "digest_hex": "f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207",
+        "host_envelope_hex": "018877665544332211403020100100000001002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "statuses": [
+        "SERVICE_REQUIRED",
+        "OK",
+        "RETIRED"
+      ],
+      "wire": {
+        "blake3_request_hex": "a1010800be00403020100200000040000000010000000000010000000200000003000000080000000a00000000000000000000004000000000000000010b00000000000000000000000000000001160000000000000000000000000000000121000000000000000000000000000000012c0000000000000000000000000000000137000000000000000000000000000000014200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b773dba1",
+        "result_frame_hex": "5a01005700403020100300000040000000024a000000f0b6a5ddd1b58f91536c77f8a3b3918e4b000000ee3b6dc8a4501dc645da803a3b39720700084000000041000000420000004300000048000000490000004a0000004b0000004fe2e8d0",
+        "retire_request_hex": "a10112000800403020109c96789dcb9623ad",
+        "retire_response_hex": "5a0102100040302010010000000300000040000000aa69c315",
+        "service_required_frame_hex": "5a01017a00403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000004000000000000000bdd58dd8",
+        "service_response_frame_hex": "a10111002a0040302010010000000100f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207de89fdac"
+      }
+    },
+    {
+      "case_id": "blake3.reject.txn_id",
+      "coverage": [
+        "binding",
+        "txn_id",
+        "SERVICE_RESPONSE"
+      ],
+      "description": "A SERVICE_RESPONSE with the wrong txn_id is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "stale or wrongly bound SERVICE_RESPONSE",
+        "host_envelope_hex": "018877665544332211413020100100000001002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "fingerprint": "sha256:1f82e6c5dbd00049166e07644e966e10c91236e58f4b6d70aa7bf747fb0066fe"
+    },
+    {
+      "case_id": "blake3.reject.service_id",
+      "coverage": [
+        "binding",
+        "service_id",
+        "SERVICE_RESPONSE"
+      ],
+      "description": "A SERVICE_RESPONSE with the wrong service_id is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "stale or wrongly bound SERVICE_RESPONSE",
+        "host_envelope_hex": "018877665544332211403020100200000001002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "fingerprint": "sha256:12799ddf11a09c60f3f519232806d07b9b987c6acdafccb9c668b04394e29b0e"
+    },
+    {
+      "case_id": "blake3.reject.kind",
+      "coverage": [
+        "binding",
+        "kind",
+        "SERVICE_RESPONSE"
+      ],
+      "description": "A SERVICE_RESPONSE with the wrong kind is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "stale or wrongly bound SERVICE_RESPONSE",
+        "host_envelope_hex": "018877665544332211403020100100000002002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "fingerprint": "sha256:feaf22b9326702dafd514c9c8b00311c0b80a8908e68489c0b200478e2c12da7"
+    },
+    {
+      "case_id": "blake3.reject.metadata.counter",
+      "coverage": [
+        "binding",
+        "metadata",
+        "counter",
+        "SERVICE_REQUIRED"
+      ],
+      "description": "A retry that changes counter metadata is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "retry changed service operands",
+        "internal_payload_hex": "403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000001000000000000004000000000000000"
+      },
+      "fingerprint": "sha256:67032dfa278dc6ccd6c87173789f197663cb28767bfcd4e7089d66c6f048979b"
+    },
+    {
+      "case_id": "blake3.reject.metadata.block_len",
+      "coverage": [
+        "binding",
+        "metadata",
+        "block_len",
+        "SERVICE_REQUIRED"
+      ],
+      "description": "A retry that changes block_len metadata is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "retry changed service operands",
+        "internal_payload_hex": "403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000003f00000000000000"
+      },
+      "fingerprint": "sha256:89c7905cca8d24c000ba2b2812af883be44f442ed4614a5c6d47df7c4a5cae8d"
+    },
+    {
+      "case_id": "blake3.reject.metadata.flags",
+      "coverage": [
+        "binding",
+        "metadata",
+        "flags",
+        "SERVICE_REQUIRED"
+      ],
+      "description": "A retry that changes flags metadata is rejected.",
+      "detected": true,
+      "evidence": {
+        "error": "retry changed service operands",
+        "internal_payload_hex": "403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000004000000001000000"
+      },
+      "fingerprint": "sha256:213f6a88d73dbd51870329210a6136adbc32653c07425e995fafa3581367e7fe"
+    },
+    {
+      "case_id": "blake3.reject.replay",
+      "coverage": [
+        "binding",
+        "replay",
+        "SERVICE_REQUIRED"
+      ],
+      "description": "A completed SERVICE_REQUIRED key cannot be replayed.",
+      "detected": true,
+      "evidence": {
+        "error": "replayed SERVICE_REQUIRED",
+        "internal_payload_hex": "403020100100000001000b00000000000000000000000000000016000000000000000000000000000000210000000000000000000000000000002c000000000000000000000000000000370000000000000000000000000000004200000000000000000000000000000000000000000000004000000000000000"
+      },
+      "fingerprint": "sha256:78bb44fdcf8df26dfc0d70c33ea2b1cb1ebb4184b991d6d4d847f391799d2b2c"
+    },
+    {
+      "case_id": "blake3.reject.digest",
+      "coverage": [
+        "binding",
+        "digest",
+        "WRITE_CONFLICT",
+        "SERVICE_RESPONSE"
+      ],
+      "description": "A digest conflicting with present output cells is rejected and discarded.",
+      "detected": true,
+      "evidence": {
+        "final_state": "idle",
+        "host_envelope_hex": "018877665544332211403020100100000001002000f1b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207",
+        "response_frame_hex": "5a018c05004030201000df213cd6",
+        "status": "WRITE_CONFLICT"
+      },
+      "fingerprint": "sha256:2cbbcd2232e3174a6286522c8a80707f7ff099a9152a3d069ad525615b20b683"
+    },
+    {
+      "case_id": "blake3.control.abort",
+      "coverage": [
+        "abort",
+        "binding",
+        "stale_response"
+      ],
+      "description": "ABORT invalidates the outstanding host response.",
+      "detected": true,
+      "evidence": {
+        "endpoint_state": "idle",
+        "error": "stale or wrongly bound SERVICE_RESPONSE",
+        "stale_host_envelope_hex": "018877665544332211403020100100000001002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "fingerprint": "sha256:c8439839e5e91f0e1939e75cbb0811f1b1c0626270a77c11f54a40d5145e4d0f"
+    },
+    {
+      "case_id": "blake3.control.reset",
+      "coverage": [
+        "reset",
+        "binding",
+        "stale_response"
+      ],
+      "description": "RESET invalidates the outstanding host response.",
+      "detected": true,
+      "evidence": {
+        "endpoint_state": "idle",
+        "error": "stale or wrongly bound SERVICE_RESPONSE",
+        "stale_host_envelope_hex": "018877665544332211403020100100000001002000f0b6a5ddd1b58f91536c77f8a3b3918eee3b6dc8a4501dc645da803a3b397207"
+      },
+      "fingerprint": "sha256:33d54d4a7b72ed9632fd6d17f0344efd00b2ef959d2909f7c44d291f4ec1f9a2"
+    }
+  ],
+  "schema": "lean-silicon-conformance-v3",
+  "scope": "BLAKE3 service lifecycle over the merged LSC-1 v1 software boundary"
+}
