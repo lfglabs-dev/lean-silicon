@@ -815,7 +815,14 @@ module lsc1_packet_frontend (
                         staged_access[5] = staged_access[4] + 1'b1;
                         staged_access[6] = fp + frame_payload[34*8 +: 32];
                         staged_access[7] = staged_access[6] + 1'b1;
-                        if (frame_payload[14*8 +: 32] > 32'hffffffff-fp ||
+                        if (service_seq >= 32'hfffffffe) begin
+                            decision_ok = 0; decision_fault = BAD_SERVICE;
+                        end else if (frame_payload[46*8 +: 32] > 32'd64 ||
+                                     (frame_payload[50*8 +: 32] & ~32'h0000007f) != 0) begin
+                            decision_ok = 0; decision_fault = BAD_SERVICE;
+                        end else if (pc == 32'h0000ffff) begin
+                            decision_ok = 0; decision_fault = INDEX_RANGE;
+                        end else if (frame_payload[14*8 +: 32] > 32'hffffffff-fp ||
                             frame_payload[18*8 +: 32] > 32'hffffffff-fp ||
                             frame_payload[22*8 +: 32] > 32'hffffffff-fp ||
                             frame_payload[26*8 +: 32] > 32'hffffffff-fp ||
@@ -824,13 +831,6 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
                         end else if (blake_alias_inconsistent) begin
                             decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
-                        end else if (frame_payload[46*8 +: 32] > 32'd64 ||
-                                     (frame_payload[50*8 +: 32] & ~32'h0000007f) != 0) begin
-                            decision_ok = 0; decision_fault = BAD_SERVICE;
-                        end else if (pc == 32'h0000ffff) begin
-                            decision_ok = 0; decision_fault = INDEX_RANGE;
-                        end else if (service_seq >= 32'hfffffffe) begin
-                            decision_ok = 0; decision_fault = BAD_SERVICE;
                         end
                         if (decision_ok) begin
                             staged_message[0] <= frame_payload[55*8 +: 128];

@@ -58,6 +58,6 @@
     "SKY26c and shuttle flows",
     "physical place and route",
     "FPGA and fabricated-silicon evidence",
-    "model-only BLAKE3_REQUEST and SERVICE_RESPONSE"
+    "host-side BLAKE3 compression datapath"
   ]
 }

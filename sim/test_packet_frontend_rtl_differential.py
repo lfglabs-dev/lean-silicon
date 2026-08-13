@@ -274,6 +274,26 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 self.assertIs(protocol.decode_response(expected).status,
                               protocol.Status.BAD_SERVICE)
 
+    def test_blake3_invalid_metadata_precedes_other_execution_faults(self) -> None:
+        cases = (
+            {"pc": 0xFFFF, "fp": 0, "message_offsets": (0, 1, 2, 3)},
+            {"pc": 0, "fp": 0xFFFF, "message_offsets": (0xFFFFFFFF, 1, 2, 3)},
+        )
+        for metadata in (65 << 64, 0x80 << 96):
+            for case in cases:
+                with self.subTest(metadata=f"{metadata:#034x}", case=case):
+                    request = protocol.build_blake3(
+                        txn_id=1, profile=protocol.Profile.INTERPRETER_COMPAT,
+                        cv_offset=4, out_offset=6, metadata=metadata,
+                        message_cells=tuple(protocol.Cell(True, value)
+                                            for value in (1, 2, 3, 4)),
+                        cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+                        out_cells=(protocol.ABSENT, protocol.ABSENT), **case)
+                    expected = model_exchange(request)
+                    self.assertEqual(self.rtl_exchange(request), expected)
+                    self.assertIs(protocol.decode_response(expected).status,
+                                  protocol.Status.BAD_SERVICE)
+
     def test_blake3_reserved_service_id_exhaustion_is_rejected_without_wrap(self) -> None:
         if os.environ.get("LSC1_SYNTH_NETLIST"):
             self.skipTest("generic netlist has no public service-sequence test hook")
@@ -294,6 +314,32 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
                 self.assertIs(protocol.decode_response(expected).status,
                               protocol.Status.BAD_SERVICE)
                 self.assertEqual(endpoint.service_seq, service_seq)
+
+    def test_blake3_service_id_exhaustion_precedes_execution_faults(self) -> None:
+        if os.environ.get("LSC1_SYNTH_NETLIST"):
+            self.skipTest("generic netlist has no public service-sequence test hook")
+        cases = (
+            {"pc": 0xFFFF, "fp": 0, "message_offsets": (0, 1, 2, 3)},
+            {"pc": 0, "fp": 0xFFFF, "message_offsets": (0xFFFFFFFF, 1, 2, 3)},
+        )
+        for service_seq in (0xFFFFFFFE, 0xFFFFFFFF):
+            for case in cases:
+                with self.subTest(service_seq=f"{service_seq:#010x}", case=case):
+                    request = protocol.build_blake3(
+                        txn_id=1, profile=protocol.Profile.INTERPRETER_COMPAT,
+                        cv_offset=4, out_offset=6, metadata=0,
+                        message_cells=tuple(protocol.Cell(True, value)
+                                            for value in (1, 2, 3, 4)),
+                        cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+                        out_cells=(protocol.ABSENT, protocol.ABSENT), **case)
+                    endpoint = protocol.Lsc1Endpoint()
+                    endpoint.service_seq = service_seq
+                    expected, _ = protocol.drive(endpoint, request.encode())
+                    self.assertEqual(self.rtl_workload([request], service_seq=service_seq),
+                                     [expected])
+                    self.assertIs(protocol.decode_response(expected).status,
+                                  protocol.Status.BAD_SERVICE)
+                    self.assertEqual(endpoint.service_seq, service_seq)
 
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
