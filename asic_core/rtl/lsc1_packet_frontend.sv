@@ -235,7 +235,7 @@ module lsc1_packet_frontend (
         .frame_valid(frame_valid), .rx_fault_valid(rx_fault_valid),
         .tx_start(tx_start), .tx_busy(tx_busy), .compute_state(compute_state),
         .alu_busy(alu_busy), .encoder_busy(encoder_busy),
-        .result_pending(result_pending)
+        .result_pending(result_pending), .service_pending(service_pending)
     );
 `endif
 
