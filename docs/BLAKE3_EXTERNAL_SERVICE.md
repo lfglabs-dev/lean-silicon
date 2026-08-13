@@ -1,9 +1,9 @@
 # External BLAKE3 service prerequisites
 
 This document freezes the canonical host-service contract and software/model
-implementation boundary. No production
-SystemVerilog, ASIC/FPGA transport, UART, JTAG, or hardware path implements this
-service yet.
+implementation boundary. Authored SystemVerilog now implements the bounded TX
+transport contract below, but no authored RTL controller, ASIC/FPGA integration,
+UART, JTAG, or hardware path implements the service lifecycle.
 
 ## Transport-independent schema
 
@@ -58,22 +58,27 @@ under arbitrary stalls, and timeout policy belongs to the host. Timeout
 recovery must explicitly ABORT or reset; reconnect alone is not a commit or an
 abort.
 
-## Future production direction
+## Authored RTL transport boundary
 
-The recommended RTL direction remains one logical 122-byte v1
-`SERVICE_REQUIRED` payload serialized scatter/gather from immutable RX storage.
-The current TX payload store is 68 bytes, so production RTL cannot emit it.
-Scatter/gather avoids duplicating another 122-byte register bank and avoids
-transport-level fragmentation. Its design gates are:
+`lsc1_packet_tx.sv` supports one logical 122-byte v1 `SERVICE_REQUIRED`
+payload through its bounded external byte-source mode. The controller selects
+that mode at `start`, asserts `payload_external_valid` only for payload beats,
+and then presents the byte named by `payload_index`. The source byte must remain
+immutable while that valid signal is asserted. This is the transport-side
+scatter/gather contract: it avoids duplicating another 122-byte register bank
+and avoids transport-level fragmentation. The existing 68-byte locally staged
+path remains the path used by the integrated scalar controller. Focused RTL
+regression covers:
 
 - byte-exact mapping and CRC under a stall at every output byte;
-- RX storage immutable until the final transmitted beat;
+- source index/data stability under a stall at every transmitted beat;
 - ABORT/reset invalidate same-edge transfers and all source references;
 - existing short responses remain byte-identical.
 
-These are documentation/design-test requirements, not implemented RTL claims.
-Production SystemVerilog and ASIC/FPGA transports remain out of scope until the
-logical corpus and protocol interfaces stabilize.
+The BLAKE3 service controller/FSM is deliberately not implemented here. The
+executable model and host service lifecycle therefore remain ahead of authored
+RTL semantics; no netlist, P&R, FPGA, or hardware claim follows from this
+serializer regression.
 
 ## Executable evidence
 
@@ -90,5 +95,5 @@ the exact dependency and registry checksum pinned by
 
 The runtime evidence is not an RTL BLAKE3 claim. The integrated packet RTL
 continues to advertise only its implemented scalar feature bit. CPU/model
-workloads may include BLAKE3; RTL workload replay stops at the supported
-SET/XOR/MUL/DEREF/JUMP boundary until the documented scatter/gather work lands.
+workloads may include BLAKE3; RTL workload replay still stops at the supported
+SET/XOR/MUL/DEREF/JUMP controller boundary.

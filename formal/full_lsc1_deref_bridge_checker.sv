@@ -407,8 +407,14 @@ module full_lsc1_deref_bridge_checker (
         if (past_valid && reset_seen)
             assert(done_pulse == ($past(rst_n) && !$past(abort) && $past(retire_match)));
         if (past_valid && reset_seen && $past(tx_valid && !tx_ready && rst_n && !abort)) begin
-            assert(tx_valid); assert(tx_data == $past(tx_data));
+            if (rst_n && !abort) begin
+                assert(tx_valid); assert(tx_data == $past(tx_data));
+            end else begin
+                assert(!tx_valid);
+            end
         end
+        if (past_valid && reset_seen && (!rst_n || abort))
+            assert(!tx_valid);
         if (past_valid && reset_seen && (!$past(rst_n) || $past(abort))) begin
             assert(!result_pending); assert(compute_state == 0);
             assert(!tx_start); assert(!done_pulse);

@@ -9,9 +9,10 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim mutation differential-mutation clean
+.PHONY: sim transport mutation differential-mutation clean
 
 sim:
+	$(MAKE) transport
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
 	vvp tb_lsc1_packet_frontend.vvp
 	iverilog -g2012 -Wall -s tb_deref_retire_trace -o tb_deref_retire_trace.vvp $(RTL) tb_deref_retire_trace.sv
@@ -20,6 +21,11 @@ sim:
 	vvp tb_jump_retire_trace.vvp
 	iverilog -g2012 -Wall -s tb_scalar_retire_trace -o tb_scalar_retire_trace.vvp $(RTL) tb_scalar_retire_trace.sv
 	vvp tb_scalar_retire_trace.vvp
+
+transport:
+	iverilog -g2012 -Wall -s tb_lsc1_packet_tx_service_required -o tb_lsc1_packet_tx_service_required.vvp \
+	  ../../asic_core/rtl/lsc1_packet_tx.sv tb_lsc1_packet_tx_service_required.sv
+	vvp tb_lsc1_packet_tx_service_required.vvp
 
 mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -85,4 +91,4 @@ differential-mutation:
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
