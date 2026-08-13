@@ -23,7 +23,7 @@ class OssCadSuiteWorkflowTest(unittest.TestCase):
         workflow = WORKFLOW.read_text()
         self.assertNotIn("YosysHQ/setup-oss-cad-suite", workflow)
         self.assertEqual(
-            workflow.count("uses: ./.github/actions/setup-oss-cad-suite"), 7
+            workflow.count("uses: ./.github/actions/setup-oss-cad-suite"), 9
         )
 
         for job in (
