@@ -161,12 +161,16 @@ theorem legal_sequence_finishes_idle (model : Transaction.Model) (items : List I
 /-- Every item admitted by `Legal` stays within the v1 current and next
 control-index boundary used by the opcode-specific lifecycle bridges. -/
 theorem legal_sequence_representable (model : Transaction.Model) (items : List Item)
-    (hlegal : Legal model items) : List.Forall (fun item => Representable item.effect) items := by
+    (hlegal : Legal model items) : ∀ item ∈ items, Representable item.effect := by
+  intro candidate hmember
   induction items generalizing model with
-  | nil => exact .nil
+  | nil => simp at hmember
   | cons item rest ih =>
       rcases hlegal with ⟨_, hrepresentable, _, _, hrest⟩
-      exact .cons hrepresentable (ih (model := (complete model item).model) hrest)
+      simp only [List.mem_cons] at hmember
+      rcases hmember with rfl | hmember
+      · exact hrepresentable
+      · exact ih (model := (complete model item).model) hrest hmember
 
 #print axioms result_wire_byte_exact
 #print axioms complete_retires_once
