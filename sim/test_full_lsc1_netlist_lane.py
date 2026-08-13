@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 import stat
 import tempfile
 import unittest
@@ -13,6 +14,15 @@ from tools import full_lsc1_netlist
 
 
 class FullLsc1NetlistLaneTests(unittest.TestCase):
+    def test_plan_is_pinned_to_arbitrary_sequence_merge(self) -> None:
+        plan = json.loads(full_lsc1_netlist.PLAN_PATH.read_text())
+        self.assertEqual(
+            plan["source_commit"],
+            "13de62cca3f6f237b599001aac0b65123ddec8ce")
+        self.assertEqual(
+            plan["source_tree"],
+            "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476")
+
     def test_existing_public_cache_is_rejected_without_chmod(self) -> None:
         with tempfile.TemporaryDirectory() as parent:
             cache = Path(parent) / "shared"

@@ -1,8 +1,8 @@
 {
   "schema": "lean-silicon/full-lsc1-netlist-plan/v1",
   "profile": "canonical full LSC-1 protocol-v1 packet controller",
-  "source_commit": "f6a5268829220577798372f397d895f2a2fc28ee",
-  "source_tree": "77e2877064364d2188bb42db4de0e829f538efab",
+  "source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+  "source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
   "top": "lean_silicon_lsc1",
   "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09",
   "clock": "clk",

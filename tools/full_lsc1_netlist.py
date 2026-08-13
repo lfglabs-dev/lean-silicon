@@ -198,6 +198,14 @@ endmodule
         "status": induction_status,
         "method": "temporal induction", "maxsteps": 32,
         "blocker": induction_blocker}
+    receipt["proofs"]["whole_design_equivalence_boundary"] = {
+        "classification": ("unbounded-pass" if induction_status == "pass"
+                           else "bounded-pass-unbounded-blocked"),
+        "mandatory_bounded_edges": BOUNDED_EDGES,
+        "unbounded_method": "temporal induction",
+        "unbounded_blocker": induction_blocker,
+        "soundness_rule": ("only a successful induction command may classify the "
+                           "whole design as unbounded")}
 
     inv_read = (f"read_verilog -formal -D FORMAL_FULL_LSC1 -sv {rtl_args} "
                 "formal/full_lsc1_controller_invariants.sv; "
