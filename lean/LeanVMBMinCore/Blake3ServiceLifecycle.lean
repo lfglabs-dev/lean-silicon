@@ -84,7 +84,7 @@ def bytesNatLE (bytes : List UInt8) : Nat :=
 /-- Construct the external request from the canonical suspended request.  The
 epoch is supplied by the trusted host adapter, while every operand and binding
 field comes from `FullProfile.ServicePending`. -/
-def wireServiceRequiredOfPending (sessionEpoch : UInt64)
+def wireServiceRequiredOfPending (sessionEpoch : UInt64) (_hEpoch : sessionEpoch ≠ 0)
     (pending : ServicePending) : WireServiceRequired := {
   schemaVersion := 1
   key := {
@@ -103,12 +103,14 @@ def wireServiceRequiredOfPending (sessionEpoch : UInt64)
   hChaining := by simp [wordLEBytes] }
 
 theorem wire_required_binding_is_canonical (sessionEpoch : UInt64)
+    (hEpoch : sessionEpoch ≠ 0)
     (pending : ServicePending) :
-    let wire := wireServiceRequiredOfPending sessionEpoch pending
-    wire.key.txnId = pending.request.common.txnId ∧
+    let wire := wireServiceRequiredOfPending sessionEpoch hEpoch pending
+    wire.key.sessionEpoch ≠ 0 ∧
+      wire.key.txnId = pending.request.common.txnId ∧
       wire.key.serviceId = pending.request.serviceId ∧
       wire.key.kind = pending.request.serviceKind := by
-  simp [wireServiceRequiredOfPending]
+  simp [wireServiceRequiredOfPending, hEpoch]
 
 /-- 53-byte SERVICE_RESPONSE wire encoding per protocol section 2. -/
 structure WireServiceResponse where
@@ -228,6 +230,11 @@ theorem wireBinding_rejects_wrong_epoch (wireKey : ServiceKey)
 def digestWord (bytes : List UInt8) : FullProfile.Word :=
   ByteSerialization.deserialize (bytes.map fun byte => BitVec.ofNat 8 byte.toNat)
 
+theorem uint8_bitvec_roundtrip (byte : UInt8) :
+    UInt8.ofNat (BitVec.ofNat 8 byte.toNat).toNat = byte := by
+  simp only [BitVec.toNat_ofNat]
+  simpa using UInt8.ofNat_toNat byte
+
 def validatedResponseToFullProfile (response : ValidatedWireServiceResponse) :
     Blake3Response := {
   txnId := response.wire.key.txnId
@@ -238,10 +245,35 @@ def validatedResponseToFullProfile (response : ValidatedWireServiceResponse) :
 
 theorem validated_response_digest_is_byte_exact
     (response : ValidatedWireServiceResponse) :
-    (validatedResponseToFullProfile response).digest =
-      (digestWord (response.wire.digest.take 16),
-        digestWord (response.wire.digest.drop 16)) := by
-  rfl
+    (ByteSerialization.serialize (validatedResponseToFullProfile response).digest.1 ++
+      ByteSerialization.serialize (validatedResponseToFullProfile response).digest.2).map
+        (fun byte => UInt8.ofNat byte.toNat) = response.wire.digest := by
+  have htake : (response.wire.digest.take 16).length = ByteSerialization.beats := by
+    simp [ByteSerialization.beats, response.wire.hDigest]
+  have hdrop : (response.wire.digest.drop 16).length = ByteSerialization.beats := by
+    simp [ByteSerialization.beats, response.wire.hDigest]
+  have hfirst := ByteSerialization.serialize_deserialize
+    ((response.wire.digest.take 16).map fun byte => BitVec.ofNat 8 byte.toNat)
+    (by simpa using htake)
+  have hsecond := ByteSerialization.serialize_deserialize
+    ((response.wire.digest.drop 16).map fun byte => BitVec.ofNat 8 byte.toNat)
+    (by simpa using hdrop)
+  have hmap (bytes : List UInt8) :
+      (bytes.map (fun byte => BitVec.ofNat 8 byte.toNat)).map
+          (fun byte => UInt8.ofNat byte.toNat) = bytes := by
+    induction bytes with
+    | nil => rfl
+    | cons byte bytes ih =>
+        simp only [List.map_cons]
+        rw [uint8_bitvec_roundtrip, ih]
+  simp only [validatedResponseToFullProfile, digestWord]
+  rw [List.map_append, hfirst, hsecond, List.map_map]
+  rw [hmap]
+  rw [show List.map
+    ((fun byte => UInt8.ofNat byte.toNat) ∘ fun byte => BitVec.ofNat 8 byte.toNat)
+    (response.wire.digest.take 16) = response.wire.digest.take 16 by
+      simpa [List.map_map] using hmap (response.wire.digest.take 16)]
+  exact List.take_append_drop 16 response.wire.digest
 
 theorem validated_wire_binding_enters_canonical_model
     (response : ValidatedWireServiceResponse) (bound : BoundServicePending)
