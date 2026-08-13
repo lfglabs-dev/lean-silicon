@@ -1,0 +1,16 @@
+name: docs
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Build Tiny Tapeout datasheet
+        uses: TinyTapeout/tt-gds-action/docs@30d38a7dfc6fda561d452b196fc822af0332ec23 # ttsky26c
