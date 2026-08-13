@@ -828,11 +828,17 @@ def _blake3_addresses(request: _DecodedRequest, staged: StagedTransaction) -> li
 
 
 def _execute_blake3(request: _DecodedRequest, staged: StagedTransaction, service_id: int) -> None:
+    block_len = (request.metadata >> 64) & 0xFFFFFFFF
+    flags = request.metadata >> 96
+    if block_len > 64 or flags & ~0x7F:
+        raise ProtocolFault(Status.BAD_SERVICE)
     frame = _Frame()
     addresses = _blake3_addresses(request, staged)
     for address, cell in zip(addresses, request.cells):
         frame.supply(address, cell)
     staged.accesses = addresses
+    if staged.pc == INDEX_LIMIT - 1:
+        raise ProtocolFault(Status.INDEX_RANGE)
     staged.next_pc = checked_add(staged.pc, 1)
     staged.next_fp = staged.fp
     staged.execute_cycles = 0
@@ -1223,8 +1229,10 @@ class Lsc1Endpoint:
         elif opcode is Opcode.JUMP:
             _execute_jump(request, staged)
         else:
+            if self.service_seq >= 0xFFFFFFFE:
+                raise ProtocolFault(Status.BAD_SERVICE)
+            _execute_blake3(request, staged, self.service_seq + 1)
             self.service_seq += 1
-            _execute_blake3(request, staged, self.service_seq)
 
         self.staged = staged
         if staged.service is not None:

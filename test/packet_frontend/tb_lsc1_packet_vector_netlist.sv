@@ -81,6 +81,16 @@ module tb_lsc1_packet_vector;
         rst_n = 1;
         repeat (2) @(posedge clk);
         run_request(request_path, request_length);
+        if ($test$plusargs("ABORT_AFTER_FIRST")) begin
+            @(negedge clk); abort = 1;
+            @(posedge clk);
+            @(negedge clk); abort = 0;
+        end
+        if ($test$plusargs("RESET_AFTER_FIRST")) begin
+            @(negedge clk); rst_n = 0;
+            repeat (2) @(posedge clk);
+            @(negedge clk); rst_n = 1;
+        end
         if ($value$plusargs("REQUEST2=%s", request2_path) &&
             $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length);
         if ($value$plusargs("REQUEST3=%s", request3_path) &&

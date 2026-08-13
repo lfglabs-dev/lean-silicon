@@ -30,8 +30,7 @@ BMCs include the initialization reset edge, the first compared reset state,
 and an operational state after an arbitrary post-reset transition. Longer
 implemented-opcode sequences run directly on the synthesized netlist.
 Transactional responses are compared byte-for-byte with the executable model;
-valid NEGOTIATE is checked against an independent canonical-RTL wire vector
-because model-only service feature bits are explicitly outside this lane.
+valid NEGOTIATE is checked against an independent canonical-RTL wire vector.
 Temporal induction is attempted under a 15-second HOST ceiling and its exact
 pass or tool blocker is retained without weakening the bounded and trace
 results. Separate controller
@@ -50,10 +49,11 @@ ordinary CI lane.
 
 The netlist is generic digital synthesis output, not a physical cell netlist.
 This lane generates no placement, routing, timing, power, GDS/OAS, FPGA,
-silicon, SKY26c, or shuttle evidence. It does not bridge Lean to RTL and does
-not implement the model-only BLAKE3 service exchange. Bounded correspondence
-does not imply correctness against the protocol model; controller invariants
-are safety properties, not fair-progress liveness.
+silicon, SKY26c, or shuttle evidence. It does not bridge Lean to RTL. The
+delegated BLAKE3 request/response lifecycle is synthesized and exercised, but
+compression remains host-owned and is not a hardware datapath. Bounded
+correspondence does not imply correctness against the protocol model;
+controller invariants are safety properties, not fair-progress liveness.
 
 ## Unbounded boundary and decomposition evidence
 

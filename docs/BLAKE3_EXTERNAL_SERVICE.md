@@ -1,9 +1,9 @@
 # External BLAKE3 service prerequisites
 
 This document freezes the canonical host-service contract and software/model
-implementation boundary. Authored SystemVerilog now implements the bounded TX
-transport contract below, but no authored RTL controller, ASIC/FPGA integration,
-UART, JTAG, or hardware path implements the service lifecycle.
+implementation boundary. Authored SystemVerilog implements the bounded TX
+transport and integrated packet-controller lifecycle below. This is source-RTL
+evidence only; it makes no netlist, place-and-route, FPGA, or hardware claim.
 
 ## Transport-independent schema
 
@@ -58,7 +58,7 @@ under arbitrary stalls, and timeout policy belongs to the host. Timeout
 recovery must explicitly ABORT or reset; reconnect alone is not a commit or an
 abort.
 
-## Authored RTL transport boundary
+## Authored RTL service boundary
 
 `lsc1_packet_tx.sv` supports one logical 122-byte v1 `SERVICE_REQUIRED`
 payload through its bounded external byte-source mode. The controller selects
@@ -75,10 +75,17 @@ regression covers:
 - ABORT/reset invalidate same-edge transfers and all source references;
 - existing short responses remain byte-identical.
 
-The BLAKE3 service controller/FSM is deliberately not implemented here. The
-executable model and host service lifecycle therefore remain ahead of authored
-RTL semantics; no netlist, P&R, FPGA, or hardware claim follows from this
-serializer regression.
+`lsc1_packet_frontend.sv` decodes the 190-byte `BLAKE3_REQUEST`, stages its
+eight host-owned memory cells, assigns a reset-scoped monotone service ID, and
+emits that external payload. A matching `SERVICE_RESPONSE` folds the two digest
+words through the same write-once rule as the executable model, emits the full
+zero-, one-, or two-write result with all eight accesses, and then uses the
+ordinary CRC-bound `RETIRE` path. `BAD_SERVICE` leaves the suspended transaction
+retryable; a digest write conflict discards it. ABORT invalidates staged service
+state, while reset also resets the service sequence. Focused RTL/model
+differential regression covers the lifecycle byte-for-byte under recurring
+ready/valid stalls and exercises mismatched response retry and abort/reset
+recovery.
 
 ## Executable evidence
 
@@ -93,7 +100,7 @@ the exact dependency and registry checksum pinned by
 `tools/blake3_reference/Cargo.lock`. Oracle build/execution failures raise
 `ServiceInfrastructureError`; byte mismatches remain ordinary test failures.
 
-The runtime evidence is not an RTL BLAKE3 claim. The integrated packet RTL
-continues to advertise only its implemented scalar feature bit. CPU/model
-workloads may include BLAKE3; RTL workload replay still stops at the supported
-SET/XOR/MUL/DEREF/JUMP controller boundary.
+The runtime oracle evidence remains distinct from the RTL lifecycle claim: the
+endpoint delegates compression and does not recompute or verify the digest.
+The integrated packet RTL advertises interpreter-compatible scalar semantics
+and BLAKE3 service offload; host memory/fetch and compression remain external.
