@@ -50,6 +50,11 @@ For every response byte, wait for `TX_VALID=1`, sample `uo_out[7:0]`, and
 raise `TX_READY=1` for a rising edge. You may introduce stalls by withholding
 either ready signal; data must remain stable during a stalled valid transfer.
 
+SET and XOR stream their response while their payload is being accepted. Drain
+each response byte before sending the next SET byte or next XOR A/B pair;
+otherwise the core deasserts `RX_READY` and waits. MUL instead accepts all
+thirty-two payload bytes before presenting its sixteen response bytes.
+
 For a simple SET check, send `0x03` followed by sixteen chosen bytes and
 verify that the sixteen response bytes match in the same order. For XOR, send
 `0x01` and alternating A/B bytes, then verify each output byte is the XOR of
