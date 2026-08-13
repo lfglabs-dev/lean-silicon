@@ -131,6 +131,7 @@ def main() -> None:
         "manifest": [{"path": str(path.relative_to(ROOT)), "sha256": sha256(path)} for path in rtl],
         "top": plan["top"], "observables": plan["observables"],
         "constraints": plan["constraints"], "commands": [], "proofs": {},
+        "unbounded_experiments": plan["unbounded_experiments"],
         "covers": {}, "mutations": [], "limits": plan["excluded"][:],
     }
     netlist = cache / "lean_silicon_lsc1.generic.v"

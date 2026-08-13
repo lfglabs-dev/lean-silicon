@@ -81,6 +81,19 @@ class FullLsc1NetlistLaneTests(unittest.TestCase):
         self.assertIn("-set-assumes", argv[-1])
         self.assertIn("-set-def-inputs", argv[-1])
 
+    def test_unbounded_resource_blocker_is_machine_readable(self) -> None:
+        plan = json.loads(full_lsc1_netlist.PLAN_PATH.read_text())
+        evidence = plan["unbounded_experiments"]
+        monolithic = evidence["whole_design_reset_prefix"]
+        self.assertEqual(monolithic["solver"], "Yosys SAT")
+        self.assertEqual(monolithic["depth_edges"], 5)
+        self.assertEqual(monolithic["timeout_seconds"], 195)
+        self.assertGreater(monolithic["peak_rss_gib_approx"], 15)
+        self.assertEqual(monolithic["classification"], "bounded-evidence-only")
+        decomposed = evidence["matched_point_decomposition"]
+        self.assertEqual(decomposed["unresolved_point"], "packet_core.addr_c[20]")
+        self.assertFalse(decomposed["sound_cut_relation"])
+
 
 if __name__ == "__main__":
     unittest.main()

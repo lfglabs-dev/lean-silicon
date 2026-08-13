@@ -26,6 +26,26 @@
     "all inputs on and after the first compared edge are unconstrained, including reset, abort and backpressure",
     "ena is functionally unused by the canonical top"
   ],
+  "unbounded_experiments": {
+    "whole_design_reset_prefix": {
+      "classification": "bounded-evidence-only",
+      "solver": "Yosys SAT",
+      "depth_edges": 5,
+      "elapsed_seconds": 195,
+      "timeout_seconds": 195,
+      "peak_rss_gib_approx": 15.9,
+      "result": "no-proof-result-before-resource-kill"
+    },
+    "matched_point_decomposition": {
+      "classification": "incomplete-decomposition",
+      "solver": "Yosys direct SAT",
+      "elapsed_seconds_lower_bound": 540,
+      "peak_rss_gib_approx": 1.9,
+      "proved_scope": "thousands of matched state bits",
+      "unresolved_point": "packet_core.addr_c[20]",
+      "sound_cut_relation": false
+    }
+  },
   "excluded": [
     "LSC-1u release and physical netlists",
     "SKY26c and shuttle flows",
