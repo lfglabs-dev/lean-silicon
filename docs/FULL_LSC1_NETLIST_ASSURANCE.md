@@ -32,9 +32,9 @@ implemented-opcode sequences run directly on the synthesized netlist.
 Transactional responses are compared byte-for-byte with the executable model;
 valid NEGOTIATE is checked against an independent canonical-RTL wire vector
 because model-only service feature bits are explicitly outside this lane.
-Temporal induction is attempted under a 15-second
-HOST ceiling and its exact pass or tool blocker is retained without weakening
-the bounded and trace results. Separate controller
+Temporal induction is attempted under a 15-second HOST ceiling and its exact
+pass or tool blocker is retained without weakening the bounded and trace
+results. Separate controller
 invariants cover reset/abort clearing, response stability under backpressure,
 receive exclusion while computing/transmitting, event exclusivity, staged
 transaction BUSY, and response arbitration. Existing adversarial simulations
@@ -54,3 +54,28 @@ silicon, SKY26c, or shuttle evidence. It does not bridge Lean to RTL and does
 not implement the model-only BLAKE3 service exchange. Bounded correspondence
 does not imply correctness against the protocol model; controller invariants
 are safety properties, not fair-progress liveness.
+
+## Unbounded boundary and decomposition evidence
+
+True whole-design unbounded closure is not claimed. On the pinned 2026-08-09
+HOST suite, extending the arbitrary-input reset-prefix miter from three to five
+edges reached 15.9 GiB RSS at depth 5 after 3 minutes 15 seconds without a
+result. A synthesis-aware matched-point decomposition held near 1.9 GiB and
+proved thousands of state bits, but one direct-SAT receiver/controller state
+point (`packet_core.addr_c[20]`) remained unresolved after more than 9 minutes.
+These are retained historical plan observations for the pinned source
+commit/tree and toolchain, not measurements made by each receipt run; the
+machine-readable provenance copied into the receipt marks `receipt_run` false.
+The ordinary lane therefore keeps the mandatory depth-3 gate and records its
+bounded temporal-induction attempt; neither resource outcome is converted into
+a pass.
+
+The semantic blocker is the monolithic packet frontend's very wide procedural
+transition relation: result construction expands 543-bit response temporaries
+across many opcode branches, while the receiver carries a 4096-bit payload
+state. Current Yosys SAT decomposition does not provide a proved cut relation
+connecting those internal points back into a reset-reachable whole-design
+invariant. Treating matched names as axioms would be unsound, so this lane does
+not do so. The existing separately proved arithmetic, stream, dereference,
+jump, scalar-lifecycle, and arbitrary accepted-sequence results remain required
+and unchanged; they do not silently upgrade the whole RTL/netlist claim.

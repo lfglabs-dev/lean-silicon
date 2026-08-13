@@ -1,8 +1,8 @@
 {
   "schema": "lean-silicon/full-lsc1-netlist-plan/v1",
   "profile": "canonical full LSC-1 protocol-v1 packet controller",
-  "source_commit": "f6a5268829220577798372f397d895f2a2fc28ee",
-  "source_tree": "77e2877064364d2188bb42db4de0e829f538efab",
+  "source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+  "source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
   "top": "lean_silicon_lsc1",
   "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09",
   "clock": "clk",
@@ -26,6 +26,33 @@
     "all inputs on and after the first compared edge are unconstrained, including reset, abort and backpressure",
     "ena is functionally unused by the canonical top"
   ],
+  "unbounded_experiments": {
+    "provenance": {
+      "evidence_kind": "historical-plan-evidence",
+      "receipt_run": false,
+      "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09",
+      "subject_source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+      "subject_source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476"
+    },
+    "whole_design_reset_prefix": {
+      "classification": "bounded-evidence-only",
+      "solver": "Yosys SAT",
+      "depth_edges": 5,
+      "elapsed_seconds": 195,
+      "timeout_seconds": 195,
+      "peak_rss_gib_approx": 15.9,
+      "result": "no-proof-result-before-resource-kill"
+    },
+    "matched_point_decomposition": {
+      "classification": "incomplete-decomposition",
+      "solver": "Yosys direct SAT",
+      "elapsed_seconds_lower_bound": 540,
+      "peak_rss_gib_approx": 1.9,
+      "proved_scope": "thousands of matched state bits",
+      "unresolved_point": "packet_core.addr_c[20]",
+      "sound_cut_relation": false
+    }
+  },
   "excluded": [
     "LSC-1u release and physical netlists",
     "SKY26c and shuttle flows",
