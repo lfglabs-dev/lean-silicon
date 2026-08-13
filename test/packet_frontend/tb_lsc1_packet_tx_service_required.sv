@@ -120,7 +120,13 @@ module tb_lsc1_packet_tx_service_required;
         // ABORT invalidates an external source transfer on the same edge.
         @(negedge clk); start = 1; tx_ready = 1;
         @(posedge clk);
-        @(negedge clk); start = 0; abort = 1;
+        @(negedge clk); start = 0;
+        wait (payload_external_valid);
+        @(negedge clk); tx_ready = 0;
+        #1;
+        if (!payload_external_valid)
+            $fatal(1, "abort precondition did not reach an external payload beat");
+        abort = 1;
         #1;
         if (tx_valid || payload_external_valid)
             $fatal(1, "abort did not invalidate same-edge transfer/source reference");
@@ -131,7 +137,13 @@ module tb_lsc1_packet_tx_service_required;
         // Reset has the same immediate invalidation contract while active.
         @(negedge clk); abort = 0; start = 1; tx_ready = 1;
         @(posedge clk);
-        @(negedge clk); start = 0; rst_n = 0;
+        @(negedge clk); start = 0;
+        wait (payload_external_valid);
+        @(negedge clk); tx_ready = 0;
+        #1;
+        if (!payload_external_valid)
+            $fatal(1, "reset precondition did not reach an external payload beat");
+        rst_n = 0;
         #1;
         if (tx_valid || payload_external_valid)
             $fatal(1, "reset did not invalidate same-edge transfer/source reference");
