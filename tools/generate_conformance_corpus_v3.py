@@ -123,9 +123,13 @@ def binding_cases() -> list[dict]:
         else:  # pragma: no cover
             raise AssertionError(f"{field} mutation was accepted")
 
-    for field, offset in (("counter", 106), ("block_len", 114), ("flags", 118)):
+    for field, offset, mask in (
+        ("counter", 106, 1),
+        ("block_len", 114, 0x7F),  # 64 -> 63, remaining within the valid range.
+        ("flags", 118, 1),
+    ):
         mutated = bytearray(reply.payload)
-        mutated[offset] ^= 1
+        mutated[offset] ^= mask
         try:
             adapter.accept_required(bytes(mutated))
         except ServiceSemanticError as error:
