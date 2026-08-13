@@ -191,7 +191,7 @@ module tb_lsc1_packet_frontend;
         if (response[5] !== 1 || response[6] !== 1 ||
             response[7] !== 0 || response[8] !== 1 ||
             response[9] !== 16 || response[10] !== 0 ||
-            response[11] !== 2 || response[12] !== 0 ||
+            response[11] !== 6 || response[12] !== 0 ||
             response[13] !== 0 || response[14] !== 0 ||
             response[15] !== 8'h31 || response[16] !== 8'h43 ||
             response[17] !== 8'h53 || response[18] !== 8'h4c)

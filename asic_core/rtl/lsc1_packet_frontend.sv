@@ -20,6 +20,7 @@ module lsc1_packet_frontend (
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03,
                      OP_DEREF_CELL = 8'h04, OP_DEREF_PC = 8'h05,
                      OP_DEREF_FP = 8'h06, OP_JUMP = 8'h07,
+                     OP_BLAKE3 = 8'h08, OP_SERVICE_RESPONSE = 8'h11,
                      OP_NEGOTIATE = 8'h10, OP_RETIRE = 8'h12,
                      OP_STATUS = 8'h13;
     localparam [7:0] OK = 8'h00, RETIRED = 8'h02, INFO = 8'h03,
@@ -56,6 +57,10 @@ module lsc1_packet_frontend (
     reg [7:0] tx_status;
     reg [15:0] tx_length;
     reg [543:0] tx_payload;
+    reg [1:0] tx_external_kind;
+    wire [15:0] tx_payload_index;
+    wire tx_payload_external_valid;
+    reg [7:0] tx_payload_external_data;
     reg capture_result_crc;
     reg [3:0] compute_state;
     reg alu_start;
@@ -70,12 +75,66 @@ module lsc1_packet_frontend (
     wire lane_enable = !tx_busy && !tx_start &&
                        compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
-    reg result_pending;
+    reg result_pending, service_pending;
     reg [31:0] staged_txn_id, staged_next_pc, staged_next_fp;
     reg [31:0] staged_result_crc;
     reg state_valid;
     reg [31:0] committed_pc, committed_fp, retire_seq;
     reg [7:0] active_profile, last_status, last_fault;
+    reg [31:0] service_seq, staged_service_id;
+    reg [127:0] staged_message [0:3];
+    reg [127:0] staged_cv [0:1];
+    reg [127:0] staged_metadata;
+    reg [31:0] staged_access [0:7];
+    reg [7:0] staged_out_present [0:1];
+    reg [127:0] staged_out_value [0:1];
+    reg [1:0] staged_write_count;
+    reg [31:0] staged_write_address [0:1];
+    reg [127:0] staged_write_value [0:1];
+    wire [31:0] blake_address [0:7];
+    wire [7:0] blake_present [0:7];
+    wire [127:0] blake_value [0:7];
+    wire [63:0] blake_alias_pair;
+    wire blake_alias_inconsistent = |blake_alias_pair;
+
+    assign blake_address[0] = frame_payload[14*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[1] = frame_payload[18*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[2] = frame_payload[22*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[3] = frame_payload[26*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[4] = frame_payload[30*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[5] = blake_address[4] + 1'b1;
+    assign blake_address[6] = frame_payload[34*8 +: 32] + frame_payload[32 +: 32];
+    assign blake_address[7] = blake_address[6] + 1'b1;
+    assign blake_present[0] = frame_payload[54*8 +: 8];
+    assign blake_present[1] = frame_payload[71*8 +: 8];
+    assign blake_present[2] = frame_payload[88*8 +: 8];
+    assign blake_present[3] = frame_payload[105*8 +: 8];
+    assign blake_present[4] = frame_payload[122*8 +: 8];
+    assign blake_present[5] = frame_payload[139*8 +: 8];
+    assign blake_present[6] = frame_payload[156*8 +: 8];
+    assign blake_present[7] = frame_payload[173*8 +: 8];
+    assign blake_value[0] = frame_payload[55*8 +: 128];
+    assign blake_value[1] = frame_payload[72*8 +: 128];
+    assign blake_value[2] = frame_payload[89*8 +: 128];
+    assign blake_value[3] = frame_payload[106*8 +: 128];
+    assign blake_value[4] = frame_payload[123*8 +: 128];
+    assign blake_value[5] = frame_payload[140*8 +: 128];
+    assign blake_value[6] = frame_payload[157*8 +: 128];
+    assign blake_value[7] = frame_payload[174*8 +: 128];
+    genvar alias_i, alias_j;
+    generate
+        for (alias_i = 0; alias_i < 8; alias_i = alias_i + 1) begin : g_alias_i
+            for (alias_j = 0; alias_j < 8; alias_j = alias_j + 1) begin : g_alias_j
+                if (alias_j > alias_i)
+                    assign blake_alias_pair[alias_i*8+alias_j] =
+                        blake_address[alias_i] == blake_address[alias_j] &&
+                        (blake_present[alias_i] != blake_present[alias_j] ||
+                         blake_value[alias_i] != blake_value[alias_j]);
+                else
+                    assign blake_alias_pair[alias_i*8+alias_j] = 1'b0;
+            end
+        end
+    endgenerate
 
     wire event_valid = frame_valid || rx_fault_valid;
     wire event_ready = !tx_busy && !tx_start &&
@@ -94,9 +153,10 @@ module lsc1_packet_frontend (
     lsc1_packet_tx transmitter (
         .clk(clk), .rst_n(rst_n), .abort(abort),
         .start(tx_start), .status(tx_status), .payload_length(tx_length),
-        .payload(tx_payload), .payload_external(1'b0), .payload_index(),
-        .payload_external_valid(),
-        .payload_external_data(8'b0),
+        .payload(tx_payload), .payload_external(tx_external_kind != 0),
+        .payload_index(tx_payload_index),
+        .payload_external_valid(tx_payload_external_valid),
+        .payload_external_data(tx_payload_external_data),
         .busy(tx_busy), .done_pulse(tx_done),
         .payload_crc(tx_payload_crc),
         .tx_data(tx_data), .tx_valid(tx_valid), .tx_ready(tx_ready)
@@ -117,7 +177,54 @@ module lsc1_packet_frontend (
 
     assign rx_ready = parser_rx_ready && lane_enable;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
+                  service_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
+
+    // Long service/result payloads are scattered directly from semantic staging
+    // registers.  The selected byte is purely a function of the stable index,
+    // so arbitrary TX backpressure cannot change it.
+    integer ext_word;
+    always @(*) begin
+        tx_payload_external_data = 0;
+        if (tx_external_kind == 1) begin
+            if (tx_payload_index < 4)
+                tx_payload_external_data = staged_txn_id[tx_payload_index*8 +: 8];
+            else if (tx_payload_index < 8)
+                tx_payload_external_data = staged_service_id[(tx_payload_index-4)*8 +: 8];
+            else if (tx_payload_index == 8) tx_payload_external_data = 8'h01;
+            else if (tx_payload_index == 9) tx_payload_external_data = 0;
+            else if (tx_payload_index < 74) begin
+                ext_word = (tx_payload_index-10) / 16;
+                tx_payload_external_data = staged_message[ext_word][((tx_payload_index-10)%16)*8 +: 8];
+            end else if (tx_payload_index < 106) begin
+                ext_word = (tx_payload_index-74) / 16;
+                tx_payload_external_data = staged_cv[ext_word][((tx_payload_index-74)%16)*8 +: 8];
+            end else
+                tx_payload_external_data = staged_metadata[(tx_payload_index-106)*8 +: 8];
+        end else if (tx_external_kind == 2) begin
+            if (tx_payload_index < 4)
+                tx_payload_external_data = staged_txn_id[tx_payload_index*8 +: 8];
+            else if (tx_payload_index < 8)
+                tx_payload_external_data = staged_next_pc[(tx_payload_index-4)*8 +: 8];
+            else if (tx_payload_index < 12)
+                tx_payload_external_data = staged_next_fp[(tx_payload_index-8)*8 +: 8];
+            else if (tx_payload_index == 12) tx_payload_external_data = staged_write_count;
+            else if (tx_payload_index < 13 + staged_write_count*20) begin
+                ext_word = (tx_payload_index-13) / 20;
+                if (((tx_payload_index-13)%20) < 4)
+                    tx_payload_external_data = staged_write_address[ext_word][((tx_payload_index-13)%20)*8 +: 8];
+                else
+                    tx_payload_external_data = staged_write_value[ext_word][(((tx_payload_index-13)%20)-4)*8 +: 8];
+            end else if (tx_payload_index == 13 + staged_write_count*20)
+                tx_payload_external_data = 0; // n_deferred
+            else if (tx_payload_index == 14 + staged_write_count*20)
+                tx_payload_external_data = 8; // n_accesses
+            else begin
+                ext_word = (tx_payload_index-(15 + staged_write_count*20)) / 4;
+                tx_payload_external_data = staged_access[ext_word][((tx_payload_index-(15 + staged_write_count*20))%4)*8 +: 8];
+            end
+        end
+    end
 
 `ifdef FORMAL_FULL_LSC1
     full_lsc1_controller_invariants formal_controller_invariants (
@@ -160,6 +267,7 @@ module lsc1_packet_frontend (
             tx_status <= status;
             tx_length <= 5;
             tx_payload <= bytes;
+            tx_external_kind <= 0;
             tx_start <= 1'b1;
             fault <= 1'b1;
             last_status <= status;
@@ -239,6 +347,7 @@ module lsc1_packet_frontend (
             tx_status <= OK;
             tx_length <= result_length;
             tx_payload <= result_bytes;
+            tx_external_kind <= 0;
             tx_start <= 1'b1;
             fault <= 1'b0;
             last_status <= OK;
@@ -259,6 +368,23 @@ module lsc1_packet_frontend (
                 emit_result(3);
                 compute_state <= C_IDLE;
             end
+        end
+    endtask
+
+    task automatic emit_blake_result;
+        integer blake_result_length;
+        begin
+            blake_result_length = 15 + staged_write_count*20 + 8*4;
+            staged_result_crc <= 0;
+            capture_result_crc <= 1'b1;
+            result_pending <= 1'b1;
+            service_pending <= 1'b0;
+            tx_status <= OK;
+            tx_length <= blake_result_length;
+            tx_external_kind <= 2;
+            tx_start <= 1'b1;
+            fault <= 1'b0;
+            last_status <= OK;
         end
     endtask
 
@@ -304,6 +430,7 @@ module lsc1_packet_frontend (
             tx_status <= 0;
             tx_length <= 0;
             tx_payload <= 0;
+            tx_external_kind <= 0;
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             alu_start <= 1'b0;
@@ -313,6 +440,7 @@ module lsc1_packet_frontend (
             encoder_start <= 1'b0;
             encoder_index <= 0;
             result_pending <= 1'b0;
+            service_pending <= 1'b0;
             staged_txn_id <= 0;
             staged_next_pc <= 0;
             staged_next_fp <= 0;
@@ -324,15 +452,20 @@ module lsc1_packet_frontend (
             active_profile <= 1;
             last_status <= OK;
             last_fault <= OK;
+            service_seq <= 0;
+            staged_service_id <= 0;
+            staged_write_count <= 0;
             fault <= 1'b0;
             done_pulse <= 1'b0;
         end else if (abort) begin
             tx_start <= 1'b0;
+            tx_external_kind <= 0;
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             alu_start <= 1'b0;
             encoder_start <= 1'b0;
             result_pending <= 1'b0;
+            service_pending <= 1'b0;
             fault <= 1'b1;
             last_status <= 8'h93;
             last_fault <= 8'h93;
@@ -452,8 +585,9 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else begin
                         result_bytes = 0;
-                        result_bytes[0 +: 8] = result_pending ? 8'h01 : 8'h00;
-                        result_bytes[8 +: 32] = result_pending ? staged_txn_id : 0;
+                        result_bytes[0 +: 8] = service_pending ? 8'h02 :
+                                                   (result_pending ? 8'h01 : 8'h00);
+                        result_bytes[8 +: 32] = (result_pending || service_pending) ? staged_txn_id : 0;
                         result_bytes[40 +: 8] = last_status;
                         result_bytes[48 +: 32] = retire_seq;
                         result_bytes[80 +: 8] = last_fault;
@@ -463,6 +597,7 @@ module lsc1_packet_frontend (
                         tx_status <= INFO;
                         tx_length <= 20;
                         tx_payload <= result_bytes;
+                        tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= INFO;
@@ -472,7 +607,7 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else if (frame_payload[16 +: 8] > 1) begin
                         emit_fault(BAD_PROFILE, 0, 0);
-                    end else if (result_pending) begin
+                    end else if (result_pending || service_pending) begin
                         emit_fault(BAD_STATE, 0, 0);
                     end else if (!(frame_payload[0 +: 8] <= 1 &&
                                    frame_payload[8 +: 8] >= 1)) begin
@@ -489,11 +624,12 @@ module lsc1_packet_frontend (
                         result_bytes[16 +: 16] = 16'd256;
                         result_bytes[32 +: 8] = 16;
                         result_bytes[40 +: 8] = 0;
-                        result_bytes[48 +: 32] = 32'h00000002;
+                        result_bytes[48 +: 32] = 32'h00000006;
                         result_bytes[80 +: 32] = 32'h4c534331;
                         tx_status <= OK;
                         tx_length <= 14;
                         tx_payload <= result_bytes;
+                        tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= OK;
@@ -524,9 +660,45 @@ module lsc1_packet_frontend (
                         tx_status <= RETIRED;
                         tx_length <= 16;
                         tx_payload <= retired_bytes;
+                        tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= RETIRED;
+                    end
+                end else if (frame_opcode == OP_SERVICE_RESPONSE) begin
+                    txn_id = frame_payload[0 +: 32];
+                    if (frame_length != 42) begin
+                        emit_fault(BAD_LENGTH, txn_id, 2);
+                    end else if (frame_payload[9*8 +: 8] != 0) begin
+                        emit_fault(BAD_FLAGS, 0, 2);
+                    end else if (!service_pending) begin
+                        emit_fault(BAD_STATE, txn_id, 0);
+                    end else if (txn_id != staged_txn_id ||
+                                 frame_payload[32 +: 32] != staged_service_id ||
+                                 frame_payload[8*8 +: 8] != 1) begin
+                        emit_fault(8'h91, txn_id,
+                                   txn_id != staged_txn_id || frame_payload[32 +: 32] != staged_service_id ? 1 : 2);
+                    end else if ((staged_out_present[0] &&
+                                  staged_out_value[0] != frame_payload[10*8 +: 128]) ||
+                                 (staged_out_present[1] &&
+                                  staged_out_value[1] != frame_payload[26*8 +: 128]) ||
+                                 (staged_access[6] == staged_access[7] &&
+                                  frame_payload[10*8 +: 128] != frame_payload[26*8 +: 128])) begin
+                        service_pending <= 1'b0;
+                        emit_fault(WRITE_CONFLICT, txn_id, 0);
+                    end else begin
+                        staged_write_count = 0;
+                        if (!staged_out_present[0]) begin
+                            staged_write_address[staged_write_count] = staged_access[6];
+                            staged_write_value[staged_write_count] = frame_payload[10*8 +: 128];
+                            staged_write_count = staged_write_count + 1'b1;
+                        end
+                        if (!staged_out_present[1] && staged_access[6] != staged_access[7]) begin
+                            staged_write_address[staged_write_count] = staged_access[7];
+                            staged_write_value[staged_write_count] = frame_payload[26*8 +: 128];
+                            staged_write_count = staged_write_count + 1'b1;
+                        end
+                        emit_blake_result();
                     end
                 end else if (frame_opcode != OP_XOR &&
                              frame_opcode != OP_MUL &&
@@ -534,7 +706,8 @@ module lsc1_packet_frontend (
                              frame_opcode != OP_DEREF_CELL &&
                              frame_opcode != OP_DEREF_PC &&
                              frame_opcode != OP_DEREF_FP &&
-                             frame_opcode != OP_JUMP) begin
+                             frame_opcode != OP_JUMP &&
+                             frame_opcode != OP_BLAKE3) begin
                     emit_fault(BAD_OPCODE, 0, 0);
                 end else if ((frame_opcode == OP_SET && frame_length != 51) ||
                              (frame_opcode == OP_XOR && frame_length != 77) ||
@@ -542,7 +715,8 @@ module lsc1_packet_frontend (
                              ((frame_opcode == OP_DEREF_CELL ||
                                frame_opcode == OP_DEREF_PC ||
                                frame_opcode == OP_DEREF_FP) && frame_length != 81) ||
-                             (frame_opcode == OP_JUMP && frame_length != 103)) begin
+                             (frame_opcode == OP_JUMP && frame_length != 103) ||
+                             (frame_opcode == OP_BLAKE3 && frame_length != 190)) begin
                     emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
                 // Match decode_request_payload: malformed payloads are rejected
                 // before dispatch sees the pending transaction, and decoder
@@ -578,6 +752,16 @@ module lsc1_packet_frontend (
                 end else if (frame_opcode == OP_JUMP &&
                              frame_payload[77*8 +: 8] > 1) begin
                     emit_fault(BAD_BRANCH_PROPOSAL, 0, 3);
+                end else if (frame_opcode == OP_BLAKE3 &&
+                             (cell_is_malformed(frame_payload[54*8 +: 8], frame_payload[55*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[71*8 +: 8], frame_payload[72*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[88*8 +: 8], frame_payload[89*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[105*8 +: 8], frame_payload[106*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[122*8 +: 8], frame_payload[123*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[139*8 +: 8], frame_payload[140*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[156*8 +: 8], frame_payload[157*8 +: 128]) ||
+                              cell_is_malformed(frame_payload[173*8 +: 8], frame_payload[174*8 +: 128]))) begin
+                    emit_fault(BAD_CELL, 0, 0);
                 end else if ((frame_opcode == OP_XOR || frame_opcode == OP_MUL) &&
                              (cell_is_malformed(frame_payload[26*8 +: 8],
                                                 frame_payload[216 +: 128]) ||
@@ -589,7 +773,7 @@ module lsc1_packet_frontend (
                                cell_is_malformed(frame_payload[77*8 +: 8],
                                                  frame_payload[624 +: 128])))) begin
                     emit_fault(BAD_CELL, 0, 0);
-                end else if (result_pending) begin
+                end else if (result_pending || service_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
                 end else begin
                     txn_id = frame_payload[0 +: 32];
@@ -618,7 +802,55 @@ module lsc1_packet_frontend (
                         decision_ok = 1'b0; decision_fault = INDEX_RANGE;
                     end
 
-                    if (decision_ok && frame_opcode == OP_SET) begin
+                    if (decision_ok && frame_opcode == OP_BLAKE3) begin
+                        // The host owns memory/fetch.  RTL consumes only the eight
+                        // cells carried by this accepted request and retains the
+                        // service operands needed while the host is computing.
+                        staged_access[0] = fp + frame_payload[14*8 +: 32];
+                        staged_access[1] = fp + frame_payload[18*8 +: 32];
+                        staged_access[2] = fp + frame_payload[22*8 +: 32];
+                        staged_access[3] = fp + frame_payload[26*8 +: 32];
+                        staged_access[4] = fp + frame_payload[30*8 +: 32];
+                        staged_access[5] = staged_access[4] + 1'b1;
+                        staged_access[6] = fp + frame_payload[34*8 +: 32];
+                        staged_access[7] = staged_access[6] + 1'b1;
+                        if (frame_payload[14*8 +: 32] > 32'hffffffff-fp ||
+                            frame_payload[18*8 +: 32] > 32'hffffffff-fp ||
+                            frame_payload[22*8 +: 32] > 32'hffffffff-fp ||
+                            frame_payload[26*8 +: 32] > 32'hffffffff-fp ||
+                            frame_payload[30*8 +: 32] >= 32'hffffffff-fp ||
+                            frame_payload[34*8 +: 32] >= 32'hffffffff-fp) begin
+                            decision_ok = 0; decision_fault = U32_OVERFLOW;
+                        end else if (blake_alias_inconsistent) begin
+                            decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
+                        end
+                        if (decision_ok) begin
+                            staged_message[0] <= frame_payload[55*8 +: 128];
+                            staged_message[1] <= frame_payload[72*8 +: 128];
+                            staged_message[2] <= frame_payload[89*8 +: 128];
+                            staged_message[3] <= frame_payload[106*8 +: 128];
+                            staged_cv[0] <= frame_payload[123*8 +: 128];
+                            staged_cv[1] <= frame_payload[140*8 +: 128];
+                            staged_metadata <= frame_payload[38*8 +: 128];
+                            staged_out_present[0] <= frame_payload[156*8 +: 8];
+                            staged_out_value[0] <= frame_payload[157*8 +: 128];
+                            staged_out_present[1] <= frame_payload[173*8 +: 8];
+                            staged_out_value[1] <= frame_payload[174*8 +: 128];
+                            staged_txn_id <= txn_id;
+                            staged_next_pc <= pc + 1'b1;
+                            staged_next_fp <= fp;
+                            staged_service_id <= service_seq + 1'b1;
+                            service_seq <= service_seq + 1'b1;
+                            service_pending <= 1'b1;
+                            tx_status <= 8'h01;
+                            tx_length <= 122;
+                            tx_external_kind <= 1;
+                            tx_start <= 1'b1;
+                            fault <= 1'b0;
+                            last_status <= 8'h01;
+                            decision_deferred = 1'b1;
+                        end
+                    end else if (decision_ok && frame_opcode == OP_SET) begin
                         off_a = frame_payload[112 +: 32];
                         result_value = frame_payload[144 +: 128];
                         pres_a = frame_payload[34*8 +: 8];

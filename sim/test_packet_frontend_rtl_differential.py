@@ -94,7 +94,8 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         return [bytes.fromhex(line.removeprefix("RESPONSE "))
                 for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
 
-    def rtl_workload(self, frames: list[protocol.RequestFrame]) -> list[bytes]:
+    def rtl_workload(self, frames: list[protocol.RequestFrame],
+                     control_after_first: str | None = None) -> list[bytes]:
         paths = []
         arguments = []
         for index, frame in enumerate(frames, 1):
@@ -104,6 +105,8 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             paths.append(path)
             suffix = "" if index == 1 else str(index)
             arguments.extend((f"+REQUEST{suffix}={path}", f"+LENGTH{suffix}={len(encoded)}"))
+        if control_after_first is not None:
+            arguments.append(f"+{control_after_first}")
         run = subprocess.run(
             ["vvp", str(self.simulator), *arguments], cwd=ROOT, check=True,
             capture_output=True, text=True,
@@ -143,14 +146,98 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         self.assertEqual(protocol.decode_response(actual[-1]).payload.hex(),
                          "03000000030000000300000000000000")
 
+    def test_blake3_service_result_and_retirement_match_model_byte_exactly(self) -> None:
+        request = protocol.build_blake3(
+            txn_id=0x10203040, pc=2, fp=64,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 3, 1, 7), cv_offset=8, out_offset=10,
+            metadata=0x7F000000400000001122334455667788,
+            message_cells=tuple(protocol.Cell(True, value) for value in (11, 22, 33, 44)),
+            cv_cells=(protocol.Cell(True, 55), protocol.Cell(True, 66)),
+            out_cells=(protocol.ABSENT, protocol.ABSENT),
+        )
+        endpoint = protocol.Lsc1Endpoint()
+        service_raw, _ = protocol.drive(endpoint, request.encode())
+        service = protocol.decode_response(service_raw)
+        self.assertIs(service.status, protocol.Status.SERVICE_REQUIRED)
+        response = protocol.build_service_response(
+            txn_id=0x10203040,
+            service_id=int.from_bytes(service.payload[4:8], "little"),
+            digest=(0x00112233445566778899AABBCCDDEEFF,
+                    0xFFEEDDCCBBAA99887766554433221100),
+        )
+        result_raw, _ = protocol.drive(endpoint, response.encode())
+        result = protocol.decode_response(result_raw)
+        retire = protocol.build_retire(
+            txn_id=0x10203040, result_crc=protocol.crc32(result.payload))
+        retired_raw, _ = protocol.drive(endpoint, retire.encode())
+        self.assertEqual(self.rtl_workload([request, response, retire]),
+                         [service_raw, result_raw, retired_raw])
+
+    def test_blake3_bad_service_retry_and_abort_reset_recovery(self) -> None:
+        request = protocol.build_blake3(
+            txn_id=7, pc=0, fp=32, profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 1, 2, 3), cv_offset=4, out_offset=6, metadata=0x40,
+            message_cells=tuple(protocol.Cell(True, value) for value in (1, 2, 3, 4)),
+            cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+            out_cells=(protocol.ABSENT, protocol.ABSENT))
+        endpoint = protocol.Lsc1Endpoint()
+        required, _ = protocol.drive(endpoint, request.encode())
+        wrong = protocol.build_service_response(txn_id=7, service_id=99, digest=(8, 9))
+        refused, _ = protocol.drive(endpoint, wrong.encode())
+        correct = protocol.build_service_response(txn_id=7, service_id=1, digest=(8, 9))
+        result, _ = protocol.drive(endpoint, correct.encode())
+        self.assertEqual(self.rtl_workload([request, wrong, correct]),
+                         [required, refused, result])
+
+        for control in ("ABORT_AFTER_FIRST", "RESET_AFTER_FIRST"):
+            with self.subTest(control=control):
+                recovered = protocol.Lsc1Endpoint()
+                first, _ = protocol.drive(recovered, request.encode())
+                if control.startswith("ABORT"):
+                    recovered.step(abort=True)
+                else:
+                    recovered.step(reset_n=False)
+                status_frame = protocol.build_status_query()
+                status, _ = protocol.drive(recovered, status_frame.encode())
+                self.assertEqual(self.rtl_workload(
+                    [request, status_frame], control_after_first=control),
+                    [first, status])
+
+    def test_blake3_write_once_shapes_and_conflict_match_model(self) -> None:
+        digest = (0xAA, 0xBB)
+        for outputs in (
+            (protocol.ABSENT, protocol.ABSENT),
+            (protocol.Cell(True, digest[0]), protocol.ABSENT),
+            (protocol.Cell(True, digest[0]), protocol.Cell(True, digest[1])),
+            (protocol.Cell(True, 0xDEAD), protocol.ABSENT),
+        ):
+            with self.subTest(outputs=outputs):
+                request = protocol.build_blake3(
+                    txn_id=1, pc=0, fp=0,
+                    profile=protocol.Profile.INTERPRETER_COMPAT,
+                    message_offsets=(0, 1, 2, 3), cv_offset=4, out_offset=6,
+                    metadata=0,
+                    message_cells=tuple(protocol.Cell(True, value)
+                                        for value in (1, 2, 3, 4)),
+                    cv_cells=(protocol.Cell(True, 5), protocol.Cell(True, 6)),
+                    out_cells=outputs)
+                endpoint = protocol.Lsc1Endpoint()
+                required, _ = protocol.drive(endpoint, request.encode())
+                response = protocol.build_service_response(
+                    txn_id=1, service_id=1, digest=digest)
+                finished, _ = protocol.drive(endpoint, response.encode())
+                self.assertEqual(self.rtl_workload([request, response]),
+                                 [required, finished])
+
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
             profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)
-        # The canonical RTL advertises only its implemented feature bit.  The
-        # executable model also advertises services explicitly excluded here.
+        # The integrated RTL implements interpreter-compatible semantics and
+        # BLAKE3 service offload, but not the forward-only profile.
         expected_negotiate = protocol.ResponseFrame(
             protocol.Status.OK,
-            b"\x01\x01\x00\x01\x10\x00\x02\x00\x00\x00\x31\x43\x53\x4c",
+            b"\x01\x01\x00\x01\x10\x00\x06\x00\x00\x00\x31\x43\x53\x4c",
         ).encode()
         self.assertEqual(self.rtl_exchange(negotiate), expected_negotiate)
 

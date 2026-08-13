@@ -119,7 +119,7 @@ class ScatterGatherDesignContractTests(unittest.TestCase):
         self.assertIn("payload_external_valid", tx)
         self.assertIn("immutable while", tx)
         self.assertIn("scatter/gather", design)
-        self.assertIn("BLAKE3 service controller/FSM is deliberately not implemented", design)
+        self.assertIn("Authored RTL service boundary", design)
 
 
 class OfficialDifferentialTests(unittest.TestCase):
