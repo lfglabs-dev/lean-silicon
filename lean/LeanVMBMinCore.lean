@@ -22,3 +22,4 @@ import LeanVMBMinCore.AcceptedScalar
 import LeanVMBMinCore.AcceptedSequence
 import LeanVMBMinCore.RTLTransactionRefinement
 import LeanVMBMinCore.Blake3ServiceLifecycle
+import LeanVMBMinCore.AuthoredRTLContract
