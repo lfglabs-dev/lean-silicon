@@ -71,7 +71,9 @@ def mul_semantics_reachable := AcceptedScalar.mul_decision_reachable
 def deref_semantics_reachable := AcceptedDeref.accepted_effect_binding_reachable
 def jump_semantics_reachable := AcceptedJump.accepted_effect_binding_reachable
 theorem blake3_semantics_reachable :
-    (FullProfile.prepareBlake3 FullProfile.witnessRawBlake3).isOk := by native_decide
+    (FullProfile.prepareBlake3 FullProfile.witnessRawBlake3).isOk := by
+  set_option maxRecDepth 10000 in
+  decide
 
 def result_retire_semantics := AcceptedSequence.complete_retires_once
 def result_replay_semantics := AcceptedSequence.duplicate_retire_rejected
