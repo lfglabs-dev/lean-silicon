@@ -63,6 +63,8 @@ jobs:
           tar -xzf elan-init.tar.gz elan-init
           ./elan-init -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Install Icarus Verilog for the authored RTL contract
+        run: sudo apt-get update && sudo apt-get install -y iverilog
       - name: Build Lean workspace
         run: cd lean && lake build
       - name: Explicit Lean library target
@@ -77,6 +79,8 @@ jobs:
         run: cd lean && python3 check_accepted_scalar_binding_mutations.py
       - name: Arbitrary mixed-sequence mutation sensitivity
         run: cd lean && python3 check_accepted_sequence_mutations.py
+      - name: Lean/authored RTL observable contract
+        run: make lsc1-authored-rtl-contract
 
   formal-toolchain:
     runs-on: ubuntu-latest
