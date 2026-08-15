@@ -88,7 +88,7 @@ def parse_trace(operation: str, output: str,
 def run_rtl_case(simulator: Path, temporary: Path, operation: str,
                  frames: list[protocol.RequestFrame], expected: list[bytes],
                  control: str | None = None) -> set[tuple[str, str]]:
-    arguments: list[str] = []
+    arguments: list[str] = ["+INJECT_RX_STALL"]
     for index, frame in enumerate(frames, 1):
         encoded = frame.encode()
         request = temporary / f"{operation.lower()}-{control or 'normal'}-{index}.hex"

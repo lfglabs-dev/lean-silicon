@@ -39,7 +39,7 @@ module tb_lsc1_packet_vector;
     end
 
     always @(posedge clk) begin
-        if (rst_n && !rx_ready) trace_rx_blocked = trace_rx_blocked + 1;
+        if (rst_n && rx_valid && !rx_ready) trace_rx_blocked = trace_rx_blocked + 1;
         if (rst_n && tx_valid && !tx_ready) trace_tx_blocked = trace_tx_blocked + 1;
         if (rst_n && done_pulse) trace_done = trace_done + 1;
         if (tx_valid && tx_ready) begin
@@ -65,6 +65,12 @@ module tb_lsc1_packet_vector;
             response_count = 0; total = 0;
             for (i = 0; i < length; i = i + 1)
                 send_byte(request[i], i % 3);
+            if ($test$plusargs("INJECT_RX_STALL")) begin
+                wait (!rx_ready);
+                @(negedge clk); rx_valid = 1;
+                @(posedge clk);
+                @(negedge clk); rx_valid = 0;
+            end
             wait (total != 0 && response_count == total);
             $write("RESPONSE ");
             for (i = 0; i < total; i = i + 1)
@@ -80,6 +86,19 @@ module tb_lsc1_packet_vector;
         repeat (4) @(posedge clk);
         rst_n = 1;
         repeat (2) @(posedge clk);
+        if ($test$plusargs("TRACE_IDLE_RX_BLOCKED") ||
+            $test$plusargs("TRACE_VALID_RX_BLOCKED")) begin
+            @(negedge clk);
+            force rx_ready = 0;
+            rx_valid = $test$plusargs("TRACE_VALID_RX_BLOCKED");
+            @(posedge clk);
+            @(negedge clk);
+            release rx_ready;
+            rx_valid = 0;
+            $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
+                     trace_rx_blocked, trace_tx_blocked, trace_done);
+            $finish;
+        end
         if ($value$plusargs("SERVICE_SEQ=%h", initial_service_seq))
             dut.service_seq = initial_service_seq;
         run_request(request_path, request_length);

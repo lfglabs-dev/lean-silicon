@@ -40,9 +40,10 @@ as the concrete finite vector driver and byte oracle; that executable-model
 evidence is separate from the Lean theorem and authored-RTL simulation
 evidence. Lean checks the shared finite relation and its semantic bindings; it
 does not prove every response byte or import the SystemVerilog transition
-system. Input
-"stall" includes receive gaps and receive exclusion while a response is held;
-it does not prove arbitrary hostile `rx_valid` waveforms. No claim is made for
+system. An RX stall is recorded only when `rx_valid && !rx_ready`; each finite
+witness deliberately presents a valid byte while the authored frontend is not
+ready, while idle `!rx_ready` cycles are excluded. This does not prove arbitrary
+hostile `rx_valid` waveforms. No claim is made for
 LSC-1µ, LSC1-06+, host fetch/memory, netlist, P&R, FPGA, or any instruction beyond the
 implemented SET/XOR/MUL/DEREF/JUMP/BLAKE3 packet paths.
 
