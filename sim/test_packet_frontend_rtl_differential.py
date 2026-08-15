@@ -375,7 +375,12 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
             profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)
-        expected_negotiate = model_exchange(negotiate)
+        # The authored RTL implements interpreter-compatible semantics and
+        # BLAKE3 service offload, but not the forward-only profile.
+        expected_negotiate = protocol.ResponseFrame(
+            protocol.Status.OK,
+            b"\x01\x01\x00\x01\x10\x00\x06\x00\x00\x00\x31\x43\x53\x4c",
+        ).encode()
         self.assertEqual(self.rtl_exchange(negotiate), expected_negotiate)
 
         staged = protocol.build_set_constant(

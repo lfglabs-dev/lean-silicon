@@ -11,9 +11,12 @@ the executable endpoint, requires its halted step count and final host memory
 to match the recorded public result from frozen leanVM-b commit
 `c308034ab78619b39a59d26f3dc60e7df5b52649`, and records every request and
 response. The complete negotiation plus 13 instruction/RETIRE lifecycles is
-then replayed in one authored `asic_core/rtl/lsc1_packet_frontend.sv` session;
-every response byte, including cumulative retirement state, must match the
-executable model. The only data sent between instructions is the next
+then replayed in one authored `asic_core/rtl/lsc1_packet_frontend.sv` session.
+Every instruction and retirement response byte, including cumulative retirement
+state, must match the executable model. Negotiation is checked against the
+authored RTL's narrower, independently specified feature mask: it advertises
+interpreter-compatible semantics and BLAKE3 offload, but not the model's
+forward-only profile. The only data sent between instructions is the next
 host-prepared packet; the RTL receives no program image or VM-memory interface.
 
 The generated Lean checker imports `HostPreparedBoundary` and constructs

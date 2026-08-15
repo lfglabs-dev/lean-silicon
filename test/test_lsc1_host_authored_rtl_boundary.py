@@ -18,6 +18,20 @@ class HostAuthoredRTLBoundaryTests(unittest.TestCase):
             self.assertIn("LSC1_HOST_AUTHORED_RTL_BOUNDARY_PASS", done.stdout)
             self.assertTrue(receipt.is_file())
 
+    def test_each_unestablished_boundary_predicate_fails(self):
+        from tools.lsc1_host_authored_rtl_boundary import require_evidence
+        base = {
+            "operation": "set",
+            "suppliedCellsMatchHost": True,
+            "resultAppliedAfterRetire": True,
+            "rtlBytesMatchModel": True,
+        }
+        for predicate in (
+            "suppliedCellsMatchHost", "resultAppliedAfterRetire", "rtlBytesMatchModel"
+        ):
+            with self.subTest(predicate=predicate), self.assertRaises(SystemExit):
+                require_evidence([{**base, predicate: False}])
+
 
 if __name__ == "__main__":
     unittest.main()
