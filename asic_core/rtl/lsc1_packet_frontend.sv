@@ -77,6 +77,10 @@ module lsc1_packet_frontend (
                        compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
     reg result_pending, service_pending;
+    // Authored-RTL provenance for the instruction which owns pending service
+    // or result state.  The simulation certificate reads this register; it is
+    // deliberately decoded here rather than supplied by the Python driver.
+    reg [7:0] staged_operation;
     reg [31:0] staged_txn_id, staged_next_pc, staged_next_fp;
     reg [31:0] staged_result_crc;
     reg state_valid;
@@ -442,6 +446,7 @@ module lsc1_packet_frontend (
             encoder_index <= 0;
             result_pending <= 1'b0;
             service_pending <= 1'b0;
+            staged_operation <= 0;
             staged_txn_id <= 0;
             staged_next_pc <= 0;
             staged_next_fp <= 0;
@@ -777,6 +782,9 @@ module lsc1_packet_frontend (
                 end else if (result_pending || service_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
                 end else begin
+                    // Preserve the decoded authored-RTL instruction identity
+                    // across compute, service response, and RETIRE frames.
+                    staged_operation <= frame_opcode;
                     txn_id = frame_payload[0 +: 32];
                     pc = frame_payload[32 +: 32];
                     fp = frame_payload[64 +: 32];

@@ -42,6 +42,12 @@ class LeanMutationWorkflowTest(unittest.TestCase):
         self.assertIn("--retry-max-time 600", lean_steps)
         self.assertIn("run: cd lean && lake build\n", lean_steps)
 
+    def test_lean_job_executes_the_authored_rtl_contract(self):
+        lean_steps = self.lean_steps()
+
+        self.assertEqual(lean_steps.count("sudo apt-get install -y iverilog"), 1)
+        self.assertEqual(lean_steps.count("make lsc1-authored-rtl-contract"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
