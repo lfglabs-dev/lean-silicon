@@ -157,7 +157,7 @@ module tb_packet_uart_bridge;
         clear_payload(); clear_response();
         payload[0] = 1; payload[1] = 1; payload[2] = 1;
         send_frame(8'h10, 7); wait_response(8'h00);
-        if (response[11] !== 6 || response[15] !== 8'h31)
+        if (response[11] !== 7 || response[15] !== 8'h31)
             $fatal(1, "packet NEGOTIATE capabilities mismatch");
 
         // STATUS is packetized and non-mutating.

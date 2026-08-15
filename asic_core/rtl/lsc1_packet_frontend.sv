@@ -630,7 +630,7 @@ module lsc1_packet_frontend (
                         result_bytes[16 +: 16] = 16'd256;
                         result_bytes[32 +: 8] = 16;
                         result_bytes[40 +: 8] = 0;
-                        result_bytes[48 +: 32] = 32'h00000006;
+                        result_bytes[48 +: 32] = 32'h00000007;
                         result_bytes[80 +: 32] = 32'h4c534331;
                         tx_status <= OK;
                         tx_length <= 14;
