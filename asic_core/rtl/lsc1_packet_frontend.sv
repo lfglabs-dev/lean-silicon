@@ -86,7 +86,7 @@ module lsc1_packet_frontend (
     wire [7:0] blake_retire_mismatch_detail;
     wire blake_done_pulse;
     reg blake_service_start, blake_service_accept, blake_service_discard;
-    reg blake_retire_attempt;
+    wire blake_retire_attempt;
     reg [31:0] blake_start_txn_id, blake_start_next_pc, blake_start_next_fp;
     reg core_done_pulse;
     // Authored-RTL provenance for the instruction which owns pending service
@@ -220,6 +220,12 @@ module lsc1_packet_frontend (
                   blake_result_pending || blake_service_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
     assign done_pulse = core_done_pulse || blake_done_pulse;
+    // The lifecycle shell and frontend must consume a RETIRE on the same edge.
+    // A registered handoff would move DONE and lifecycle state one edge after
+    // the architectural commit performed below.
+    assign blake_retire_attempt = frame_valid && event_ready &&
+                                  frame_opcode == OP_RETIRE && frame_length == 8 &&
+                                  blake_result_pending;
 
     // Long service/result payloads are scattered directly from semantic staging
     // registers.  The selected byte is purely a function of the stable index,
@@ -494,7 +500,6 @@ module lsc1_packet_frontend (
             blake_service_start <= 1'b0;
             blake_service_accept <= 1'b0;
             blake_service_discard <= 1'b0;
-            blake_retire_attempt <= 1'b0;
             blake_start_txn_id <= 0;
             blake_start_next_pc <= 0;
             blake_start_next_fp <= 0;
@@ -515,7 +520,6 @@ module lsc1_packet_frontend (
             blake_service_start <= 1'b0;
             blake_service_accept <= 1'b0;
             blake_service_discard <= 1'b0;
-            blake_retire_attempt <= 1'b0;
         end else begin
             tx_start <= 1'b0;
             alu_start <= 1'b0;
@@ -524,7 +528,6 @@ module lsc1_packet_frontend (
             blake_service_start <= 1'b0;
             blake_service_accept <= 1'b0;
             blake_service_discard <= 1'b0;
-            blake_retire_attempt <= 1'b0;
             if (tx_done && capture_result_crc) begin
                 staged_result_crc <= tx_payload_crc;
                 capture_result_crc <= 1'b0;
@@ -691,7 +694,6 @@ module lsc1_packet_frontend (
                     if (frame_length != 8) begin
                         emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
                     end else if (blake_result_pending) begin
-                        blake_retire_attempt <= 1'b1;
                         if (!blake_retire_match) begin
                             emit_fault(RETIRE_MISMATCH, txn_id,
                                        blake_retire_mismatch_detail);

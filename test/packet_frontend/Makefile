@@ -10,10 +10,11 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport lifecycle lifecycle-mutation mutation differential-mutation clean
+.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation clean
 
 sim:
 	$(MAKE) lifecycle
+	$(MAKE) blake3-retire-commit
 	$(MAKE) transport
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
 	vvp tb_lsc1_packet_frontend.vvp
@@ -34,6 +35,11 @@ lifecycle:
 	  ../../asic_core/rtl/lsc1_blake3_lifecycle.sv tb_lsc1_blake3_lifecycle.sv
 	vvp tb_lsc1_blake3_lifecycle.vvp
 
+blake3-retire-commit:
+	iverilog -g2012 -Wall -s tb_blake3_retire_commit -o tb_blake3_retire_commit.vvp \
+	  $(RTL) tb_blake3_retire_commit.sv
+	vvp tb_blake3_retire_commit.vvp
+
 lifecycle-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  cp ../../asic_core/rtl/lsc1_blake3_lifecycle.sv "$$d/dut.sv"; \
@@ -41,7 +47,7 @@ lifecycle-mutation:
 	    cp ../../asic_core/rtl/lsc1_blake3_lifecycle.sv "$$d/dut.sv"; \
 	    case $$mutation in \
 	      id) sed -i 's/retire_txn_id == staged_txn_id/retire_txn_id != staged_txn_id/' "$$d/dut.sv" ;; \
-	      done) sed -i "s/done_pulse <= 1'b1;/done_pulse <= 1'b0;/" "$$d/dut.sv" ;; \
+	  done) sed -i "s/done_pulse <= 1'b1;/done_pulse <= 1'b0;/" "$$d/dut.sv" ;; \
 	      abort) sed -i "/end else if (abort) begin/,/end else begin/ s/service_pending <= 1'b0;/service_pending <= 1'b1;/" "$$d/dut.sv" ;; \
 	    esac; \
 	    iverilog -g2012 -s tb_lsc1_blake3_lifecycle -o "$$d/$$mutation.vvp" "$$d/dut.sv" tb_lsc1_blake3_lifecycle.sv; \
@@ -49,7 +55,17 @@ lifecycle-mutation:
 	      echo "lifecycle $$mutation mutation unexpectedly survived" >&2; exit 1; \
 	    fi; \
 	  done; \
-	  echo "PASS: lifecycle ID, exactly-once done, and abort mutations detected"
+	  rm "$$d/dut.sv"; \
+	  cp $(RTL) "$$d/"; \
+	  sed -i 's/assign blake_retire_attempt = frame_valid/assign blake_retire_attempt = 1'"'"'b0 \&\& frame_valid/' \
+	    "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_blake3_retire_commit -o "$$d/commit.vvp" \
+	    "$$d"/*.sv tb_blake3_retire_commit.sv; \
+	  if vvp "$$d/commit.vvp" >"$$d/commit.out" 2>&1; then \
+	    echo "RETIRE commit-edge mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "FATAL:" "$$d/commit.out"; \
+	  echo "PASS: lifecycle ID, exactly-once done, abort, and commit-edge mutations detected"
 
 mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -115,4 +131,4 @@ differential-mutation:
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
