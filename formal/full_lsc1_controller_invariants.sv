@@ -7,7 +7,8 @@ module full_lsc1_controller_invariants (
     input wire done_pulse, input wire frame_valid, input wire rx_fault_valid,
     input wire tx_start, input wire tx_busy, input wire [3:0] compute_state,
     input wire alu_busy, input wire encoder_busy,
-    input wire result_pending, input wire service_pending
+    input wire result_pending, input wire blake_result_pending,
+    input wire service_pending
 );
     reg past_valid = 1'b0;
     always @(posedge clk) begin
@@ -19,6 +20,8 @@ module full_lsc1_controller_invariants (
             assert(!(frame_valid && rx_fault_valid));
             // Every staged transaction is observable as BUSY until completion or abort.
             if (result_pending || service_pending) assert(busy);
+            // The aggregate result-pending input must include the extracted BLAKE3 shell.
+            if (blake_result_pending) assert(result_pending);
             // A queued response is included in BUSY and cannot accept another byte.
             if (tx_start) begin assert(busy); assert(!rx_ready); end
             // Controller starts a response only at its idle arbitration boundary.
@@ -35,12 +38,14 @@ module full_lsc1_controller_invariants (
             assert(!tx_valid);
             assert(!done_pulse);
             assert(!result_pending);
+            assert(!blake_result_pending);
             assert(!service_pending);
         end
         if (past_valid && done_pulse) assert(!tx_valid);
         cover(past_valid && rst_n && tx_valid && !tx_ready);
         cover(past_valid && rst_n && fault);
         cover(past_valid && rst_n && result_pending);
+        cover(past_valid && rst_n && blake_result_pending);
         cover(past_valid && rst_n && service_pending);
         cover(past_valid && rst_n && done_pulse);
     end
