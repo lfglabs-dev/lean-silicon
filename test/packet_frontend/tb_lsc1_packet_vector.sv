@@ -184,7 +184,7 @@ module tb_lsc1_packet_vector;
             $finish;
         end
         if ($value$plusargs("SERVICE_SEQ=%h", initial_service_seq))
-            dut.service_seq = initial_service_seq;
+            dut.blake3_lifecycle.service_seq = initial_service_seq;
         if (manifest_path != 0) begin
             manifest_fd = $fopen(manifest_path, "r");
             if (!manifest_fd) $fatal(1, "cannot open request manifest");
@@ -215,21 +215,25 @@ module tb_lsc1_packet_vector;
         run_request(request_path, request_length, 0);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
             $display("RTL_CONTROL ABORT BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
-                     dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
+                     dut.staged_operation, dut.result_pending || dut.blake_result_pending,
+                     dut.blake_service_pending, tx_valid);
             @(negedge clk); abort = 1;
             @(posedge clk);
             @(negedge clk); abort = 0;
             #1 $display("RTL_CONTROL ABORT AFTER origin_opcode=%02x result=%0d service=%0d tx=%0d",
-                        dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
+                        dut.staged_operation, dut.result_pending || dut.blake_result_pending,
+                        dut.blake_service_pending, tx_valid);
         end
         if ($test$plusargs("RESET_AFTER_FIRST")) begin
             $display("RTL_CONTROL RESET BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
-                     dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
+                     dut.staged_operation, dut.result_pending || dut.blake_result_pending,
+                     dut.blake_service_pending, tx_valid);
             @(negedge clk); rst_n = 0;
             repeat (2) @(posedge clk);
             @(negedge clk); rst_n = 1;
             #1 $display("RTL_CONTROL RESET AFTER origin_opcode=%02x result=%0d service=%0d tx=%0d",
-                        dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
+                        dut.staged_operation, dut.result_pending || dut.blake_result_pending,
+                        dut.blake_service_pending, tx_valid);
         end
         if ($value$plusargs("REQUEST2=%s", request2_path) &&
             $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length, 0);

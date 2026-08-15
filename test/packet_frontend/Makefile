@@ -2,6 +2,7 @@ PYTHON ?= python3
 
 RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_packet_tx.sv \
+      ../../asic_core/rtl/lsc1_blake3_lifecycle.sv \
       ../../asic_core/rtl/gf2n_mul_bitstream.sv \
       ../../asic_core/rtl/gf128_mul_bitstream.sv \
       ../../asic_core/rtl/leanvm_b_stream_alu.sv \
@@ -9,9 +10,10 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport mutation differential-mutation clean
+.PHONY: sim transport lifecycle lifecycle-mutation mutation differential-mutation clean
 
 sim:
+	$(MAKE) lifecycle
 	$(MAKE) transport
 	iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp $(RTL) tb_lsc1_packet_frontend.sv
 	vvp tb_lsc1_packet_frontend.vvp
@@ -26,6 +28,28 @@ transport:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_tx_service_required -o tb_lsc1_packet_tx_service_required.vvp \
 	  ../../asic_core/rtl/lsc1_packet_tx.sv tb_lsc1_packet_tx_service_required.sv
 	vvp tb_lsc1_packet_tx_service_required.vvp
+
+lifecycle:
+	iverilog -g2012 -Wall -s tb_lsc1_blake3_lifecycle -o tb_lsc1_blake3_lifecycle.vvp \
+	  ../../asic_core/rtl/lsc1_blake3_lifecycle.sv tb_lsc1_blake3_lifecycle.sv
+	vvp tb_lsc1_blake3_lifecycle.vvp
+
+lifecycle-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp ../../asic_core/rtl/lsc1_blake3_lifecycle.sv "$$d/dut.sv"; \
+	  for mutation in id done abort; do \
+	    cp ../../asic_core/rtl/lsc1_blake3_lifecycle.sv "$$d/dut.sv"; \
+	    case $$mutation in \
+	      id) sed -i 's/retire_txn_id == staged_txn_id/retire_txn_id != staged_txn_id/' "$$d/dut.sv" ;; \
+	      done) sed -i "s/done_pulse <= 1'b1;/done_pulse <= 1'b0;/" "$$d/dut.sv" ;; \
+	      abort) sed -i "/end else if (abort) begin/,/end else begin/ s/service_pending <= 1'b0;/service_pending <= 1'b1;/" "$$d/dut.sv" ;; \
+	    esac; \
+	    iverilog -g2012 -s tb_lsc1_blake3_lifecycle -o "$$d/$$mutation.vvp" "$$d/dut.sv" tb_lsc1_blake3_lifecycle.sv; \
+	    if vvp "$$d/$$mutation.vvp" >"$$d/$$mutation.out" 2>&1; then \
+	      echo "lifecycle $$mutation mutation unexpectedly survived" >&2; exit 1; \
+	    fi; \
+	  done; \
+	  echo "PASS: lifecycle ID, exactly-once done, and abort mutations detected"
 
 mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -91,4 +115,4 @@ differential-mutation:
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp

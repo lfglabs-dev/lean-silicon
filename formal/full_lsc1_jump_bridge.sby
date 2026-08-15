@@ -41,6 +41,7 @@ read -formal -D FORMAL_DEREF_BRIDGE gf128_mul_bitstream.sv
 read -formal -D FORMAL_DEREF_BRIDGE leanvm_b_stream_alu.sv
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_stream_adapter.sv
 read -formal -D FORMAL_DEREF_BRIDGE lsc1_field_encoder.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_blake3_lifecycle.sv
 safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_JUMP_WITNESS full_lsc1_deref_bridge_checker.sv
 reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_JUMP_WITNESS full_lsc1_deref_bridge_checker.sv
 accepted_result_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_ACCEPTED_RESULT -D FORMAL_JUMP_WITNESS full_lsc1_deref_bridge_checker.sv
@@ -62,4 +63,5 @@ full_lsc1_deref_bridge_checker.sv
 ../asic_core/rtl/leanvm_b_stream_alu.sv
 ../asic_core/rtl/lsc1_stream_adapter.sv
 ../asic_core/rtl/lsc1_field_encoder.sv
+../asic_core/rtl/lsc1_blake3_lifecycle.sv
 ../asic_core/rtl/lsc1_packet_frontend.sv
