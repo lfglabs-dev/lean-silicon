@@ -134,7 +134,9 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         self.assertEqual(done_count, 1, counts)
         stability = next(line for line in run.stdout.splitlines()
                          if line.startswith("RTL_V3_STABILITY "))
+        rx_checks = int(stability.split("rx_checks=")[1].split()[0])
         tx_checks = int(stability.split("tx_checks=")[1])
+        self.assertGreater(rx_checks, 0, stability)
         self.assertGreater(tx_checks, 0, stability)
 
 

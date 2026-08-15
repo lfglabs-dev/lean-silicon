@@ -23,7 +23,7 @@ module tb_lsc1_packet_vector;
     integer cycle = 0, i;
     integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
-    integer v3_finite_stalls = 0, tx_stable_checks = 0;
+    integer v3_finite_stalls = 0, rx_stable_checks = 0, tx_stable_checks = 0;
     integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
     integer transaction_done = 0;
     reg [7:0] transaction_opcode = 0;
@@ -33,6 +33,9 @@ module tb_lsc1_packet_vector;
     reg [1023:0] manifest_path, manifest_request_path;
     reg tx_was_blocked = 0;
     reg [7:0] blocked_tx_data = 0;
+    reg rx_was_blocked = 0;
+    reg [7:0] blocked_rx_data = 0;
+    reg v3_rx_prefetched = 0;
 
     lsc1_packet_frontend dut (
         .clk(clk), .rst_n(rst_n), .abort(abort),
@@ -59,6 +62,20 @@ module tb_lsc1_packet_vector;
         if (rst_n && rx_valid && !rx_ready) transaction_rx_blocked = transaction_rx_blocked + 1;
         if (rst_n && tx_valid && !tx_ready) transaction_tx_blocked = transaction_tx_blocked + 1;
         if (rst_n && done_pulse) transaction_done = transaction_done + 1;
+        if (rst_n && rx_was_blocked) begin
+            if (!rx_valid)
+                $fatal(1, "RX valid dropped before stalled beat was accepted");
+            if (rx_data !== blocked_rx_data)
+                $fatal(1, "RX valid data changed before stalled beat was accepted");
+            rx_stable_checks = rx_stable_checks + 1;
+        end
+        if (rst_n && rx_valid && !rx_ready) begin
+            if (!rx_was_blocked)
+                blocked_rx_data <= rx_data;
+            rx_was_blocked <= 1;
+        end else begin
+            rx_was_blocked <= 0;
+        end
         if (rst_n && tx_was_blocked) begin
             if (!tx_valid)
                 $fatal(1, "TX valid dropped before stalled beat was accepted");
@@ -101,7 +118,8 @@ module tb_lsc1_packet_vector;
             transaction_tx_blocked = 0;
             transaction_done = 0;
             transaction_opcode = 0;
-            for (i = 0; i < length; i = i + 1)
+            for (i = (v3_finite_stalls && v3_rx_prefetched) ? 1 : 0;
+                 i < length; i = i + 1)
                 send_byte(request[i], v3_finite_stalls ? ((i * 7 + 3) % 4) : (i % 3));
             if ($test$plusargs("INJECT_RX_STALL")) begin
                 wait (!rx_ready);
@@ -109,7 +127,22 @@ module tb_lsc1_packet_vector;
                 @(posedge clk);
                 @(negedge clk); rx_valid = 0;
             end
-            wait (total != 0 && response_count == total);
+            if (v3_finite_stalls) begin
+                // Present the next frame's common SOF while this response owns
+                // the frontend.  send_byte holds that genuine input beat until
+                // the authored RTL accepts it after the finite TX stall/drain.
+                fork
+                    begin
+                        send_byte(request[0], 0);
+                        v3_rx_prefetched = 1;
+                    end
+                    begin
+                        wait (total != 0 && response_count == total);
+                    end
+                join
+            end else begin
+                wait (total != 0 && response_count == total);
+            end
             $write("RESPONSE ");
             for (i = 0; i < total; i = i + 1)
                 $write("%02x", response[i]);
@@ -161,7 +194,8 @@ module tb_lsc1_packet_vector;
             $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                      trace_rx_blocked, trace_tx_blocked, trace_done);
             if (v3_finite_stalls)
-                $display("RTL_V3_STABILITY tx_checks=%0d", tx_stable_checks);
+                $display("RTL_V3_STABILITY rx_checks=%0d tx_checks=%0d",
+                         rx_stable_checks, tx_stable_checks);
             $finish;
         end
         run_request(request_path, request_length);
@@ -198,7 +232,8 @@ module tb_lsc1_packet_vector;
         $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                  trace_rx_blocked, trace_tx_blocked, trace_done);
         if (v3_finite_stalls)
-            $display("RTL_V3_STABILITY tx_checks=%0d", tx_stable_checks);
+            $display("RTL_V3_STABILITY rx_checks=%0d tx_checks=%0d",
+                     rx_stable_checks, tx_stable_checks);
         $finish;
     end
 
