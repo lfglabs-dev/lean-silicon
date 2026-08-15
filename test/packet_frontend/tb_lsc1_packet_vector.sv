@@ -68,11 +68,16 @@ module tb_lsc1_packet_vector;
         end else begin
             rx_was_blocked <= 0;
         end
+        if (rst_n && tx_was_blocked) begin
+            if (!tx_valid)
+                $fatal(1, "TX valid dropped before stalled beat was accepted");
+            if (tx_data !== blocked_tx_data)
+                $fatal(1, "TX valid data changed before stalled beat was accepted");
+            tx_stable_checks = tx_stable_checks + 1;
+        end
         if (rst_n && tx_valid && !tx_ready) begin
-            if (tx_was_blocked && tx_data !== blocked_tx_data)
-                $fatal(1, "TX valid data changed while stalled");
-            if (tx_was_blocked) tx_stable_checks = tx_stable_checks + 1;
-            blocked_tx_data <= tx_data;
+            if (!tx_was_blocked)
+                blocked_tx_data <= tx_data;
             tx_was_blocked <= 1;
         end else begin
             tx_was_blocked <= 0;
