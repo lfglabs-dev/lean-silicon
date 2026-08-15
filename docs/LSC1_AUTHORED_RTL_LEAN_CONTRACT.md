@@ -11,24 +11,33 @@
 | ready/valid | Lean service stall theorems and retained scalar trace model | integrated bench asserts stable `tx_valid/tx_data` and receive exclusion under backpressure | both sides must expose the stall observations in the executable contract |
 | fault/lifecycle | canonical fault decisions and atomic transaction/service state | status responses, sticky fault, `result_pending`, `service_pending`, `done_pulse` | faults, discard controls and retirement cannot disappear from either checked scope |
 
-`LeanVMBMinCore.AuthoredRTLContract.contractHolds` is the single normative
-finite relation.  Its semantic bindings refer directly to the existing
-accepted-frame decisions, `Transaction` theorems and BLAKE3 lifecycle, rather
-than restating instruction results in a new executable model.
+`LeanVMBMinCore.AuthoredRTLContract.contractHolds` is the single bounded
+common-relation theorem.  Its result is `ContractEvidence`: exact finite fact
+equality plus explicit premises for the canonical SET/XOR/MUL/DEREF/JUMP/BLAKE3
+reachability witnesses, abort/reset semantics, and the general successful
+RESULT-to-RETIRE theorem.  Thus equality of a generated label list alone cannot
+inhabit the contract.
 
 `python3 tools/lsc1_authored_rtl_contract.py --verify` compiles and runs the
 authored `asic_core/rtl/lsc1_packet_frontend.sv` with deterministic ready/valid
-stalls.  The SystemVerilog harness emits raw `RESPONSE`, `RTL_COUNTS`, and
-`RTL_CONTROL ... BEFORE/AFTER` records.  Python derives facts from those
-records: response status bytes name RESULT/SERVICE_REQUIRED/FAULT/RETIRE,
-handshake counters name stalls, `done_pulse` corroborates RETIRE, and actual
-pending-state transitions establish reset/abort discard.  It also requires
-every response byte to equal the independent executable protocol model.
+stalls.  The authored RTL retains the decoded opcode owning pending service or
+result state.  The SystemVerilog harness emits a raw `RESPONSE` followed by one
+`RTL_TRANSACTION` record containing that RTL-derived origin opcode and counters
+scoped to the same request/response interval.  Python derives facts only from
+those records: response status bytes name RESULT/SERVICE_REQUIRED/FAULT;
+transaction-local handshake events name stalls; and RETIRE requires status
+`0x02`, a decoded RETIRE request, and exactly one `done_pulse` in that same
+interval.  `RTL_CONTROL ... BEFORE/AFTER` records carry the pending operation's
+RTL provenance and establish reset/abort discard.  Every response byte must
+also equal the independent executable protocol model.
 
 The runner then writes a temporary Lean module containing only those derived
-facts and asks the Lean kernel to decide `contractHolds rtlFacts`.  There is no
+facts and asks the Lean kernel to construct `ContractEvidence rtlFacts` by
+applying `contractHolds` to fact equality and the named semantic theorems. There is no
 Python copy of the required label table and no predeclared RTL observation set.
-The top-level unittest exercises this complete path as a repository gate.
+The top-level unittest exercises this complete path and adversarially rejects
+opcode relabeling, cross-transaction stall/DONE borrowing, and multiple or
+non-co-occurring DONE fabrication.
 
 ## Deliberate boundaries
 

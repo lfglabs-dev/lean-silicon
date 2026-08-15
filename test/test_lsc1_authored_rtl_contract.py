@@ -10,9 +10,54 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from sim import lsc1_transaction as protocol
+from tools.lsc1_authored_rtl_contract import parse_trace
 
 
 class AuthoredRtlContractTests(unittest.TestCase):
+    @staticmethod
+    def trace_line(raw: bytes, request: int, origin: int, *, rx: int = 0,
+                   tx: int = 0, done: int = 0) -> str:
+        return (
+            f"RESPONSE {raw.hex()}\n"
+            f"RTL_TRANSACTION request_opcode={request:02x} "
+            f"origin_opcode={origin:02x} status={raw[2]:02x} "
+            f"rx_blocked={rx} tx_blocked={tx} done={done}\n"
+        )
+
+    def test_trace_relabeling_is_rejected(self) -> None:
+        result = protocol.ResponseFrame(protocol.Status.OK, b"").encode()
+        forged = self.trace_line(result, 0x03, 0x08)
+        with self.assertRaisesRegex(SystemExit, "provenance changed"):
+            parse_trace("relabel", forged, [result])
+
+    def test_done_cannot_be_borrowed_across_transactions(self) -> None:
+        result = protocol.ResponseFrame(protocol.Status.OK, b"").encode()
+        retired = protocol.ResponseFrame(protocol.Status.RETIRED, b"").encode()
+        forged = (self.trace_line(result, 0x03, 0x03, done=1) +
+                  self.trace_line(retired, 0x12, 0x03, done=0))
+        with self.assertRaisesRegex(SystemExit, "non-RETIRE response"):
+            parse_trace("borrowed-done", forged, [result, retired])
+
+    def test_stalls_remain_transaction_local(self) -> None:
+        first = protocol.ResponseFrame(protocol.Status.OK, b"a").encode()
+        second = protocol.ResponseFrame(protocol.Status.OK, b"b").encode()
+        trace = (self.trace_line(first, 0x03, 0x03, rx=1, tx=1) +
+                 self.trace_line(second, 0x01, 0x01))
+        facts = parse_trace("local-stalls", trace, [first, second])
+        self.assertIn(("SET", "RX_STALL"), facts)
+        self.assertIn(("SET", "TX_STALL"), facts)
+        self.assertNotIn(("XOR", "RX_STALL"), facts)
+        self.assertNotIn(("XOR", "TX_STALL"), facts)
+
+    def test_retire_requires_exactly_one_cooccurring_done(self) -> None:
+        retired = protocol.ResponseFrame(protocol.Status.RETIRED, b"").encode()
+        forged = self.trace_line(retired, 0x12, 0x03, done=2)
+        with self.assertRaisesRegex(SystemExit, "acceptance-edge done pulse"):
+            parse_trace("duplicate-done", forged, [retired])
+
     def test_rx_stall_requires_blocked_valid_transfer(self) -> None:
         rtl = [ROOT / path for path in (
             "asic_core/rtl/lsc1_packet_rx.sv",

@@ -47,40 +47,75 @@ def retire_for(result: bytes, txn_id: int) -> protocol.RequestFrame:
     return protocol.build_retire(txn_id=txn_id, result_crc=protocol.crc32(payload))
 
 
-def parse_trace(operation: str, output: str,
+OPERATION_BY_OPCODE = {
+    0x01: "XOR", 0x02: "MUL", 0x03: "SET",
+    0x04: "DEREF", 0x05: "DEREF", 0x06: "DEREF",
+    0x07: "JUMP", 0x08: "BLAKE3",
+}
+
+
+def parse_trace(case_name: str, output: str,
                 expected: list[bytes]) -> set[tuple[str, str]]:
     responses = [bytes.fromhex(line.removeprefix("RESPONSE "))
                  for line in output.splitlines() if line.startswith("RESPONSE ")]
     if responses != expected:
-        raise SystemExit(f"{operation}: authored RTL bytes differ from executable model")
-    statuses = [int(protocol.decode_response(raw).status) for raw in responses]
-    counts_match = re.search(r"RTL_COUNTS rx_blocked=(\d+) tx_blocked=(\d+) done=(\d+)", output)
-    if counts_match is None:
-        raise SystemExit(f"{operation}: authored RTL emitted no trace counters")
-    rx_blocked, tx_blocked, done = map(int, counts_match.groups())
+        raise SystemExit(f"{case_name}: authored RTL bytes differ from executable model")
+    records = re.findall(
+        r"RTL_TRANSACTION request_opcode=([0-9a-fA-F]{2}) "
+        r"origin_opcode=([0-9a-fA-F]{2}) status=([0-9a-fA-F]{2}) "
+        r"rx_blocked=(\d+) tx_blocked=(\d+) done=(\d+)", output)
+    if len(records) != len(responses):
+        raise SystemExit(f"{case_name}: each response needs one temporal RTL record")
     facts: set[tuple[str, str]] = set()
-    if rx_blocked:
-        facts.add((operation, "RX_STALL"))
-    if tx_blocked:
-        facts.add((operation, "TX_STALL"))
-    if 0x00 in statuses:
-        facts.add((operation, "RESULT"))
-    if 0x01 in statuses:
-        facts.add((operation, "SERVICE_REQUIRED"))
-    if any(status >= 0x80 for status in statuses):
-        facts.add((operation, "FAULT"))
-    if 0x02 in statuses and done:
-        facts.add((operation, "RETIRE"))
+    for raw, record in zip(responses, records, strict=True):
+        request_opcode, origin_opcode, traced_status = (
+            int(value, 16) for value in record[:3])
+        rx_blocked, tx_blocked, done = (int(value) for value in record[3:])
+        status = int(protocol.decode_response(raw).status)
+        if traced_status != status:
+            raise SystemExit(f"{case_name}: RTL status record differs from response")
+        if request_opcode not in (*OPERATION_BY_OPCODE, 0x11, 0x12):
+            if done != 0:
+                raise SystemExit(f"{case_name}: done pulse co-occurred with control response")
+            continue
+        operation = OPERATION_BY_OPCODE.get(origin_opcode)
+        if operation is None:
+            raise SystemExit(
+                f"{case_name}: RTL emitted unknown origin opcode {origin_opcode:02x} "
+                f"for request {request_opcode:02x} status {status:02x}")
+        if request_opcode in OPERATION_BY_OPCODE and request_opcode != origin_opcode:
+            raise SystemExit(f"{case_name}: RTL instruction provenance changed")
+        if status == 0x02:
+            if request_opcode != 0x12 or done != 1:
+                raise SystemExit(f"{case_name}: RETIRE lacks its acceptance-edge done pulse")
+            facts.add((operation, "RETIRE"))
+        elif done != 0:
+            raise SystemExit(f"{case_name}: done pulse co-occurred with non-RETIRE response")
+        if rx_blocked:
+            facts.add((operation, "RX_STALL"))
+        if tx_blocked:
+            facts.add((operation, "TX_STALL"))
+        if status == 0x00:
+            facts.add((operation, "RESULT"))
+        if status == 0x01:
+            facts.add((operation, "SERVICE_REQUIRED"))
+        if status >= 0x80:
+            facts.add((operation, "FAULT"))
     for control in ("RESET", "ABORT"):
         before = re.search(
-            rf"RTL_CONTROL {control} BEFORE result=(\d+) service=(\d+) tx=(\d+)", output)
+            rf"RTL_CONTROL {control} BEFORE origin_opcode=([0-9a-fA-F]{{2}}) "
+            rf"result=(\d+) service=(\d+) tx=(\d+)", output)
         after = re.search(
-            rf"RTL_CONTROL {control} AFTER result=(\d+) service=(\d+) tx=(\d+)", output)
+            rf"RTL_CONTROL {control} AFTER origin_opcode=[0-9a-fA-F]{{2}} "
+            rf"result=(\d+) service=(\d+) tx=(\d+)", output)
         if before and after:
-            if not (int(before.group(1)) or int(before.group(2))):
-                raise SystemExit(f"{operation}: {control} did not target pending RTL work")
+            operation = OPERATION_BY_OPCODE.get(int(before.group(1), 16))
+            if operation is None:
+                raise SystemExit(f"{case_name}: {control} has no RTL operation provenance")
+            if not (int(before.group(2)) or int(before.group(3))):
+                raise SystemExit(f"{case_name}: {control} did not target pending RTL work")
             if any(map(int, after.groups())):
-                raise SystemExit(f"{operation}: {control} did not discard pending RTL work")
+                raise SystemExit(f"{case_name}: {control} did not discard pending RTL work")
             facts.add((operation, f"{control}_DISCARD"))
     return facts
 
@@ -210,8 +245,12 @@ open LeanVMBMinCore.AuthoredRTLContract
 def rtlFacts : List Fact := [
   {entries}
 ]
-example : contractHolds rtlFacts := by decide
-#eval if contractHolds rtlFacts then IO.println "LEAN_RTL_TRACE_RELATION_PASS"
+example : ContractEvidence rtlFacts :=
+  contractHolds rtlFacts (by decide)
+    set_semantics_reachable xor_semantics_reachable mul_semantics_reachable
+    deref_semantics_reachable jump_semantics_reachable blake3_semantics_reachable
+    abort_semantics reset_semantics result_retire_semantics blake3_retire_semantics
+#eval if factsMatch rtlFacts then IO.println "LEAN_RTL_TRACE_RELATION_PASS"
   else throw (IO.userError "Lean/authored-RTL trace relation failed")
 """
     run(["lake", "build", "LeanVMBMinCore.AuthoredRTLContract"], ROOT / "lean")

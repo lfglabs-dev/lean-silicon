@@ -22,6 +22,9 @@ module tb_lsc1_packet_vector;
     integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
+    integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
+    integer transaction_done = 0;
+    reg [7:0] transaction_opcode = 0;
     reg [31:0] initial_service_seq;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
@@ -42,6 +45,11 @@ module tb_lsc1_packet_vector;
         if (rst_n && rx_valid && !rx_ready) trace_rx_blocked = trace_rx_blocked + 1;
         if (rst_n && tx_valid && !tx_ready) trace_tx_blocked = trace_tx_blocked + 1;
         if (rst_n && done_pulse) trace_done = trace_done + 1;
+        if (rst_n && rx_valid && !rx_ready) transaction_rx_blocked = transaction_rx_blocked + 1;
+        if (rst_n && tx_valid && !tx_ready) transaction_tx_blocked = transaction_tx_blocked + 1;
+        if (rst_n && done_pulse) transaction_done = transaction_done + 1;
+        if (rst_n && dut.frame_valid && dut.event_ready)
+            transaction_opcode = dut.frame_opcode;
         if (tx_valid && tx_ready) begin
             response[response_count] <= tx_data;
             response_count <= response_count + 1;
@@ -60,9 +68,14 @@ module tb_lsc1_packet_vector;
     endtask
 
     task automatic run_request(input [1023:0] path, input integer length);
+        reg [7:0] origin_opcode;
         begin
             $readmemh(path, request);
             response_count = 0; total = 0;
+            transaction_rx_blocked = 0;
+            transaction_tx_blocked = 0;
+            transaction_done = 0;
+            transaction_opcode = 0;
             for (i = 0; i < length; i = i + 1)
                 send_byte(request[i], i % 3);
             if ($test$plusargs("INJECT_RX_STALL")) begin
@@ -76,6 +89,13 @@ module tb_lsc1_packet_vector;
             for (i = 0; i < total; i = i + 1)
                 $write("%02x", response[i]);
             $write("\n");
+            origin_opcode = (transaction_opcode == 8'h11 ||
+                             transaction_opcode == 8'h12)
+                ? dut.staged_operation : transaction_opcode;
+            $display("RTL_TRANSACTION request_opcode=%02x origin_opcode=%02x status=%02x rx_blocked=%0d tx_blocked=%0d done=%0d",
+                     transaction_opcode, origin_opcode, response[2],
+                     transaction_rx_blocked, transaction_tx_blocked,
+                     transaction_done);
         end
     endtask
 
@@ -103,22 +123,22 @@ module tb_lsc1_packet_vector;
             dut.service_seq = initial_service_seq;
         run_request(request_path, request_length);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
-            $display("RTL_CONTROL ABORT BEFORE result=%0d service=%0d tx=%0d",
-                     dut.result_pending, dut.service_pending, tx_valid);
+            $display("RTL_CONTROL ABORT BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
+                     dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
             @(negedge clk); abort = 1;
             @(posedge clk);
             @(negedge clk); abort = 0;
-            #1 $display("RTL_CONTROL ABORT AFTER result=%0d service=%0d tx=%0d",
-                        dut.result_pending, dut.service_pending, tx_valid);
+            #1 $display("RTL_CONTROL ABORT AFTER origin_opcode=%02x result=%0d service=%0d tx=%0d",
+                        dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
         end
         if ($test$plusargs("RESET_AFTER_FIRST")) begin
-            $display("RTL_CONTROL RESET BEFORE result=%0d service=%0d tx=%0d",
-                     dut.result_pending, dut.service_pending, tx_valid);
+            $display("RTL_CONTROL RESET BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
+                     dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
             @(negedge clk); rst_n = 0;
             repeat (2) @(posedge clk);
             @(negedge clk); rst_n = 1;
-            #1 $display("RTL_CONTROL RESET AFTER result=%0d service=%0d tx=%0d",
-                        dut.result_pending, dut.service_pending, tx_valid);
+            #1 $display("RTL_CONTROL RESET AFTER origin_opcode=%02x result=%0d service=%0d tx=%0d",
+                        dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
         end
         if ($value$plusargs("REQUEST2=%s", request2_path) &&
             $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length);
