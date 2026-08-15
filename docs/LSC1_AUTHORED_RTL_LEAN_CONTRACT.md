@@ -11,31 +11,44 @@
 | ready/valid | Lean service stall theorems and retained scalar trace model | integrated bench asserts stable `tx_valid/tx_data` and receive exclusion under backpressure | both sides must expose the stall observations in the executable contract |
 | fault/lifecycle | canonical fault decisions and atomic transaction/service state | status responses, sticky fault, `result_pending`, `service_pending`, `done_pulse` | faults, discard controls and retirement cannot disappear from either checked scope |
 
-`LeanVMBMinCore.AuthoredRTLContract` is the common machine-checked vocabulary.
-Its scope-completeness theorems prevent silently omitting an implemented opcode
-or lifecycle observation. Its semantic bindings refer directly to the existing
+`LeanVMBMinCore.AuthoredRTLContract.contractHolds` is the single normative
+finite relation.  Its semantic bindings refer directly to the existing
 accepted-frame decisions, `Transaction` theorems and BLAKE3 lifecycle, rather
-than restating instruction results in a new model.
+than restating instruction results in a new executable model.
 
-`python3 tools/lsc1_authored_rtl_contract.py --verify` builds that Lean module,
-extracts its executable contract lines, compiles and runs the authored
-`asic_core/rtl/lsc1_packet_frontend.sv` with deterministic ready/valid stalls,
-executes byte-exact result/service/fault/RETIRE scenarios, and requires exact
-set equality with the Lean vocabulary. The top-level unittest makes this a
-repeatable repository gate.
+`python3 tools/lsc1_authored_rtl_contract.py --verify` compiles and runs the
+authored `asic_core/rtl/lsc1_packet_frontend.sv` with deterministic ready/valid
+stalls.  The SystemVerilog harness emits raw `RESPONSE`, `RTL_COUNTS`, and
+`RTL_CONTROL ... BEFORE/AFTER` records.  Python derives facts from those
+records: response status bytes name RESULT/SERVICE_REQUIRED/FAULT/RETIRE,
+handshake counters name stalls, `done_pulse` corroborates RETIRE, and actual
+pending-state transitions establish reset/abort discard.  It also requires
+every response byte to equal the independent executable protocol model.
+
+The runner then writes a temporary Lean module containing only those derived
+facts and asks the Lean kernel to decide `contractHolds rtlFacts`.  There is no
+Python copy of the required label table and no predeclared RTL observation set.
+The top-level unittest exercises this complete path as a repository gate.
 
 ## Deliberate boundaries
 
 This is a finite witness-suite relation over the currently authored full LSC-1
 packet endpoint. It is substantive and executable, but it is **not** an
 unbounded cycle-by-cycle proof that arbitrary SystemVerilog traces refine Lean.
-The byte-exact RTL checks still use the independent Python protocol companion
-as the concrete vector driver; Lean supplies and proves the shared semantic
-scope and its bindings, not every response byte in those RTL vectors. Input
+The byte-exact authored-RTL checks use the independent Python protocol companion
+as the concrete finite vector driver and byte oracle; that executable-model
+evidence is separate from the Lean theorem and authored-RTL simulation
+evidence. Lean checks the shared finite relation and its semantic bindings; it
+does not prove every response byte or import the SystemVerilog transition
+system. Input
 "stall" includes receive gaps and receive exclusion while a response is held;
 it does not prove arbitrary hostile `rx_valid` waveforms. No claim is made for
-LSC-1µ, host fetch/memory, netlist, P&R, FPGA, or any instruction beyond the
+LSC-1µ, LSC1-06+, host fetch/memory, netlist, P&R, FPGA, or any instruction beyond the
 implemented SET/XOR/MUL/DEREF/JUMP/BLAKE3 packet paths.
+
+No netlist, P&R report, FPGA run, or hardware observation is consumed by this
+gate.  Consequently none of those evidence classes is upgraded by this result,
+and this document makes no end-to-end hardware claim.
 
 The remaining theorem edge is an independent full-profile cycle transition
 system plus an inductive correspondence proof to the authored SV, including

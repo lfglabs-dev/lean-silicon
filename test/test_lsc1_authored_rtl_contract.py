@@ -21,6 +21,8 @@ class AuthoredRtlContractTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         self.assertIn("LSC1_AUTHORED_RTL_CONTRACT_PASS", completed.stdout)
+        self.assertIn("source=rtl-traces", completed.stdout)
+        self.assertIn("observations=30", completed.stdout)
 
 
 if __name__ == "__main__":

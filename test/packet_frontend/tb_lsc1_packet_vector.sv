@@ -21,6 +21,7 @@ module tb_lsc1_packet_vector;
     integer request2_length = 0, request3_length = 0, request4_length = 0;
     integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
+    integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
     reg [31:0] initial_service_seq;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
@@ -38,6 +39,9 @@ module tb_lsc1_packet_vector;
     end
 
     always @(posedge clk) begin
+        if (rst_n && !rx_ready) trace_rx_blocked = trace_rx_blocked + 1;
+        if (rst_n && tx_valid && !tx_ready) trace_tx_blocked = trace_tx_blocked + 1;
+        if (rst_n && done_pulse) trace_done = trace_done + 1;
         if (tx_valid && tx_ready) begin
             response[response_count] <= tx_data;
             response_count <= response_count + 1;
@@ -80,14 +84,22 @@ module tb_lsc1_packet_vector;
             dut.service_seq = initial_service_seq;
         run_request(request_path, request_length);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
+            $display("RTL_CONTROL ABORT BEFORE result=%0d service=%0d tx=%0d",
+                     dut.result_pending, dut.service_pending, tx_valid);
             @(negedge clk); abort = 1;
             @(posedge clk);
             @(negedge clk); abort = 0;
+            #1 $display("RTL_CONTROL ABORT AFTER result=%0d service=%0d tx=%0d",
+                        dut.result_pending, dut.service_pending, tx_valid);
         end
         if ($test$plusargs("RESET_AFTER_FIRST")) begin
+            $display("RTL_CONTROL RESET BEFORE result=%0d service=%0d tx=%0d",
+                     dut.result_pending, dut.service_pending, tx_valid);
             @(negedge clk); rst_n = 0;
             repeat (2) @(posedge clk);
             @(negedge clk); rst_n = 1;
+            #1 $display("RTL_CONTROL RESET AFTER result=%0d service=%0d tx=%0d",
+                        dut.result_pending, dut.service_pending, tx_valid);
         end
         if ($value$plusargs("REQUEST2=%s", request2_path) &&
             $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length);
@@ -101,6 +113,8 @@ module tb_lsc1_packet_vector;
             $value$plusargs("LENGTH6=%d", request6_length)) run_request(request6_path, request6_length);
         if ($value$plusargs("REQUEST7=%s", request7_path) &&
             $value$plusargs("LENGTH7=%d", request7_length)) run_request(request7_path, request7_length);
+        $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
+                 trace_rx_blocked, trace_tx_blocked, trace_done);
         $finish;
     end
 

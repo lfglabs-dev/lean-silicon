@@ -2,12 +2,13 @@ import LeanVMBMinCore.AcceptedSequence
 import LeanVMBMinCore.Blake3ServiceLifecycle
 
 /-!
-# Observable contract exercised against the authored full LSC-1 RTL
+# Finite authored-RTL trace relation
 
-This module names the finite, executable observation alphabet used by
-`tools/lsc1_authored_rtl_contract.py`.  The witnesses are deliberately built
-from the existing accepted-frame and service-lifecycle models; this is not a
-second instruction semantics and it is not an unbounded SV equivalence proof.
+This module defines the Lean side of the finite observation relation.  It does
+not contain an executable list of alleged RTL observations.  The gate generates
+a separate Lean module whose `rtlFacts` value was decoded from bytes and signal
+events emitted by an Icarus run of the authored packet RTL, then asks Lean to
+decide `contractHolds rtlFacts`.
 -/
 
 namespace LeanVMBMinCore.AuthoredRTLContract
@@ -23,48 +24,30 @@ inductive Observation where
   | resetDiscard | abortDiscard | retire
   deriving DecidableEq, Repr
 
-structure Scenario where
-  name : String
-  operation : Operation
-  observations : List Observation
-  deriving Repr
+abbrev Fact := Operation × Observation
 
-def scenarios : List Scenario := [
-  { name := "set", operation := .set,
-    observations := [.result, .rxStall, .txStall, .retire] },
-  { name := "xor", operation := .xor,
-    observations := [.result, .rxStall, .txStall, .retire] },
-  { name := "mul", operation := .mul,
-    observations := [.result, .rxStall, .txStall, .retire] },
-  { name := "deref", operation := .deref,
-    observations := [.result, .fault, .rxStall, .txStall, .retire] },
-  { name := "jump", operation := .jump,
-    observations := [.result, .fault, .rxStall, .txStall, .retire] },
-  { name := "blake3", operation := .blake3,
-    observations := [.serviceRequired, .result, .fault, .rxStall, .txStall,
-      .resetDiscard, .abortDiscard, .retire] }
-]
+private def scalarRequired (op : Operation) : List Fact :=
+  [.result, .rxStall, .txStall, .retire].map (op, ·)
 
-def hasOperation (operation : Operation) : Bool :=
-  scenarios.any (fun scenario => scenario.operation == operation)
+private def controlRequired (op : Operation) : List Fact :=
+  [.result, .fault, .rxStall, .txStall, .retire].map (op, ·)
 
-def hasObservation (observation : Observation) : Bool :=
-  scenarios.any (fun scenario => scenario.observations.contains observation)
+/-- The sole normative finite relation.  The left argument supplied by the
+generated checker is derived from authored-RTL trace records, never populated
+from this value by the Python runner. -/
+def requiredFacts : List Fact :=
+  scalarRequired .set ++ scalarRequired .xor ++ scalarRequired .mul ++
+  controlRequired .deref ++ controlRequired .jump ++
+  [.serviceRequired, .result, .fault, .rxStall, .txStall,
+   .resetDiscard, .abortDiscard, .retire].map (.blake3, ·)
 
-/-- The executable suite cannot silently narrow any implemented opcode class. -/
-theorem operation_scope_complete :
-    hasOperation .set && hasOperation .xor && hasOperation .mul &&
-    hasOperation .deref && hasOperation .jump && hasOperation .blake3 := by decide
+def contractHolds (rtlFacts : List Fact) : Bool :=
+  requiredFacts.all rtlFacts.contains && rtlFacts.all requiredFacts.contains
 
-/-- The suite cannot silently drop any observable lifecycle class. -/
-theorem observation_scope_complete :
-    hasObservation .result && hasObservation .serviceRequired &&
-    hasObservation .fault && hasObservation .rxStall &&
-    hasObservation .txStall && hasObservation .resetDiscard &&
-    hasObservation .abortDiscard && hasObservation .retire := by decide
+theorem required_scope_is_exact : contractHolds requiredFacts := by decide
 
-/- These aliases keep the suite attached to the canonical executable witnesses,
-instead of merely asserting membership in the table above. -/
+/- These names attach the relation's semantic classes to canonical executable
+Lean witnesses; they are not an alternate instruction semantics. -/
 def set_semantics_reachable := AcceptedScalar.set_decision_reachable
 def xor_semantics_reachable := AcceptedScalar.xor_decision_reachable
 def mul_semantics_reachable := AcceptedScalar.mul_decision_reachable
@@ -72,8 +55,7 @@ def deref_semantics_reachable := AcceptedDeref.accepted_effect_binding_reachable
 def jump_semantics_reachable := AcceptedJump.accepted_effect_binding_reachable
 theorem blake3_semantics_reachable :
     (FullProfile.prepareBlake3 FullProfile.witnessRawBlake3).isOk := by
-  set_option maxRecDepth 10000 in
-  decide
+  set_option maxRecDepth 10000 in decide
 
 def result_retire_semantics := AcceptedSequence.complete_retires_once
 def result_replay_semantics := AcceptedSequence.duplicate_retire_rejected
@@ -81,26 +63,7 @@ def abort_semantics := Transaction.abort_clears_pending
 def reset_semantics := Transaction.reset_restores_initial
 def blake3_retire_semantics := Blake3ServiceLifecycle.retirement_exactly_once
 
-def operationName : Operation -> String
-  | .set => "SET" | .xor => "XOR" | .mul => "MUL"
-  | .deref => "DEREF" | .jump => "JUMP" | .blake3 => "BLAKE3"
-
-def observationName : Observation -> String
-  | .result => "RESULT" | .serviceRequired => "SERVICE_REQUIRED"
-  | .fault => "FAULT" | .rxStall => "RX_STALL" | .txStall => "TX_STALL"
-  | .resetDiscard => "RESET_DISCARD" | .abortDiscard => "ABORT_DISCARD"
-  | .retire => "RETIRE"
-
-def contractLines : List String := scenarios.flatMap fun scenario =>
-  scenario.observations.map fun observation =>
-    s!"CONTRACT {operationName scenario.operation} {observationName observation}"
-
-def main : IO Unit := contractLines.forM IO.println
-
-#eval contractLines.forM IO.println
-
-#print axioms operation_scope_complete
-#print axioms observation_scope_complete
+#print axioms required_scope_is_exact
 #print axioms set_semantics_reachable
 #print axioms blake3_semantics_reachable
 
