@@ -31,7 +31,7 @@ depth 2
 smtbmc boolector
 
 [script]
-read -formal -D FORMAL_FULL_LSC1 -sv {' '.join(SOURCES)} full_lsc1_controller_invariants.sv
+read -formal -D FORMAL_FULL_LSC1 -D FORMAL_BLAKE_PENDING_BINDING -sv {' '.join(SOURCES)} full_lsc1_controller_invariants.sv
 prep -top lsc1_packet_frontend
 
 [files]
