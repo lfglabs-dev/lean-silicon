@@ -23,6 +23,7 @@ module tb_lsc1_packet_vector;
     integer cycle = 0, i;
     integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
+    integer v3_finite_stalls = 0, rx_stable_checks = 0, tx_stable_checks = 0;
     integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
     integer transaction_done = 0;
     reg [7:0] transaction_opcode = 0;
@@ -30,6 +31,8 @@ module tb_lsc1_packet_vector;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
     reg [1023:0] manifest_path, manifest_request_path;
+    reg rx_was_blocked = 0, tx_was_blocked = 0;
+    reg [7:0] blocked_rx_data = 0, blocked_tx_data = 0;
 
     lsc1_packet_frontend dut (
         .clk(clk), .rst_n(rst_n), .abort(abort),
@@ -40,7 +43,13 @@ module tb_lsc1_packet_vector;
 
     always @(negedge clk) begin
         cycle = cycle + 1;
-        tx_ready = (cycle % 5) != 0;
+        if (v3_finite_stalls)
+            // Fixed backpressure ends after cycle 4000; it is not an
+            // arbitrary-ready proof or an unbounded fairness assumption.
+            tx_ready = cycle >= 4000 || !((cycle % 11) == 4 ||
+                                          (cycle % 11) == 5);
+        else
+            tx_ready = (cycle % 5) != 0;
     end
 
     always @(posedge clk) begin
@@ -50,6 +59,24 @@ module tb_lsc1_packet_vector;
         if (rst_n && rx_valid && !rx_ready) transaction_rx_blocked = transaction_rx_blocked + 1;
         if (rst_n && tx_valid && !tx_ready) transaction_tx_blocked = transaction_tx_blocked + 1;
         if (rst_n && done_pulse) transaction_done = transaction_done + 1;
+        if (rst_n && rx_valid && !rx_ready) begin
+            if (rx_was_blocked && rx_data !== blocked_rx_data)
+                $fatal(1, "RX valid data changed while stalled");
+            if (rx_was_blocked) rx_stable_checks = rx_stable_checks + 1;
+            blocked_rx_data <= rx_data;
+            rx_was_blocked <= 1;
+        end else begin
+            rx_was_blocked <= 0;
+        end
+        if (rst_n && tx_valid && !tx_ready) begin
+            if (tx_was_blocked && tx_data !== blocked_tx_data)
+                $fatal(1, "TX valid data changed while stalled");
+            if (tx_was_blocked) tx_stable_checks = tx_stable_checks + 1;
+            blocked_tx_data <= tx_data;
+            tx_was_blocked <= 1;
+        end else begin
+            tx_was_blocked <= 0;
+        end
         if (rst_n && dut.frame_valid && dut.event_ready)
             transaction_opcode = dut.frame_opcode;
         if (tx_valid && tx_ready) begin
@@ -79,7 +106,7 @@ module tb_lsc1_packet_vector;
             transaction_done = 0;
             transaction_opcode = 0;
             for (i = 0; i < length; i = i + 1)
-                send_byte(request[i], i % 3);
+                send_byte(request[i], v3_finite_stalls ? ((i * 7 + 3) % 4) : (i % 3));
             if ($test$plusargs("INJECT_RX_STALL")) begin
                 wait (!rx_ready);
                 @(negedge clk); rx_valid = 1;
@@ -102,6 +129,7 @@ module tb_lsc1_packet_vector;
     endtask
 
     initial begin
+        v3_finite_stalls = $test$plusargs("V3_FINITE_STALLS");
         if (!$value$plusargs("MANIFEST=%s", manifest_path) &&
             (!$value$plusargs("REQUEST=%s", request_path) ||
              !$value$plusargs("LENGTH=%d", request_length)))
@@ -136,6 +164,9 @@ module tb_lsc1_packet_vector;
             $fclose(manifest_fd);
             $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                      trace_rx_blocked, trace_tx_blocked, trace_done);
+            if (v3_finite_stalls)
+                $display("RTL_V3_STABILITY rx_checks=%0d tx_checks=%0d",
+                         rx_stable_checks, tx_stable_checks);
             $finish;
         end
         run_request(request_path, request_length);
@@ -171,6 +202,9 @@ module tb_lsc1_packet_vector;
             $value$plusargs("LENGTH7=%d", request7_length)) run_request(request7_path, request7_length);
         $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                  trace_rx_blocked, trace_tx_blocked, trace_done);
+        if (v3_finite_stalls)
+            $display("RTL_V3_STABILITY rx_checks=%0d tx_checks=%0d",
+                     rx_stable_checks, tx_stable_checks);
         $finish;
     end
 
