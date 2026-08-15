@@ -29,6 +29,7 @@ module blake3_pending_invariant_formal(input clk, output wire cover_condition);
     if (past_valid && rst_n) begin
       assert(aggregate_result_pending ==
              (scalar_result_pending || blake_result_pending));
+      cover(cover_condition);
     end
   end
 endmodule
@@ -36,17 +37,24 @@ endmodule
 
 
 def run(source: Path, mode: str) -> subprocess.CompletedProcess[str]:
-    sat = (
-        "sat -verify -prove-asserts -seq 3 -set-def-inputs"
-        if mode == "prove" else
-        "sat -seq 3 -set-def-inputs -set-at 3 cover_condition 1 -show cover_condition"
-    )
-    command = (
-        f"read_verilog -formal -sv {source}; prep -top blake3_pending_invariant_formal; "
-        f"{sat}"
-    )
+    sby_mode = "bmc" if mode == "prove" else "cover"
+    config = source.with_suffix(".sby")
+    config.write_text(f"""[options]
+mode {sby_mode}
+depth 3
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal -sv {source.name}
+prep -top blake3_pending_invariant_formal
+
+[files]
+{source.name}
+""")
     return subprocess.run(
-        ["yosys", "-Q", "-p", command], cwd=ROOT, text=True,
+        ["sby", "-f", config.name], cwd=source.parent, text=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
 
@@ -69,12 +77,7 @@ def main() -> int:
         mutation = run(source, "prove")
 
     baseline_pass = baseline.returncode == 0
-    coverage_output = coverage.stdout.lower()
-    cover_reached = (
-        coverage.returncode == 0 and
-        "no model found" not in coverage_output and
-        "unsat" not in coverage_output
-    )
+    cover_reached = coverage.returncode == 0
     mutation_killed = mutation.returncode != 0
     print(f"production_union_binding=true")
     print(f"baseline_proof={str(baseline_pass).lower()}")
