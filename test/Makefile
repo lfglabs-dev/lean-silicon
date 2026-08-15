@@ -47,6 +47,7 @@ packet-frontend-mutation:
 
 packet-rtl-differential:
 	cd .. && $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential -v
+	cd .. && PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest -v sim.test_conformance_v3_rtl_differential
 
 clean:
 	$(MAKE) -f Makefile.tt clean
