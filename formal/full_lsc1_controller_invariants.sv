@@ -11,6 +11,13 @@ module full_lsc1_controller_invariants (
     input wire service_pending
 );
     reg past_valid = 1'b0;
+    // This combinational obligation is intentionally sensitive to the production
+    // instance connection, including arbitrary initial lifecycle state.
+    always @(*) begin
+        if (blake_result_pending) assert(result_pending);
+        cover(blake_result_pending);
+    end
+
     always @(posedge clk) begin
         past_valid <= 1'b1;
         if (!past_valid) assume(!rst_n);
@@ -20,8 +27,6 @@ module full_lsc1_controller_invariants (
             assert(!(frame_valid && rx_fault_valid));
             // Every staged transaction is observable as BUSY until completion or abort.
             if (result_pending || service_pending) assert(busy);
-            // The aggregate result-pending input must include the extracted BLAKE3 shell.
-            if (blake_result_pending) assert(result_pending);
             // A queued response is included in BUSY and cannot accept another byte.
             if (tx_start) begin assert(busy); assert(!rx_ready); end
             // Controller starts a response only at its idle arbitration boundary.
