@@ -81,6 +81,8 @@ jobs:
         run: cd lean && python3 check_accepted_sequence_mutations.py
       - name: Lean/authored RTL observable contract
         run: make lsc1-authored-rtl-contract
+      - name: Host-prepared memory/fetch boundary
+        run: make lsc1-host-authored-rtl-boundary
 
   formal-toolchain:
     runs-on: ubuntu-latest

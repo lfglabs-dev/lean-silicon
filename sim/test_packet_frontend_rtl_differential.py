@@ -375,7 +375,7 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
     def test_valid_negotiate_and_staged_retire_match_model(self) -> None:
         negotiate = protocol.build_negotiate(
             profile=protocol.Profile.INTERPRETER_COMPAT, host_features=0x13579BDF)
-        # The integrated RTL implements interpreter-compatible semantics and
+        # The authored RTL implements interpreter-compatible semantics and
         # BLAKE3 service offload, but not the forward-only profile.
         expected_negotiate = protocol.ResponseFrame(
             protocol.Status.OK,

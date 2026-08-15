@@ -21,6 +21,7 @@ module tb_lsc1_packet_vector;
     integer request2_length = 0, request3_length = 0, request4_length = 0;
     integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
+    integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
     integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
     integer transaction_done = 0;
@@ -28,6 +29,7 @@ module tb_lsc1_packet_vector;
     reg [31:0] initial_service_seq;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
+    reg [1023:0] manifest_path, manifest_request_path;
 
     lsc1_packet_frontend dut (
         .clk(clk), .rst_n(rst_n), .abort(abort),
@@ -100,9 +102,10 @@ module tb_lsc1_packet_vector;
     endtask
 
     initial begin
-        if (!$value$plusargs("REQUEST=%s", request_path) ||
-            !$value$plusargs("LENGTH=%d", request_length))
-            $fatal(1, "REQUEST and LENGTH plusargs are required");
+        if (!$value$plusargs("MANIFEST=%s", manifest_path) &&
+            (!$value$plusargs("REQUEST=%s", request_path) ||
+             !$value$plusargs("LENGTH=%d", request_length)))
+            $fatal(1, "MANIFEST or REQUEST and LENGTH plusargs are required");
         repeat (4) @(posedge clk);
         rst_n = 1;
         repeat (2) @(posedge clk);
@@ -121,6 +124,20 @@ module tb_lsc1_packet_vector;
         end
         if ($value$plusargs("SERVICE_SEQ=%h", initial_service_seq))
             dut.service_seq = initial_service_seq;
+        if (manifest_path != 0) begin
+            manifest_fd = $fopen(manifest_path, "r");
+            if (!manifest_fd) $fatal(1, "cannot open request manifest");
+            while (!$feof(manifest_fd)) begin
+                manifest_scan = $fscanf(manifest_fd, "%s %d\n",
+                                         manifest_request_path, manifest_length);
+                if (manifest_scan == 2)
+                    run_request(manifest_request_path, manifest_length);
+            end
+            $fclose(manifest_fd);
+            $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
+                     trace_rx_blocked, trace_tx_blocked, trace_done);
+            $finish;
+        end
         run_request(request_path, request_length);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
             $display("RTL_CONTROL ABORT BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
