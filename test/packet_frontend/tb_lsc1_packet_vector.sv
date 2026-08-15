@@ -22,6 +22,7 @@ module tb_lsc1_packet_vector;
     integer request5_length = 0, request6_length = 0, request7_length = 0;
     integer cycle = 0, i;
     integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
+    integer manifest_current_length = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
     integer v3_finite_stalls = 0, rx_stable_checks = 0, tx_stable_checks = 0;
     integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
@@ -30,7 +31,7 @@ module tb_lsc1_packet_vector;
     reg [31:0] initial_service_seq;
     reg [1023:0] request_path, request2_path, request3_path, request4_path;
     reg [1023:0] request5_path, request6_path, request7_path;
-    reg [1023:0] manifest_path, manifest_request_path;
+    reg [1023:0] manifest_path, manifest_request_path, manifest_current_path;
     reg tx_was_blocked = 0;
     reg [7:0] blocked_tx_data = 0;
     reg rx_was_blocked = 0;
@@ -109,7 +110,8 @@ module tb_lsc1_packet_vector;
         end
     endtask
 
-    task automatic run_request(input [1023:0] path, input integer length);
+    task automatic run_request(input [1023:0] path, input integer length,
+                               input integer prefetch_next);
         reg [7:0] origin_opcode;
         begin
             $readmemh(path, request);
@@ -127,7 +129,7 @@ module tb_lsc1_packet_vector;
                 @(posedge clk);
                 @(negedge clk); rx_valid = 0;
             end
-            if (v3_finite_stalls) begin
+            if (v3_finite_stalls && prefetch_next) begin
                 // Present the next frame's common SOF while this response owns
                 // the frontend.  send_byte holds that genuine input beat until
                 // the authored RTL accepts it after the finite TX stall/drain.
@@ -184,13 +186,19 @@ module tb_lsc1_packet_vector;
         if (manifest_path != 0) begin
             manifest_fd = $fopen(manifest_path, "r");
             if (!manifest_fd) $fatal(1, "cannot open request manifest");
-            while (!$feof(manifest_fd)) begin
+            manifest_scan = $fscanf(manifest_fd, "%s %d\n",
+                                     manifest_request_path, manifest_length);
+            while (manifest_scan == 2) begin
+                manifest_current_path = manifest_request_path;
+                manifest_current_length = manifest_length;
                 manifest_scan = $fscanf(manifest_fd, "%s %d\n",
                                          manifest_request_path, manifest_length);
-                if (manifest_scan == 2)
-                    run_request(manifest_request_path, manifest_length);
+                run_request(manifest_current_path, manifest_current_length,
+                            manifest_scan == 2);
             end
             $fclose(manifest_fd);
+            if (v3_finite_stalls && dut.receiver.state !== 3'd0)
+                $fatal(1, "final v3 replay left RX parser non-idle");
             $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                      trace_rx_blocked, trace_tx_blocked, trace_done);
             if (v3_finite_stalls)
@@ -198,7 +206,7 @@ module tb_lsc1_packet_vector;
                          rx_stable_checks, tx_stable_checks);
             $finish;
         end
-        run_request(request_path, request_length);
+        run_request(request_path, request_length, 0);
         if ($test$plusargs("ABORT_AFTER_FIRST")) begin
             $display("RTL_CONTROL ABORT BEFORE origin_opcode=%02x result=%0d service=%0d tx=%0d",
                      dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
@@ -218,17 +226,17 @@ module tb_lsc1_packet_vector;
                         dut.staged_operation, dut.result_pending, dut.service_pending, tx_valid);
         end
         if ($value$plusargs("REQUEST2=%s", request2_path) &&
-            $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length);
+            $value$plusargs("LENGTH2=%d", request2_length)) run_request(request2_path, request2_length, 0);
         if ($value$plusargs("REQUEST3=%s", request3_path) &&
-            $value$plusargs("LENGTH3=%d", request3_length)) run_request(request3_path, request3_length);
+            $value$plusargs("LENGTH3=%d", request3_length)) run_request(request3_path, request3_length, 0);
         if ($value$plusargs("REQUEST4=%s", request4_path) &&
-            $value$plusargs("LENGTH4=%d", request4_length)) run_request(request4_path, request4_length);
+            $value$plusargs("LENGTH4=%d", request4_length)) run_request(request4_path, request4_length, 0);
         if ($value$plusargs("REQUEST5=%s", request5_path) &&
-            $value$plusargs("LENGTH5=%d", request5_length)) run_request(request5_path, request5_length);
+            $value$plusargs("LENGTH5=%d", request5_length)) run_request(request5_path, request5_length, 0);
         if ($value$plusargs("REQUEST6=%s", request6_path) &&
-            $value$plusargs("LENGTH6=%d", request6_length)) run_request(request6_path, request6_length);
+            $value$plusargs("LENGTH6=%d", request6_length)) run_request(request6_path, request6_length, 0);
         if ($value$plusargs("REQUEST7=%s", request7_path) &&
-            $value$plusargs("LENGTH7=%d", request7_length)) run_request(request7_path, request7_length);
+            $value$plusargs("LENGTH7=%d", request7_length)) run_request(request7_path, request7_length, 0);
         $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                  trace_rx_blocked, trace_tx_blocked, trace_done);
         if (v3_finite_stalls)
