@@ -132,6 +132,13 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
                       if line.startswith("RTL_COUNTS "))
         done_count = int(counts.split("done=")[1])
         self.assertEqual(done_count, 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
         stability = next(line for line in run.stdout.splitlines()
                          if line.startswith("RTL_V3_STABILITY "))
         rx_checks = int(stability.split("rx_checks=")[1].split()[0])

@@ -24,6 +24,7 @@ module tb_lsc1_packet_vector;
     integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
     integer manifest_current_length = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
+    integer trace_rx_accepted = 0;
     integer v3_finite_stalls = 0, rx_stable_checks = 0, tx_stable_checks = 0;
     integer transaction_rx_blocked = 0, transaction_tx_blocked = 0;
     integer transaction_done = 0;
@@ -58,6 +59,7 @@ module tb_lsc1_packet_vector;
 
     always @(posedge clk) begin
         if (rst_n && rx_valid && !rx_ready) trace_rx_blocked = trace_rx_blocked + 1;
+        if (rst_n && rx_valid && rx_ready) trace_rx_accepted = trace_rx_accepted + 1;
         if (rst_n && tx_valid && !tx_ready) trace_tx_blocked = trace_tx_blocked + 1;
         if (rst_n && done_pulse) trace_done = trace_done + 1;
         if (rst_n && rx_valid && !rx_ready) transaction_rx_blocked = transaction_rx_blocked + 1;
@@ -197,8 +199,12 @@ module tb_lsc1_packet_vector;
                             manifest_scan == 2);
             end
             $fclose(manifest_fd);
+            @(negedge clk);
             if (v3_finite_stalls && dut.receiver.state !== 3'd0)
                 $fatal(1, "final v3 replay left RX parser non-idle");
+            if (v3_finite_stalls)
+                $display("RTL_V3_FINAL rx_accepted=%0d rx_valid=%0d parser_state=%0d",
+                         trace_rx_accepted, rx_valid, dut.receiver.state);
             $display("RTL_COUNTS rx_blocked=%0d tx_blocked=%0d done=%0d",
                      trace_rx_blocked, trace_tx_blocked, trace_done);
             if (v3_finite_stalls)
