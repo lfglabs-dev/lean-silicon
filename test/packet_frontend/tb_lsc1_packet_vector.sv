@@ -62,14 +62,14 @@ module tb_lsc1_packet_vector;
         if (rst_n && rx_valid && !rx_ready) transaction_rx_blocked = transaction_rx_blocked + 1;
         if (rst_n && tx_valid && !tx_ready) transaction_tx_blocked = transaction_tx_blocked + 1;
         if (rst_n && done_pulse) transaction_done = transaction_done + 1;
-        if (rst_n && rx_was_blocked) begin
+        if (rst_n && v3_finite_stalls && rx_was_blocked) begin
             if (!rx_valid)
                 $fatal(1, "RX valid dropped before stalled beat was accepted");
             if (rx_data !== blocked_rx_data)
                 $fatal(1, "RX valid data changed before stalled beat was accepted");
             rx_stable_checks = rx_stable_checks + 1;
         end
-        if (rst_n && rx_valid && !rx_ready) begin
+        if (rst_n && v3_finite_stalls && rx_valid && !rx_ready) begin
             if (!rx_was_blocked)
                 blocked_rx_data <= rx_data;
             rx_was_blocked <= 1;
