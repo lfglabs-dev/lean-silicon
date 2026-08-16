@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 CONTRACT_VERSION = 11
@@ -190,6 +191,35 @@ def _remove_private_tree(path: Path) -> None:
             residue = [f"unreadable:{error.errno}"]
         detail = ",".join(failures + residue) or "unknown"
         raise RuntimeError(f"private_workspace_cleanup_incomplete:{detail}")
+
+
+def _preserve_primary_across_cleanup(
+        primary_outcome: list | tuple | None,
+        primary_error: BaseException | None,
+        cleanup: Callable[[], None]) -> dict | None:
+    """Run cleanup without allowing it to mask a primary result or exception."""
+    try:
+        cleanup()
+    except BaseException as cleanup_error:
+        secondary = {
+            "classification": "secondary" if primary_error is not None or (
+                primary_outcome is not None and not primary_outcome[0]) else "principal",
+            "type": type(cleanup_error).__name__,
+            "message": str(cleanup_error),
+        }
+        if primary_error is not None:
+            primary_error.add_note(
+                f"secondary cleanup failure: {type(cleanup_error).__name__}: {cleanup_error}")
+            setattr(primary_error, "cleanup_failure", secondary)
+            return secondary
+        if primary_outcome is not None and not primary_outcome[0]:
+            primary_outcome[2]["cleanup_failure"] = secondary
+            return secondary
+        if isinstance(primary_outcome, list):
+            primary_outcome[:] = [False, "private_workspace_cleanup_failed", {
+                "cleanup_failure": secondary}]
+        return secondary
+    return None
 
 
 def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...],
@@ -522,33 +552,42 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
     except (OSError, RuntimeError) as error:
         os.close(source_fd); os.close(archive_fd)
         return False, f"private_workspace_failed:{error}", base_meta
+    primary_outcome: list | None = None
+
+    def outcome(valid: bool, reason: str, details: dict) -> list:
+        nonlocal primary_outcome
+        # A mutable result lets the finally block promote a cleanup failure to
+        # principal without replacing a pending primary exception or failure.
+        primary_outcome = [valid, reason, details]
+        return primary_outcome
+
     try:
         try:
             snapshot = _extract_authenticated_archive(archive_fd, private)
         except (OSError, RuntimeError) as error:
             os.close(source_fd); os.close(archive_fd)
-            return False, f"authenticated_archive_extraction_failed:{error}", base_meta
+            return outcome(False, f"authenticated_archive_extraction_failed:{error}", base_meta)
         snapshot_yosys = snapshot / MANIFEST["yosys_relative_path"]
         if sha256(snapshot_yosys) != MANIFEST["yosys_sha256"]:
             os.close(source_fd); os.close(archive_fd)
-            return False, "snapshot_yosys_digest_mismatch", base_meta
+            return outcome(False, "snapshot_yosys_digest_mismatch", base_meta)
         runtime_env, env_meta = _sanitized_environment(snapshot)
         try:
             runtime_executable, runtime_prefix = _snapshot_yosys_command(snapshot)
         except RuntimeError as error:
             os.close(source_fd); os.close(archive_fd)
-            return False, str(error), base_meta
+            return outcome(False, str(error), base_meta)
         dependencies_valid, dependency_audit = _audit_snapshot_dependencies(
             runtime_executable, runtime_prefix, snapshot, runtime_env, archive_fd)
         if not dependencies_valid:
             os.close(source_fd); os.close(archive_fd)
-            return False, "snapshot_runtime_dependency_outside_archive", {
-                **base_meta, "runtime_dependency_audit": dependency_audit}
+            return outcome(False, "snapshot_runtime_dependency_outside_archive", {
+                **base_meta, "runtime_dependency_audit": dependency_audit})
         try:
             snapshot_identity = _tree_identity(snapshot)
         except (OSError, RuntimeError) as error:
             os.close(source_fd); os.close(archive_fd)
-            return False, f"snapshot_sealing_failed:{error}", base_meta
+            return outcome(False, f"snapshot_sealing_failed:{error}", base_meta)
         try:
             loader_fd, loader_before = _open_stable(
                 snapshot / "lib" / "ld-linux-x86-64.so.2")
@@ -559,7 +598,7 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                               _fd_path(yosys_fd)]
         except (OSError, RuntimeError) as error:
             os.close(source_fd); os.close(archive_fd)
-            return False, f"snapshot_descriptor_route_failed:{error}", base_meta
+            return outcome(False, f"snapshot_descriptor_route_failed:{error}", base_meta)
         runtime_files = {}
         for relative in (MANIFEST["yosys_relative_path"], "lib/ld-linux-x86-64.so.2",
                          "libexec/yosys"):
@@ -590,12 +629,12 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
         }
         if not archive_stable:
             os.close(source_fd); os.close(archive_fd)
-            return False, "archive_changed_during_version", runtime_meta
+            return outcome(False, "archive_changed_during_version", runtime_meta)
         runtime_identity = _yosys_identity(runtime_version)
         if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
                                                               SUPPORTED_YOSYS_GIT_SHA):
             os.close(source_fd); os.close(archive_fd)
-            return False, "runtime_unsupported_yosys_build", runtime_meta
+            return outcome(False, "runtime_unsupported_yosys_build", runtime_meta)
         output_fd = os.open("invariant.json", os.O_RDWR | os.O_CREAT | os.O_EXCL |
                             os.O_CLOEXEC | getattr(os, "O_NOFOLLOW", 0), 0o600,
                             dir_fd=workspace_fd)
@@ -627,30 +666,33 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                                                "yosys": yosys_after},
         "output_consumption_route": "preopened_inherited_descriptor"}
         if not archive_stable:
-            return False, "archive_changed_during_elaboration", meta
+            return outcome(False, "archive_changed_during_elaboration", meta)
         if not source_stable:
             os.close(output_fd); os.close(source_fd); os.close(archive_fd)
-            return False, "source_changed_during_elaboration", meta
+            return outcome(False, "source_changed_during_elaboration", meta)
         if snapshot_after != snapshot_identity:
             os.close(output_fd); os.close(source_fd); os.close(archive_fd)
-            return False, "snapshot_changed_during_elaboration", meta
+            return outcome(False, "snapshot_changed_during_elaboration", meta)
         if not loader_stable or not yosys_stable:
             os.close(output_fd); os.close(loader_fd); os.close(yosys_fd)
             os.close(source_fd); os.close(archive_fd)
-            return False, "runtime_descriptor_changed_during_elaboration", meta
+            return outcome(False, "runtime_descriptor_changed_during_elaboration", meta)
         if completed.returncode:
             os.close(output_fd); os.close(source_fd); os.close(archive_fd)
-            return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
+            return outcome(False, "production_invariant_elaboration_failed",
+                           {**meta, "output": completed.stdout[-2000:]})
         netlist_bytes = _read_output_fd(output_fd)
         os.close(output_fd); os.close(loader_fd); os.close(yosys_fd)
         os.close(source_fd); os.close(archive_fd)
         design = json.loads(netlist_bytes)
+        valid, reason, design_meta = validate_design(design, runtime_version)
+        return outcome(valid, reason, {
+            **meta, "json_sha256": hashlib.sha256(netlist_bytes).hexdigest(),
+            **design_meta})
     finally:
         os.close(workspace_fd); os.close(parent_fd)
-        _remove_private_tree(private)
-    valid, reason, design_meta = validate_design(design, runtime_version)
-    return valid, reason, {**meta, "json_sha256": hashlib.sha256(netlist_bytes).hexdigest(),
-                           **design_meta}
+        _preserve_primary_across_cleanup(
+            primary_outcome, sys.exception(), lambda: _remove_private_tree(private))
 
 
 def main(argv: list[str]) -> int:

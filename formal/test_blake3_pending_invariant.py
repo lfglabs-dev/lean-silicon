@@ -328,6 +328,45 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             validator._remove_private_tree(private)
             self.assertFalse(private.exists(), "private snapshot residue remains")
 
+    def test_primary_success_cleanup_success_preserves_result(self) -> None:
+        primary = (True, "primary_success", {})
+        cleanup = mock.Mock()
+        failure = validator._preserve_primary_across_cleanup(primary, None, cleanup)
+        self.assertIsNone(failure)
+        self.assertEqual(primary, (True, "primary_success", {}))
+        cleanup.assert_called_once_with()
+
+    def test_primary_success_cleanup_failure_makes_cleanup_principal(self) -> None:
+        primary = [True, "primary_success", {}]
+        failure = validator._preserve_primary_across_cleanup(
+            primary, None, mock.Mock(side_effect=RuntimeError("residue")))
+        self.assertEqual(failure["classification"], "principal")
+        self.assertEqual(failure["message"], "residue")
+        self.assertEqual(primary[0:2], [False, "private_workspace_cleanup_failed"])
+        self.assertEqual(primary[2]["cleanup_failure"], failure)
+
+    def test_primary_failure_cleanup_success_preserves_primary(self) -> None:
+        primary = (False, "primary_failure", {})
+        failure = validator._preserve_primary_across_cleanup(primary, None, mock.Mock())
+        self.assertIsNone(failure)
+        self.assertEqual(primary[1], "primary_failure")
+        self.assertNotIn("cleanup_failure", primary[2])
+
+    def test_primary_failure_cleanup_failure_keeps_primary_principal(self) -> None:
+        primary = (False, "primary_failure", {})
+        failure = validator._preserve_primary_across_cleanup(
+            primary, None, mock.Mock(side_effect=RuntimeError("residue")))
+        self.assertEqual(primary[1], "primary_failure")
+        self.assertEqual(failure["classification"], "secondary")
+        self.assertEqual(primary[2]["cleanup_failure"], failure)
+
+        primary_error = ValueError("primary exception")
+        failure = validator._preserve_primary_across_cleanup(
+            None, primary_error, mock.Mock(side_effect=RuntimeError("residue")))
+        self.assertEqual(str(primary_error), "primary exception")
+        self.assertEqual(failure["classification"], "secondary")
+        self.assertIs(primary_error.cleanup_failure, failure)
+
     def test_hostile_tmpdir_is_ignored(self) -> None:
         production = check.FORMAL / check.INVARIANT
         with tempfile.TemporaryDirectory() as raw:
