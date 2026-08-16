@@ -199,6 +199,10 @@ def main() -> int:
                 "representation_classification"),
             "validator_trigger_classification": baseline_contract_receipt.get(
                 "trigger_classification"),
+            "validator_supported_yosys_range": baseline_contract_receipt.get(
+                "supported_yosys_range"),
+            "validator_supported_representation": baseline_contract_receipt.get(
+                "supported_representation"),
         },
         "baseline_proof": baseline_pass,
         "blake_pending_cover": cover_reached,

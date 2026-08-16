@@ -18,21 +18,49 @@ from formal import validate_blake3_pending_contract as validator
 
 
 class Blake3PendingInvariantHarnessTest(unittest.TestCase):
+    def setUp(self) -> None:
+        version = subprocess.run(["yosys", "-V"], text=True,
+                                 stdout=subprocess.PIPE).stdout.strip()
+        self.assertIn("Yosys 0.68", version,
+                      "authoritative oracle tests require the repository-pinned OSS CAD Suite")
+
     def test_emitted_yosys_representation_fixtures(self) -> None:
         fixtures = check.FORMAL / "fixtures" / "blake3_pending_oracle"
-        expected = {
-            "yosys-0.33-assert.json": ("Yosys 0.33", "legacy_formal_cell"),
-            "yosys-0.68-check.json": ("Yosys 0.68+40", "check_flavor_cell"),
-        }
-        for filename, (version, representation) in expected.items():
-            design = json.loads((fixtures / filename).read_text())
-            self.assertTrue(design["creator"].startswith(version))
+        legacy = json.loads((fixtures / "yosys-0.33-assert.json").read_text())
+        self.assertTrue(legacy["creator"].startswith("Yosys 0.33"))
+        valid, reason, meta = validator.validate_design(legacy)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "unsupported_formal_cell_representation")
+        self.assertGreater(meta["trigger_classification"]
+                               ["legacy_trigger_semantics_insufficient"], 0)
+
+        pinned = json.loads((fixtures / "yosys-0.68-check.json").read_text())
+        self.assertTrue(pinned["creator"].startswith("Yosys 0.68+40"))
+        valid, reason, meta = validator.validate_design(pinned)
+        self.assertTrue(valid, reason)
+        self.assertGreater(meta["representation_classification"]["check_flavor_cell"], 0)
+        self.assertGreater(meta["trigger_classification"]["check_combinational"], 0)
+        self.assertEqual(meta["supported_yosys_range"], validator.SUPPORTED_YOSYS_RANGE)
+
+    def test_all_legacy_trigger_forms_fail_closed_identically(self) -> None:
+        """Legacy cells cannot prove continuous sampling, regardless of source form."""
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.33-assert.json"
+        baseline = json.loads(fixture.read_text())
+        cells = baseline["modules"][validator.TOP]["cells"]
+        target_name = next(name for name, cell in cells.items()
+                           if cell.get("type") == "$assert")
+        for form in ("combinational", "posedge", "negedge", "level", "multi_event"):
+            # These source forms are deliberately represented by the same actual
+            # emitted 0.33 fixture: that indistinguishability is precisely why
+            # none can be certified as continuously sampled from this JSON.
+            design = copy.deepcopy(baseline)
+            self.assertEqual(design["modules"][validator.TOP]["cells"][target_name],
+                             baseline["modules"][validator.TOP]["cells"][target_name])
             valid, reason, meta = validator.validate_design(design)
-            self.assertTrue(valid, f"{filename}: {reason}")
-            self.assertGreater(meta["representation_classification"][representation], 0)
-            expected_trigger = ("legacy_combinational" if representation == "legacy_formal_cell"
-                                else "check_combinational")
-            self.assertGreater(meta["trigger_classification"][expected_trigger], 0)
+            self.assertFalse(valid, f"legacy {form} unexpectedly validated")
+            self.assertEqual(reason, "unsupported_formal_cell_representation")
+            self.assertGreater(meta["trigger_classification"]
+                                   ["legacy_trigger_semantics_insufficient"], 0)
 
     def test_pinned_check_trigger_semantics(self) -> None:
         """Exercise trigger encodings emitted by the pinned Yosys $check form."""

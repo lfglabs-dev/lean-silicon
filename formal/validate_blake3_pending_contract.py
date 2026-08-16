@@ -10,8 +10,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 4
+CONTRACT_VERSION = 5
 TOP = "full_lsc1_controller_invariants"
+SUPPORTED_YOSYS_REPRESENTATION = "$check with FLAVOR=assert and explicit TRG metadata"
+SUPPORTED_YOSYS_RANGE = "repository-pinned OSS CAD Suite Yosys 0.68+40"
 
 
 def sha256(path: Path) -> str:
@@ -83,9 +85,10 @@ def _parameter_uint(value: object) -> int:
 def _trigger_kind(cell: dict, representation: str) -> str:
     """Classify whether a supported formal cell is live continuously or on an event."""
     if representation == "legacy_formal_cell":
-        # Legacy $assert/$assume/$cover cells have no trigger ports: their A/EN
-        # inputs are the continuously evaluated formal semantics.
-        return "legacy_combinational"
+        # The legacy JSON form has no trigger metadata.  Source constructs with
+        # materially different sampling semantics can therefore normalize to
+        # the same cell interface.  Do not infer continuous evaluation.
+        return "legacy_trigger_semantics_insufficient"
     if representation != "check_flavor_cell":
         return "not_applicable"
 
@@ -140,10 +143,10 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
             continue
         trigger = _trigger_kind(cell, representation)
         triggers[trigger] = triggers.get(trigger, 0) + 1
-        if trigger == "unknown_check_trigger":
+        if trigger in ("unknown_check_trigger", "legacy_trigger_semantics_insufficient"):
             unknown.append(name)
             continue
-        if trigger not in ("legacy_combinational", "check_combinational"):
+        if trigger != "check_combinational":
             continue
         con = cell.get("connections", {})
         if not {"A", "EN"}.issubset(con) or len(con["A"]) != 1 or len(con["EN"]) != 1:
@@ -162,7 +165,10 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
         violations = {(r, b) for r, b, a, en in truth if en and not a}
         if violations == {(0, 1)}:
             matches.append(name)
-    meta = {"top": TOP, "representation_classification": representations,
+    meta = {"top": TOP,
+            "supported_yosys_range": SUPPORTED_YOSYS_RANGE,
+            "supported_representation": SUPPORTED_YOSYS_REPRESENTATION,
+            "representation_classification": representations,
             "trigger_classification": triggers,
             "unknown_formal_cells": unknown, "live_assert_cells": len(matches),
             "matching_cells": matches}
