@@ -197,6 +197,8 @@ def main() -> int:
             "validator_yosys_version": baseline_contract_receipt.get("yosys_version"),
             "validator_representation_classification": baseline_contract_receipt.get(
                 "representation_classification"),
+            "validator_trigger_classification": baseline_contract_receipt.get(
+                "trigger_classification"),
         },
         "baseline_proof": baseline_pass,
         "blake_pending_cover": cover_reached,

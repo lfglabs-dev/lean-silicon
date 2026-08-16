@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import copy
 import subprocess
 import tempfile
 import unittest
@@ -29,6 +30,73 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             valid, reason, meta = validator.validate_design(design)
             self.assertTrue(valid, f"{filename}: {reason}")
             self.assertGreater(meta["representation_classification"][representation], 0)
+            expected_trigger = ("legacy_combinational" if representation == "legacy_formal_cell"
+                                else "check_combinational")
+            self.assertGreater(meta["trigger_classification"][expected_trigger], 0)
+
+    def test_pinned_check_trigger_semantics(self) -> None:
+        """Exercise trigger encodings emitted by the pinned Yosys $check form."""
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"
+        baseline = json.loads(fixture.read_text())
+        cells = baseline["modules"][validator.TOP]["cells"]
+        target_name = next(name for name, cell in cells.items()
+                           if cell.get("type") == "$check"
+                           and cell.get("parameters", {}).get("FLAVOR") == "assert"
+                           and cell.get("parameters", {}).get("TRG_ENABLE", "").endswith("0")
+                           and cell.get("connections", {}).get("TRG") == [])
+
+        valid, reason, meta = validator.validate_design(copy.deepcopy(baseline))
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["trigger_classification"]["check_combinational"], 1)
+
+        variants = {
+            "posedge": ("1", [2], "check_posedge_triggered"),
+            "negedge": ("0", [2], "check_negedge_triggered"),
+        }
+        for name, (polarity, bits, classification) in variants.items():
+            design = copy.deepcopy(baseline)
+            target = design["modules"][validator.TOP]["cells"][target_name]
+            target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1",
+                                         TRG_POLARITY=polarity)
+            target["connections"]["TRG"] = bits
+            valid, reason, meta = validator.validate_design(design)
+            self.assertFalse(valid, f"{name} unexpectedly validated")
+            self.assertIn("production_blake_pending_implication_cells=0", reason)
+            self.assertGreaterEqual(meta["trigger_classification"][classification], 1)
+
+        event = copy.deepcopy(baseline)
+        target = event["modules"][validator.TOP]["cells"][target_name]
+        target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="10", TRG_POLARITY="10")
+        target["connections"]["TRG"] = [2, 3]
+        valid, reason, meta = validator.validate_design(event)
+        self.assertFalse(valid, "event-triggered pending assertion unexpectedly validated")
+        self.assertIn("production_blake_pending_implication_cells=0", reason)
+        self.assertEqual(meta["trigger_classification"]["check_event_triggered"], 1)
+
+        malformed = copy.deepcopy(baseline)
+        target = malformed["modules"][validator.TOP]["cells"][target_name]
+        target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1", TRG_POLARITY="x")
+        target["connections"]["TRG"] = [2]
+        valid, reason, meta = validator.validate_design(malformed)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "unsupported_formal_cell_representation")
+        self.assertEqual(meta["trigger_classification"]["unknown_check_trigger"], 1)
+
+    def test_irrelevant_triggered_assert_cannot_satisfy_contract(self) -> None:
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"
+        design = json.loads(fixture.read_text())
+        cells = design["modules"][validator.TOP]["cells"]
+        target_name = next(name for name, cell in cells.items()
+                           if cell.get("type") == "$check"
+                           and cell.get("parameters", {}).get("FLAVOR") == "assert"
+                           and cell.get("connections", {}).get("TRG") == [])
+        target = cells.pop(target_name)
+        target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1", TRG_POLARITY="1")
+        target["connections"]["TRG"] = [2]
+        cells["irrelevant_triggered_pending_assert"] = target
+        valid, reason, _ = validator.validate_design(design)
+        self.assertFalse(valid)
+        self.assertIn("production_blake_pending_implication_cells=0", reason)
 
     def test_unknown_check_representation_fails_closed(self) -> None:
         fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"

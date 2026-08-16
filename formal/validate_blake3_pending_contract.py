@@ -10,7 +10,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 3
+CONTRACT_VERSION = 4
 TOP = "full_lsc1_controller_invariants"
 
 
@@ -71,6 +71,49 @@ def _formal_kind(cell: dict) -> tuple[str | None, str]:
     return None, "not_formal"
 
 
+def _parameter_uint(value: object) -> int:
+    """Decode the binary parameter strings used by Yosys JSON, fail closed."""
+    if isinstance(value, int) and value >= 0:
+        return value
+    if isinstance(value, str) and value and set(value) <= {"0", "1"}:
+        return int(value, 2)
+    raise ValueError(value)
+
+
+def _trigger_kind(cell: dict, representation: str) -> str:
+    """Classify whether a supported formal cell is live continuously or on an event."""
+    if representation == "legacy_formal_cell":
+        # Legacy $assert/$assume/$cover cells have no trigger ports: their A/EN
+        # inputs are the continuously evaluated formal semantics.
+        return "legacy_combinational"
+    if representation != "check_flavor_cell":
+        return "not_applicable"
+
+    parameters = cell.get("parameters", {})
+    connections = cell.get("connections", {})
+    required = {"TRG_ENABLE", "TRG_WIDTH", "TRG_POLARITY"}
+    if not required.issubset(parameters) or "TRG" not in connections:
+        return "unknown_check_trigger"
+    try:
+        enabled = _parameter_uint(parameters["TRG_ENABLE"])
+        width = _parameter_uint(parameters["TRG_WIDTH"])
+    except ValueError:
+        return "unknown_check_trigger"
+    polarity = parameters["TRG_POLARITY"]
+    trigger = connections["TRG"]
+    if not isinstance(polarity, str) or not isinstance(trigger, list):
+        return "unknown_check_trigger"
+    if enabled == 0 and width == 0 and polarity == "" and trigger == []:
+        return "check_combinational"
+    if enabled != 1 or width <= 0 or len(polarity) != width or len(trigger) != width:
+        return "unknown_check_trigger"
+    if set(polarity) - {"0", "1"}:
+        return "unknown_check_trigger"
+    if width == 1:
+        return "check_posedge_triggered" if polarity == "1" else "check_negedge_triggered"
+    return "check_event_triggered"
+
+
 def validate_design(design: dict) -> tuple[bool, str, dict]:
     """Validate an already elaborated design (also used by version fixtures)."""
     module = design.get("modules", {}).get(TOP)
@@ -84,6 +127,7 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
         return False, "production_pending_ports_missing", {}
     matches = []
     representations: dict[str, int] = {}
+    triggers: dict[str, int] = {}
     unknown = []
     for name, cell in module.get("cells", {}).items():
         kind, representation = _formal_kind(cell)
@@ -93,6 +137,13 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
             unknown.append(name)
             continue
         if kind != "assert":
+            continue
+        trigger = _trigger_kind(cell, representation)
+        triggers[trigger] = triggers.get(trigger, 0) + 1
+        if trigger == "unknown_check_trigger":
+            unknown.append(name)
+            continue
+        if trigger not in ("legacy_combinational", "check_combinational"):
             continue
         con = cell.get("connections", {})
         if not {"A", "EN"}.issubset(con) or len(con["A"]) != 1 or len(con["EN"]) != 1:
@@ -112,6 +163,7 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
         if violations == {(0, 1)}:
             matches.append(name)
     meta = {"top": TOP, "representation_classification": representations,
+            "trigger_classification": triggers,
             "unknown_formal_cells": unknown, "live_assert_cells": len(matches),
             "matching_cells": matches}
     if unknown:
