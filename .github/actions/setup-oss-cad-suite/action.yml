@@ -14,12 +14,25 @@ runs:
       shell: bash
       env:
         ARCHIVE: ${{ runner.tool_cache }}/oss-cad-suite-linux-x64-20260809.tgz
-        EXPECTED_BYTES: "737556153"
-        EXPECTED_SHA256: 7c0f1bb619d03fdf1614b73d84a95a88c64671685c364f87fe0827b7fffc6c4e
-        OSS_CAD_SUITE_URL: https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-08-09/oss-cad-suite-linux-x64-20260809.tgz
+        MANIFEST: ${{ github.workspace }}/.github/toolchains/oss-cad-suite-20260809.json
         SUITE_DIR: ${{ runner.temp }}/oss-cad-suite
       run: |
         set -euo pipefail
+        readarray -t pinned < <(python3 - "$MANIFEST" <<'PY'
+        import json, sys
+        m = json.load(open(sys.argv[1], encoding="utf-8"))
+        print(m["archive_bytes"])
+        print(m["archive_sha256"])
+        print(m["archive_url"])
+        print(m["yosys_relative_path"])
+        print(m["yosys_sha256"])
+        PY
+        )
+        EXPECTED_BYTES="${pinned[0]}"
+        EXPECTED_SHA256="${pinned[1]}"
+        OSS_CAD_SUITE_URL="${pinned[2]}"
+        YOSYS_RELATIVE_PATH="${pinned[3]}"
+        YOSYS_SHA256="${pinned[4]}"
         mkdir -p "$(dirname "$ARCHIVE")"
 
         archive_is_valid() {
@@ -54,6 +67,7 @@ runs:
         rm -rf "$SUITE_DIR"
         mkdir -p "$SUITE_DIR"
         tar -xzf "$ARCHIVE" --strip-components=1 -C "$SUITE_DIR"
-        test -x "$SUITE_DIR/bin/yosys"
+        test -x "$SUITE_DIR/$YOSYS_RELATIVE_PATH"
+        printf '%s  %s\n' "$YOSYS_SHA256" "$SUITE_DIR/$YOSYS_RELATIVE_PATH" | sha256sum --check --status
         test -x "$SUITE_DIR/bin/sby"
         printf '%s\n' "$SUITE_DIR/bin" >> "$GITHUB_PATH"

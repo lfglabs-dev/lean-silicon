@@ -200,7 +200,17 @@ def main() -> int:
             "validator_yosys_executable": baseline_contract_receipt.get(
                 "yosys_executable"),
             "validator_yosys_executable_sha256": baseline_contract_receipt.get(
-                "yosys_executable_sha256"),
+                "yosys_executable_observed_before", {}).get("sha256"),
+            "validator_toolchain_manifest_sha256": baseline_contract_receipt.get(
+                "toolchain_manifest_sha256"),
+            "validator_yosys_executable_observed_before": baseline_contract_receipt.get(
+                "yosys_executable_observed_before"),
+            "validator_yosys_executable_observed_after_elaboration": baseline_contract_receipt.get(
+                "yosys_executable_observed_after_elaboration"),
+            "validator_source_observed_before": baseline_contract_receipt.get(
+                "source_observed_before"),
+            "validator_source_observed_after": baseline_contract_receipt.get(
+                "source_observed_after"),
             "validator_json_sha256": baseline_contract_receipt.get("json_sha256"),
             "validator_elaboration_command": baseline_contract_receipt.get("command"),
             "validator_representation_classification": baseline_contract_receipt.get(

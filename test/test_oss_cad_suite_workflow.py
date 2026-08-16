@@ -9,6 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 ACTION = ROOT / ".github" / "actions" / "setup-oss-cad-suite" / "action.yml"
+MANIFEST = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
 
 
 class OssCadSuiteWorkflowTest(unittest.TestCase):
@@ -51,11 +52,19 @@ class OssCadSuiteWorkflowTest(unittest.TestCase):
             "EXPECTED_SHA256",
             "sha256sum --check --status",
             "tar -xzf",
-            'test -x "$SUITE_DIR/bin/yosys"',
+            'MANIFEST: ${{ github.workspace }}/.github/toolchains/oss-cad-suite-20260809.json',
+            'test -x "$SUITE_DIR/$YOSYS_RELATIVE_PATH"',
+            '"$YOSYS_SHA256" "$SUITE_DIR/$YOSYS_RELATIVE_PATH"',
             'test -x "$SUITE_DIR/bin/sby"',
         ):
             with self.subTest(required=required):
                 self.assertIn(required, action)
+
+        manifest = MANIFEST.read_text()
+        for required in ("archive_bytes", "archive_sha256", "archive_url",
+                         "yosys_relative_path", "yosys_sha256", "yosys_version",
+                         "yosys_git_sha"):
+            self.assertIn(f'"{required}"', manifest)
 
     def test_toolchain_deadline_retains_verification_and_extraction_headroom(self):
         action = ACTION.read_text()

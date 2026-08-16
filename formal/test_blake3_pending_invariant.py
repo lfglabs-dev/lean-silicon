@@ -182,6 +182,83 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(meta["runtime_yosys_version"], self.runtime_version)
         self.assertIn(str(Path("yosys")), meta["yosys_executable"])
 
+    def test_authoritative_binary_digest_and_path_fail_closed(self) -> None:
+        """A banner/fixture copier, tampered binary, or symlink never executes."""
+        production = check.FORMAL / check.INVARIANT
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            marker = root / "executed"
+            fake = root / "yosys"
+            fake.write_text(f"#!/bin/sh\ntouch {marker}\necho '{self.runtime_version}'\n")
+            fake.chmod(0o755)
+            valid, reason, _ = validator.validate(production, str(fake))
+            self.assertFalse(valid)
+            self.assertEqual(reason, "yosys_executable_digest_mismatch")
+            self.assertFalse(marker.exists(), "digest-rejected executable was run")
+
+            pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
+                                         stdout=subprocess.PIPE, check=True).stdout.strip())
+            tampered = root / "tampered-yosys"
+            tampered.write_bytes(pinned.read_bytes() + b"\n# tampered\n")
+            tampered.chmod(0o755)
+            valid, reason, _ = validator.validate(production, str(tampered))
+            self.assertFalse(valid)
+            self.assertEqual(reason, "yosys_executable_digest_mismatch")
+
+            substitute = root / "path-yosys"
+            substitute.symlink_to(pinned)
+            valid, reason, _ = validator.validate(production, str(substitute))
+            self.assertFalse(valid)
+            self.assertTrue(reason.startswith("yosys_executable_no_follow_open_failed"), reason)
+
+    def test_authoritative_toctou_checks_fail_closed(self) -> None:
+        production = check.FORMAL / check.INVARIANT
+        original = validator._verify_unchanged
+        calls = 0
+
+        def unstable(fd, path, before):
+            nonlocal calls
+            calls += 1
+            stable, after = original(fd, path, before)
+            if calls == 1:
+                return False, {**after, "simulated_change": True}
+            return stable, after
+
+        with mock.patch.object(validator, "_verify_unchanged", side_effect=unstable):
+            valid, reason, _ = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "yosys_executable_changed_during_version")
+
+        calls = 0
+        def unstable_source(fd, path, before):
+            nonlocal calls
+            calls += 1
+            stable, after = original(fd, path, before)
+            if calls == 3:
+                return False, {**after, "simulated_change": True}
+            return stable, after
+
+        with mock.patch.object(validator, "_verify_unchanged", side_effect=unstable_source):
+            valid, reason, _ = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "source_changed_during_elaboration")
+
+    def test_authoritative_source_symlink_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            link = Path(raw) / "invariant.sv"
+            link.symlink_to(check.FORMAL / check.INVARIANT)
+            valid, reason, _ = validator.validate(link)
+        self.assertFalse(valid)
+        self.assertTrue(reason.startswith("source_no_follow_open_failed"), reason)
+
+    def test_manifest_binds_verified_archive_and_executable(self) -> None:
+        self.assertEqual(validator.MANIFEST["archive_bytes"], 737556153)
+        self.assertEqual(validator.MANIFEST["archive_sha256"],
+                         "7c0f1bb619d03fdf1614b73d84a95a88c64671685c364f87fe0827b7fffc6c4e")
+        executable = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
+                                         stdout=subprocess.PIPE, check=True).stdout.strip())
+        self.assertEqual(validator.sha256(executable), validator.MANIFEST["yosys_sha256"])
+
     def test_independent_validator_semantics(self) -> None:
         production = (check.FORMAL / check.INVARIANT).read_text()
         pending_block = """    always @(*) begin

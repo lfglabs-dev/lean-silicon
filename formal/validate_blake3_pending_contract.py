@@ -5,19 +5,68 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 6
+CONTRACT_VERSION = 7
 TOP = "full_lsc1_controller_invariants"
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
+MANIFEST = json.loads(MANIFEST_PATH.read_text())
+MANIFEST_SHA256 = hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()
 SUPPORTED_YOSYS_REPRESENTATION = "$check with FLAVOR=assert and explicit TRG metadata"
 SUPPORTED_YOSYS_RANGE = "repository-pinned OSS CAD Suite Yosys 0.68+40"
-SUPPORTED_YOSYS_VERSION = "0.68+40"
-SUPPORTED_YOSYS_GIT_SHA = "0f2bcb94b"
+SUPPORTED_YOSYS_VERSION = MANIFEST["yosys_version"]
+SUPPORTED_YOSYS_GIT_SHA = MANIFEST["yosys_git_sha"]
+
+
+def _fd_digest(fd: int) -> str:
+    digest = hashlib.sha256()
+    os.lseek(fd, 0, os.SEEK_SET)
+    while chunk := os.read(fd, 1024 * 1024):
+        digest.update(chunk)
+    os.lseek(fd, 0, os.SEEK_SET)
+    return digest.hexdigest()
+
+
+def _identity(st: os.stat_result) -> dict:
+    return {"device": st.st_dev, "inode": st.st_ino, "mode": st.st_mode,
+            "size": st.st_size, "mtime_ns": st.st_mtime_ns, "ctime_ns": st.st_ctime_ns}
+
+
+def _open_stable(path: Path, expected_digest: str | None = None) -> tuple[int, dict]:
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_CLOEXEC | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as error:
+        raise RuntimeError(f"no_follow_open_failed:{error.errno}") from error
+    st = os.fstat(fd)
+    if not stat.S_ISREG(st.st_mode):
+        os.close(fd)
+        raise RuntimeError("not_regular_file")
+    digest = _fd_digest(fd)
+    if expected_digest is not None and digest != expected_digest:
+        os.close(fd)
+        raise RuntimeError("digest_mismatch")
+    return fd, {**_identity(st), "sha256": digest}
+
+
+def _verify_unchanged(fd: int, path: Path, before: dict) -> tuple[bool, dict]:
+    try:
+        fd_stat = os.fstat(fd)
+        path_stat = os.stat(path, follow_symlinks=False)
+        after = {**_identity(fd_stat), "sha256": _fd_digest(fd)}
+        path_identity = _identity(path_stat)
+        expected_identity = {key: before[key] for key in path_identity}
+        stable = after == before and path_identity == expected_identity
+        return stable, after
+    except OSError:
+        return False, {"error": "post_execution_stat_failed"}
 
 
 def _yosys_identity(value: object) -> tuple[str, str] | None:
@@ -228,20 +277,41 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
     executable = shutil.which(yosys_command)
     if executable is None:
         return False, "yosys_executable_missing", {"yosys_command": yosys_command}
-    executable_path = Path(executable).resolve()
+    executable_path = Path(executable).absolute()
+    base_meta = {"toolchain_manifest": str(MANIFEST_PATH),
+                 "toolchain_manifest_sha256": MANIFEST_SHA256,
+                 "expected_yosys_sha256": MANIFEST["yosys_sha256"]}
+    try:
+        executable_fd, executable_before = _open_stable(
+            executable_path, MANIFEST["yosys_sha256"])
+    except RuntimeError as error:
+        return False, f"yosys_executable_{error}", {**base_meta, "yosys_executable": str(executable_path)}
+    try:
+        source_fd, source_before = _open_stable(path)
+    except RuntimeError as error:
+        os.close(executable_fd)
+        return False, f"source_{error}", {**base_meta, "source": str(path)}
     version_command = [str(executable_path), "-V"]
     version_result = subprocess.run(version_command, text=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
+    executable_stable, executable_after_version = _verify_unchanged(
+        executable_fd, executable_path, executable_before)
     runtime_version = version_result.stdout.strip()
     runtime_meta = {
+        **base_meta,
         "yosys_executable": str(executable_path),
-        "yosys_executable_sha256": sha256(executable_path),
+        "yosys_executable_observed_before": executable_before,
+        "yosys_executable_observed_after_version": executable_after_version,
         "yosys_version_command": version_command,
         "runtime_yosys_version": runtime_version,
     }
+    if not executable_stable:
+        os.close(source_fd); os.close(executable_fd)
+        return False, "yosys_executable_changed_during_version", runtime_meta
     runtime_identity = _yosys_identity(runtime_version)
     if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
                                                           SUPPORTED_YOSYS_GIT_SHA):
+        os.close(source_fd); os.close(executable_fd)
         return False, "runtime_unsupported_yosys_build", runtime_meta
     with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
         netlist = Path(raw) / "invariant.json"
@@ -249,7 +319,17 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                    f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
         completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
-        meta = {**runtime_meta, "command": command, "source_sha256": sha256(path)}
+        executable_stable, executable_after = _verify_unchanged(
+            executable_fd, executable_path, executable_before)
+        source_stable, source_after = _verify_unchanged(source_fd, path, source_before)
+        os.close(source_fd); os.close(executable_fd)
+        meta = {**runtime_meta, "command": command, "source_observed_before": source_before,
+                "source_observed_after": source_after,
+                "yosys_executable_observed_after_elaboration": executable_after}
+        if not executable_stable:
+            return False, "yosys_executable_changed_during_elaboration", meta
+        if not source_stable:
+            return False, "source_changed_during_elaboration", meta
         if completed.returncode:
             return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
         netlist_bytes = netlist.read_bytes()
