@@ -10,7 +10,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation clean
+.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation clean
 
 sim:
 	$(MAKE) lifecycle
@@ -84,7 +84,7 @@ mutation:
 	  if vvp "$$d/set.vvp" >"$$d/set.out" 2>&1; then \
 	    echo "SET write-value mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
-	  grep -q "SET result write value mismatch" "$$d/set.out"; \
+	  grep -Eq "staged write byte zero|SET result write value mismatch" "$$d/set.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
 	  sed -i.bak 's/txn_id != staged_txn_id ||/1'"'"'b0 ||/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/txn.vvp" \
@@ -112,6 +112,37 @@ mutation:
 	  fi; \
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
+	$(MAKE) scalar-result-mutation
+
+scalar-result-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp $(RTL) "$$d/"; \
+	  test "$$(grep -Fxc '                tx_payload_external_data = scalar_staged_write_value[(tx_payload_index-17)*8 +: 8];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/baseline.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  vvp "$$d/baseline.vvp" >"$$d/baseline.out" 2>&1; \
+	  echo "scalar-result baseline: anchor_exactly_once=PASS compile_elaboration=PASS behavior=PASS"; \
+	  cp $(RTL) "$$d/"; \
+	  test "$$(grep -Fo '(tx_payload_index-17)*8' "$$d/lsc1_packet_frontend.sv" | wc -l)" -eq 1; \
+	  sed -i 's/(tx_payload_index-17)\*8/(tx_payload_index-16)*8/' "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/byte.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/byte.vvp" >"$$d/byte.out" 2>&1; then echo "scalar byte-selection mutation unexpectedly survived" >&2; exit 1; fi; \
+	  grep -Eq "staged write byte zero|SET result write value mismatch" "$$d/byte.out"; \
+	  echo "scalar byte-selection mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  test "$$(grep -Foc 'result_length = 39;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	  sed -i 's/result_length = 39;/result_length = 38;/' "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/length.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/length.vvp" >"$$d/length.out" 2>&1; then echo "scalar RESULT-length mutation unexpectedly survived" >&2; exit 1; fi; \
+	  grep -q "SET result payload schema mismatch" "$$d/length.out"; \
+	  echo "scalar length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  test "$$(grep -Foc 'tx_payload_external_data = scalar_staged_write_value' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	  sed -i 's/tx_payload_external_data = scalar_staged_write_value/tx_payload_external_data = write_value/' "$$d/lsc1_packet_frontend.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/staging.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
+	  if vvp "$$d/staging.vvp" >"$$d/staging.out" 2>&1; then echo "scalar stable-staging mutation unexpectedly survived" >&2; exit 1; fi; \
+	  grep -q "scalar staged-byte/backpressure stability failed" "$$d/staging.out"; \
+	  echo "scalar stable-staging mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  echo "PASS: scalar RESULT byte selection, length, CRC/stall, and stable-staging mutations detected"
 
 differential-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \

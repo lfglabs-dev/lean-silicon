@@ -112,12 +112,15 @@ class ScatterGatherDesignContractTests(unittest.TestCase):
     def test_authored_rtl_exposes_bounded_external_payload_contract(self):
         tx = (ROOT / "asic_core" / "rtl" / "lsc1_packet_tx.sv").read_text()
         design = (ROOT / "docs" / "BLAKE3_EXTERNAL_SERVICE.md").read_text()
-        self.assertIn("[543:0]", tx)
-        self.assertGreater(122, 544 // 8)
+        self.assertIn("[159:0]", tx)
+        self.assertGreater(122, 160 // 8)
         self.assertIn("payload_external", tx)
         self.assertIn("payload_index", tx)
         self.assertIn("payload_external_valid", tx)
         self.assertIn("immutable while", tx)
+        frontend = (ROOT / "asic_core" / "rtl" / "lsc1_packet_frontend.sv").read_text()
+        self.assertIn("tx_external_kind == 3", frontend)
+        self.assertIn("scalar_staged_write_value", frontend)
         self.assertIn("scatter/gather", design)
         self.assertIn("Authored RTL service boundary", design)
 

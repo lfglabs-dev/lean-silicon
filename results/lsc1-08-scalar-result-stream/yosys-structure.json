@@ -1,0 +1,25 @@
+{
+  "schema": "lean-silicon/yosys-structure-comparison/v1",
+  "scope": "canonical lean_silicon_lsc1 hierarchy after read_verilog, hierarchy, proc, and flatten",
+  "base_commit": "008c2f57a2843e0213004c611a9e4edd1dc88e85",
+  "tool": "Yosys 0.33 (git sha1 2584903a060)",
+  "command_passes": ["read_verilog -sv", "hierarchy -check -top lean_silicon_lsc1", "proc", "flatten", "stat -json -width -top lean_silicon_lsc1"],
+  "before": {
+    "wire_bits": 8238803,
+    "cells": 77634,
+    "registered_bits": 47988,
+    "wide_payload_dff_cells": {"width": 544, "count": 46}
+  },
+  "after": {
+    "wire_bits": 4497338,
+    "cells": 77101,
+    "registered_bits": 30495,
+    "ordinary_payload_dff_cells": {"width": 160, "count": 45}
+  },
+  "registered_bits_method": "sum(width * count) for Yosys $dff/$adff/$sdff/$dffe/$sdffe/$adffe/$dlatch width-annotated cells",
+  "limits": [
+    "Generic RTL process-lowering and structure statistics only; no PPA claim.",
+    "No liberty mapping, placement, routing, timing, power, FPGA, physical, release, or hardware flow was run.",
+    "Counts depend on the recorded Yosys version and exact pass sequence."
+  ]
+}

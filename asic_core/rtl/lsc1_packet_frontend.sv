@@ -57,7 +57,9 @@ module lsc1_packet_frontend (
     reg tx_start;
     reg [7:0] tx_status;
     reg [15:0] tx_length;
-    reg [543:0] tx_payload;
+    // Non-external responses top out at the 20-byte STATUS payload.  RESULT
+    // payloads use stable semantic staging below instead of this byte vector.
+    reg [159:0] tx_payload;
     reg [1:0] tx_external_kind;
     wire [15:0] tx_payload_index;
     wire tx_payload_external_valid;
@@ -95,6 +97,17 @@ module lsc1_packet_frontend (
     reg [7:0] staged_operation;
     reg [31:0] staged_txn_id, staged_next_pc, staged_next_fp;
     reg [31:0] staged_result_crc;
+    reg [1:0] scalar_staged_write_count;
+    reg scalar_staged_deferred;
+    reg [7:0] scalar_staged_access_count;
+    reg [31:0] scalar_staged_write_address;
+    reg [127:0] scalar_staged_write_value;
+    // Decode/computation scratch is declared before the external serializer so
+    // focused mutations can substitute it without relying on implicit nets.
+    // Production serialization continues to use scalar_staged_write_value.
+    reg [127:0] write_value;
+    reg [31:0] scalar_staged_deferred_target, scalar_staged_deferred_local;
+    reg [31:0] scalar_staged_access [0:2];
     reg state_valid;
     reg [31:0] committed_pc, committed_fp, retire_seq;
     reg [7:0] active_profile, last_status, last_fault;
@@ -270,6 +283,45 @@ module lsc1_packet_frontend (
                 ext_word = (tx_payload_index-(15 + staged_write_count*20)) / 4;
                 tx_payload_external_data = staged_access[ext_word][((tx_payload_index-(15 + staged_write_count*20))%4)*8 +: 8];
             end
+        end else if (tx_external_kind == 3) begin
+            if (tx_payload_index < 4)
+                tx_payload_external_data = staged_txn_id[tx_payload_index*8 +: 8];
+            else if (tx_payload_index < 8)
+                tx_payload_external_data = staged_next_pc[(tx_payload_index-4)*8 +: 8];
+            else if (tx_payload_index < 12)
+                tx_payload_external_data = staged_next_fp[(tx_payload_index-8)*8 +: 8];
+            else if (tx_payload_index == 12)
+                tx_payload_external_data = scalar_staged_write_count;
+            else if (scalar_staged_write_count != 0 && tx_payload_index < 17)
+                tx_payload_external_data = scalar_staged_write_address[(tx_payload_index-13)*8 +: 8];
+            else if (scalar_staged_write_count != 0 && tx_payload_index < 33)
+                tx_payload_external_data = scalar_staged_write_value[(tx_payload_index-17)*8 +: 8];
+            else if (scalar_staged_write_count != 0 && tx_payload_index == 33)
+                tx_payload_external_data = 0;
+            else if (scalar_staged_write_count != 0 && tx_payload_index == 34)
+                tx_payload_external_data = scalar_staged_access_count;
+            else if (scalar_staged_write_count != 0) begin
+                ext_word = (tx_payload_index-35) / 4;
+                tx_payload_external_data = scalar_staged_access[ext_word][((tx_payload_index-35)%4)*8 +: 8];
+            end else if (scalar_staged_deferred && tx_payload_index == 13)
+                tx_payload_external_data = 1;
+            else if (scalar_staged_deferred && tx_payload_index < 18)
+                tx_payload_external_data = scalar_staged_deferred_target[(tx_payload_index-14)*8 +: 8];
+            else if (scalar_staged_deferred && tx_payload_index < 22)
+                tx_payload_external_data = scalar_staged_deferred_local[(tx_payload_index-18)*8 +: 8];
+            else if (scalar_staged_deferred && tx_payload_index == 22)
+                tx_payload_external_data = scalar_staged_access_count;
+            else if (scalar_staged_deferred) begin
+                ext_word = (tx_payload_index-23) / 4;
+                tx_payload_external_data = scalar_staged_access[ext_word][((tx_payload_index-23)%4)*8 +: 8];
+            end else if (tx_payload_index == 13)
+                tx_payload_external_data = 0;
+            else if (tx_payload_index == 14)
+                tx_payload_external_data = scalar_staged_access_count;
+            else begin
+                ext_word = (tx_payload_index-15) / 4;
+                tx_payload_external_data = scalar_staged_access[ext_word][((tx_payload_index-15)%4)*8 +: 8];
+            end
         end
     end
 
@@ -308,7 +360,7 @@ module lsc1_packet_frontend (
         input [7:0] status;
         input [31:0] txn;
         input [7:0] detail;
-        reg [543:0] bytes;
+        reg [159:0] bytes;
         begin
             bytes = 0;
             bytes[0 +: 32] = txn;
@@ -342,61 +394,45 @@ module lsc1_packet_frontend (
     reg [7:0] taken_proposal;
     reg [127:0] val_a, val_b, val_c, inv_value, result_value;
     reg [127:0] solved_a, solved_b;
-    reg [543:0] result_bytes, retired_bytes;
+    reg [159:0] response_bytes;
     reg [31:0] write_address;
-    reg [127:0] write_value;
     reg [7:0] decision_fault, decision_detail;
     reg decision_ok, decision_deferred;
 
     task automatic emit_result(input [7:0] access_count);
         begin
-            result_bytes = 0;
-            result_bytes[0 +: 32] = txn_id;
-            result_bytes[32 +: 32] = next_pc_value;
-            result_bytes[64 +: 32] = next_fp_value;
-            result_bytes[96 +: 8] = n_writes;
             if (n_writes != 0) begin
-                result_bytes[104 +: 32] = write_address;
-                result_bytes[136 +: 128] = write_value;
-                result_bytes[264 +: 8] = 0; // n_deferred
-                result_bytes[272 +: 8] = access_count;
-                result_bytes[280 +: 32] = addr_a;
                 if (access_count == 3) begin
-                    result_bytes[312 +: 32] = addr_b;
-                    result_bytes[344 +: 32] = addr_c;
                     result_length = 47;
                 end else begin
                     result_length = 39;
                 end
             end else if (n_deferred != 0) begin
-                result_bytes[104 +: 8] = 1;
-                result_bytes[112 +: 32] = deferred_target;
-                result_bytes[144 +: 32] = deferred_local;
-                result_bytes[176 +: 8] = access_count;
-                result_bytes[184 +: 32] = addr_a;
-                result_bytes[216 +: 32] = addr_b;
-                result_bytes[248 +: 32] = addr_c;
                 result_length = 35;
             end else begin
-                result_bytes[104 +: 8] = 0;
-                result_bytes[112 +: 8] = access_count;
-                result_bytes[120 +: 32] = addr_a;
                 if (access_count == 3) begin
-                    result_bytes[152 +: 32] = addr_b;
-                    result_bytes[184 +: 32] = addr_c;
                     result_length = 27;
                 end else result_length = 19;
             end
             staged_txn_id <= txn_id;
             staged_next_pc <= next_pc_value;
             staged_next_fp <= next_fp_value;
+            scalar_staged_write_count <= n_writes;
+            scalar_staged_deferred <= n_deferred != 0;
+            scalar_staged_access_count <= access_count;
+            scalar_staged_write_address <= write_address;
+            scalar_staged_write_value <= write_value;
+            scalar_staged_deferred_target <= deferred_target;
+            scalar_staged_deferred_local <= deferred_local;
+            scalar_staged_access[0] <= addr_a;
+            scalar_staged_access[1] <= addr_b;
+            scalar_staged_access[2] <= addr_c;
             staged_result_crc <= 0;
             capture_result_crc <= 1'b1;
             result_pending <= 1'b1;
             tx_status <= OK;
             tx_length <= result_length;
-            tx_payload <= result_bytes;
-            tx_external_kind <= 0;
+            tx_external_kind <= 3;
             tx_start <= 1'b1;
             fault <= 1'b0;
             last_status <= OK;
@@ -491,6 +527,16 @@ module lsc1_packet_frontend (
             staged_next_pc <= 0;
             staged_next_fp <= 0;
             staged_result_crc <= 0;
+            scalar_staged_write_count <= 0;
+            scalar_staged_deferred <= 0;
+            scalar_staged_access_count <= 0;
+            scalar_staged_write_address <= 0;
+            scalar_staged_write_value <= 0;
+            scalar_staged_deferred_target <= 0;
+            scalar_staged_deferred_local <= 0;
+            scalar_staged_access[0] <= 0;
+            scalar_staged_access[1] <= 0;
+            scalar_staged_access[2] <= 0;
             state_valid <= 1'b0;
             committed_pc <= 0;
             committed_fp <= 0;
@@ -639,20 +685,20 @@ module lsc1_packet_frontend (
                     if (frame_length != 0) begin
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else begin
-                        result_bytes = 0;
-                        result_bytes[0 +: 8] = blake_service_pending ? 8'h02 :
+                        response_bytes = 0;
+                        response_bytes[0 +: 8] = blake_service_pending ? 8'h02 :
                                                    ((result_pending || blake_result_pending) ? 8'h01 : 8'h00);
-                        result_bytes[8 +: 32] = (blake_result_pending || blake_service_pending) ?
+                        response_bytes[8 +: 32] = (blake_result_pending || blake_service_pending) ?
                                                    blake_staged_txn_id : (result_pending ? staged_txn_id : 0);
-                        result_bytes[40 +: 8] = last_status;
-                        result_bytes[48 +: 32] = retire_seq;
-                        result_bytes[80 +: 8] = last_fault;
-                        result_bytes[88 +: 32] = committed_pc;
-                        result_bytes[120 +: 32] = committed_fp;
-                        result_bytes[152 +: 8] = state_valid;
+                        response_bytes[40 +: 8] = last_status;
+                        response_bytes[48 +: 32] = retire_seq;
+                        response_bytes[80 +: 8] = last_fault;
+                        response_bytes[88 +: 32] = committed_pc;
+                        response_bytes[120 +: 32] = committed_fp;
+                        response_bytes[152 +: 8] = state_valid;
                         tx_status <= INFO;
                         tx_length <= 20;
-                        tx_payload <= result_bytes;
+                        tx_payload <= response_bytes;
                         tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
@@ -675,17 +721,17 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_PROFILE, 0, 0);
                     end else begin
                         active_profile <= frame_payload[16 +: 8];
-                        result_bytes = 0;
-                        result_bytes[0 +: 8] = 1;
-                        result_bytes[8 +: 8] = frame_payload[16 +: 8];
-                        result_bytes[16 +: 16] = 16'd256;
-                        result_bytes[32 +: 8] = 16;
-                        result_bytes[40 +: 8] = 0;
-                        result_bytes[48 +: 32] = 32'h00000006;
-                        result_bytes[80 +: 32] = 32'h4c534331;
+                        response_bytes = 0;
+                        response_bytes[0 +: 8] = 1;
+                        response_bytes[8 +: 8] = frame_payload[16 +: 8];
+                        response_bytes[16 +: 16] = 16'd256;
+                        response_bytes[32 +: 8] = 16;
+                        response_bytes[40 +: 8] = 0;
+                        response_bytes[48 +: 32] = 32'h00000006;
+                        response_bytes[80 +: 32] = 32'h4c534331;
                         tx_status <= OK;
                         tx_length <= 14;
-                        tx_payload <= result_bytes;
+                        tx_payload <= response_bytes;
                         tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
@@ -704,14 +750,14 @@ module lsc1_packet_frontend (
                             committed_fp <= blake_staged_next_fp;
                             state_valid <= 1'b1;
                             retire_seq <= retire_seq + 1'b1;
-                            retired_bytes = 0;
-                            retired_bytes[0 +: 32] = txn_id;
-                            retired_bytes[32 +: 32] = retire_seq + 1'b1;
-                            retired_bytes[64 +: 32] = blake_staged_next_pc;
-                            retired_bytes[96 +: 32] = blake_staged_next_fp;
+                            response_bytes = 0;
+                            response_bytes[0 +: 32] = txn_id;
+                            response_bytes[32 +: 32] = retire_seq + 1'b1;
+                            response_bytes[64 +: 32] = blake_staged_next_pc;
+                            response_bytes[96 +: 32] = blake_staged_next_fp;
                             tx_status <= RETIRED;
                             tx_length <= 16;
-                            tx_payload <= retired_bytes;
+                            tx_payload <= response_bytes;
                             tx_external_kind <= 0;
                             tx_start <= 1'b1;
                             fault <= 1'b0;
@@ -731,14 +777,14 @@ module lsc1_packet_frontend (
                         retire_seq <= retire_seq + 1'b1;
                         result_pending <= 1'b0;
                         core_done_pulse <= 1'b1;
-                        retired_bytes = 0;
-                        retired_bytes[0 +: 32] = txn_id;
-                        retired_bytes[32 +: 32] = retire_seq + 1'b1;
-                        retired_bytes[64 +: 32] = staged_next_pc;
-                        retired_bytes[96 +: 32] = staged_next_fp;
+                        response_bytes = 0;
+                        response_bytes[0 +: 32] = txn_id;
+                        response_bytes[32 +: 32] = retire_seq + 1'b1;
+                        response_bytes[64 +: 32] = staged_next_pc;
+                        response_bytes[96 +: 32] = staged_next_fp;
                         tx_status <= RETIRED;
                         tx_length <= 16;
-                        tx_payload <= retired_bytes;
+                        tx_payload <= response_bytes;
                         tx_external_kind <= 0;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
@@ -867,7 +913,6 @@ module lsc1_packet_frontend (
                     decision_deferred = 1'b0;
                     decision_fault = 0;
                     decision_detail = 0;
-                    result_bytes = 0;
                     n_writes = 0;
                     n_deferred = 0;
                     write_address = 0;
