@@ -284,8 +284,8 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertFalse(valid)
         self.assertTrue(reason.startswith("source_no_follow_open_failed"), reason)
 
-    def test_extracted_runtime_substitution_is_not_consumed(self) -> None:
-        """Mutable loader/libexec/lib/plugin/data neighbors are outside the root of trust."""
+    def test_preexisting_extracted_tree_substitution_is_ignored(self) -> None:
+        """Ambient extracted files are ignored in favor of the authenticated archive."""
         pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
                                      stdout=subprocess.PIPE, check=True).stdout.strip())
         with tempfile.TemporaryDirectory() as raw:
@@ -315,53 +315,18 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertTrue(receipt["reason"].startswith("source_no_follow_open_failed"))
 
-    def test_authenticated_descriptors_survive_ancestor_swap(self) -> None:
-        """Swapped pathname ancestors cannot change either consumed object."""
-        pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
-                                     stdout=subprocess.PIPE, check=True).stdout.strip())
-        production_text = (check.FORMAL / check.INVARIANT).read_text()
-        spoof_text = production_text.replace(check.PENDING_ASSERTION, check.REMOVED_PENDING_ASSERTION)
+    def test_read_only_nested_snapshot_cleanup_leaves_no_residue(self) -> None:
+        """Cleanup restores deep sealed modes before removing the private tree."""
         with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            live = root / "live"
-            parked = root / "parked"
-            (live / "bin").mkdir(parents=True)
-            (live / "invariant.sv").write_text(production_text)
-            os.link(pinned, live / "bin" / "yosys")
-            suite = pinned.parent.parent
-            (live / "lib").symlink_to(suite / "lib", target_is_directory=True)
-            (live / "libexec").symlink_to(suite / "libexec", target_is_directory=True)
-            original_run = validator._run_authenticated
-            calls = 0
-
-            def swap_then_run(executable_fd, arguments, inherited_fds, env=None):
-                nonlocal calls
-                calls += 1
-                if calls != 2:
-                    return original_run(executable_fd, arguments, inherited_fds, env)
-                live.rename(parked)
-                (live / "bin").mkdir(parents=True)
-                (live / "invariant.sv").write_text(spoof_text)
-                fake = live / "bin" / "yosys"
-                fake.write_text("#!/bin/sh\nexit 99\n")
-                fake.chmod(0o755)
-                try:
-                    return original_run(executable_fd, arguments, inherited_fds, env)
-                finally:
-                    for entry in (live / "bin").iterdir():
-                        entry.unlink()
-                    (live / "bin").rmdir()
-                    (live / "invariant.sv").unlink()
-                    live.rmdir()
-                    parked.rename(live)
-
-            with mock.patch.object(validator, "_run_authenticated", side_effect=swap_then_run):
-                valid, reason, meta = validator.validate(
-                    live / "invariant.sv", str(live / "bin" / "yosys"))
-        self.assertTrue(valid, reason)
-        self.assertEqual(meta["consumption_route"],
-                         "fixed_parent_sealed_snapshot_descriptor_runtime_and_io")
-        self.assertEqual(calls, 3)  # dependency audit, version, elaboration
+            private = Path(raw) / "private"
+            nested = private / "oss-cad-suite" / "examples" / "abstract" / "deep"
+            nested.mkdir(parents=True)
+            (nested / "model.v").write_text("module model; endmodule\n")
+            for entry in sorted(private.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+                os.chmod(entry, 0o400 if entry.is_file() else 0o500)
+            os.chmod(private, 0o500)
+            validator._remove_private_tree(private)
+            self.assertFalse(private.exists(), "private snapshot residue remains")
 
     def test_hostile_tmpdir_is_ignored(self) -> None:
         production = check.FORMAL / check.INVARIANT
@@ -374,7 +339,8 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(meta["trusted_workspace"]["mode"], "0700")
         self.assertIn("TMPDIR", meta["sanitized_environment"]["removed_variables"])
 
-    def test_runtime_path_swap_after_audit_fails_closed(self) -> None:
+    def test_deterministic_snapshot_change_is_detected(self) -> None:
+        """A test-hook modification is detected; this is not a concurrent-attacker claim."""
         production = check.FORMAL / check.INVARIANT
         original = validator._run_authenticated
         calls = 0

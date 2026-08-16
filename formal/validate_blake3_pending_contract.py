@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 10
+CONTRACT_VERSION = 11
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -26,6 +26,22 @@ SUPPORTED_YOSYS_REPRESENTATION = "$check with FLAVOR=assert and explicit TRG met
 SUPPORTED_YOSYS_RANGE = "repository-pinned OSS CAD Suite Yosys 0.68+40"
 SUPPORTED_YOSYS_VERSION = MANIFEST["yosys_version"]
 SUPPORTED_YOSYS_GIT_SHA = MANIFEST["yosys_git_sha"]
+THREAT_BOUNDARY = {
+    "assumption": "trusted isolated CI process and runner after SHA-pinned archive authentication",
+    "protects_against": [
+        "accidental_or_ambient_PATH_selection",
+        "final_component_symlinks",
+        "hostile_TMPDIR",
+        "stale_or_substituted_extracted_tree_before_validation",
+        "output_pathname_replacement",
+    ],
+    "not_claimed": [
+        "same_uid_or_root_concurrent_tampering",
+        "ptrace_or_proc_fd_writes",
+        "privileged_mount_replacement",
+        "kernel_compromise",
+    ],
+}
 
 
 def _fd_digest(fd: int) -> str:
@@ -151,14 +167,29 @@ def _read_output_fd(fd: int) -> bytes:
 
 
 def _remove_private_tree(path: Path) -> None:
-    def restore_write(_function, target, _error):
-        os.chmod(target, 0o700)
-        if Path(target).is_dir():
-            for child in Path(target).iterdir():
-                try: os.chmod(child, 0o700)
-                except OSError: pass
-        _function(target)
-    shutil.rmtree(path, onerror=restore_write)
+    """Restore sealed-tree permissions bottom-up, remove it, and verify residue."""
+    if not path.exists():
+        return
+    failures: list[str] = []
+    entries = sorted(path.rglob("*"), key=lambda entry: len(entry.parts), reverse=True)
+    for entry in entries:
+        try:
+            if not entry.is_symlink():
+                os.chmod(entry, 0o700 if entry.is_dir() else 0o600)
+        except OSError as error:
+            failures.append(f"chmod:{entry.relative_to(path)}:{error.errno}")
+    try:
+        os.chmod(path, 0o700)
+    except OSError as error:
+        failures.append(f"chmod:.:{error.errno}")
+    shutil.rmtree(path, ignore_errors=True)
+    if path.exists():
+        try:
+            residue = [str(entry.relative_to(path)) for entry in path.rglob("*")][:20]
+        except OSError as error:
+            residue = [f"unreadable:{error.errno}"]
+        detail = ",".join(failures + residue) or "unknown"
+        raise RuntimeError(f"private_workspace_cleanup_incomplete:{detail}")
 
 
 def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...],
@@ -455,6 +486,7 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                  "toolchain_manifest_sha256": MANIFEST_SHA256,
                  "archive_sha256": MANIFEST["archive_sha256"],
                  "archive_bytes": MANIFEST["archive_bytes"],
+                 "threat_boundary": THREAT_BOUNDARY,
                  "snapshot_route": "fixed-parent_sealed_snapshot_descriptor_entries"}
     # The caller-selected command is authenticated as a boundary check, but is
     # never executed; runtime consumption comes exclusively from the archive.

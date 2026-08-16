@@ -221,6 +221,8 @@ def main() -> int:
                 "runtime_descriptor_objects_after"),
             "validator_output_consumption_route": baseline_contract_receipt.get(
                 "output_consumption_route"),
+            "validator_threat_boundary": baseline_contract_receipt.get(
+                "threat_boundary"),
             "validator_sanitized_environment": baseline_contract_receipt.get(
                 "sanitized_environment"),
             "validator_observed_runtime_files": baseline_contract_receipt.get(
