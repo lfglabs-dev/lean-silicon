@@ -5,15 +5,56 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 5
+CONTRACT_VERSION = 6
 TOP = "full_lsc1_controller_invariants"
 SUPPORTED_YOSYS_REPRESENTATION = "$check with FLAVOR=assert and explicit TRG metadata"
 SUPPORTED_YOSYS_RANGE = "repository-pinned OSS CAD Suite Yosys 0.68+40"
+SUPPORTED_YOSYS_VERSION = "0.68+40"
+SUPPORTED_YOSYS_GIT_SHA = "0f2bcb94b"
+
+
+def _yosys_identity(value: object) -> tuple[str, str] | None:
+    """Extract the pinned version/build identity from genuine Yosys banners."""
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(
+        r"Yosys ([0-9]+\.[0-9]+\+[0-9]+) \(git sha1 ([0-9a-f]{9})(?:-dirty)?(?:,.*)?\)",
+        value.strip(),
+    )
+    if not match:
+        return None
+    return match.group(1), match.group(2)
+
+
+def _provenance(design: dict, runtime_version: object) -> tuple[bool, str, dict]:
+    creator = design.get("creator")
+    creator_identity = _yosys_identity(creator)
+    runtime_identity = _yosys_identity(runtime_version)
+    meta = {
+        "json_creator": creator,
+        "runtime_yosys_version": runtime_version,
+        "creator_identity": creator_identity,
+        "runtime_identity": runtime_identity,
+    }
+    expected = (SUPPORTED_YOSYS_VERSION, SUPPORTED_YOSYS_GIT_SHA)
+    if creator_identity is None:
+        return False, "json_creator_missing_or_malformed", meta
+    if runtime_identity is None:
+        return False, "runtime_yosys_version_missing_or_malformed", meta
+    if creator_identity != expected:
+        return False, "json_creator_unsupported_yosys_build", meta
+    if runtime_identity != expected:
+        return False, "runtime_unsupported_yosys_build", meta
+    if creator_identity != runtime_identity:
+        return False, "json_creator_runtime_mismatch", meta
+    return True, "pinned_yosys_provenance_verified", meta
 
 
 def sha256(path: Path) -> str:
@@ -117,8 +158,12 @@ def _trigger_kind(cell: dict, representation: str) -> str:
     return "check_event_triggered"
 
 
-def validate_design(design: dict) -> tuple[bool, str, dict]:
+def validate_design(design: dict, runtime_version: str) -> tuple[bool, str, dict]:
     """Validate an already elaborated design (also used by version fixtures)."""
+    provenance_valid, provenance_reason, provenance_meta = _provenance(
+        design, runtime_version)
+    if not provenance_valid:
+        return False, provenance_reason, provenance_meta
     module = design.get("modules", {}).get(TOP)
     if not module:
         return False, "production_invariant_top_missing", {}
@@ -165,7 +210,7 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
         violations = {(r, b) for r, b, a, en in truth if en and not a}
         if violations == {(0, 1)}:
             matches.append(name)
-    meta = {"top": TOP,
+    meta = {**provenance_meta, "provenance": provenance_reason, "top": TOP,
             "supported_yosys_range": SUPPORTED_YOSYS_RANGE,
             "supported_representation": SUPPORTED_YOSYS_REPRESENTATION,
             "representation_classification": representations,
@@ -179,19 +224,39 @@ def validate_design(design: dict) -> tuple[bool, str, dict]:
     return True, "production_blake_pending_implication_elaborated", meta
 
 
-def validate(path: Path) -> tuple[bool, str, dict]:
+def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]:
+    executable = shutil.which(yosys_command)
+    if executable is None:
+        return False, "yosys_executable_missing", {"yosys_command": yosys_command}
+    executable_path = Path(executable).resolve()
+    version_command = [str(executable_path), "-V"]
+    version_result = subprocess.run(version_command, text=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+    runtime_version = version_result.stdout.strip()
+    runtime_meta = {
+        "yosys_executable": str(executable_path),
+        "yosys_executable_sha256": sha256(executable_path),
+        "yosys_version_command": version_command,
+        "runtime_yosys_version": runtime_version,
+    }
+    runtime_identity = _yosys_identity(runtime_version)
+    if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
+                                                          SUPPORTED_YOSYS_GIT_SHA):
+        return False, "runtime_unsupported_yosys_build", runtime_meta
     with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
         netlist = Path(raw) / "invariant.json"
-        command = ["yosys", "-q", "-p",
+        command = [str(executable_path), "-q", "-p",
                    f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
         completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
-        meta = {"command": command, "source_sha256": sha256(path)}
+        meta = {**runtime_meta, "command": command, "source_sha256": sha256(path)}
         if completed.returncode:
             return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
-        design = json.loads(netlist.read_text())
-    valid, reason, design_meta = validate_design(design)
-    return valid, reason, {**meta, **design_meta}
+        netlist_bytes = netlist.read_bytes()
+        design = json.loads(netlist_bytes)
+    valid, reason, design_meta = validate_design(design, runtime_version)
+    return valid, reason, {**meta, "json_sha256": hashlib.sha256(netlist_bytes).hexdigest(),
+                           **design_meta}
 
 
 def main(argv: list[str]) -> int:
@@ -200,9 +265,8 @@ def main(argv: list[str]) -> int:
         return 2
     path = Path(argv[1]).resolve()
     valid, reason, meta = validate(path)
-    version = subprocess.run(["yosys", "-V"], text=True, stdout=subprocess.PIPE).stdout.strip()
     print(json.dumps({"contract_version": CONTRACT_VERSION, "valid": valid, "reason": reason,
-                      "validator_sha256": sha256(Path(__file__)), "yosys_version": version, **meta},
+                      "validator_sha256": sha256(Path(__file__)), **meta},
                      sort_keys=True))
     return 0 if valid else 1
 

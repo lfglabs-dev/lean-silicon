@@ -21,22 +21,24 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
     def setUp(self) -> None:
         version = subprocess.run(["yosys", "-V"], text=True,
                                  stdout=subprocess.PIPE).stdout.strip()
-        self.assertIn("Yosys 0.68", version,
-                      "authoritative oracle tests require the repository-pinned OSS CAD Suite")
+        self.assertEqual(
+            validator._yosys_identity(version),
+            (validator.SUPPORTED_YOSYS_VERSION, validator.SUPPORTED_YOSYS_GIT_SHA),
+            "authoritative oracle tests require the exact repository-pinned OSS CAD Suite",
+        )
+        self.runtime_version = version
 
     def test_emitted_yosys_representation_fixtures(self) -> None:
         fixtures = check.FORMAL / "fixtures" / "blake3_pending_oracle"
         legacy = json.loads((fixtures / "yosys-0.33-assert.json").read_text())
         self.assertTrue(legacy["creator"].startswith("Yosys 0.33"))
-        valid, reason, meta = validator.validate_design(legacy)
+        valid, reason, meta = validator.validate_design(legacy, self.runtime_version)
         self.assertFalse(valid)
-        self.assertEqual(reason, "unsupported_formal_cell_representation")
-        self.assertGreater(meta["trigger_classification"]
-                               ["legacy_trigger_semantics_insufficient"], 0)
+        self.assertEqual(reason, "json_creator_missing_or_malformed")
 
         pinned = json.loads((fixtures / "yosys-0.68-check.json").read_text())
         self.assertTrue(pinned["creator"].startswith("Yosys 0.68+40"))
-        valid, reason, meta = validator.validate_design(pinned)
+        valid, reason, meta = validator.validate_design(pinned, self.runtime_version)
         self.assertTrue(valid, reason)
         self.assertGreater(meta["representation_classification"]["check_flavor_cell"], 0)
         self.assertGreater(meta["trigger_classification"]["check_combinational"], 0)
@@ -56,11 +58,9 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             design = copy.deepcopy(baseline)
             self.assertEqual(design["modules"][validator.TOP]["cells"][target_name],
                              baseline["modules"][validator.TOP]["cells"][target_name])
-            valid, reason, meta = validator.validate_design(design)
+            valid, reason, meta = validator.validate_design(design, self.runtime_version)
             self.assertFalse(valid, f"legacy {form} unexpectedly validated")
-            self.assertEqual(reason, "unsupported_formal_cell_representation")
-            self.assertGreater(meta["trigger_classification"]
-                                   ["legacy_trigger_semantics_insufficient"], 0)
+            self.assertEqual(reason, "json_creator_missing_or_malformed")
 
     def test_pinned_check_trigger_semantics(self) -> None:
         """Exercise trigger encodings emitted by the pinned Yosys $check form."""
@@ -73,7 +73,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                            and cell.get("parameters", {}).get("TRG_ENABLE", "").endswith("0")
                            and cell.get("connections", {}).get("TRG") == [])
 
-        valid, reason, meta = validator.validate_design(copy.deepcopy(baseline))
+        valid, reason, meta = validator.validate_design(copy.deepcopy(baseline), self.runtime_version)
         self.assertTrue(valid, reason)
         self.assertEqual(meta["trigger_classification"]["check_combinational"], 1)
 
@@ -87,7 +87,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1",
                                          TRG_POLARITY=polarity)
             target["connections"]["TRG"] = bits
-            valid, reason, meta = validator.validate_design(design)
+            valid, reason, meta = validator.validate_design(design, self.runtime_version)
             self.assertFalse(valid, f"{name} unexpectedly validated")
             self.assertIn("production_blake_pending_implication_cells=0", reason)
             self.assertGreaterEqual(meta["trigger_classification"][classification], 1)
@@ -96,7 +96,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         target = event["modules"][validator.TOP]["cells"][target_name]
         target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="10", TRG_POLARITY="10")
         target["connections"]["TRG"] = [2, 3]
-        valid, reason, meta = validator.validate_design(event)
+        valid, reason, meta = validator.validate_design(event, self.runtime_version)
         self.assertFalse(valid, "event-triggered pending assertion unexpectedly validated")
         self.assertIn("production_blake_pending_implication_cells=0", reason)
         self.assertEqual(meta["trigger_classification"]["check_event_triggered"], 1)
@@ -105,7 +105,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         target = malformed["modules"][validator.TOP]["cells"][target_name]
         target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1", TRG_POLARITY="x")
         target["connections"]["TRG"] = [2]
-        valid, reason, meta = validator.validate_design(malformed)
+        valid, reason, meta = validator.validate_design(malformed, self.runtime_version)
         self.assertFalse(valid)
         self.assertEqual(reason, "unsupported_formal_cell_representation")
         self.assertEqual(meta["trigger_classification"]["unknown_check_trigger"], 1)
@@ -122,7 +122,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         target["parameters"].update(TRG_ENABLE="1", TRG_WIDTH="1", TRG_POLARITY="1")
         target["connections"]["TRG"] = [2]
         cells["irrelevant_triggered_pending_assert"] = target
-        valid, reason, _ = validator.validate_design(design)
+        valid, reason, _ = validator.validate_design(design, self.runtime_version)
         self.assertFalse(valid)
         self.assertIn("production_blake_pending_implication_cells=0", reason)
 
@@ -134,9 +134,53 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                          if cell.get("type") == "$check"
                          and cell.get("parameters", {}).get("FLAVOR") == "assert")
         assertion["parameters"]["FLAVOR"] = "future_assert_encoding"
-        valid, reason, _ = validator.validate_design(design)
+        valid, reason, _ = validator.validate_design(design, self.runtime_version)
         self.assertFalse(valid)
         self.assertEqual(reason, "unsupported_formal_cell_representation")
+
+    def test_creator_and_runtime_provenance_fail_closed(self) -> None:
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"
+        baseline = json.loads(fixture.read_text())
+        cases = (
+            (None, self.runtime_version, "json_creator_missing_or_malformed"),
+            ("garbage", self.runtime_version, "json_creator_missing_or_malformed"),
+            ("Yosys 0.68+39 (git sha1 0f2bcb94b)", self.runtime_version,
+             "json_creator_unsupported_yosys_build"),
+            ("Yosys 0.68+40 (git sha1 111111111)", self.runtime_version,
+             "json_creator_unsupported_yosys_build"),
+            ("Yosys 0.69+1 (git sha1 0f2bcb94b)", self.runtime_version,
+             "json_creator_unsupported_yosys_build"),
+            ("Yosys 0.33 (git sha1 2584903a060)", self.runtime_version,
+             "json_creator_missing_or_malformed"),
+            (baseline["creator"], "garbage", "runtime_yosys_version_missing_or_malformed"),
+            (baseline["creator"], "Yosys 0.69+1 (git sha1 0f2bcb94b)",
+             "runtime_unsupported_yosys_build"),
+            (baseline["creator"], "Yosys 0.68+40 (git sha1 111111111)",
+             "runtime_unsupported_yosys_build"),
+        )
+        for creator, runtime, expected_reason in cases:
+            design = copy.deepcopy(baseline)
+            if creator is None:
+                design.pop("creator", None)
+            else:
+                design["creator"] = creator
+            with self.subTest(creator=creator, runtime=runtime):
+                valid, reason, _ = validator.validate_design(design, runtime)
+                self.assertFalse(valid)
+                self.assertEqual(reason, expected_reason)
+
+        valid, reason, meta = validator.validate_design(baseline, self.runtime_version)
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["creator_identity"], meta["runtime_identity"])
+
+    def test_authoritative_path_cannot_be_spoofed_with_a_fixture(self) -> None:
+        """The CLI boundary always generates JSON with its verified executable."""
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"
+        valid, reason, meta = validator.validate(fixture)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "production_invariant_elaboration_failed")
+        self.assertEqual(meta["runtime_yosys_version"], self.runtime_version)
+        self.assertIn(str(Path("yosys")), meta["yosys_executable"])
 
     def test_independent_validator_semantics(self) -> None:
         production = (check.FORMAL / check.INVARIANT).read_text()

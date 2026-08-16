@@ -194,7 +194,15 @@ def main() -> int:
             "formal_command": "sby -f binding-{bmc,cover}.sby",
             "validator_command": f"{sys.executable} {VALIDATOR} INVARIANT",
             "validator_contract_version": baseline_contract_receipt.get("contract_version"),
-            "validator_yosys_version": baseline_contract_receipt.get("yosys_version"),
+            "validator_runtime_yosys_version": baseline_contract_receipt.get(
+                "runtime_yosys_version"),
+            "validator_json_creator": baseline_contract_receipt.get("json_creator"),
+            "validator_yosys_executable": baseline_contract_receipt.get(
+                "yosys_executable"),
+            "validator_yosys_executable_sha256": baseline_contract_receipt.get(
+                "yosys_executable_sha256"),
+            "validator_json_sha256": baseline_contract_receipt.get("json_sha256"),
+            "validator_elaboration_command": baseline_contract_receipt.get("command"),
             "validator_representation_classification": baseline_contract_receipt.get(
                 "representation_classification"),
             "validator_trigger_classification": baseline_contract_receipt.get(
