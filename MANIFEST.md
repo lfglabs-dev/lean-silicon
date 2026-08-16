@@ -55,3 +55,11 @@ frozen-ISA/controller and RTL/netlist correspondence bridges.
 Historical result directories record the environment available when they were
 produced; they are not LSC-1 validation claims. Current CI runs Lean
 compilation, HDL simulation, formal checking, and LSC-1 synthesis.
+
+## LSC1-08 scalar RESULT serialization receipt
+
+`results/lsc1-08-scalar-result-stream/yosys-structure.json` records paired
+generic Yosys process-lowering statistics from exact base
+`008c2f57a2843e0213004c611a9e4edd1dc88e85` and the bounded scalar RESULT
+streaming slice.  It is registered-state/structure evidence only and makes no
+PPA, physical-design, FPGA, release, or hardware claim.

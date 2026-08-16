@@ -8,7 +8,7 @@ module lsc1_packet_tx (
     input  wire          start,
     input  wire [7:0]    status,
     input  wire [15:0]   payload_length,
-    input  wire [543:0]  payload,
+    input  wire [159:0]  payload,
     // Bounded scatter/gather contract.  When asserted with start, payload bytes
     // are read through payload_index instead of copied into saved_payload.  The
     // caller must keep payload_external_data immutable while
@@ -29,7 +29,7 @@ module lsc1_packet_tx (
     reg [15:0] index;
     reg [15:0] saved_length;
     reg [7:0] saved_status;
-    reg [543:0] saved_payload;
+    reg [159:0] saved_payload;
     reg saved_external;
     reg [31:0] saved_crc;
     reg [31:0] envelope_crc_work;

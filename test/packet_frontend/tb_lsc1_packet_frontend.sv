@@ -209,17 +209,26 @@ module tb_lsc1_packet_frontend;
         // Valid SET with deterministic input stalls and output backpressure.
         build_set(32'h11, 0, 4);
         send_frame(1, 8'h03, 0, 51, 0);
-        @(negedge clk); tx_ready = 0;
+        if ($bits(dut.tx_payload) != 160 || $bits(dut.transmitter.saved_payload) != 160)
+            $fatal(1, "ordinary payload storage was not narrowed to 20 bytes");
         wait (tx_valid);
+        wait (dut.tx_payload_external_valid && dut.tx_payload_index == 17);
+        #1;
+        if (dut.tx_external_kind !== 3 || tx_data !== 8'h40)
+            $fatal(1, "scalar RESULT did not select staged write byte zero");
+        @(negedge clk); tx_ready = 0;
         #1; // allow combinational tx_data to settle after active/index update
         held_tx_byte = tx_data;
+        // Working decode/computation scratch is not the serializer contract.
+        // Perturb it during a real payload stall; semantic staging must hold.
+        dut.write_value = 128'hfeedfacefeedfacefeedfacefeedface;
         repeat (12) begin
             @(posedge clk);
             if (!tx_valid || tx_data !== held_tx_byte || rx_ready) begin
                 $display("DEBUG tx_valid=%0d tx_data=%02x held=%02x rx_ready=%0d adapter_state=%0d adapter_result_index=%0d",
                          tx_valid, tx_data, held_tx_byte, rx_ready,
                          dut.adapter.state, dut.adapter.result_index);
-                $fatal(1, "output backpressure stability/receive exclusion failed");
+                $fatal(1, "scalar staged-byte/backpressure stability failed");
             end
         end
         @(negedge clk); tx_ready = 1;
