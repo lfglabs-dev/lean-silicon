@@ -102,6 +102,10 @@ module lsc1_packet_frontend (
     reg [7:0] scalar_staged_access_count;
     reg [31:0] scalar_staged_write_address;
     reg [127:0] scalar_staged_write_value;
+    // Decode/computation scratch is declared before the external serializer so
+    // focused mutations can substitute it without relying on implicit nets.
+    // Production serialization continues to use scalar_staged_write_value.
+    reg [127:0] write_value;
     reg [31:0] scalar_staged_deferred_target, scalar_staged_deferred_local;
     reg [31:0] scalar_staged_access [0:2];
     reg state_valid;
@@ -392,7 +396,6 @@ module lsc1_packet_frontend (
     reg [127:0] solved_a, solved_b;
     reg [159:0] response_bytes;
     reg [31:0] write_address;
-    reg [127:0] write_value;
     reg [7:0] decision_fault, decision_detail;
     reg decision_ok, decision_deferred;
 
