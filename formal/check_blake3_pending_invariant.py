@@ -197,8 +197,11 @@ def main() -> int:
             "validator_runtime_yosys_version": baseline_contract_receipt.get(
                 "runtime_yosys_version"),
             "validator_json_creator": baseline_contract_receipt.get("json_creator"),
-            "validator_yosys_executable": baseline_contract_receipt.get(
-                "yosys_executable"),
+            "validator_consumption_route": baseline_contract_receipt.get(
+                "consumption_route"),
+            "validator_yosys_executable_fd": baseline_contract_receipt.get(
+                "yosys_executable_fd"),
+            "validator_source_fd": baseline_contract_receipt.get("source_fd"),
             "validator_yosys_executable_sha256": baseline_contract_receipt.get(
                 "yosys_executable_observed_before", {}).get("sha256"),
             "validator_toolchain_manifest_sha256": baseline_contract_receipt.get(

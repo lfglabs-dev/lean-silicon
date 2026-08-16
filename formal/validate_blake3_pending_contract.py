@@ -14,7 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 7
+CONTRACT_VERSION = 8
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -56,17 +56,63 @@ def _open_stable(path: Path, expected_digest: str | None = None) -> tuple[int, d
     return fd, {**_identity(st), "sha256": digest}
 
 
-def _verify_unchanged(fd: int, path: Path, before: dict) -> tuple[bool, dict]:
+def _verify_fd_unchanged(fd: int, before: dict) -> tuple[bool, dict]:
     try:
         fd_stat = os.fstat(fd)
-        path_stat = os.stat(path, follow_symlinks=False)
         after = {**_identity(fd_stat), "sha256": _fd_digest(fd)}
-        path_identity = _identity(path_stat)
-        expected_identity = {key: before[key] for key in path_identity}
-        stable = after == before and path_identity == expected_identity
-        return stable, after
+        return after == before, after
     except OSError:
         return False, {"error": "post_execution_stat_failed"}
+
+
+def _fd_path(fd: int) -> str:
+    """Return a descriptor-backed path, or fail rather than reopen a pathname."""
+    path = f"/proc/self/fd/{fd}"
+    try:
+        st = os.stat(path)
+        fd_st = os.fstat(fd)
+    except OSError as error:
+        raise RuntimeError(f"descriptor_route_unavailable:{error.errno}") from error
+    if (st.st_dev, st.st_ino) != (fd_st.st_dev, fd_st.st_ino):
+        raise RuntimeError("descriptor_route_identity_mismatch")
+    return path
+
+
+def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...]
+                       ) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [executable, *arguments], executable=executable, pass_fds=inherited_fds,
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+
+
+def _sealed_executable(executable_fd: int, suite_fd: int, private: Path,
+                       expected_digest: str) -> tuple[str, dict]:
+    """Make an exact, private copy of an authenticated launcher.
+
+    The OSS CAD Suite Yosys is a relocatable shell launcher, so executing it
+    directly through /proc/self/fd loses its suite-relative runtime.  Its exact
+    authenticated bytes are copied into a private 0700 tree; suite-relative
+    runtime directories are reached through the already-open suite directory.
+    """
+    bindir = private / "bin"
+    bindir.mkdir(mode=0o700)
+    sealed = bindir / "yosys"
+    output_fd = os.open(sealed, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o500)
+    try:
+        os.lseek(executable_fd, 0, os.SEEK_SET)
+        while chunk := os.read(executable_fd, 1024 * 1024):
+            os.write(output_fd, chunk)
+        os.fsync(output_fd)
+    finally:
+        os.close(output_fd)
+        os.lseek(executable_fd, 0, os.SEEK_SET)
+    sealed_fd, sealed_meta = _open_stable(sealed, expected_digest)
+    os.close(sealed_fd)
+    suite_route = _fd_path(suite_fd)
+    (private / "lib").symlink_to(f"{suite_route}/lib", target_is_directory=True)
+    (private / "libexec").symlink_to(f"{suite_route}/libexec", target_is_directory=True)
+    return str(sealed), sealed_meta
 
 
 def _yosys_identity(value: object) -> tuple[str, str] | None:
@@ -277,7 +323,10 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
     executable = shutil.which(yosys_command)
     if executable is None:
         return False, "yosys_executable_missing", {"yosys_command": yosys_command}
-    executable_path = Path(executable).absolute()
+    # Deliberately do not resolve either object: final-component symlinks must
+    # reach O_NOFOLLOW, and authenticated objects are consumed only by fd.
+    executable_path = Path(os.path.abspath(executable))
+    source_path = Path(os.path.abspath(os.fspath(path)))
     base_meta = {"toolchain_manifest": str(MANIFEST_PATH),
                  "toolchain_manifest_sha256": MANIFEST_SHA256,
                  "expected_yosys_sha256": MANIFEST["yosys_sha256"]}
@@ -285,47 +334,76 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
         executable_fd, executable_before = _open_stable(
             executable_path, MANIFEST["yosys_sha256"])
     except RuntimeError as error:
-        return False, f"yosys_executable_{error}", {**base_meta, "yosys_executable": str(executable_path)}
+        return False, f"yosys_executable_{error}", base_meta
     try:
-        source_fd, source_before = _open_stable(path)
+        source_fd, source_before = _open_stable(source_path)
     except RuntimeError as error:
         os.close(executable_fd)
-        return False, f"source_{error}", {**base_meta, "source": str(path)}
-    version_command = [str(executable_path), "-V"]
-    version_result = subprocess.run(version_command, text=True, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-    executable_stable, executable_after_version = _verify_unchanged(
-        executable_fd, executable_path, executable_before)
-    runtime_version = version_result.stdout.strip()
-    runtime_meta = {
-        **base_meta,
-        "yosys_executable": str(executable_path),
-        "yosys_executable_observed_before": executable_before,
-        "yosys_executable_observed_after_version": executable_after_version,
-        "yosys_version_command": version_command,
-        "runtime_yosys_version": runtime_version,
-    }
-    if not executable_stable:
+        return False, f"source_{error}", base_meta
+    try:
+        _fd_path(executable_fd)
+        source_route = _fd_path(source_fd)
+    except RuntimeError as error:
         os.close(source_fd); os.close(executable_fd)
-        return False, "yosys_executable_changed_during_version", runtime_meta
-    runtime_identity = _yosys_identity(runtime_version)
-    if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
-                                                          SUPPORTED_YOSYS_GIT_SHA):
+        return False, str(error), base_meta
+    try:
+        suite_fd = os.open(executable_path.parent.parent,
+                           os.O_RDONLY | os.O_CLOEXEC | os.O_DIRECTORY |
+                           getattr(os, "O_NOFOLLOW", 0))
+    except OSError as error:
         os.close(source_fd); os.close(executable_fd)
-        return False, "runtime_unsupported_yosys_build", runtime_meta
+        return False, f"suite_descriptor_open_failed:{error.errno}", base_meta
     with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
-        netlist = Path(raw) / "invariant.json"
-        command = [str(executable_path), "-q", "-p",
-                   f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
-        completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        executable_stable, executable_after = _verify_unchanged(
-            executable_fd, executable_path, executable_before)
-        source_stable, source_after = _verify_unchanged(source_fd, path, source_before)
-        os.close(source_fd); os.close(executable_fd)
+        private = Path(raw)
+        private.chmod(0o700)
+        try:
+            sealed_executable, sealed_meta = _sealed_executable(
+                executable_fd, suite_fd, private, MANIFEST["yosys_sha256"])
+        except (OSError, RuntimeError) as error:
+            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
+            return False, f"sealed_executable_failed:{error}", base_meta
+        version_command = ["sealed-authenticated-yosys", "-V"]
+        version_result = _run_authenticated(
+            sealed_executable, ["-V"], (executable_fd, suite_fd))
+        executable_stable, executable_after_version = _verify_fd_unchanged(
+            executable_fd, executable_before)
+        runtime_version = version_result.stdout.strip()
+        runtime_meta = {
+            **base_meta,
+            "yosys_executable_fd": executable_fd,
+            "yosys_suite_fd": suite_fd,
+            "source_fd": source_fd,
+            "sealed_executable": sealed_meta,
+            "yosys_executable_observed_before": executable_before,
+            "yosys_executable_observed_after_version": executable_after_version,
+            "yosys_version_command": version_command,
+            "runtime_yosys_version": runtime_version,
+        }
+        if not executable_stable:
+            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
+            return False, "yosys_executable_changed_during_version", runtime_meta
+        runtime_identity = _yosys_identity(runtime_version)
+        if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
+                                                              SUPPORTED_YOSYS_GIT_SHA):
+            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
+            return False, "runtime_unsupported_yosys_build", runtime_meta
+        netlist = private / "invariant.json"
+        script = (f"read_verilog -formal -sv {source_route}; "
+                  f"hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; "
+                  f"write_json {netlist}")
+        command = ["authenticated-yosys-fd", "-q", "-p", script]
+        completed = _run_authenticated(
+            sealed_executable, ["-q", "-p", script],
+            (executable_fd, suite_fd, source_fd))
+        executable_stable, executable_after = _verify_fd_unchanged(
+            executable_fd, executable_before)
+        source_stable, source_after = _verify_fd_unchanged(source_fd, source_before)
+        os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
         meta = {**runtime_meta, "command": command, "source_observed_before": source_before,
                 "source_observed_after": source_after,
-                "yosys_executable_observed_after_elaboration": executable_after}
+        "yosys_executable_observed_after_elaboration": executable_after,
+        "consumption_route": "sealed_authenticated_launcher_and_inherited_source_fd",
+        "output_directory_mode": "0700"}
         if not executable_stable:
             return False, "yosys_executable_changed_during_elaboration", meta
         if not source_stable:
@@ -343,7 +421,7 @@ def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print("usage: validate_blake3_pending_contract.py INVARIANT", file=sys.stderr)
         return 2
-    path = Path(argv[1]).resolve()
+    path = Path(os.path.abspath(argv[1]))
     valid, reason, meta = validate(path)
     print(json.dumps({"contract_version": CONTRACT_VERSION, "valid": valid, "reason": reason,
                       "validator_sha256": sha256(Path(__file__)), **meta},

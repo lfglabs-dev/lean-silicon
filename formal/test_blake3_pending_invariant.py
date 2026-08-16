@@ -7,6 +7,7 @@ import contextlib
 import io
 import json
 import copy
+import os
 import subprocess
 import tempfile
 import unittest
@@ -180,7 +181,8 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertFalse(valid)
         self.assertEqual(reason, "production_invariant_elaboration_failed")
         self.assertEqual(meta["runtime_yosys_version"], self.runtime_version)
-        self.assertIn(str(Path("yosys")), meta["yosys_executable"])
+        self.assertEqual(meta["consumption_route"],
+                         "sealed_authenticated_launcher_and_inherited_source_fd")
 
     def test_authoritative_binary_digest_and_path_fail_closed(self) -> None:
         """A banner/fixture copier, tampered binary, or symlink never executes."""
@@ -211,34 +213,42 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             self.assertFalse(valid)
             self.assertTrue(reason.startswith("yosys_executable_no_follow_open_failed"), reason)
 
+            path_bin = root / "bin"
+            path_bin.mkdir()
+            (path_bin / "yosys").symlink_to(pinned)
+            with mock.patch.dict(os.environ, {"PATH": str(path_bin)}):
+                valid, reason, _ = validator.validate(production, "yosys")
+            self.assertFalse(valid)
+            self.assertTrue(reason.startswith("yosys_executable_no_follow_open_failed"), reason)
+
     def test_authoritative_toctou_checks_fail_closed(self) -> None:
         production = check.FORMAL / check.INVARIANT
-        original = validator._verify_unchanged
+        original = validator._verify_fd_unchanged
         calls = 0
 
-        def unstable(fd, path, before):
+        def unstable(fd, before):
             nonlocal calls
             calls += 1
-            stable, after = original(fd, path, before)
+            stable, after = original(fd, before)
             if calls == 1:
                 return False, {**after, "simulated_change": True}
             return stable, after
 
-        with mock.patch.object(validator, "_verify_unchanged", side_effect=unstable):
+        with mock.patch.object(validator, "_verify_fd_unchanged", side_effect=unstable):
             valid, reason, _ = validator.validate(production)
         self.assertFalse(valid)
         self.assertEqual(reason, "yosys_executable_changed_during_version")
 
         calls = 0
-        def unstable_source(fd, path, before):
+        def unstable_source(fd, before):
             nonlocal calls
             calls += 1
-            stable, after = original(fd, path, before)
+            stable, after = original(fd, before)
             if calls == 3:
                 return False, {**after, "simulated_change": True}
             return stable, after
 
-        with mock.patch.object(validator, "_verify_unchanged", side_effect=unstable_source):
+        with mock.patch.object(validator, "_verify_fd_unchanged", side_effect=unstable_source):
             valid, reason, _ = validator.validate(production)
         self.assertFalse(valid)
         self.assertEqual(reason, "source_changed_during_elaboration")
@@ -250,6 +260,65 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             valid, reason, _ = validator.validate(link)
         self.assertFalse(valid)
         self.assertTrue(reason.startswith("source_no_follow_open_failed"), reason)
+
+    def test_cli_preserves_final_source_symlink_for_no_follow(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            link = Path(raw) / "invariant.sv"
+            link.symlink_to(check.FORMAL / check.INVARIANT)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                rc = validator.main(["validator", str(link)])
+            receipt = json.loads(output.getvalue())
+        self.assertEqual(rc, 1)
+        self.assertTrue(receipt["reason"].startswith("source_no_follow_open_failed"))
+
+    def test_authenticated_descriptors_survive_ancestor_swap(self) -> None:
+        """Swapped pathname ancestors cannot change either consumed object."""
+        pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
+                                     stdout=subprocess.PIPE, check=True).stdout.strip())
+        production_text = (check.FORMAL / check.INVARIANT).read_text()
+        spoof_text = production_text.replace(check.PENDING_ASSERTION, check.REMOVED_PENDING_ASSERTION)
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            live = root / "live"
+            parked = root / "parked"
+            (live / "bin").mkdir(parents=True)
+            (live / "invariant.sv").write_text(production_text)
+            os.link(pinned, live / "bin" / "yosys")
+            suite = pinned.parent.parent
+            (live / "lib").symlink_to(suite / "lib", target_is_directory=True)
+            (live / "libexec").symlink_to(suite / "libexec", target_is_directory=True)
+            original_run = validator._run_authenticated
+            calls = 0
+
+            def swap_then_run(executable_fd, arguments, inherited_fds):
+                nonlocal calls
+                calls += 1
+                if calls != 2:
+                    return original_run(executable_fd, arguments, inherited_fds)
+                live.rename(parked)
+                (live / "bin").mkdir(parents=True)
+                (live / "invariant.sv").write_text(spoof_text)
+                fake = live / "bin" / "yosys"
+                fake.write_text("#!/bin/sh\nexit 99\n")
+                fake.chmod(0o755)
+                try:
+                    return original_run(executable_fd, arguments, inherited_fds)
+                finally:
+                    for entry in (live / "bin").iterdir():
+                        entry.unlink()
+                    (live / "bin").rmdir()
+                    (live / "invariant.sv").unlink()
+                    live.rmdir()
+                    parked.rename(live)
+
+            with mock.patch.object(validator, "_run_authenticated", side_effect=swap_then_run):
+                valid, reason, meta = validator.validate(
+                    live / "invariant.sv", str(live / "bin" / "yosys"))
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["consumption_route"],
+                         "sealed_authenticated_launcher_and_inherited_source_fd")
+        self.assertEqual(calls, 2)
 
     def test_manifest_binds_verified_archive_and_executable(self) -> None:
         self.assertEqual(validator.MANIFEST["archive_bytes"], 737556153)
