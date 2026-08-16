@@ -17,6 +17,31 @@ from formal import validate_blake3_pending_contract as validator
 
 
 class Blake3PendingInvariantHarnessTest(unittest.TestCase):
+    def test_emitted_yosys_representation_fixtures(self) -> None:
+        fixtures = check.FORMAL / "fixtures" / "blake3_pending_oracle"
+        expected = {
+            "yosys-0.33-assert.json": ("Yosys 0.33", "legacy_formal_cell"),
+            "yosys-0.68-check.json": ("Yosys 0.68+40", "check_flavor_cell"),
+        }
+        for filename, (version, representation) in expected.items():
+            design = json.loads((fixtures / filename).read_text())
+            self.assertTrue(design["creator"].startswith(version))
+            valid, reason, meta = validator.validate_design(design)
+            self.assertTrue(valid, f"{filename}: {reason}")
+            self.assertGreater(meta["representation_classification"][representation], 0)
+
+    def test_unknown_check_representation_fails_closed(self) -> None:
+        fixture = check.FORMAL / "fixtures" / "blake3_pending_oracle" / "yosys-0.68-check.json"
+        design = json.loads(fixture.read_text())
+        cells = design["modules"][validator.TOP]["cells"]
+        assertion = next(cell for cell in cells.values()
+                         if cell.get("type") == "$check"
+                         and cell.get("parameters", {}).get("FLAVOR") == "assert")
+        assertion["parameters"]["FLAVOR"] = "future_assert_encoding"
+        valid, reason, _ = validator.validate_design(design)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "unsupported_formal_cell_representation")
+
     def test_independent_validator_semantics(self) -> None:
         production = (check.FORMAL / check.INVARIANT).read_text()
         pending_block = """    always @(*) begin

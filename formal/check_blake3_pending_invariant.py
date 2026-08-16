@@ -103,6 +103,14 @@ def validate_contract(work: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def contract_receipt(result: subprocess.CompletedProcess[str]) -> dict:
+    try:
+        return json.loads(result.stdout.splitlines()[-1])
+    except (json.JSONDecodeError, IndexError):
+        return {"valid": False, "reason": "validator_receipt_unparseable",
+                "raw_output": result.stdout[-2000:]}
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="blake3-pending-invariant-") as raw:
         root = Path(raw)
@@ -117,6 +125,7 @@ def main() -> int:
 
         baseline_work = install_baseline(root, "baseline")
         baseline_contract = validate_contract(baseline_work)
+        baseline_contract_receipt = contract_receipt(baseline_contract)
         baseline = run(baseline_work, "bmc")
         coverage = run(baseline_work, "cover")
 
@@ -137,6 +146,7 @@ def main() -> int:
             (mutant_work / INVARIANT).write_text(mutant_invariant)
             isolated = mutation_isolated(mutant_work, source_text, mutant_invariant)
             contract = validate_contract(mutant_work)
+            contract_meta = contract_receipt(contract)
             proof = run(mutant_work, "bmc")
             cover = run(mutant_work, "cover")
             assertion_results[name] = {
@@ -149,6 +159,7 @@ def main() -> int:
                 "cover_reached": cover.returncode == 0,
                 "contract_rejected": contract.returncode == 1,
                 "contract_output": contract.stdout,
+                "contract_receipt": contract_meta,
                 "killed": isolated and contract.returncode == 1
                     and proof.returncode == 0 and cover.returncode == 0,
                 "proof_output": proof.stdout,
@@ -162,6 +173,7 @@ def main() -> int:
         (control_work / INVARIANT).write_text(control_invariant)
         control_isolated = mutation_isolated(control_work, source_text, control_invariant)
         control_contract = validate_contract(control_work)
+        control_contract_receipt = contract_receipt(control_contract)
 
     baseline_pass = baseline.returncode == 0 and baseline_contract.returncode == 0
     cover_reached = coverage.returncode == 0
@@ -181,6 +193,10 @@ def main() -> int:
             "sby_version": tool_version(["sby", "--version"]),
             "formal_command": "sby -f binding-{bmc,cover}.sby",
             "validator_command": f"{sys.executable} {VALIDATOR} INVARIANT",
+            "validator_contract_version": baseline_contract_receipt.get("contract_version"),
+            "validator_yosys_version": baseline_contract_receipt.get("yosys_version"),
+            "validator_representation_classification": baseline_contract_receipt.get(
+                "representation_classification"),
         },
         "baseline_proof": baseline_pass,
         "blake_pending_cover": cover_reached,
@@ -191,6 +207,7 @@ def main() -> int:
                 "anchor_count": source_text.count(UNION_BINDING),
                 "isolated": binding_isolated,
                 "contract_pass": binding_contract.returncode == 0,
+                "contract_receipt": contract_receipt(binding_contract),
                 "killed": binding_mutation_killed and binding_isolated
                     and binding_contract.returncode == 0,
                 "reason": "production_pending_assertion_failed",
@@ -205,6 +222,7 @@ def main() -> int:
                     "proof_pass": result["proof_pass"],
                     "cover_reached": result["cover_reached"],
                     "contract_rejected": result["contract_rejected"],
+                    "contract_receipt": result["contract_receipt"],
                     "killed": result["killed"],
                     "reason": "independent_production_pending_contract_rejected",
                 } for name, result in assertion_results.items()
@@ -215,6 +233,7 @@ def main() -> int:
                 "anchor_count": invariant_text.count(CONTROL_COVER),
                 "isolated": control_isolated,
                 "contract_pass": control_contract.returncode == 0,
+                "contract_receipt": control_contract_receipt,
                 "accepted": control_isolated and control_contract.returncode == 0,
                 "reason": "unrelated_invariant_change_accepted",
             },

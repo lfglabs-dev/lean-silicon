@@ -10,7 +10,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 2
+CONTRACT_VERSION = 3
 TOP = "full_lsc1_controller_invariants"
 
 
@@ -58,31 +58,46 @@ def _evaluate(module: dict, outputs: list[object], inputs: dict[int, int]) -> li
     return [_bit(bit, values) for bit in outputs]
 
 
-def validate(path: Path) -> tuple[bool, str, dict]:
-    with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
-        netlist = Path(raw) / "invariant.json"
-        command = ["yosys", "-q", "-p",
-                   f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
-        completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        meta = {"command": command, "source_sha256": sha256(path)}
-        if completed.returncode:
-            return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
-        design = json.loads(netlist.read_text())
+def _formal_kind(cell: dict) -> tuple[str | None, str]:
+    """Normalize formal cells emitted by supported Yosys generations."""
+    cell_type = cell.get("type")
+    if cell_type in ("$assert", "$assume", "$cover"):
+        return cell_type[1:], "legacy_formal_cell"
+    if cell_type == "$check":
+        flavor = cell.get("parameters", {}).get("FLAVOR")
+        if flavor in ("assert", "assume", "cover", "live", "fair"):
+            return flavor, "check_flavor_cell"
+        return None, "unknown_check_flavor"
+    return None, "not_formal"
+
+
+def validate_design(design: dict) -> tuple[bool, str, dict]:
+    """Validate an already elaborated design (also used by version fixtures)."""
     module = design.get("modules", {}).get(TOP)
     if not module:
-        return False, "production_invariant_top_missing", meta
+        return False, "production_invariant_top_missing", {}
     ports = module.get("ports", {})
     try:
         result_bit = ports["result_pending"]["bits"][0]
         blake_bit = ports["blake_result_pending"]["bits"][0]
     except (KeyError, IndexError):
-        return False, "production_pending_ports_missing", meta
+        return False, "production_pending_ports_missing", {}
     matches = []
+    representations: dict[str, int] = {}
+    unknown = []
     for name, cell in module.get("cells", {}).items():
-        if cell.get("type") != "$assert":
+        kind, representation = _formal_kind(cell)
+        if representation != "not_formal":
+            representations[representation] = representations.get(representation, 0) + 1
+        if representation == "unknown_check_flavor":
+            unknown.append(name)
             continue
-        con = cell["connections"]
+        if kind != "assert":
+            continue
+        con = cell.get("connections", {})
+        if not {"A", "EN"}.issubset(con) or len(con["A"]) != 1 or len(con["EN"]) != 1:
+            unknown.append(name)
+            continue
         truth = []
         try:
             for result in (0, 1):
@@ -96,10 +111,29 @@ def validate(path: Path) -> tuple[bool, str, dict]:
         violations = {(r, b) for r, b, a, en in truth if en and not a}
         if violations == {(0, 1)}:
             matches.append(name)
-    meta.update({"top": TOP, "live_assert_cells": len(matches), "matching_cells": matches})
+    meta = {"top": TOP, "representation_classification": representations,
+            "unknown_formal_cells": unknown, "live_assert_cells": len(matches),
+            "matching_cells": matches}
+    if unknown:
+        return False, "unsupported_formal_cell_representation", meta
     if len(matches) != 1:
         return False, f"production_blake_pending_implication_cells={len(matches)};expected=1", meta
     return True, "production_blake_pending_implication_elaborated", meta
+
+
+def validate(path: Path) -> tuple[bool, str, dict]:
+    with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
+        netlist = Path(raw) / "invariant.json"
+        command = ["yosys", "-q", "-p",
+                   f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
+        completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        meta = {"command": command, "source_sha256": sha256(path)}
+        if completed.returncode:
+            return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
+        design = json.loads(netlist.read_text())
+    valid, reason, design_meta = validate_design(design)
+    return valid, reason, {**meta, **design_meta}
 
 
 def main(argv: list[str]) -> int:
