@@ -209,6 +209,18 @@ def main() -> int:
             "validator_archive_observed_after_elaboration": baseline_contract_receipt.get(
                 "archive_observed_after_elaboration"),
             "validator_snapshot_route": baseline_contract_receipt.get("snapshot_route"),
+            "validator_trusted_workspace": baseline_contract_receipt.get(
+                "trusted_workspace"),
+            "validator_snapshot_identity_before": baseline_contract_receipt.get(
+                "snapshot_identity_before"),
+            "validator_snapshot_identity_after": baseline_contract_receipt.get(
+                "snapshot_identity_after"),
+            "validator_runtime_descriptor_objects": baseline_contract_receipt.get(
+                "runtime_descriptor_objects"),
+            "validator_runtime_descriptor_objects_after": baseline_contract_receipt.get(
+                "runtime_descriptor_objects_after"),
+            "validator_output_consumption_route": baseline_contract_receipt.get(
+                "output_consumption_route"),
             "validator_sanitized_environment": baseline_contract_receipt.get(
                 "sanitized_environment"),
             "validator_observed_runtime_files": baseline_contract_receipt.get(

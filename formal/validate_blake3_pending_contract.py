@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 9
+CONTRACT_VERSION = 10
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -81,14 +81,84 @@ def _fd_path(fd: int) -> str:
 
 
 def _sanitized_environment(snapshot: Path) -> tuple[dict[str, str], dict]:
-    removed = sorted(k for k in os.environ if k.startswith(("LD_", "YOSYS_")))
+    removed = sorted(k for k in os.environ
+                     if k.startswith(("LD_", "YOSYS_")) or k == "TMPDIR")
     env = {k: v for k, v in os.environ.items()
-           if not k.startswith(("LD_", "YOSYS_"))}
+           if not k.startswith(("LD_", "YOSYS_")) and k != "TMPDIR"}
     env.update({"PATH": str(snapshot / "bin") + ":/usr/bin:/bin",
                 "HOME": str(snapshot), "LC_ALL": "C"})
     return env, {"removed_variables": removed,
                  "set_variables": {"PATH": "<snapshot>/bin:/usr/bin:/bin",
                                    "HOME": "<snapshot>", "LC_ALL": "C"}}
+
+
+def _private_workspace() -> tuple[Path, int, int, dict]:
+    """Create beneath the fixed, no-follow verified system temp parent."""
+    parent = Path("/tmp")
+    parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
+                        getattr(os, "O_NOFOLLOW", 0))
+    parent_st = os.fstat(parent_fd)
+    if not stat.S_ISDIR(parent_st.st_mode) or parent_st.st_uid != 0 or \
+            not (parent_st.st_mode & stat.S_ISVTX):
+        os.close(parent_fd)
+        raise RuntimeError("trusted_temp_parent_policy_failed")
+    raw = Path(tempfile.mkdtemp(prefix="blake-pending-contract-", dir="/tmp"))
+    os.chmod(raw, 0o700)
+    workspace_fd = os.open(raw, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
+                           getattr(os, "O_NOFOLLOW", 0))
+    st = os.fstat(workspace_fd)
+    if st.st_uid != os.getuid() or stat.S_IMODE(st.st_mode) != 0o700:
+        os.close(workspace_fd); os.close(parent_fd); shutil.rmtree(raw)
+        raise RuntimeError("private_workspace_policy_failed")
+    return raw, parent_fd, workspace_fd, {"device": parent_st.st_dev,
+        "inode": parent_st.st_ino, "workspace_device": st.st_dev,
+        "workspace_inode": st.st_ino, "owner": st.st_uid, "mode": "0700"}
+
+
+def _tree_identity(root: Path) -> dict:
+    """Hash the extracted namespace and reject aliases/special objects."""
+    digest = hashlib.sha256()
+    count = 0
+    for path in sorted(root.rglob("*"), key=lambda p: os.fsencode(p.relative_to(root))):
+        relative = os.fsencode(path.relative_to(root))
+        st = path.lstat()
+        if stat.S_ISLNK(st.st_mode):
+            raise RuntimeError("snapshot_symlink_not_sealed")
+        if not (stat.S_ISDIR(st.st_mode) or stat.S_ISREG(st.st_mode)):
+            raise RuntimeError("snapshot_special_file")
+        if stat.S_ISREG(st.st_mode) and st.st_nlink != 1:
+            raise RuntimeError("snapshot_hardlink_not_sealed")
+        digest.update(relative + b"\0" + str(st.st_mode & ~0o222).encode() + b"\0" +
+                      str(st.st_size).encode() + b"\0")
+        if stat.S_ISREG(st.st_mode):
+            with path.open("rb") as stream:
+                while chunk := stream.read(1024 * 1024): digest.update(chunk)
+            os.chmod(path, stat.S_IMODE(st.st_mode) & ~0o222)
+        count += 1
+    for path in sorted((p for p in root.rglob("*") if p.is_dir()),
+                       key=lambda p: len(p.parts), reverse=True):
+        os.chmod(path, stat.S_IMODE(path.stat().st_mode) & ~0o222)
+    os.chmod(root, stat.S_IMODE(root.stat().st_mode) & ~0o222)
+    return {"sha256": digest.hexdigest(), "entries": count}
+
+
+def _read_output_fd(fd: int) -> bytes:
+    os.lseek(fd, 0, os.SEEK_SET)
+    chunks = []
+    while chunk := os.read(fd, 1024 * 1024): chunks.append(chunk)
+    os.lseek(fd, 0, os.SEEK_SET)
+    return b"".join(chunks)
+
+
+def _remove_private_tree(path: Path) -> None:
+    def restore_write(_function, target, _error):
+        os.chmod(target, 0o700)
+        if Path(target).is_dir():
+            for child in Path(target).iterdir():
+                try: os.chmod(child, 0o700)
+                except OSError: pass
+        _function(target)
+    shutil.rmtree(path, onerror=restore_write)
 
 
 def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...],
@@ -124,6 +194,22 @@ def _extract_authenticated_archive(archive_fd: int, private: Path) -> Path:
     snapshot = private / "oss-cad-suite"
     if not snapshot.is_dir():
         raise RuntimeError("archive_suite_root_missing")
+    for path in sorted(snapshot.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+        if path.is_symlink():
+            target = path.resolve(strict=True)
+            try:
+                target.relative_to(snapshot.resolve())
+            except ValueError as error:
+                raise RuntimeError("archive_link_not_confined") from error
+            path.unlink()
+            if target.is_dir():
+                shutil.copytree(target, path, symlinks=False)
+            else:
+                shutil.copy2(target, path)
+        elif path.is_file() and path.stat().st_nlink > 1:
+            replacement = path.with_name(path.name + ".sealed-copy")
+            shutil.copy2(path, replacement)
+            os.replace(replacement, path)
     return snapshot
 
 
@@ -369,7 +455,7 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                  "toolchain_manifest_sha256": MANIFEST_SHA256,
                  "archive_sha256": MANIFEST["archive_sha256"],
                  "archive_bytes": MANIFEST["archive_bytes"],
-                 "snapshot_route": "authenticated_archive_private_full_extraction"}
+                 "snapshot_route": "fixed-parent_sealed_snapshot_descriptor_entries"}
     # The caller-selected command is authenticated as a boundary check, but is
     # never executed; runtime consumption comes exclusively from the archive.
     try:
@@ -399,9 +485,12 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
     except RuntimeError as error:
         os.close(source_fd); os.close(archive_fd)
         return False, str(error), base_meta
-    with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
-        private = Path(raw)
-        private.chmod(0o700)
+    try:
+        private, parent_fd, workspace_fd, workspace_meta = _private_workspace()
+    except (OSError, RuntimeError) as error:
+        os.close(source_fd); os.close(archive_fd)
+        return False, f"private_workspace_failed:{error}", base_meta
+    try:
         try:
             snapshot = _extract_authenticated_archive(archive_fd, private)
         except (OSError, RuntimeError) as error:
@@ -423,6 +512,22 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
             os.close(source_fd); os.close(archive_fd)
             return False, "snapshot_runtime_dependency_outside_archive", {
                 **base_meta, "runtime_dependency_audit": dependency_audit}
+        try:
+            snapshot_identity = _tree_identity(snapshot)
+        except (OSError, RuntimeError) as error:
+            os.close(source_fd); os.close(archive_fd)
+            return False, f"snapshot_sealing_failed:{error}", base_meta
+        try:
+            loader_fd, loader_before = _open_stable(
+                snapshot / "lib" / "ld-linux-x86-64.so.2")
+            yosys_fd, yosys_before = _open_stable(snapshot / "libexec" / "yosys")
+            runtime_executable = _fd_path(loader_fd)
+            runtime_prefix = ["--inhibit-cache", "--inhibit-rpath", "",
+                              "--library-path", str(snapshot / "lib"),
+                              _fd_path(yosys_fd)]
+        except (OSError, RuntimeError) as error:
+            os.close(source_fd); os.close(archive_fd)
+            return False, f"snapshot_descriptor_route_failed:{error}", base_meta
         runtime_files = {}
         for relative in (MANIFEST["yosys_relative_path"], "lib/ld-linux-x86-64.so.2",
                          "libexec/yosys"):
@@ -432,7 +537,8 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
         version_command = ["authenticated-snapshot/lib/ld-linux-x86-64.so.2",
                            "<sealed-loader-options>", "libexec/yosys", "-V"]
         version_result = _run_authenticated(
-            runtime_executable, [*runtime_prefix, "-V"], (archive_fd,), runtime_env)
+            runtime_executable, [*runtime_prefix, "-V"],
+            (archive_fd, loader_fd, yosys_fd), runtime_env)
         archive_stable, archive_after_version = _verify_fd_unchanged(
             archive_fd, archive_before)
         runtime_version = version_result.stdout.strip()
@@ -447,6 +553,8 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
             "sanitized_environment": env_meta,
             "observed_runtime_files": runtime_files,
             "runtime_dependency_audit": dependency_audit,
+            "runtime_descriptor_objects": {"loader": loader_before,
+                                             "yosys": yosys_before},
         }
         if not archive_stable:
             os.close(source_fd); os.close(archive_fd)
@@ -456,31 +564,58 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
                                                               SUPPORTED_YOSYS_GIT_SHA):
             os.close(source_fd); os.close(archive_fd)
             return False, "runtime_unsupported_yosys_build", runtime_meta
-        netlist = private / "invariant.json"
+        output_fd = os.open("invariant.json", os.O_RDWR | os.O_CREAT | os.O_EXCL |
+                            os.O_CLOEXEC | getattr(os, "O_NOFOLLOW", 0), 0o600,
+                            dir_fd=workspace_fd)
+        output_route = _fd_path(output_fd)
         script = (f"read_verilog -formal -sv {source_route}; "
                   f"hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; "
-                  f"write_json {netlist}")
+                  f"write_json {output_route}")
         command = ["authenticated-snapshot/lib/ld-linux-x86-64.so.2",
                    "<sealed-loader-options>", "libexec/yosys", "-q", "-p", script]
         completed = _run_authenticated(
             runtime_executable, [*runtime_prefix, "-q", "-p", script],
-            (archive_fd, source_fd), runtime_env)
+            (archive_fd, source_fd, output_fd, loader_fd, yosys_fd), runtime_env)
         archive_stable, archive_after = _verify_fd_unchanged(archive_fd, archive_before)
         source_stable, source_after = _verify_fd_unchanged(source_fd, source_before)
-        os.close(source_fd); os.close(archive_fd)
+        loader_stable, loader_after = _verify_fd_unchanged(loader_fd, loader_before)
+        yosys_stable, yosys_after = _verify_fd_unchanged(yosys_fd, yosys_before)
+        try:
+            snapshot_after = _tree_identity(snapshot)
+        except (OSError, RuntimeError) as error:
+            snapshot_after = {"error": str(error)}
         meta = {**runtime_meta, "command": command, "source_observed_before": source_before,
                 "source_observed_after": source_after,
         "archive_observed_after_elaboration": archive_after,
-        "consumption_route": "authenticated_archive_private_full_snapshot_and_inherited_source_fd",
-        "output_directory_mode": "0700"}
+        "consumption_route": "fixed_parent_sealed_snapshot_descriptor_runtime_and_io",
+        "output_directory_mode": "0700", "trusted_workspace": workspace_meta,
+        "snapshot_identity_before": snapshot_identity,
+        "snapshot_identity_after": snapshot_after,
+        "runtime_descriptor_objects_after": {"loader": loader_after,
+                                               "yosys": yosys_after},
+        "output_consumption_route": "preopened_inherited_descriptor"}
         if not archive_stable:
             return False, "archive_changed_during_elaboration", meta
         if not source_stable:
+            os.close(output_fd); os.close(source_fd); os.close(archive_fd)
             return False, "source_changed_during_elaboration", meta
+        if snapshot_after != snapshot_identity:
+            os.close(output_fd); os.close(source_fd); os.close(archive_fd)
+            return False, "snapshot_changed_during_elaboration", meta
+        if not loader_stable or not yosys_stable:
+            os.close(output_fd); os.close(loader_fd); os.close(yosys_fd)
+            os.close(source_fd); os.close(archive_fd)
+            return False, "runtime_descriptor_changed_during_elaboration", meta
         if completed.returncode:
+            os.close(output_fd); os.close(source_fd); os.close(archive_fd)
             return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
-        netlist_bytes = netlist.read_bytes()
+        netlist_bytes = _read_output_fd(output_fd)
+        os.close(output_fd); os.close(loader_fd); os.close(yosys_fd)
+        os.close(source_fd); os.close(archive_fd)
         design = json.loads(netlist_bytes)
+    finally:
+        os.close(workspace_fd); os.close(parent_fd)
+        _remove_private_tree(private)
     valid, reason, design_meta = validate_design(design, runtime_version)
     return valid, reason, {**meta, "json_sha256": hashlib.sha256(netlist_bytes).hexdigest(),
                            **design_meta}

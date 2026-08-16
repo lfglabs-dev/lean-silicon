@@ -185,7 +185,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(reason, "production_invariant_elaboration_failed")
         self.assertEqual(meta["runtime_yosys_version"], self.runtime_version)
         self.assertEqual(meta["consumption_route"],
-                         "authenticated_archive_private_full_snapshot_and_inherited_source_fd")
+                         "fixed_parent_sealed_snapshot_descriptor_runtime_and_io")
 
     def test_authoritative_binary_digest_and_path_fail_closed(self) -> None:
         """A banner/fixture copier, tampered binary, or symlink never executes."""
@@ -302,7 +302,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                 check.FORMAL / check.INVARIANT, str(fake_suite / "bin" / "yosys"))
         self.assertTrue(valid, reason)
         self.assertEqual(meta["snapshot_route"],
-                         "authenticated_archive_private_full_extraction")
+                         "fixed-parent_sealed_snapshot_descriptor_entries")
 
     def test_cli_preserves_final_source_symlink_for_no_follow(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -360,8 +360,64 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                     live / "invariant.sv", str(live / "bin" / "yosys"))
         self.assertTrue(valid, reason)
         self.assertEqual(meta["consumption_route"],
-                         "authenticated_archive_private_full_snapshot_and_inherited_source_fd")
+                         "fixed_parent_sealed_snapshot_descriptor_runtime_and_io")
         self.assertEqual(calls, 3)  # dependency audit, version, elaboration
+
+    def test_hostile_tmpdir_is_ignored(self) -> None:
+        production = check.FORMAL / check.INVARIANT
+        with tempfile.TemporaryDirectory() as raw:
+            hostile = Path(raw) / "hostile"
+            hostile.symlink_to("/does/not/exist")
+            with mock.patch.dict(os.environ, {"TMPDIR": str(hostile)}):
+                valid, reason, meta = validator.validate(production)
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["trusted_workspace"]["mode"], "0700")
+        self.assertIn("TMPDIR", meta["sanitized_environment"]["removed_variables"])
+
+    def test_runtime_path_swap_after_audit_fails_closed(self) -> None:
+        production = check.FORMAL / check.INVARIANT
+        original = validator._run_authenticated
+        calls = 0
+
+        def swap_runtime(executable, arguments, inherited_fds, env=None):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                target = Path(env["HOME"]) / "libexec" / "yosys"
+                target.parent.chmod(0o700)
+                target.chmod(0o700)
+                target.unlink()
+                target.write_text("forged runtime\n")
+                target.chmod(0o500)
+                target.parent.chmod(0o500)
+            return original(executable, arguments, inherited_fds, env)
+
+        with mock.patch.object(validator, "_run_authenticated", side_effect=swap_runtime):
+            valid, reason, _ = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "snapshot_changed_during_elaboration")
+
+    def test_output_path_substitution_cannot_replace_descriptor_result(self) -> None:
+        production = check.FORMAL / check.INVARIANT
+        original = validator._run_authenticated
+        calls = 0
+
+        def substitute_output(executable, arguments, inherited_fds, env=None):
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                output_fd = inherited_fds[2]
+                pathname = Path(os.readlink(f"/proc/self/fd/{output_fd}"))
+                pathname.unlink()
+                pathname.write_text('{"creator":"spoofed","modules":{}}')
+            return original(executable, arguments, inherited_fds, env)
+
+        with mock.patch.object(validator, "_run_authenticated", side_effect=substitute_output):
+            valid, reason, meta = validator.validate(production)
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["output_consumption_route"],
+                         "preopened_inherited_descriptor")
+        self.assertNotEqual(meta["json_creator"], "spoofed")
 
     def test_manifest_binds_verified_archive_and_executable(self) -> None:
         self.assertEqual(validator.MANIFEST["archive_bytes"], 737556153)
