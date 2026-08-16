@@ -367,6 +367,104 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(failure["classification"], "secondary")
         self.assertIs(primary_error.cleanup_failure, failure)
 
+    def test_every_cleanup_action_runs_and_failures_are_ordered(self) -> None:
+        """Each close/removal position is independent and never stops later cleanup."""
+        actions = [f"close_{name}" for name in validator._CleanupTransaction._FD_ORDER]
+        actions.append("remove_private_tree")
+        for injected in actions:
+            with self.subTest(injected=injected), tempfile.TemporaryDirectory() as raw:
+                cleanup = validator._CleanupTransaction()
+                private = Path(raw) / "private"
+                nested = private / "oss-cad-suite" / "examples" / "abstract"
+                nested.mkdir(parents=True)
+                (nested / "model.v").write_text("module model; endmodule\n")
+                cleanup.own_private_tree(private)
+                for name in validator._CleanupTransaction._FD_ORDER:
+                    cleanup.own_fd(name, os.open(os.devnull, os.O_RDONLY))
+                observed = []
+                real_close = validator._close_owned_fd
+                real_remove = validator._remove_private_tree
+
+                def close(name, fd):
+                    observed.append(f"close_{name}")
+                    real_close(name, fd)
+                    if injected == f"close_{name}":
+                        raise OSError(f"injected {name} close failure")
+
+                def remove(path):
+                    observed.append("remove_private_tree")
+                    real_remove(path)
+                    if injected == "remove_private_tree":
+                        raise OSError("injected removal failure")
+
+                with mock.patch.object(validator, "_close_owned_fd", side_effect=close), \
+                        mock.patch.object(validator, "_remove_private_tree", side_effect=remove):
+                    with self.assertRaises(validator._CleanupFailures) as raised:
+                        cleanup.run()
+                self.assertEqual(observed, actions)
+                self.assertEqual(raised.exception.failures[0]["action"], injected)
+                self.assertFalse(private.exists(), "removal-capable cleanup left residue")
+
+    def test_cleanup_aggregate_principal_and_secondary_classification(self) -> None:
+        cleanup_error = validator._CleanupFailures([
+            {"action": "close_output", "type": "OSError", "message": "first"},
+            {"action": "close_source", "type": "OSError", "message": "second"},
+        ])
+        primary = [True, "primary_success", {}]
+        failure = validator._preserve_primary_across_cleanup(
+            primary, None, mock.Mock(side_effect=cleanup_error))
+        self.assertEqual(primary[0:2], [False, "private_workspace_cleanup_failed"])
+        self.assertEqual(failure["classification"], "principal")
+        self.assertEqual([item["action"] for item in failure["failures"]],
+                         ["close_output", "close_source"])
+
+        primary = [False, "primary_failure", {}]
+        failure = validator._preserve_primary_across_cleanup(
+            primary, None, mock.Mock(side_effect=cleanup_error))
+        self.assertEqual(primary[1], "primary_failure")
+        self.assertEqual(failure["classification"], "secondary")
+        self.assertEqual([item["action"] for item in failure["failures"]],
+                         ["close_output", "close_source"])
+
+    def test_internal_double_close_is_reported_as_ebadf(self) -> None:
+        cleanup = validator._CleanupTransaction()
+        fd = os.open(os.devnull, os.O_RDONLY)
+        cleanup.own_fd("output", fd)
+        os.close(fd)
+        with self.assertRaises(validator._CleanupFailures) as raised:
+            cleanup.run()
+        failure = raised.exception.failures[0]
+        self.assertEqual(failure["action"], "close_output")
+        self.assertIn("Bad file descriptor", failure["message"])
+
+    def test_production_validate_classifies_close_failure_without_masking(self) -> None:
+        """Exercise the real archive-backed validate path, not only cleanup helpers."""
+        production = check.FORMAL / check.INVARIANT
+        real_close = validator._close_owned_fd
+
+        def fail_output_close(name, fd):
+            real_close(name, fd)
+            if name == "output":
+                raise OSError("injected production output close failure")
+
+        with mock.patch.object(validator, "_close_owned_fd", side_effect=fail_output_close):
+            valid, reason, meta = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertEqual(reason, "private_workspace_cleanup_failed")
+        self.assertEqual(meta["cleanup_failure"]["classification"], "principal")
+        self.assertEqual(meta["cleanup_failure"]["failures"][0]["action"], "close_output")
+
+        def primary_failure(*args, **kwargs):
+            raise ValueError("injected production primary failure")
+
+        with mock.patch.object(validator, "validate_design", side_effect=primary_failure), \
+                mock.patch.object(validator, "_close_owned_fd", side_effect=fail_output_close):
+            with self.assertRaisesRegex(ValueError, "injected production primary failure") as raised:
+                validator.validate(production)
+        self.assertEqual(raised.exception.cleanup_failure["classification"], "secondary")
+        self.assertEqual(raised.exception.cleanup_failure["failures"][0]["action"],
+                         "close_output")
+
     def test_hostile_tmpdir_is_ignored(self) -> None:
         production = check.FORMAL / check.INVARIANT
         with tempfile.TemporaryDirectory() as raw:
