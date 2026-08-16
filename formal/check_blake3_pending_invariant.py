@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -23,6 +24,9 @@ INVARIANT = "full_lsc1_controller_invariants.sv"
 PENDING_ASSERTION = "if (blake_result_pending) assert(result_pending);"
 WEAK_PENDING_ASSERTION = "if (blake_result_pending) assert(1'b1);"
 REMOVED_PENDING_ASSERTION = "if (blake_result_pending) /* assertion removed by mutation */;"
+CONTROL_COVER = "cover(blake_result_pending);"
+CONTROL_COVER_MUTATION = "cover(blake_result_pending || 1'b0);"
+VALIDATOR = FORMAL / "validate_blake3_pending_contract.py"
 
 
 def run(work: Path, mode: str) -> subprocess.CompletedProcess[str]:
@@ -74,6 +78,14 @@ def mutation_isolated(work: Path, expected_frontend: str, expected_invariant: st
     return (work / INVARIANT).read_text() == expected_invariant
 
 
+def validate_contract(work: Path) -> subprocess.CompletedProcess[str]:
+    """Invoke the independent production-invariant structural contract."""
+    return subprocess.run(
+        [sys.executable, str(VALIDATOR), str(work / INVARIANT)], text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="blake3-pending-invariant-") as raw:
         root = Path(raw)
@@ -87,6 +99,7 @@ def main() -> int:
             return 1
 
         baseline_work = install_baseline(root, "baseline")
+        baseline_contract = validate_contract(baseline_work)
         baseline = run(baseline_work, "bmc")
         coverage = run(baseline_work, "cover")
 
@@ -95,6 +108,7 @@ def main() -> int:
         binding_text = source_text.replace(UNION_BINDING, OMITTED_BINDING)
         binding_frontend.write_text(binding_text)
         binding_isolated = mutation_isolated(binding_work, binding_text, invariant_text)
+        binding_contract = validate_contract(binding_work)
         binding_mutation = run(binding_work, "bmc")
 
         assertion_results = {}
@@ -105,25 +119,32 @@ def main() -> int:
             anchor_once(mutant_invariant, replacement, f"{name} replacement")
             (mutant_work / INVARIANT).write_text(mutant_invariant)
             isolated = mutation_isolated(mutant_work, source_text, mutant_invariant)
-            # The intact union makes the implication true by construction.  Run both
-            # jobs to rule out syntax/elaboration failures and require focused
-            # reachability, then kill the mutant because the shipped property is gone.
+            contract = validate_contract(mutant_work)
             proof = run(mutant_work, "bmc")
             cover = run(mutant_work, "cover")
-            property_missing = mutant_invariant.count(PENDING_ASSERTION) == 0
             assertion_results[name] = {
                 "isolated": isolated,
                 "union_intact": (mutant_work / "lsc1_packet_frontend.sv").read_text() == source_text
                     and source_text.count(UNION_BINDING) == 1,
                 "proof_pass": proof.returncode == 0,
                 "cover_reached": cover.returncode == 0,
-                "property_missing": property_missing,
-                "killed": isolated and property_missing and proof.returncode == 0 and cover.returncode == 0,
+                "contract_rejected": contract.returncode == 1,
+                "contract_output": contract.stdout,
+                "killed": isolated and contract.returncode == 1
+                    and proof.returncode == 0 and cover.returncode == 0,
                 "proof_output": proof.stdout,
                 "cover_output": cover.stdout,
             }
 
-    baseline_pass = baseline.returncode == 0
+        control_work = install_baseline(root, "control_cover")
+        anchor_once(invariant_text, CONTROL_COVER, "control cover")
+        control_invariant = invariant_text.replace(CONTROL_COVER, CONTROL_COVER_MUTATION)
+        anchor_once(control_invariant, CONTROL_COVER_MUTATION, "control cover replacement")
+        (control_work / INVARIANT).write_text(control_invariant)
+        control_isolated = mutation_isolated(control_work, source_text, control_invariant)
+        control_contract = validate_contract(control_work)
+
+    baseline_pass = baseline.returncode == 0 and baseline_contract.returncode == 0
     cover_reached = coverage.returncode == 0
     binding_mutation_killed = (
         binding_mutation.returncode != 0
@@ -138,7 +159,9 @@ def main() -> int:
             "omit_frontend_union": {
                 "anchor_count": source_text.count(UNION_BINDING),
                 "isolated": binding_isolated,
-                "killed": binding_mutation_killed and binding_isolated,
+                "contract_pass": binding_contract.returncode == 0,
+                "killed": binding_mutation_killed and binding_isolated
+                    and binding_contract.returncode == 0,
                 "reason": "production_pending_assertion_failed",
             },
             **{
@@ -148,9 +171,17 @@ def main() -> int:
                     "union_intact": result["union_intact"],
                     "proof_pass": result["proof_pass"],
                     "cover_reached": result["cover_reached"],
+                    "contract_rejected": result["contract_rejected"],
                     "killed": result["killed"],
-                    "reason": "required_production_property_missing",
+                    "reason": "independent_production_pending_contract_rejected",
                 } for name, result in assertion_results.items()
+            },
+            "control_cover_change": {
+                "anchor_count": invariant_text.count(CONTROL_COVER),
+                "isolated": control_isolated,
+                "contract_pass": control_contract.returncode == 0,
+                "accepted": control_isolated and control_contract.returncode == 0,
+                "reason": "unrelated_invariant_change_accepted",
             },
         },
     }
@@ -170,10 +201,13 @@ def main() -> int:
         print(binding_mutation.stdout[-4000:])
     for result in assertion_results.values():
         if not result["killed"]:
+            print(result["contract_output"][-2000:])
             print(result["proof_output"][-2000:])
             print(result["cover_output"][-2000:])
+    control_accepted = control_isolated and control_contract.returncode == 0
     return 0 if (baseline_pass and cover_reached and binding_mutation_killed
-                 and binding_isolated and assertion_mutations_killed) else 1
+                 and binding_isolated and binding_contract.returncode == 0
+                 and assertion_mutations_killed and control_accepted) else 1
 
 
 if __name__ == "__main__":
