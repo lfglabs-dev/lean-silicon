@@ -20,6 +20,9 @@ UNION_BINDING = ".result_pending(result_pending || blake_result_pending)"
 OMITTED_BINDING = ".result_pending(result_pending)"
 
 
+CHECKER = "blake3_pending_binding_checker.sv"
+
+
 def run(work: Path, mode: str) -> subprocess.CompletedProcess[str]:
     config = work / f"binding-{mode}.sby"
     file_list = "\n".join(SOURCES)
@@ -31,12 +34,12 @@ depth 2
 smtbmc boolector
 
 [script]
-read -formal -D FORMAL_FULL_LSC1 -D FORMAL_BLAKE_PENDING_BINDING -sv {' '.join(SOURCES)} full_lsc1_controller_invariants.sv
+read -formal -D FORMAL_FULL_LSC1 -sv {' '.join(SOURCES)} {CHECKER}
 prep -top lsc1_packet_frontend
 
 [files]
 {file_list}
-full_lsc1_controller_invariants.sv
+{CHECKER}
 """)
     return subprocess.run(
         ["sby", "-f", config.name], cwd=work, text=True,
@@ -49,10 +52,7 @@ def main() -> int:
         work = Path(raw)
         for source in SOURCES:
             shutil.copy2(RTL / source, work / source)
-        shutil.copy2(
-            FORMAL / "full_lsc1_controller_invariants.sv",
-            work / "full_lsc1_controller_invariants.sv",
-        )
+        shutil.copy2(FORMAL / CHECKER, work / CHECKER)
         frontend = work / "lsc1_packet_frontend.sv"
         source_text = frontend.read_text()
         if source_text.count(UNION_BINDING) != 1:
