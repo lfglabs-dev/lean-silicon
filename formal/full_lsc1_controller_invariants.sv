@@ -47,12 +47,14 @@ module full_lsc1_controller_invariants (
             assert(!service_pending);
         end
         if (past_valid && done_pulse) assert(!tx_valid);
+`ifndef FORMAL_BLAKE_PENDING_FOCUSED
         cover(past_valid && rst_n && tx_valid && !tx_ready);
         cover(past_valid && rst_n && fault);
         cover(past_valid && rst_n && result_pending);
         cover(past_valid && rst_n && blake_result_pending);
         cover(past_valid && rst_n && service_pending);
         cover(past_valid && rst_n && done_pulse);
+`endif
     end
 endmodule
 

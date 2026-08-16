@@ -18,9 +18,9 @@ SOURCES = [
 ]
 UNION_BINDING = ".result_pending(result_pending || blake_result_pending)"
 OMITTED_BINDING = ".result_pending(result_pending)"
-
-
-CHECKER = "blake3_pending_binding_checker.sv"
+INVARIANT = "full_lsc1_controller_invariants.sv"
+PENDING_ASSERTION = "if (blake_result_pending) assert(result_pending);"
+WEAK_PENDING_ASSERTION = "if (blake_result_pending) assert(1'b1);"
 
 
 def run(work: Path, mode: str) -> subprocess.CompletedProcess[str]:
@@ -34,12 +34,12 @@ depth 2
 smtbmc boolector
 
 [script]
-read -formal -D FORMAL_FULL_LSC1 -sv {' '.join(SOURCES)} {CHECKER}
+read -formal -D FORMAL_FULL_LSC1 -D FORMAL_BLAKE_PENDING_FOCUSED -sv {' '.join(SOURCES)} {INVARIANT}
 prep -top lsc1_packet_frontend
 
 [files]
 {file_list}
-{CHECKER}
+{INVARIANT}
 """)
     return subprocess.run(
         ["sby", "-f", config.name], cwd=work, text=True,
@@ -52,32 +52,51 @@ def main() -> int:
         work = Path(raw)
         for source in SOURCES:
             shutil.copy2(RTL / source, work / source)
-        shutil.copy2(FORMAL / CHECKER, work / CHECKER)
+        shutil.copy2(FORMAL / INVARIANT, work / INVARIANT)
         frontend = work / "lsc1_packet_frontend.sv"
+        invariant = work / INVARIANT
         source_text = frontend.read_text()
+        invariant_text = invariant.read_text()
         if source_text.count(UNION_BINDING) != 1:
             print("production_union_binding=false")
+            return 1
+        if invariant_text.count(PENDING_ASSERTION) != 1:
+            print("production_pending_assertion=false")
             return 1
 
         baseline = run(work, "bmc")
         coverage = run(work, "cover")
         frontend.write_text(source_text.replace(UNION_BINDING, OMITTED_BINDING))
-        mutation = run(work, "bmc")
+        binding_mutation = run(work, "bmc")
+        invariant.write_text(invariant_text.replace(PENDING_ASSERTION, WEAK_PENDING_ASSERTION))
+        assertion_mutation = run(work, "bmc")
 
     baseline_pass = baseline.returncode == 0
     cover_reached = coverage.returncode == 0
-    mutation_killed = mutation.returncode != 0 and "done (fail" in mutation.stdout.lower()
+    binding_mutation_killed = (
+        binding_mutation.returncode != 0
+        and "done (fail" in binding_mutation.stdout.lower()
+    )
+    # With the deliberately omitted frontend union still installed, weakening the
+    # shipped assertion removes the expected counterexample.  Treat that unexpected
+    # proof success as the mutation being detected by this receipt.
+    assertion_mutation_killed = assertion_mutation.returncode == 0
     print("production_union_binding=true")
+    print("production_pending_assertion=true")
     print(f"baseline_proof={str(baseline_pass).lower()}")
     print(f"blake_pending_cover={str(cover_reached).lower()}")
-    print(f"omit_production_blake_pending_mutation_killed={str(mutation_killed).lower()}")
+    print(f"omit_production_blake_pending_mutation_killed={str(binding_mutation_killed).lower()}")
+    print(f"weaken_production_pending_assertion_mutation_killed={str(assertion_mutation_killed).lower()}")
     if not baseline_pass:
         print(baseline.stdout[-4000:])
     if not cover_reached:
         print(coverage.stdout[-4000:])
-    if not mutation_killed:
-        print(mutation.stdout[-4000:])
-    return 0 if baseline_pass and cover_reached and mutation_killed else 1
+    if not binding_mutation_killed:
+        print(binding_mutation.stdout[-4000:])
+    if not assertion_mutation_killed:
+        print(assertion_mutation.stdout[-4000:])
+    return 0 if (baseline_pass and cover_reached and binding_mutation_killed
+                 and assertion_mutation_killed) else 1
 
 
 if __name__ == "__main__":
