@@ -1,44 +1,117 @@
 #!/usr/bin/env python3
-"""Independent structural contract for the production BLAKE pending implication."""
+"""Elaborated semantic oracle for the production BLAKE pending implication."""
 
 from __future__ import annotations
 
+import hashlib
 import json
-import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-
-def tokens(text: str) -> list[str]:
-    """Return SystemVerilog tokens after removing comments and whitespace."""
-    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.DOTALL)
-    text = re.sub(r"//[^\n]*", " ", text)
-    return re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*|\d+'[bdhoBDHO][0-9a-fA-F_xXzZ]+|\S", text)
+CONTRACT_VERSION = 2
+TOP = "full_lsc1_controller_invariants"
 
 
-REQUIRED = [
-    "always", "@", "(", "*", ")", "begin",
-    "if", "(", "blake_result_pending", ")",
-    "assert", "(", "result_pending", ")", ";",
-]
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def validate(text: str) -> tuple[bool, str]:
-    stream = tokens(text)
-    matches = sum(stream[index:index + len(REQUIRED)] == REQUIRED
-                  for index in range(len(stream) - len(REQUIRED) + 1))
-    if matches != 1:
-        return False, f"production_blake_pending_implication_count={matches};expected=1"
-    return True, "production_blake_pending_implication_present"
+def _bit(value: object, values: dict[int, int]) -> int:
+    if value == "0": return 0
+    if value == "1": return 1
+    if isinstance(value, int) and value in values: return values[value]
+    raise KeyError(value)
+
+
+def _evaluate(module: dict, outputs: list[object], inputs: dict[int, int]) -> list[int]:
+    values = dict(inputs)
+    pending = dict(module.get("cells", {}))
+    while pending:
+        progress = False
+        for name, cell in list(pending.items()):
+            if cell["type"] == "$assert" or "Y" not in cell.get("connections", {}):
+                del pending[name]
+                progress = True
+                continue
+            con = cell["connections"]
+            try:
+                if cell["type"] == "$mux":
+                    result = [_bit(b if _bit(con["S"][0], values) else a, values)
+                              for a, b in zip(con["A"], con["B"])]
+                elif cell["type"] in ("$not", "$logic_not"):
+                    result = [int(not _bit(con["A"][0], values))]
+                elif cell["type"] in ("$and", "$logic_and"):
+                    result = [_bit(con["A"][0], values) & _bit(con["B"][0], values)]
+                elif cell["type"] in ("$or", "$logic_or"):
+                    result = [_bit(con["A"][0], values) | _bit(con["B"][0], values)]
+                else:
+                    continue
+            except KeyError:
+                continue
+            for bit, value in zip(con["Y"], result):
+                if isinstance(bit, int): values[bit] = value
+            del pending[name]
+            progress = True
+        if not progress: break
+    return [_bit(bit, values) for bit in outputs]
+
+
+def validate(path: Path) -> tuple[bool, str, dict]:
+    with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
+        netlist = Path(raw) / "invariant.json"
+        command = ["yosys", "-q", "-p",
+                   f"read_verilog -formal -sv {path}; hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; write_json {netlist}"]
+        completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        meta = {"command": command, "source_sha256": sha256(path)}
+        if completed.returncode:
+            return False, "production_invariant_elaboration_failed", {**meta, "output": completed.stdout[-2000:]}
+        design = json.loads(netlist.read_text())
+    module = design.get("modules", {}).get(TOP)
+    if not module:
+        return False, "production_invariant_top_missing", meta
+    ports = module.get("ports", {})
+    try:
+        result_bit = ports["result_pending"]["bits"][0]
+        blake_bit = ports["blake_result_pending"]["bits"][0]
+    except (KeyError, IndexError):
+        return False, "production_pending_ports_missing", meta
+    matches = []
+    for name, cell in module.get("cells", {}).items():
+        if cell.get("type") != "$assert":
+            continue
+        con = cell["connections"]
+        truth = []
+        try:
+            for result in (0, 1):
+                for blake in (0, 1):
+                    assignment = {result_bit: result, blake_bit: blake}
+                    en = _evaluate(module, [con["EN"][0]], assignment)[0]
+                    a = _evaluate(module, [con["A"][0]], assignment)[0] if en else 1
+                    truth.append((result, blake, a, en))
+        except KeyError:
+            continue
+        violations = {(r, b) for r, b, a, en in truth if en and not a}
+        if violations == {(0, 1)}:
+            matches.append(name)
+    meta.update({"top": TOP, "live_assert_cells": len(matches), "matching_cells": matches})
+    if len(matches) != 1:
+        return False, f"production_blake_pending_implication_cells={len(matches)};expected=1", meta
+    return True, "production_blake_pending_implication_elaborated", meta
 
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print("usage: validate_blake3_pending_contract.py INVARIANT", file=sys.stderr)
         return 2
-    path = Path(argv[1])
-    valid, reason = validate(path.read_text())
-    print(json.dumps({"contract_version": 1, "valid": valid, "reason": reason}, sort_keys=True))
+    path = Path(argv[1]).resolve()
+    valid, reason, meta = validate(path)
+    version = subprocess.run(["yosys", "-V"], text=True, stdout=subprocess.PIPE).stdout.strip()
+    print(json.dumps({"contract_version": CONTRACT_VERSION, "valid": valid, "reason": reason,
+                      "validator_sha256": sha256(Path(__file__)), "yosys_version": version, **meta},
+                     sort_keys=True))
     return 0 if valid else 1
 
 

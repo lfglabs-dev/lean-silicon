@@ -7,7 +7,9 @@ import contextlib
 import io
 import json
 import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from formal import check_blake3_pending_invariant as check
@@ -16,13 +18,35 @@ from formal import validate_blake3_pending_contract as validator
 
 class Blake3PendingInvariantHarnessTest(unittest.TestCase):
     def test_independent_validator_semantics(self) -> None:
-        baseline = "module x; always @(*) begin if (blake_result_pending) assert(result_pending); cover(blake_result_pending); end endmodule"
-        self.assertEqual(validator.validate(baseline),
-                         (True, "production_blake_pending_implication_present"))
-        self.assertFalse(validator.validate(baseline.replace("assert(result_pending)", "assert(1'b1)"))[0])
-        self.assertFalse(validator.validate(baseline.replace("assert(result_pending);", ""))[0])
-        self.assertTrue(validator.validate(baseline.replace("cover(blake_result_pending)",
-                                                            "cover(blake_result_pending || 1'b0)"))[0])
+        production = (check.FORMAL / check.INVARIANT).read_text()
+        pending_block = """    always @(*) begin
+        if (blake_result_pending) assert(result_pending);
+        cover(blake_result_pending);
+    end
+"""
+        variants = {
+            "baseline": (production, True),
+            "always_at_star": (production.replace("always @(*) begin", "always @* begin : pending_check"), True),
+            "extra_parentheses": (production.replace("assert(result_pending)", "assert(((result_pending)))"), True),
+            "weakened": (production.replace(check.PENDING_ASSERTION, check.WEAK_PENDING_ASSERTION), False),
+            "removed": (production.replace(check.PENDING_ASSERTION, check.REMOVED_PENDING_ASSERTION), False),
+            "disabled_generate": (production.replace(pending_block, """    generate if (1'b0) begin : disabled
+        always @* if (blake_result_pending) assert(result_pending);
+    end endgenerate
+    always @* cover(blake_result_pending);
+"""), False),
+            "string_literal": (production.replace(pending_block, """    localparam [8*64-1:0] NOTE = "if (blake_result_pending) assert(result_pending);";
+    always @* cover(blake_result_pending);
+"""), False),
+            "unrelated_module": (production.replace(check.PENDING_ASSERTION, "") + "\nmodule decoy(input blake_result_pending, result_pending); always @* if (blake_result_pending) assert(result_pending); endmodule\n", False),
+            "benign_control": (production.replace(check.CONTROL_COVER, check.CONTROL_COVER_MUTATION), True),
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            for name, (text, expected) in variants.items():
+                path = Path(raw) / f"{name}.sv"
+                path.write_text(text)
+                valid, reason, _ = validator.validate(path)
+                self.assertEqual(valid, expected, f"{name}: {reason}")
 
     def test_each_mutant_starts_from_the_exact_baseline(self) -> None:
         observations: list[tuple[str, str, bool, bool]] = []
@@ -41,7 +65,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
 
         output = io.StringIO()
         def fake_validate(work):
-            valid, reason = validator.validate((work / check.INVARIANT).read_text())
+            valid, reason, _ = validator.validate(work / check.INVARIANT)
             return subprocess.CompletedProcess(["validator"], 0 if valid else 1,
                                                json.dumps({"valid": valid, "reason": reason}))
 

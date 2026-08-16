@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import shutil
 import subprocess
 import sys
@@ -27,6 +28,22 @@ REMOVED_PENDING_ASSERTION = "if (blake_result_pending) /* assertion removed by m
 CONTROL_COVER = "cover(blake_result_pending);"
 CONTROL_COVER_MUTATION = "cover(blake_result_pending || 1'b0);"
 VALIDATOR = FORMAL / "validate_blake3_pending_contract.py"
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def text_digest(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def tool_version(command: list[str]) -> str:
+    try:
+        result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    except FileNotFoundError:
+        return "unavailable"
+    return result.stdout.strip()
 
 
 def run(work: Path, mode: str) -> subprocess.CompletedProcess[str]:
@@ -123,6 +140,8 @@ def main() -> int:
             proof = run(mutant_work, "bmc")
             cover = run(mutant_work, "cover")
             assertion_results[name] = {
+                "input_frontend_sha256": text_digest(source_text),
+                "input_invariant_sha256": text_digest(mutant_invariant),
                 "isolated": isolated,
                 "union_intact": (mutant_work / "lsc1_packet_frontend.sv").read_text() == source_text
                     and source_text.count(UNION_BINDING) == 1,
@@ -152,11 +171,23 @@ def main() -> int:
     )
     assertion_mutations_killed = all(result["killed"] for result in assertion_results.values())
     receipt = {
-        "receipt_version": 1,
+        "receipt_version": 2,
+        "provenance": {
+            "git_head": tool_version(["git", "rev-parse", "HEAD"]),
+            "production_frontend_sha256": digest(RTL / "lsc1_packet_frontend.sv"),
+            "production_invariant_sha256": digest(FORMAL / INVARIANT),
+            "validator_sha256": digest(VALIDATOR),
+            "yosys_version": tool_version(["yosys", "-V"]),
+            "sby_version": tool_version(["sby", "--version"]),
+            "formal_command": "sby -f binding-{bmc,cover}.sby",
+            "validator_command": f"{sys.executable} {VALIDATOR} INVARIANT",
+        },
         "baseline_proof": baseline_pass,
         "blake_pending_cover": cover_reached,
         "mutations": {
             "omit_frontend_union": {
+                "input_frontend_sha256": text_digest(binding_text),
+                "input_invariant_sha256": text_digest(invariant_text),
                 "anchor_count": source_text.count(UNION_BINDING),
                 "isolated": binding_isolated,
                 "contract_pass": binding_contract.returncode == 0,
@@ -166,6 +197,8 @@ def main() -> int:
             },
             **{
                 name: {
+                    "input_frontend_sha256": result["input_frontend_sha256"],
+                    "input_invariant_sha256": result["input_invariant_sha256"],
                     "anchor_count": invariant_text.count(PENDING_ASSERTION),
                     "isolated": result["isolated"],
                     "union_intact": result["union_intact"],
@@ -177,6 +210,8 @@ def main() -> int:
                 } for name, result in assertion_results.items()
             },
             "control_cover_change": {
+                "input_frontend_sha256": text_digest(source_text),
+                "input_invariant_sha256": text_digest(control_invariant),
                 "anchor_count": invariant_text.count(CONTROL_COVER),
                 "isolated": control_isolated,
                 "contract_pass": control_contract.returncode == 0,
