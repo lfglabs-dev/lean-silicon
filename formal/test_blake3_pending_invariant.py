@@ -416,6 +416,83 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds)
         self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")), before_paths)
 
+    def test_registration_assignment_rollback_is_strongly_exception_safe(self) -> None:
+        """Failures inside ownership assignment roll back locals on the production path."""
+        production = check.FORMAL / check.INVARIANT
+        real_register_fd = validator._CleanupTransaction._register_fd
+        real_register_tree = validator._CleanupTransaction._register_private_tree
+
+        def fail_fd_registration(target):
+            def replacement(owner, name, fd):
+                if name == target:
+                    raise RuntimeError(f"injected {target} mapping assignment failure")
+                return real_register_fd(owner, name, fd)
+            return mock.patch.object(
+                validator._CleanupTransaction, "_register_fd", replacement)
+
+        def fail_tree_registration(owner, path):
+            del owner, path
+            raise RuntimeError("injected private attribute assignment failure")
+
+        cases = {
+            "parent_mapping_assignment": lambda: fail_fd_registration("parent"),
+            "workspace_mapping_assignment": lambda: fail_fd_registration("workspace"),
+            "private_attribute_assignment": lambda: mock.patch.object(
+                validator._CleanupTransaction, "_register_private_tree",
+                fail_tree_registration),
+        }
+        for name, patch_factory in cases.items():
+            with self.subTest(step=name):
+                before_fds = len(os.listdir("/proc/self/fd"))
+                before_paths = set(Path("/tmp").glob("blake-pending-contract-*"))
+                with patch_factory():
+                    valid, reason, meta = validator.validate(production)
+                self.assertFalse(valid)
+                self.assertTrue(reason.startswith("private_workspace_failed:"), reason)
+                self.assertNotIn("cleanup_failure", meta)
+                self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds)
+                self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")),
+                                 before_paths)
+
+        before_fds = len(os.listdir("/proc/self/fd"))
+        before_paths = set(Path("/tmp").glob("blake-pending-contract-*"))
+        real_close = validator._close_owned_fd
+
+        def close_then_fail(name, fd):
+            real_close(name, fd)
+            if name == "parent":
+                raise OSError("injected registration fd rollback failure")
+
+        with fail_fd_registration("parent"), mock.patch.object(
+                validator, "_close_owned_fd", side_effect=close_then_fail):
+            valid, reason, meta = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertIn("injected parent mapping assignment failure", reason)
+        self.assertEqual(meta["cleanup_failure"]["classification"], "secondary")
+        self.assertEqual(meta["cleanup_failure"]["failures"][0]["action"],
+                         "rollback_close_parent")
+        self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds)
+        self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")), before_paths)
+
+        real_remove = validator._remove_private_tree
+
+        def remove_then_fail(path):
+            real_remove(path)
+            raise OSError("injected registration tree rollback failure")
+
+        with mock.patch.object(
+                validator._CleanupTransaction, "_register_private_tree",
+                fail_tree_registration), mock.patch.object(
+                    validator, "_remove_private_tree", side_effect=remove_then_fail):
+            valid, reason, meta = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertIn("injected private attribute assignment failure", reason)
+        self.assertEqual(meta["cleanup_failure"]["classification"], "secondary")
+        self.assertEqual(meta["cleanup_failure"]["failures"][0]["action"],
+                         "rollback_remove_private_tree")
+        self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds)
+        self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")), before_paths)
+
     def test_primary_success_cleanup_success_preserves_result(self) -> None:
         primary = (True, "primary_success", {})
         cleanup = mock.Mock()

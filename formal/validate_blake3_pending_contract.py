@@ -17,7 +17,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-CONTRACT_VERSION = 13
+CONTRACT_VERSION = 14
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -227,10 +227,26 @@ class _CleanupTransaction:
         self._fds: dict[str, int] = {}
         self.private: Path | None = None
 
+    def _register_fd(self, name: str, fd: int) -> None:
+        """Registration seam: callers retain rollback ownership until this returns."""
+        self._fds[name] = fd
+
+    def _register_private_tree(self, path: Path) -> None:
+        """Registration seam: callers retain rollback ownership until this returns."""
+        self.private = path
+
     def own_fd(self, name: str, fd: int) -> int:
         if name in self._fds:
             raise RuntimeError(f"cleanup_fd_ownership_duplicate:{name}")
-        self._fds[name] = fd
+        try:
+            self._register_fd(name, fd)
+        except BaseException as registration_error:
+            try:
+                _close_owned_fd(name, fd)
+            except BaseException as rollback_error:
+                _attach_secondary_cleanup_failure(
+                    registration_error, f"rollback_close_{name}", rollback_error)
+            raise
         return fd
 
     def open_fd(self, name: str, path: os.PathLike[str] | str, flags: int,
@@ -239,7 +255,15 @@ class _CleanupTransaction:
         if name in self._fds:
             raise RuntimeError(f"cleanup_fd_ownership_duplicate:{name}")
         fd = os.open(path, flags, mode, dir_fd=dir_fd)
-        self._fds[name] = fd
+        try:
+            self._register_fd(name, fd)
+        except BaseException as registration_error:
+            try:
+                _close_owned_fd(name, fd)
+            except BaseException as rollback_error:
+                _attach_secondary_cleanup_failure(
+                    registration_error, f"rollback_close_{name}", rollback_error)
+            raise
         return fd
 
     def create_private_tree(self, *, prefix: str, dir: str) -> Path:
@@ -247,13 +271,29 @@ class _CleanupTransaction:
         if self.private is not None:
             raise RuntimeError("cleanup_private_tree_ownership_duplicate")
         path = Path(tempfile.mkdtemp(prefix=prefix, dir=dir))
-        self.private = path
+        try:
+            self._register_private_tree(path)
+        except BaseException as registration_error:
+            try:
+                _remove_private_tree(path)
+            except BaseException as rollback_error:
+                _attach_secondary_cleanup_failure(
+                    registration_error, "rollback_remove_private_tree", rollback_error)
+            raise
         return path
 
     def own_private_tree(self, path: Path) -> None:
         if self.private is not None:
             raise RuntimeError("cleanup_private_tree_ownership_duplicate")
-        self.private = path
+        try:
+            self._register_private_tree(path)
+        except BaseException as registration_error:
+            try:
+                _remove_private_tree(path)
+            except BaseException as rollback_error:
+                _attach_secondary_cleanup_failure(
+                    registration_error, "rollback_remove_private_tree", rollback_error)
+            raise
 
     def run(self) -> None:
         failures: list[dict] = []
@@ -281,6 +321,27 @@ def _close_owned_fd(name: str, fd: int) -> None:
     """Named seam for production-path cleanup fault-injection regressions."""
     del name
     os.close(fd)
+
+
+def _attach_secondary_cleanup_failure(
+        primary_error: BaseException, action: str, cleanup_error: BaseException) -> None:
+    """Attach a registration rollback failure without replacing its primary error."""
+    failure = {"action": action, "type": type(cleanup_error).__name__,
+               "message": str(cleanup_error)}
+    secondary = {"classification": "secondary",
+                 "type": "_CleanupFailures",
+                 "message": json.dumps([failure], sort_keys=True, separators=(",", ":")),
+                 "failures": [failure]}
+    primary_error.add_note(
+        f"secondary cleanup failure: {type(cleanup_error).__name__}: {cleanup_error}")
+    setattr(primary_error, "cleanup_failure", secondary)
+
+
+def _with_attached_cleanup_failure(meta: dict, error: BaseException) -> dict:
+    """Copy rollback classification from an acquisition exception into its receipt."""
+    if not hasattr(error, "cleanup_failure"):
+        return meta
+    return {**meta, "cleanup_failure": error.cleanup_failure}
 
 
 def _preserve_primary_across_cleanup(
@@ -617,7 +678,8 @@ def _validate_primary(path: Path, yosys_command: str,
         boundary_fd, boundary_meta = _open_stable(executable_path, MANIFEST["yosys_sha256"])
         cleanup.own_fd("boundary", boundary_fd)
     except RuntimeError as error:
-        return False, f"yosys_executable_{error}", base_meta
+        return False, f"yosys_executable_{error}", _with_attached_cleanup_failure(
+            base_meta, error)
     base_meta["caller_yosys_observed"] = boundary_meta
     if archive_value is None:
         return False, "authenticated_archive_path_missing", base_meta
@@ -626,7 +688,7 @@ def _validate_primary(path: Path, yosys_command: str,
         archive_fd, archive_before = _open_stable(archive_path, MANIFEST["archive_sha256"])
         cleanup.own_fd("archive", archive_fd)
     except RuntimeError as error:
-        return False, f"archive_{error}", base_meta
+        return False, f"archive_{error}", _with_attached_cleanup_failure(base_meta, error)
     if archive_before["size"] != MANIFEST["archive_bytes"]:
         return False, "archive_size_mismatch", {**base_meta,
                                                  "archive_observed_before": archive_before}
@@ -634,7 +696,7 @@ def _validate_primary(path: Path, yosys_command: str,
         source_fd, source_before = _open_stable(source_path)
         cleanup.own_fd("source", source_fd)
     except RuntimeError as error:
-        return False, f"source_{error}", base_meta
+        return False, f"source_{error}", _with_attached_cleanup_failure(base_meta, error)
     try:
         source_route = _fd_path(source_fd)
     except RuntimeError as error:
@@ -642,7 +704,8 @@ def _validate_primary(path: Path, yosys_command: str,
     try:
         private, parent_fd, workspace_fd, workspace_meta = _private_workspace(cleanup)
     except (OSError, RuntimeError) as error:
-        return False, f"private_workspace_failed:{error}", base_meta
+        return False, f"private_workspace_failed:{error}", \
+            _with_attached_cleanup_failure(base_meta, error)
 
     def outcome(valid: bool, reason: str, details: dict) -> tuple[bool, str, dict]:
         return valid, reason, details
