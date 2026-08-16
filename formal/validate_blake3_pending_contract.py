@@ -17,7 +17,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-CONTRACT_VERSION = 12
+CONTRACT_VERSION = 13
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -109,27 +109,43 @@ def _sanitized_environment(snapshot: Path) -> tuple[dict[str, str], dict]:
                                    "HOME": "<snapshot>", "LC_ALL": "C"}}
 
 
-def _private_workspace() -> tuple[Path, int, int, dict]:
+def _private_workspace(cleanup: "_CleanupTransaction") -> tuple[Path, int, int, dict]:
     """Create beneath the fixed, no-follow verified system temp parent."""
     parent = Path("/tmp")
-    parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
-                        getattr(os, "O_NOFOLLOW", 0))
-    parent_st = os.fstat(parent_fd)
+    parent_fd = cleanup.open_fd(
+        "parent", parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
+        getattr(os, "O_NOFOLLOW", 0))
+    parent_st = _workspace_fstat("parent", parent_fd)
     if not stat.S_ISDIR(parent_st.st_mode) or parent_st.st_uid != 0 or \
             not (parent_st.st_mode & stat.S_ISVTX):
-        os.close(parent_fd)
         raise RuntimeError("trusted_temp_parent_policy_failed")
-    raw = Path(tempfile.mkdtemp(prefix="blake-pending-contract-", dir="/tmp"))
-    os.chmod(raw, 0o700)
-    workspace_fd = os.open(raw, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
-                           getattr(os, "O_NOFOLLOW", 0))
-    st = os.fstat(workspace_fd)
-    if st.st_uid != os.getuid() or stat.S_IMODE(st.st_mode) != 0o700:
-        os.close(workspace_fd); os.close(parent_fd); shutil.rmtree(raw)
+    raw = cleanup.create_private_tree(prefix="blake-pending-contract-", dir="/tmp")
+    _workspace_chmod(raw, 0o700)
+    workspace_fd = cleanup.open_fd(
+        "workspace", raw, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC |
+        getattr(os, "O_NOFOLLOW", 0))
+    st = _workspace_fstat("workspace", workspace_fd)
+    if not _workspace_policy_valid(st):
         raise RuntimeError("private_workspace_policy_failed")
     return raw, parent_fd, workspace_fd, {"device": parent_st.st_dev,
         "inode": parent_st.st_ino, "workspace_device": st.st_dev,
         "workspace_inode": st.st_ino, "owner": st.st_uid, "mode": "0700"}
+
+
+def _workspace_fstat(name: str, fd: int) -> os.stat_result:
+    """Named acquisition seam used by production-path fault regressions."""
+    del name
+    return os.fstat(fd)
+
+
+def _workspace_chmod(path: Path, mode: int) -> None:
+    """Named acquisition seam used by production-path fault regressions."""
+    os.chmod(path, mode)
+
+
+def _workspace_policy_valid(st: os.stat_result) -> bool:
+    """Keep owner/mode verification independently fault-testable."""
+    return st.st_uid == os.getuid() and stat.S_IMODE(st.st_mode) == 0o700
 
 
 def _tree_identity(root: Path) -> dict:
@@ -216,6 +232,23 @@ class _CleanupTransaction:
             raise RuntimeError(f"cleanup_fd_ownership_duplicate:{name}")
         self._fds[name] = fd
         return fd
+
+    def open_fd(self, name: str, path: os.PathLike[str] | str, flags: int,
+                mode: int = 0o777, *, dir_fd: int | None = None) -> int:
+        """Open and register without exposing an unowned descriptor to the caller."""
+        if name in self._fds:
+            raise RuntimeError(f"cleanup_fd_ownership_duplicate:{name}")
+        fd = os.open(path, flags, mode, dir_fd=dir_fd)
+        self._fds[name] = fd
+        return fd
+
+    def create_private_tree(self, *, prefix: str, dir: str) -> Path:
+        """Create and register without exposing an unowned tree to the caller."""
+        if self.private is not None:
+            raise RuntimeError("cleanup_private_tree_ownership_duplicate")
+        path = Path(tempfile.mkdtemp(prefix=prefix, dir=dir))
+        self.private = path
+        return path
 
     def own_private_tree(self, path: Path) -> None:
         if self.private is not None:
@@ -607,10 +640,7 @@ def _validate_primary(path: Path, yosys_command: str,
     except RuntimeError as error:
         return False, str(error), base_meta
     try:
-        private, parent_fd, workspace_fd, workspace_meta = _private_workspace()
-        cleanup.own_private_tree(private)
-        cleanup.own_fd("parent", parent_fd)
-        cleanup.own_fd("workspace", workspace_fd)
+        private, parent_fd, workspace_fd, workspace_meta = _private_workspace(cleanup)
     except (OSError, RuntimeError) as error:
         return False, f"private_workspace_failed:{error}", base_meta
 

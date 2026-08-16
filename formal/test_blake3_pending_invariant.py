@@ -328,6 +328,94 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             validator._remove_private_tree(private)
             self.assertFalse(private.exists(), "private snapshot residue remains")
 
+    def test_production_workspace_acquisition_is_transactional(self) -> None:
+        """Every acquisition failure leaves neither descriptors nor workspace residue."""
+        production = check.FORMAL / check.INVARIANT
+        real_open = validator._CleanupTransaction.open_fd
+        real_create = validator._CleanupTransaction.create_private_tree
+
+        def fail_open(target):
+            def replacement(owner, name, path, flags, mode=0o777, *, dir_fd=None):
+                if name == target:
+                    raise OSError(f"injected {target} open failure")
+                return real_open(owner, name, path, flags, mode, dir_fd=dir_fd)
+            return mock.patch.object(validator._CleanupTransaction, "open_fd", replacement)
+
+        def fail_after_open(target):
+            def replacement(owner, name, path, flags, mode=0o777, *, dir_fd=None):
+                fd = real_open(owner, name, path, flags, mode, dir_fd=dir_fd)
+                if name == target:
+                    raise RuntimeError(f"injected {target} registration-boundary failure")
+                return fd
+            return mock.patch.object(validator._CleanupTransaction, "open_fd", replacement)
+
+        def fail_after_create():
+            def replacement(owner, *, prefix, dir):
+                path = real_create(owner, prefix=prefix, dir=dir)
+                raise RuntimeError("injected tree registration-boundary failure")
+            return mock.patch.object(
+                validator._CleanupTransaction, "create_private_tree", replacement)
+
+        def fail_fstat(target):
+            real_fstat = validator._workspace_fstat
+
+            def replacement(name, fd):
+                if name == target:
+                    raise OSError(f"injected {target} fstat failure")
+                return real_fstat(name, fd)
+            return mock.patch.object(validator, "_workspace_fstat", side_effect=replacement)
+
+        cases = {
+            "mkdtemp": lambda: mock.patch.object(
+                validator.tempfile, "mkdtemp", side_effect=OSError("injected mkdtemp failure")),
+            "parent_open": lambda: fail_open("parent"),
+            "parent_fstat": lambda: fail_fstat("parent"),
+            "tree_registration_boundary": fail_after_create,
+            "chmod_after_mkdtemp": lambda: mock.patch.object(
+                validator, "_workspace_chmod", side_effect=OSError("injected chmod failure")),
+            "workspace_open": lambda: fail_open("workspace"),
+            "workspace_fstat": lambda: fail_fstat("workspace"),
+            "owner_mode_verification": lambda: mock.patch.object(
+                validator, "_workspace_policy_valid", return_value=False),
+            "parent_registration_boundary": lambda: fail_after_open("parent"),
+            "workspace_registration_boundary": lambda: fail_after_open("workspace"),
+        }
+        for name, patch_factory in cases.items():
+            with self.subTest(step=name):
+                before_fds = len(os.listdir("/proc/self/fd"))
+                before_paths = set(Path("/tmp").glob("blake-pending-contract-*"))
+                with patch_factory():
+                    valid, reason, meta = validator.validate(production)
+                self.assertFalse(valid)
+                self.assertTrue(reason.startswith("private_workspace_failed:"), reason)
+                self.assertNotIn("cleanup_failure", meta)
+                self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds,
+                                 f"fd leak after {name}")
+                self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")),
+                                 before_paths, f"workspace residue after {name}")
+
+        before_fds = len(os.listdir("/proc/self/fd"))
+        before_paths = set(Path("/tmp").glob("blake-pending-contract-*"))
+        real_close = validator._close_owned_fd
+
+        def fail_parent_close(name, fd):
+            real_close(name, fd)
+            if name == "parent":
+                raise OSError("injected acquisition cleanup failure")
+
+        with mock.patch.object(
+                validator, "_workspace_chmod",
+                side_effect=OSError("injected acquisition primary failure")), \
+                mock.patch.object(
+                    validator, "_close_owned_fd", side_effect=fail_parent_close):
+            valid, reason, meta = validator.validate(production)
+        self.assertFalse(valid)
+        self.assertIn("injected acquisition primary failure", reason)
+        self.assertEqual(meta["cleanup_failure"]["classification"], "secondary")
+        self.assertEqual(meta["cleanup_failure"]["failures"][0]["action"], "close_parent")
+        self.assertEqual(len(os.listdir("/proc/self/fd")), before_fds)
+        self.assertEqual(set(Path("/tmp").glob("blake-pending-contract-*")), before_paths)
+
     def test_primary_success_cleanup_success_preserves_result(self) -> None:
         primary = (True, "primary_success", {})
         cleanup = mock.Mock()
