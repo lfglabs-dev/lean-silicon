@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import tempfile
@@ -21,6 +22,7 @@ OMITTED_BINDING = ".result_pending(result_pending)"
 INVARIANT = "full_lsc1_controller_invariants.sv"
 PENDING_ASSERTION = "if (blake_result_pending) assert(result_pending);"
 WEAK_PENDING_ASSERTION = "if (blake_result_pending) assert(1'b1);"
+REMOVED_PENDING_ASSERTION = "if (blake_result_pending) /* assertion removed by mutation */;"
 
 
 def run(work: Path, mode: str) -> subprocess.CompletedProcess[str]:
@@ -47,29 +49,79 @@ prep -top lsc1_packet_frontend
     )
 
 
+def install_baseline(root: Path, name: str) -> Path:
+    """Create an independent exact-baseline workspace for one receipt task."""
+    work = root / name
+    work.mkdir()
+    for source in SOURCES:
+        shutil.copy2(RTL / source, work / source)
+    shutil.copy2(FORMAL / INVARIANT, work / INVARIANT)
+    return work
+
+
+def anchor_once(text: str, anchor: str, label: str) -> None:
+    count = text.count(anchor)
+    if count != 1:
+        raise RuntimeError(f"{label} anchor count is {count}, expected 1")
+
+
+def mutation_isolated(work: Path, expected_frontend: str, expected_invariant: str) -> bool:
+    """Ensure a mutant changed only its named file from the production baseline."""
+    for source in SOURCES:
+        expected = expected_frontend if source == "lsc1_packet_frontend.sv" else (RTL / source).read_text()
+        if (work / source).read_text() != expected:
+            return False
+    return (work / INVARIANT).read_text() == expected_invariant
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="blake3-pending-invariant-") as raw:
-        work = Path(raw)
-        for source in SOURCES:
-            shutil.copy2(RTL / source, work / source)
-        shutil.copy2(FORMAL / INVARIANT, work / INVARIANT)
-        frontend = work / "lsc1_packet_frontend.sv"
-        invariant = work / INVARIANT
-        source_text = frontend.read_text()
-        invariant_text = invariant.read_text()
-        if source_text.count(UNION_BINDING) != 1:
-            print("production_union_binding=false")
-            return 1
-        if invariant_text.count(PENDING_ASSERTION) != 1:
-            print("production_pending_assertion=false")
+        root = Path(raw)
+        source_text = (RTL / "lsc1_packet_frontend.sv").read_text()
+        invariant_text = (FORMAL / INVARIANT).read_text()
+        try:
+            anchor_once(source_text, UNION_BINDING, "production union binding")
+            anchor_once(invariant_text, PENDING_ASSERTION, "production pending assertion")
+        except RuntimeError as error:
+            print(json.dumps({"receipt_version": 1, "error": str(error)}, sort_keys=True))
             return 1
 
-        baseline = run(work, "bmc")
-        coverage = run(work, "cover")
-        frontend.write_text(source_text.replace(UNION_BINDING, OMITTED_BINDING))
-        binding_mutation = run(work, "bmc")
-        invariant.write_text(invariant_text.replace(PENDING_ASSERTION, WEAK_PENDING_ASSERTION))
-        assertion_mutation = run(work, "bmc")
+        baseline_work = install_baseline(root, "baseline")
+        baseline = run(baseline_work, "bmc")
+        coverage = run(baseline_work, "cover")
+
+        binding_work = install_baseline(root, "omit_union")
+        binding_frontend = binding_work / "lsc1_packet_frontend.sv"
+        binding_text = source_text.replace(UNION_BINDING, OMITTED_BINDING)
+        binding_frontend.write_text(binding_text)
+        binding_isolated = mutation_isolated(binding_work, binding_text, invariant_text)
+        binding_mutation = run(binding_work, "bmc")
+
+        assertion_results = {}
+        for name, replacement in (("weaken_assertion", WEAK_PENDING_ASSERTION),
+                                  ("remove_assertion", REMOVED_PENDING_ASSERTION)):
+            mutant_work = install_baseline(root, name)
+            mutant_invariant = invariant_text.replace(PENDING_ASSERTION, replacement)
+            anchor_once(mutant_invariant, replacement, f"{name} replacement")
+            (mutant_work / INVARIANT).write_text(mutant_invariant)
+            isolated = mutation_isolated(mutant_work, source_text, mutant_invariant)
+            # The intact union makes the implication true by construction.  Run both
+            # jobs to rule out syntax/elaboration failures and require focused
+            # reachability, then kill the mutant because the shipped property is gone.
+            proof = run(mutant_work, "bmc")
+            cover = run(mutant_work, "cover")
+            property_missing = mutant_invariant.count(PENDING_ASSERTION) == 0
+            assertion_results[name] = {
+                "isolated": isolated,
+                "union_intact": (mutant_work / "lsc1_packet_frontend.sv").read_text() == source_text
+                    and source_text.count(UNION_BINDING) == 1,
+                "proof_pass": proof.returncode == 0,
+                "cover_reached": cover.returncode == 0,
+                "property_missing": property_missing,
+                "killed": isolated and property_missing and proof.returncode == 0 and cover.returncode == 0,
+                "proof_output": proof.stdout,
+                "cover_output": cover.stdout,
+            }
 
     baseline_pass = baseline.returncode == 0
     cover_reached = coverage.returncode == 0
@@ -77,26 +129,51 @@ def main() -> int:
         binding_mutation.returncode != 0
         and "done (fail" in binding_mutation.stdout.lower()
     )
-    # With the deliberately omitted frontend union still installed, weakening the
-    # shipped assertion removes the expected counterexample.  Treat that unexpected
-    # proof success as the mutation being detected by this receipt.
-    assertion_mutation_killed = assertion_mutation.returncode == 0
+    assertion_mutations_killed = all(result["killed"] for result in assertion_results.values())
+    receipt = {
+        "receipt_version": 1,
+        "baseline_proof": baseline_pass,
+        "blake_pending_cover": cover_reached,
+        "mutations": {
+            "omit_frontend_union": {
+                "anchor_count": source_text.count(UNION_BINDING),
+                "isolated": binding_isolated,
+                "killed": binding_mutation_killed and binding_isolated,
+                "reason": "production_pending_assertion_failed",
+            },
+            **{
+                name: {
+                    "anchor_count": invariant_text.count(PENDING_ASSERTION),
+                    "isolated": result["isolated"],
+                    "union_intact": result["union_intact"],
+                    "proof_pass": result["proof_pass"],
+                    "cover_reached": result["cover_reached"],
+                    "killed": result["killed"],
+                    "reason": "required_production_property_missing",
+                } for name, result in assertion_results.items()
+            },
+        },
+    }
+    print(json.dumps(receipt, sort_keys=True))
     print("production_union_binding=true")
     print("production_pending_assertion=true")
     print(f"baseline_proof={str(baseline_pass).lower()}")
     print(f"blake_pending_cover={str(cover_reached).lower()}")
     print(f"omit_production_blake_pending_mutation_killed={str(binding_mutation_killed).lower()}")
-    print(f"weaken_production_pending_assertion_mutation_killed={str(assertion_mutation_killed).lower()}")
+    print(f"weaken_production_pending_assertion_mutation_killed={str(assertion_results['weaken_assertion']['killed']).lower()}")
+    print(f"remove_production_pending_assertion_mutation_killed={str(assertion_results['remove_assertion']['killed']).lower()}")
     if not baseline_pass:
         print(baseline.stdout[-4000:])
     if not cover_reached:
         print(coverage.stdout[-4000:])
     if not binding_mutation_killed:
         print(binding_mutation.stdout[-4000:])
-    if not assertion_mutation_killed:
-        print(assertion_mutation.stdout[-4000:])
+    for result in assertion_results.values():
+        if not result["killed"]:
+            print(result["proof_output"][-2000:])
+            print(result["cover_output"][-2000:])
     return 0 if (baseline_pass and cover_reached and binding_mutation_killed
-                 and assertion_mutation_killed) else 1
+                 and binding_isolated and assertion_mutations_killed) else 1
 
 
 if __name__ == "__main__":
