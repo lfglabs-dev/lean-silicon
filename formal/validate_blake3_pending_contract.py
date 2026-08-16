@@ -6,15 +6,17 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import posixpath
 import re
 import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 
-CONTRACT_VERSION = 8
+CONTRACT_VERSION = 9
 TOP = "full_lsc1_controller_invariants"
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / ".github" / "toolchains" / "oss-cad-suite-20260809.json"
@@ -78,41 +80,76 @@ def _fd_path(fd: int) -> str:
     return path
 
 
-def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...]
+def _sanitized_environment(snapshot: Path) -> tuple[dict[str, str], dict]:
+    removed = sorted(k for k in os.environ if k.startswith(("LD_", "YOSYS_")))
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith(("LD_", "YOSYS_"))}
+    env.update({"PATH": str(snapshot / "bin") + ":/usr/bin:/bin",
+                "HOME": str(snapshot), "LC_ALL": "C"})
+    return env, {"removed_variables": removed,
+                 "set_variables": {"PATH": "<snapshot>/bin:/usr/bin:/bin",
+                                   "HOME": "<snapshot>", "LC_ALL": "C"}}
+
+
+def _run_authenticated(executable: str, arguments: list[str], inherited_fds: tuple[int, ...],
+                       env: dict[str, str] | None = None
                        ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [executable, *arguments], executable=executable, pass_fds=inherited_fds,
-        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
     )
 
 
-def _sealed_executable(executable_fd: int, suite_fd: int, private: Path,
-                       expected_digest: str) -> tuple[str, dict]:
-    """Make an exact, private copy of an authenticated launcher.
+def _extract_authenticated_archive(archive_fd: int, private: Path) -> Path:
+    """Privately materialize the archive root; never consume an extracted original."""
+    os.lseek(archive_fd, 0, os.SEEK_SET)
+    with os.fdopen(os.dup(archive_fd), "rb") as stream, tarfile.open(fileobj=stream,
+                                                                     mode="r:gz") as archive:
+        members = archive.getmembers()
+        for member in members:
+            parts = Path(member.name).parts
+            if not parts or parts[0] != "oss-cad-suite" or ".." in parts:
+                raise RuntimeError("archive_member_outside_suite")
+            if member.isdev() or member.isfifo():
+                raise RuntimeError("archive_special_member")
+            if member.issym() or member.islnk():
+                if member.linkname.startswith("/"):
+                    raise RuntimeError("archive_link_not_confined")
+                effective = posixpath.normpath(posixpath.join(
+                    posixpath.dirname(member.name), member.linkname))
+                if effective != "oss-cad-suite" and not effective.startswith("oss-cad-suite/"):
+                    raise RuntimeError("archive_link_not_confined")
+        archive.extractall(private, members=members, filter="fully_trusted")
+    os.lseek(archive_fd, 0, os.SEEK_SET)
+    snapshot = private / "oss-cad-suite"
+    if not snapshot.is_dir():
+        raise RuntimeError("archive_suite_root_missing")
+    return snapshot
 
-    The OSS CAD Suite Yosys is a relocatable shell launcher, so executing it
-    directly through /proc/self/fd loses its suite-relative runtime.  Its exact
-    authenticated bytes are copied into a private 0700 tree; suite-relative
-    runtime directories are reached through the already-open suite directory.
-    """
-    bindir = private / "bin"
-    bindir.mkdir(mode=0o700)
-    sealed = bindir / "yosys"
-    output_fd = os.open(sealed, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o500)
-    try:
-        os.lseek(executable_fd, 0, os.SEEK_SET)
-        while chunk := os.read(executable_fd, 1024 * 1024):
-            os.write(output_fd, chunk)
-        os.fsync(output_fd)
-    finally:
-        os.close(output_fd)
-        os.lseek(executable_fd, 0, os.SEEK_SET)
-    sealed_fd, sealed_meta = _open_stable(sealed, expected_digest)
-    os.close(sealed_fd)
-    suite_route = _fd_path(suite_fd)
-    (private / "lib").symlink_to(f"{suite_route}/lib", target_is_directory=True)
-    (private / "libexec").symlink_to(f"{suite_route}/libexec", target_is_directory=True)
-    return str(sealed), sealed_meta
+
+def _snapshot_yosys_command(snapshot: Path) -> tuple[str, list[str]]:
+    loader = snapshot / "lib" / "ld-linux-x86-64.so.2"
+    yosys = snapshot / "libexec" / "yosys"
+    if not loader.is_file() or not yosys.is_file():
+        raise RuntimeError("snapshot_runtime_entry_missing")
+    return str(loader), ["--inhibit-cache", "--inhibit-rpath", "",
+                         "--library-path", str(snapshot / "lib"), str(yosys)]
+
+
+def _audit_snapshot_dependencies(executable: str, prefix: list[str], snapshot: Path,
+                                 env: dict[str, str], archive_fd: int) -> tuple[bool, str]:
+    result = _run_authenticated(executable, [*prefix[:-1], "--list", prefix[-1]],
+                                (archive_fd,), env)
+    if result.returncode:
+        return False, result.stdout
+    root = str(snapshot) + os.sep
+    for line in result.stdout.splitlines():
+        match = re.search(r"=>\s+(/\S+)", line)
+        if match is None:
+            match = re.match(r"\s*(/\S+)", line)
+        if match and not match.group(1).startswith(root):
+            return False, result.stdout
+    return True, result.stdout
 
 
 def _yosys_identity(value: object) -> tuple[str, str] | None:
@@ -327,85 +364,117 @@ def validate(path: Path, yosys_command: str = "yosys") -> tuple[bool, str, dict]
     # reach O_NOFOLLOW, and authenticated objects are consumed only by fd.
     executable_path = Path(os.path.abspath(executable))
     source_path = Path(os.path.abspath(os.fspath(path)))
+    archive_value = os.environ.get(MANIFEST["archive_environment_variable"])
     base_meta = {"toolchain_manifest": str(MANIFEST_PATH),
                  "toolchain_manifest_sha256": MANIFEST_SHA256,
-                 "expected_yosys_sha256": MANIFEST["yosys_sha256"]}
+                 "archive_sha256": MANIFEST["archive_sha256"],
+                 "archive_bytes": MANIFEST["archive_bytes"],
+                 "snapshot_route": "authenticated_archive_private_full_extraction"}
+    # The caller-selected command is authenticated as a boundary check, but is
+    # never executed; runtime consumption comes exclusively from the archive.
     try:
-        executable_fd, executable_before = _open_stable(
-            executable_path, MANIFEST["yosys_sha256"])
+        boundary_fd, boundary_meta = _open_stable(executable_path, MANIFEST["yosys_sha256"])
     except RuntimeError as error:
         return False, f"yosys_executable_{error}", base_meta
+    os.close(boundary_fd)
+    base_meta["caller_yosys_observed"] = boundary_meta
+    if archive_value is None:
+        return False, "authenticated_archive_path_missing", base_meta
+    archive_path = Path(os.path.abspath(archive_value))
+    try:
+        archive_fd, archive_before = _open_stable(archive_path, MANIFEST["archive_sha256"])
+    except RuntimeError as error:
+        return False, f"archive_{error}", base_meta
+    if archive_before["size"] != MANIFEST["archive_bytes"]:
+        os.close(archive_fd)
+        return False, "archive_size_mismatch", {**base_meta,
+                                                 "archive_observed_before": archive_before}
     try:
         source_fd, source_before = _open_stable(source_path)
     except RuntimeError as error:
-        os.close(executable_fd)
+        os.close(archive_fd)
         return False, f"source_{error}", base_meta
     try:
-        _fd_path(executable_fd)
         source_route = _fd_path(source_fd)
     except RuntimeError as error:
-        os.close(source_fd); os.close(executable_fd)
+        os.close(source_fd); os.close(archive_fd)
         return False, str(error), base_meta
-    try:
-        suite_fd = os.open(executable_path.parent.parent,
-                           os.O_RDONLY | os.O_CLOEXEC | os.O_DIRECTORY |
-                           getattr(os, "O_NOFOLLOW", 0))
-    except OSError as error:
-        os.close(source_fd); os.close(executable_fd)
-        return False, f"suite_descriptor_open_failed:{error.errno}", base_meta
     with tempfile.TemporaryDirectory(prefix="blake-pending-contract-") as raw:
         private = Path(raw)
         private.chmod(0o700)
         try:
-            sealed_executable, sealed_meta = _sealed_executable(
-                executable_fd, suite_fd, private, MANIFEST["yosys_sha256"])
+            snapshot = _extract_authenticated_archive(archive_fd, private)
         except (OSError, RuntimeError) as error:
-            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
-            return False, f"sealed_executable_failed:{error}", base_meta
-        version_command = ["sealed-authenticated-yosys", "-V"]
+            os.close(source_fd); os.close(archive_fd)
+            return False, f"authenticated_archive_extraction_failed:{error}", base_meta
+        snapshot_yosys = snapshot / MANIFEST["yosys_relative_path"]
+        if sha256(snapshot_yosys) != MANIFEST["yosys_sha256"]:
+            os.close(source_fd); os.close(archive_fd)
+            return False, "snapshot_yosys_digest_mismatch", base_meta
+        runtime_env, env_meta = _sanitized_environment(snapshot)
+        try:
+            runtime_executable, runtime_prefix = _snapshot_yosys_command(snapshot)
+        except RuntimeError as error:
+            os.close(source_fd); os.close(archive_fd)
+            return False, str(error), base_meta
+        dependencies_valid, dependency_audit = _audit_snapshot_dependencies(
+            runtime_executable, runtime_prefix, snapshot, runtime_env, archive_fd)
+        if not dependencies_valid:
+            os.close(source_fd); os.close(archive_fd)
+            return False, "snapshot_runtime_dependency_outside_archive", {
+                **base_meta, "runtime_dependency_audit": dependency_audit}
+        runtime_files = {}
+        for relative in (MANIFEST["yosys_relative_path"], "lib/ld-linux-x86-64.so.2",
+                         "libexec/yosys"):
+            candidate = snapshot / relative
+            runtime_files[relative] = {"size": candidate.stat().st_size,
+                                       "sha256": sha256(candidate)}
+        version_command = ["authenticated-snapshot/lib/ld-linux-x86-64.so.2",
+                           "<sealed-loader-options>", "libexec/yosys", "-V"]
         version_result = _run_authenticated(
-            sealed_executable, ["-V"], (executable_fd, suite_fd))
-        executable_stable, executable_after_version = _verify_fd_unchanged(
-            executable_fd, executable_before)
+            runtime_executable, [*runtime_prefix, "-V"], (archive_fd,), runtime_env)
+        archive_stable, archive_after_version = _verify_fd_unchanged(
+            archive_fd, archive_before)
         runtime_version = version_result.stdout.strip()
         runtime_meta = {
             **base_meta,
-            "yosys_executable_fd": executable_fd,
-            "yosys_suite_fd": suite_fd,
+            "archive_fd": archive_fd,
             "source_fd": source_fd,
-            "sealed_executable": sealed_meta,
-            "yosys_executable_observed_before": executable_before,
-            "yosys_executable_observed_after_version": executable_after_version,
+            "archive_observed_before": archive_before,
+            "archive_observed_after_version": archive_after_version,
             "yosys_version_command": version_command,
             "runtime_yosys_version": runtime_version,
+            "sanitized_environment": env_meta,
+            "observed_runtime_files": runtime_files,
+            "runtime_dependency_audit": dependency_audit,
         }
-        if not executable_stable:
-            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
-            return False, "yosys_executable_changed_during_version", runtime_meta
+        if not archive_stable:
+            os.close(source_fd); os.close(archive_fd)
+            return False, "archive_changed_during_version", runtime_meta
         runtime_identity = _yosys_identity(runtime_version)
         if version_result.returncode or runtime_identity != (SUPPORTED_YOSYS_VERSION,
                                                               SUPPORTED_YOSYS_GIT_SHA):
-            os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
+            os.close(source_fd); os.close(archive_fd)
             return False, "runtime_unsupported_yosys_build", runtime_meta
         netlist = private / "invariant.json"
         script = (f"read_verilog -formal -sv {source_route}; "
                   f"hierarchy -check -top {TOP}; proc; opt_expr; opt_clean; "
                   f"write_json {netlist}")
-        command = ["authenticated-yosys-fd", "-q", "-p", script]
+        command = ["authenticated-snapshot/lib/ld-linux-x86-64.so.2",
+                   "<sealed-loader-options>", "libexec/yosys", "-q", "-p", script]
         completed = _run_authenticated(
-            sealed_executable, ["-q", "-p", script],
-            (executable_fd, suite_fd, source_fd))
-        executable_stable, executable_after = _verify_fd_unchanged(
-            executable_fd, executable_before)
+            runtime_executable, [*runtime_prefix, "-q", "-p", script],
+            (archive_fd, source_fd), runtime_env)
+        archive_stable, archive_after = _verify_fd_unchanged(archive_fd, archive_before)
         source_stable, source_after = _verify_fd_unchanged(source_fd, source_before)
-        os.close(suite_fd); os.close(source_fd); os.close(executable_fd)
+        os.close(source_fd); os.close(archive_fd)
         meta = {**runtime_meta, "command": command, "source_observed_before": source_before,
                 "source_observed_after": source_after,
-        "yosys_executable_observed_after_elaboration": executable_after,
-        "consumption_route": "sealed_authenticated_launcher_and_inherited_source_fd",
+        "archive_observed_after_elaboration": archive_after,
+        "consumption_route": "authenticated_archive_private_full_snapshot_and_inherited_source_fd",
         "output_directory_mode": "0700"}
-        if not executable_stable:
-            return False, "yosys_executable_changed_during_elaboration", meta
+        if not archive_stable:
+            return False, "archive_changed_during_elaboration", meta
         if not source_stable:
             return False, "source_changed_during_elaboration", meta
         if completed.returncode:

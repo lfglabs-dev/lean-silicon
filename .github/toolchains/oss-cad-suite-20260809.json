@@ -2,6 +2,7 @@
   "archive_bytes": 737556153,
   "archive_sha256": "7c0f1bb619d03fdf1614b73d84a95a88c64671685c364f87fe0827b7fffc6c4e",
   "archive_url": "https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-08-09/oss-cad-suite-linux-x64-20260809.tgz",
+  "archive_environment_variable": "OSS_CAD_SUITE_ARCHIVE",
   "manifest_version": 1,
   "yosys_git_sha": "0f2bcb94b",
   "yosys_relative_path": "bin/yosys",

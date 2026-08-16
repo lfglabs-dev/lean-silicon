@@ -71,3 +71,4 @@ runs:
         printf '%s  %s\n' "$YOSYS_SHA256" "$SUITE_DIR/$YOSYS_RELATIVE_PATH" | sha256sum --check --status
         test -x "$SUITE_DIR/bin/sby"
         printf '%s\n' "$SUITE_DIR/bin" >> "$GITHUB_PATH"
+        printf 'OSS_CAD_SUITE_ARCHIVE=%s\n' "$ARCHIVE" >> "$GITHUB_ENV"

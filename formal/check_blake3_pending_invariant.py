@@ -199,17 +199,22 @@ def main() -> int:
             "validator_json_creator": baseline_contract_receipt.get("json_creator"),
             "validator_consumption_route": baseline_contract_receipt.get(
                 "consumption_route"),
-            "validator_yosys_executable_fd": baseline_contract_receipt.get(
-                "yosys_executable_fd"),
+            "validator_archive_fd": baseline_contract_receipt.get("archive_fd"),
             "validator_source_fd": baseline_contract_receipt.get("source_fd"),
-            "validator_yosys_executable_sha256": baseline_contract_receipt.get(
-                "yosys_executable_observed_before", {}).get("sha256"),
+            "validator_archive_sha256": baseline_contract_receipt.get("archive_sha256"),
             "validator_toolchain_manifest_sha256": baseline_contract_receipt.get(
                 "toolchain_manifest_sha256"),
-            "validator_yosys_executable_observed_before": baseline_contract_receipt.get(
-                "yosys_executable_observed_before"),
-            "validator_yosys_executable_observed_after_elaboration": baseline_contract_receipt.get(
-                "yosys_executable_observed_after_elaboration"),
+            "validator_archive_observed_before": baseline_contract_receipt.get(
+                "archive_observed_before"),
+            "validator_archive_observed_after_elaboration": baseline_contract_receipt.get(
+                "archive_observed_after_elaboration"),
+            "validator_snapshot_route": baseline_contract_receipt.get("snapshot_route"),
+            "validator_sanitized_environment": baseline_contract_receipt.get(
+                "sanitized_environment"),
+            "validator_observed_runtime_files": baseline_contract_receipt.get(
+                "observed_runtime_files"),
+            "validator_runtime_dependency_audit": baseline_contract_receipt.get(
+                "runtime_dependency_audit"),
             "validator_source_observed_before": baseline_contract_receipt.get(
                 "source_observed_before"),
             "validator_source_observed_after": baseline_contract_receipt.get(

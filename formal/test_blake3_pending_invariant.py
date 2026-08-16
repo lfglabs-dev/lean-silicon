@@ -28,6 +28,9 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             "authoritative oracle tests require the exact repository-pinned OSS CAD Suite",
         )
         self.runtime_version = version
+        archive = os.environ.get("OSS_CAD_SUITE_ARCHIVE")
+        self.assertIsNotNone(archive, "tests require the authenticated pinned archive")
+        self.assertEqual(validator.sha256(Path(archive)), validator.MANIFEST["archive_sha256"])
 
     def test_emitted_yosys_representation_fixtures(self) -> None:
         fixtures = check.FORMAL / "fixtures" / "blake3_pending_oracle"
@@ -182,7 +185,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         self.assertEqual(reason, "production_invariant_elaboration_failed")
         self.assertEqual(meta["runtime_yosys_version"], self.runtime_version)
         self.assertEqual(meta["consumption_route"],
-                         "sealed_authenticated_launcher_and_inherited_source_fd")
+                         "authenticated_archive_private_full_snapshot_and_inherited_source_fd")
 
     def test_authoritative_binary_digest_and_path_fail_closed(self) -> None:
         """A banner/fixture copier, tampered binary, or symlink never executes."""
@@ -213,6 +216,26 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             self.assertFalse(valid)
             self.assertTrue(reason.startswith("yosys_executable_no_follow_open_failed"), reason)
 
+    def test_authenticated_archive_boundary_fails_closed(self) -> None:
+        production = check.FORMAL / check.INVARIANT
+        pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
+                                     stdout=subprocess.PIPE, check=True).stdout.strip())
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            tampered = root / "suite.tgz"
+            tampered.write_bytes(b"not the pinned archive")
+            with mock.patch.dict(os.environ, {"OSS_CAD_SUITE_ARCHIVE": str(tampered)}):
+                valid, reason, _ = validator.validate(production)
+            self.assertFalse(valid)
+            self.assertEqual(reason, "archive_digest_mismatch")
+
+            link = root / "linked-suite.tgz"
+            link.symlink_to(os.environ["OSS_CAD_SUITE_ARCHIVE"])
+            with mock.patch.dict(os.environ, {"OSS_CAD_SUITE_ARCHIVE": str(link)}):
+                valid, reason, _ = validator.validate(production)
+            self.assertFalse(valid)
+            self.assertTrue(reason.startswith("archive_no_follow_open_failed"), reason)
+
             path_bin = root / "bin"
             path_bin.mkdir()
             (path_bin / "yosys").symlink_to(pinned)
@@ -237,7 +260,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
         with mock.patch.object(validator, "_verify_fd_unchanged", side_effect=unstable):
             valid, reason, _ = validator.validate(production)
         self.assertFalse(valid)
-        self.assertEqual(reason, "yosys_executable_changed_during_version")
+        self.assertEqual(reason, "archive_changed_during_version")
 
         calls = 0
         def unstable_source(fd, before):
@@ -260,6 +283,26 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             valid, reason, _ = validator.validate(link)
         self.assertFalse(valid)
         self.assertTrue(reason.startswith("source_no_follow_open_failed"), reason)
+
+    def test_extracted_runtime_substitution_is_not_consumed(self) -> None:
+        """Mutable loader/libexec/lib/plugin/data neighbors are outside the root of trust."""
+        pinned = Path(subprocess.run(["sh", "-c", "command -v yosys"], text=True,
+                                     stdout=subprocess.PIPE, check=True).stdout.strip())
+        with tempfile.TemporaryDirectory() as raw:
+            fake_suite = Path(raw)
+            (fake_suite / "bin").mkdir()
+            os.link(pinned, fake_suite / "bin" / "yosys")
+            for relative in ("lib/ld-linux-x86-64.so.2", "lib/libstdc++.so.6",
+                             "libexec/yosys", "share/yosys/plugins/spoof.so",
+                             "share/yosys/spoof.txt"):
+                target = fake_suite / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("forged runtime object\n")
+            valid, reason, meta = validator.validate(
+                check.FORMAL / check.INVARIANT, str(fake_suite / "bin" / "yosys"))
+        self.assertTrue(valid, reason)
+        self.assertEqual(meta["snapshot_route"],
+                         "authenticated_archive_private_full_extraction")
 
     def test_cli_preserves_final_source_symlink_for_no_follow(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -291,11 +334,11 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
             original_run = validator._run_authenticated
             calls = 0
 
-            def swap_then_run(executable_fd, arguments, inherited_fds):
+            def swap_then_run(executable_fd, arguments, inherited_fds, env=None):
                 nonlocal calls
                 calls += 1
                 if calls != 2:
-                    return original_run(executable_fd, arguments, inherited_fds)
+                    return original_run(executable_fd, arguments, inherited_fds, env)
                 live.rename(parked)
                 (live / "bin").mkdir(parents=True)
                 (live / "invariant.sv").write_text(spoof_text)
@@ -303,7 +346,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                 fake.write_text("#!/bin/sh\nexit 99\n")
                 fake.chmod(0o755)
                 try:
-                    return original_run(executable_fd, arguments, inherited_fds)
+                    return original_run(executable_fd, arguments, inherited_fds, env)
                 finally:
                     for entry in (live / "bin").iterdir():
                         entry.unlink()
@@ -317,8 +360,8 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
                     live / "invariant.sv", str(live / "bin" / "yosys"))
         self.assertTrue(valid, reason)
         self.assertEqual(meta["consumption_route"],
-                         "sealed_authenticated_launcher_and_inherited_source_fd")
-        self.assertEqual(calls, 2)
+                         "authenticated_archive_private_full_snapshot_and_inherited_source_fd")
+        self.assertEqual(calls, 3)  # dependency audit, version, elaboration
 
     def test_manifest_binds_verified_archive_and_executable(self) -> None:
         self.assertEqual(validator.MANIFEST["archive_bytes"], 737556153)
