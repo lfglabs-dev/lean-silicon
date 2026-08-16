@@ -21,7 +21,7 @@ RTL = ROOT / "asic_core" / "rtl"
 SOURCES = [
     "lsc1_packet_rx.sv", "lsc1_packet_tx.sv", "gf2n_mul_bitstream.sv",
     "gf128_mul_bitstream.sv", "leanvm_b_stream_alu.sv", "lsc1_stream_adapter.sv",
-    "lsc1_field_encoder.sv", "lsc1_packet_frontend.sv",
+    "lsc1_field_encoder.sv", "lsc1_blake3_lifecycle.sv", "lsc1_packet_frontend.sv",
 ]
 SOLVER_TIMEOUT_SECONDS = 540
 SBY_NAME = "full_lsc1_deref_bridge.sby"
@@ -45,9 +45,15 @@ MUTATIONS = [
      "staged_result_crc <= tx_payload_crc;\n"
      "                committed_fp <= staged_next_fp;"),
     ("corrupted_staged_fp_retention", "matching_retire_safety", "lsc1_packet_frontend.sv",
-     "            done_pulse <= 1'b0;\n"
+     "            core_done_pulse <= 1'b0;\n"
+     "            blake_service_start <= 1'b0;\n"
+     "            blake_service_accept <= 1'b0;\n"
+     "            blake_service_discard <= 1'b0;\n"
      "            if (tx_done && capture_result_crc) begin",
-     "            done_pulse <= 1'b0;\n"
+     "            core_done_pulse <= 1'b0;\n"
+     "            blake_service_start <= 1'b0;\n"
+     "            blake_service_accept <= 1'b0;\n"
+     "            blake_service_discard <= 1'b0;\n"
      "            if (result_pending && !capture_result_crc)\n"
      "                staged_next_fp <= staged_next_fp ^ 32'h00000001;\n"
      "            if (tx_done && capture_result_crc) begin"),
@@ -55,9 +61,15 @@ MUTATIONS = [
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b0;",
      "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b1;"),
     ("duplicate_completion_pulse", "post_retire_safety", "lsc1_packet_frontend.sv",
-     "            encoder_start <= 1'b0;\n            done_pulse <= 1'b0;\n"
+     "            encoder_start <= 1'b0;\n            core_done_pulse <= 1'b0;\n"
+     "            blake_service_start <= 1'b0;\n"
+     "            blake_service_accept <= 1'b0;\n"
+     "            blake_service_discard <= 1'b0;\n"
      "            if (tx_done && capture_result_crc) begin",
-     "            encoder_start <= 1'b0;\n            done_pulse <= done_pulse;\n"
+     "            encoder_start <= 1'b0;\n            core_done_pulse <= core_done_pulse;\n"
+     "            blake_service_start <= 1'b0;\n"
+     "            blake_service_accept <= 1'b0;\n"
+     "            blake_service_discard <= 1'b0;\n"
      "            if (tx_done && capture_result_crc) begin"),
 ]
 

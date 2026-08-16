@@ -62,6 +62,7 @@ class AuthoredRtlContractTests(unittest.TestCase):
         rtl = [ROOT / path for path in (
             "asic_core/rtl/lsc1_packet_rx.sv",
             "asic_core/rtl/lsc1_packet_tx.sv",
+            "asic_core/rtl/lsc1_blake3_lifecycle.sv",
             "asic_core/rtl/gf2n_mul_bitstream.sv",
             "asic_core/rtl/gf128_mul_bitstream.sv",
             "asic_core/rtl/leanvm_b_stream_alu.sv",

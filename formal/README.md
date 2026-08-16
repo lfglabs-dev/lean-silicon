@@ -27,6 +27,23 @@ or rewrite that artifact.  The miter shares `ui_in`, `uio_in`, `ena`, `clk`, and
 `rst_n`, ties the gate design's power pins to their active values, and compares
 `uo_out`, `uio_out`, and `uio_oe`.  Those vectors include TX data, RX ready, TX
 valid, BUSY, FAULT, DONE, and the wrapper's output-enable handshake behavior.
+
+### BLAKE pending oracle trust boundary
+
+The elaborated BLAKE pending oracle runs in a trusted, isolated CI process and
+runner after authenticating the SHA-pinned OSS CAD Suite archive. Its bounded
+provenance checks protect against accidental or ambient `PATH` selection,
+final-component symlinks, hostile `TMPDIR`, stale or substituted extracted
+trees before validation, and replacement of the JSON output pathname. The
+source and archive are digest/stability checked, and JSON is consumed through
+the same pre-opened descriptor used by Yosys.
+
+This is not authentication against a malicious concurrent process with the
+same UID (or root), `ptrace` or `/proc` descriptor writes, privileged mount
+replacement, or kernel compromise. CI must provide the isolated-runner
+assumption; the oracle does not add namespaces, seccomp, or a broader
+supply-chain mechanism.
+
 Reset is required on the initial edge; all later inputs, including stalls,
 aborts, commands, and payload bytes, are unconstrained.
 

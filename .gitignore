@@ -10,6 +10,8 @@ __pycache__/
 !host/fixtures/*.json
 # Immutable conformance inputs are reviewed source artifacts, not run output.
 !conformance/*.json
+# Versioned elaborated-netlist fixtures for the BLAKE pending semantic oracle.
+!formal/fixtures/blake3_pending_oracle/*.json
 # Reviewed assurance plans are source; mutable receipts remain in private caches.
 !assurance/full-profile/plan.json
 !assurance/full-profile/schema.json

@@ -7,6 +7,7 @@ PROJECT_SOURCES = \
   ../asic_core/rtl/leanvm_b_stream_alu.sv \
   ../asic_core/rtl/lsc1_packet_rx.sv \
   ../asic_core/rtl/lsc1_packet_tx.sv \
+  ../asic_core/rtl/lsc1_blake3_lifecycle.sv \
   ../asic_core/rtl/lsc1_stream_adapter.sv \
   ../asic_core/rtl/lsc1_field_encoder.sv \
   ../asic_core/rtl/lsc1_packet_frontend.sv \
@@ -44,6 +45,7 @@ packet-frontend-sim:
 
 packet-frontend-mutation:
 	$(MAKE) -C packet_frontend mutation
+	$(MAKE) -C packet_frontend lifecycle-mutation
 
 packet-rtl-differential:
 	cd .. && $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential -v

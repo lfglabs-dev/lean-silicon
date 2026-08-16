@@ -15,7 +15,7 @@ module lsc1_packet_frontend (
     input  wire       tx_ready,
     output wire       busy,
     output reg        fault,
-    output reg        done_pulse
+    output wire       done_pulse
 );
     localparam [7:0] OP_XOR = 8'h01, OP_MUL = 8'h02, OP_SET = 8'h03,
                      OP_DEREF_CELL = 8'h04, OP_DEREF_PC = 8'h05,
@@ -76,7 +76,19 @@ module lsc1_packet_frontend (
     wire lane_enable = !tx_busy && !tx_start &&
                        compute_state == C_IDLE && !alu_busy && !encoder_busy;
 
-    reg result_pending, service_pending;
+    reg result_pending;
+    wire blake_service_pending, blake_result_pending;
+    wire [31:0] blake_staged_txn_id, blake_staged_service_id;
+    wire [31:0] blake_staged_next_pc, blake_staged_next_fp;
+    wire [31:0] blake_staged_result_crc;
+    wire [31:0] blake_service_seq, blake_retire_seq;
+    wire blake_retire_match;
+    wire [7:0] blake_retire_mismatch_detail;
+    wire blake_done_pulse;
+    reg blake_service_start, blake_service_accept, blake_service_discard;
+    wire blake_retire_attempt;
+    reg [31:0] blake_start_txn_id, blake_start_next_pc, blake_start_next_fp;
+    reg core_done_pulse;
     // Authored-RTL provenance for the instruction which owns pending service
     // or result state.  The simulation certificate reads this register; it is
     // deliberately decoded here rather than supplied by the Python driver.
@@ -86,7 +98,6 @@ module lsc1_packet_frontend (
     reg state_valid;
     reg [31:0] committed_pc, committed_fp, retire_seq;
     reg [7:0] active_profile, last_status, last_fault;
-    reg [31:0] service_seq, staged_service_id;
     reg [127:0] staged_message [0:3];
     reg [127:0] staged_cv [0:1];
     reg [127:0] staged_metadata;
@@ -180,10 +191,41 @@ module lsc1_packet_frontend (
         .fault(encoder_fault), .result(encoder_result)
     );
 
+    lsc1_blake3_lifecycle blake3_lifecycle (
+        .clk(clk), .rst_n(rst_n), .abort(abort),
+        .service_start(blake_service_start), .service_txn_id(blake_start_txn_id),
+        .service_next_pc(blake_start_next_pc), .service_next_fp(blake_start_next_fp),
+        .service_accept(blake_service_accept),
+        .service_discard(blake_service_discard),
+        .result_tx_done(tx_done && tx_external_kind == 2),
+        .result_tx_crc(tx_payload_crc),
+        .retire_attempt(blake_retire_attempt),
+        .retire_txn_id(frame_payload[0 +: 32]),
+        .retire_result_crc(frame_payload[32 +: 32]),
+        .service_pending(blake_service_pending),
+        .result_pending(blake_result_pending),
+        .staged_txn_id(blake_staged_txn_id),
+        .staged_service_id(blake_staged_service_id),
+        .staged_next_pc(blake_staged_next_pc),
+        .staged_next_fp(blake_staged_next_fp),
+        .staged_result_crc(blake_staged_result_crc),
+        .service_seq(blake_service_seq), .retire_seq(blake_retire_seq),
+        .retire_match(blake_retire_match),
+        .retire_mismatch_detail(blake_retire_mismatch_detail),
+        .done_pulse(blake_done_pulse)
+    );
+
     assign rx_ready = parser_rx_ready && lane_enable;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
-                  service_pending ||
+                  blake_result_pending || blake_service_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
+    assign done_pulse = core_done_pulse || blake_done_pulse;
+    // The lifecycle shell and frontend must consume a RETIRE on the same edge.
+    // A registered handoff would move DONE and lifecycle state one edge after
+    // the architectural commit performed below.
+    assign blake_retire_attempt = frame_valid && event_ready &&
+                                  frame_opcode == OP_RETIRE && frame_length == 8 &&
+                                  blake_result_pending;
 
     // Long service/result payloads are scattered directly from semantic staging
     // registers.  The selected byte is purely a function of the stable index,
@@ -193,9 +235,9 @@ module lsc1_packet_frontend (
         tx_payload_external_data = 0;
         if (tx_external_kind == 1) begin
             if (tx_payload_index < 4)
-                tx_payload_external_data = staged_txn_id[tx_payload_index*8 +: 8];
+                tx_payload_external_data = blake_staged_txn_id[tx_payload_index*8 +: 8];
             else if (tx_payload_index < 8)
-                tx_payload_external_data = staged_service_id[(tx_payload_index-4)*8 +: 8];
+                tx_payload_external_data = blake_staged_service_id[(tx_payload_index-4)*8 +: 8];
             else if (tx_payload_index == 8) tx_payload_external_data = 8'h01;
             else if (tx_payload_index == 9) tx_payload_external_data = 0;
             else if (tx_payload_index < 74) begin
@@ -208,11 +250,11 @@ module lsc1_packet_frontend (
                 tx_payload_external_data = staged_metadata[(tx_payload_index-106)*8 +: 8];
         end else if (tx_external_kind == 2) begin
             if (tx_payload_index < 4)
-                tx_payload_external_data = staged_txn_id[tx_payload_index*8 +: 8];
+                tx_payload_external_data = blake_staged_txn_id[tx_payload_index*8 +: 8];
             else if (tx_payload_index < 8)
-                tx_payload_external_data = staged_next_pc[(tx_payload_index-4)*8 +: 8];
+                tx_payload_external_data = blake_staged_next_pc[(tx_payload_index-4)*8 +: 8];
             else if (tx_payload_index < 12)
-                tx_payload_external_data = staged_next_fp[(tx_payload_index-8)*8 +: 8];
+                tx_payload_external_data = blake_staged_next_fp[(tx_payload_index-8)*8 +: 8];
             else if (tx_payload_index == 12) tx_payload_external_data = staged_write_count;
             else if (tx_payload_index < 13 + staged_write_count*20) begin
                 ext_word = (tx_payload_index-13) / 20;
@@ -239,7 +281,9 @@ module lsc1_packet_frontend (
         .frame_valid(frame_valid), .rx_fault_valid(rx_fault_valid),
         .tx_start(tx_start), .tx_busy(tx_busy), .compute_state(compute_state),
         .alu_busy(alu_busy), .encoder_busy(encoder_busy),
-        .result_pending(result_pending), .service_pending(service_pending)
+        .result_pending(result_pending || blake_result_pending),
+        .blake_result_pending(blake_result_pending),
+        .service_pending(blake_service_pending)
     );
 `endif
 
@@ -380,10 +424,7 @@ module lsc1_packet_frontend (
         integer blake_result_length;
         begin
             blake_result_length = 15 + staged_write_count*20 + 8*4;
-            staged_result_crc <= 0;
-            capture_result_crc <= 1'b1;
-            result_pending <= 1'b1;
-            service_pending <= 1'b0;
+            blake_service_accept <= 1'b1;
             tx_status <= OK;
             tx_length <= blake_result_length;
             tx_external_kind <= 2;
@@ -445,7 +486,6 @@ module lsc1_packet_frontend (
             encoder_start <= 1'b0;
             encoder_index <= 0;
             result_pending <= 1'b0;
-            service_pending <= 1'b0;
             staged_operation <= 0;
             staged_txn_id <= 0;
             staged_next_pc <= 0;
@@ -458,11 +498,15 @@ module lsc1_packet_frontend (
             active_profile <= 1;
             last_status <= OK;
             last_fault <= OK;
-            service_seq <= 0;
-            staged_service_id <= 0;
             staged_write_count <= 0;
+            blake_service_start <= 1'b0;
+            blake_service_accept <= 1'b0;
+            blake_service_discard <= 1'b0;
+            blake_start_txn_id <= 0;
+            blake_start_next_pc <= 0;
+            blake_start_next_fp <= 0;
             fault <= 1'b0;
-            done_pulse <= 1'b0;
+            core_done_pulse <= 1'b0;
         end else if (abort) begin
             tx_start <= 1'b0;
             tx_external_kind <= 0;
@@ -471,16 +515,21 @@ module lsc1_packet_frontend (
             alu_start <= 1'b0;
             encoder_start <= 1'b0;
             result_pending <= 1'b0;
-            service_pending <= 1'b0;
             fault <= 1'b1;
             last_status <= 8'h93;
             last_fault <= 8'h93;
-            done_pulse <= 1'b0;
+            core_done_pulse <= 1'b0;
+            blake_service_start <= 1'b0;
+            blake_service_accept <= 1'b0;
+            blake_service_discard <= 1'b0;
         end else begin
             tx_start <= 1'b0;
             alu_start <= 1'b0;
             encoder_start <= 1'b0;
-            done_pulse <= 1'b0;
+            core_done_pulse <= 1'b0;
+            blake_service_start <= 1'b0;
+            blake_service_accept <= 1'b0;
+            blake_service_discard <= 1'b0;
             if (tx_done && capture_result_crc) begin
                 staged_result_crc <= tx_payload_crc;
                 capture_result_crc <= 1'b0;
@@ -591,9 +640,10 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else begin
                         result_bytes = 0;
-                        result_bytes[0 +: 8] = service_pending ? 8'h02 :
-                                                   (result_pending ? 8'h01 : 8'h00);
-                        result_bytes[8 +: 32] = (result_pending || service_pending) ? staged_txn_id : 0;
+                        result_bytes[0 +: 8] = blake_service_pending ? 8'h02 :
+                                                   ((result_pending || blake_result_pending) ? 8'h01 : 8'h00);
+                        result_bytes[8 +: 32] = (blake_result_pending || blake_service_pending) ?
+                                                   blake_staged_txn_id : (result_pending ? staged_txn_id : 0);
                         result_bytes[40 +: 8] = last_status;
                         result_bytes[48 +: 32] = retire_seq;
                         result_bytes[80 +: 8] = last_fault;
@@ -613,7 +663,8 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else if (frame_payload[16 +: 8] > 1) begin
                         emit_fault(BAD_PROFILE, 0, 0);
-                    end else if (result_pending || service_pending) begin
+                    end else if (result_pending ||
+                                 blake_result_pending || blake_service_pending) begin
                         emit_fault(BAD_STATE, 0, 0);
                     end else if (!(frame_payload[0 +: 8] <= 1 &&
                                    frame_payload[8 +: 8] >= 1)) begin
@@ -644,6 +695,28 @@ module lsc1_packet_frontend (
                     txn_id = frame_payload[0 +: 32];
                     if (frame_length != 8) begin
                         emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
+                    end else if (blake_result_pending) begin
+                        if (!blake_retire_match) begin
+                            emit_fault(RETIRE_MISMATCH, txn_id,
+                                       blake_retire_mismatch_detail);
+                        end else begin
+                            committed_pc <= blake_staged_next_pc;
+                            committed_fp <= blake_staged_next_fp;
+                            state_valid <= 1'b1;
+                            retire_seq <= retire_seq + 1'b1;
+                            retired_bytes = 0;
+                            retired_bytes[0 +: 32] = txn_id;
+                            retired_bytes[32 +: 32] = retire_seq + 1'b1;
+                            retired_bytes[64 +: 32] = blake_staged_next_pc;
+                            retired_bytes[96 +: 32] = blake_staged_next_fp;
+                            tx_status <= RETIRED;
+                            tx_length <= 16;
+                            tx_payload <= retired_bytes;
+                            tx_external_kind <= 0;
+                            tx_start <= 1'b1;
+                            fault <= 1'b0;
+                            last_status <= RETIRED;
+                        end
                     end else if (!result_pending) begin
                         emit_fault(BAD_STATE, txn_id, 0);
                     end else if (txn_id != staged_txn_id ||
@@ -657,7 +730,7 @@ module lsc1_packet_frontend (
                         state_valid <= 1'b1;
                         retire_seq <= retire_seq + 1'b1;
                         result_pending <= 1'b0;
-                        done_pulse <= 1'b1;
+                        core_done_pulse <= 1'b1;
                         retired_bytes = 0;
                         retired_bytes[0 +: 32] = txn_id;
                         retired_bytes[32 +: 32] = retire_seq + 1'b1;
@@ -677,20 +750,20 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_LENGTH, txn_id, 2);
                     end else if (frame_payload[9*8 +: 8] != 0) begin
                         emit_fault(BAD_FLAGS, 0, 2);
-                    end else if (!service_pending) begin
+                    end else if (!blake_service_pending) begin
                         emit_fault(BAD_STATE, txn_id, 0);
-                    end else if (txn_id != staged_txn_id ||
-                                 frame_payload[32 +: 32] != staged_service_id ||
+                    end else if (txn_id != blake_staged_txn_id ||
+                                 frame_payload[32 +: 32] != blake_staged_service_id ||
                                  frame_payload[8*8 +: 8] != 1) begin
                         emit_fault(8'h91, txn_id,
-                                   txn_id != staged_txn_id || frame_payload[32 +: 32] != staged_service_id ? 1 : 2);
+                                   txn_id != blake_staged_txn_id || frame_payload[32 +: 32] != blake_staged_service_id ? 1 : 2);
                     end else if ((staged_out_present[0] &&
                                   staged_out_value[0] != frame_payload[10*8 +: 128]) ||
                                  (staged_out_present[1] &&
                                   staged_out_value[1] != frame_payload[26*8 +: 128]) ||
                                  (staged_access[6] == staged_access[7] &&
                                   frame_payload[10*8 +: 128] != frame_payload[26*8 +: 128])) begin
-                        service_pending <= 1'b0;
+                        blake_service_discard <= 1'b1;
                         emit_fault(WRITE_CONFLICT, txn_id, 0);
                     end else begin
                         staged_write_count = 0;
@@ -779,7 +852,8 @@ module lsc1_packet_frontend (
                                cell_is_malformed(frame_payload[77*8 +: 8],
                                                  frame_payload[624 +: 128])))) begin
                     emit_fault(BAD_CELL, 0, 0);
-                end else if (result_pending || service_pending) begin
+                end else if (result_pending ||
+                             blake_result_pending || blake_service_pending) begin
                     emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
                 end else begin
                     // Preserve the decoded authored-RTL instruction identity
@@ -823,7 +897,7 @@ module lsc1_packet_frontend (
                         staged_access[5] = staged_access[4] + 1'b1;
                         staged_access[6] = fp + frame_payload[34*8 +: 32];
                         staged_access[7] = staged_access[6] + 1'b1;
-                        if (service_seq >= 32'hfffffffe) begin
+                        if (blake_service_seq >= 32'hfffffffe) begin
                             decision_ok = 0; decision_fault = BAD_SERVICE;
                         end else if (frame_payload[46*8 +: 32] > 32'd64 ||
                                      (frame_payload[50*8 +: 32] & ~32'h0000007f) != 0) begin
@@ -852,12 +926,10 @@ module lsc1_packet_frontend (
                             staged_out_value[0] <= frame_payload[157*8 +: 128];
                             staged_out_present[1] <= frame_payload[173*8 +: 8];
                             staged_out_value[1] <= frame_payload[174*8 +: 128];
-                            staged_txn_id <= txn_id;
-                            staged_next_pc <= pc + 1'b1;
-                            staged_next_fp <= fp;
-                            staged_service_id <= service_seq + 1'b1;
-                            service_seq <= service_seq + 1'b1;
-                            service_pending <= 1'b1;
+                            blake_service_start <= 1'b1;
+                            blake_start_txn_id <= txn_id;
+                            blake_start_next_pc <= pc + 1'b1;
+                            blake_start_next_fp <= fp;
                             tx_status <= 8'h01;
                             tx_length <= 122;
                             tx_external_kind <= 1;

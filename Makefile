@@ -132,6 +132,8 @@ formal-mutations:
 formal-deref-coverage-mutation:
 	$(PYTHON) -m unittest formal/test_deref_task_serialization.py -v
 	$(PYTHON) -m unittest formal/test_deref_retire_formal_mutations.py -v
+	$(PYTHON) -m unittest formal/test_blake3_pending_invariant.py -v
+	$(PYTHON) formal/check_blake3_pending_invariant.py
 	$(PYTHON) formal/check_deref_coverage_mutation.py
 	$(PYTHON) formal/check_deref_retire_formal_mutations.py
 

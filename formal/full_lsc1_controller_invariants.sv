@@ -7,9 +7,17 @@ module full_lsc1_controller_invariants (
     input wire done_pulse, input wire frame_valid, input wire rx_fault_valid,
     input wire tx_start, input wire tx_busy, input wire [3:0] compute_state,
     input wire alu_busy, input wire encoder_busy,
-    input wire result_pending, input wire service_pending
+    input wire result_pending, input wire blake_result_pending,
+    input wire service_pending
 );
     reg past_valid = 1'b0;
+    // This combinational obligation is intentionally sensitive to the production
+    // instance connection, including arbitrary initial lifecycle state.
+    always @(*) begin
+        if (blake_result_pending) assert(result_pending);
+        cover(blake_result_pending);
+    end
+
     always @(posedge clk) begin
         past_valid <= 1'b1;
         if (!past_valid) assume(!rst_n);
@@ -35,14 +43,18 @@ module full_lsc1_controller_invariants (
             assert(!tx_valid);
             assert(!done_pulse);
             assert(!result_pending);
+            assert(!blake_result_pending);
             assert(!service_pending);
         end
         if (past_valid && done_pulse) assert(!tx_valid);
+`ifndef FORMAL_BLAKE_PENDING_FOCUSED
         cover(past_valid && rst_n && tx_valid && !tx_ready);
         cover(past_valid && rst_n && fault);
         cover(past_valid && rst_n && result_pending);
+        cover(past_valid && rst_n && blake_result_pending);
         cover(past_valid && rst_n && service_pending);
         cover(past_valid && rst_n && done_pulse);
+`endif
     end
 endmodule
 
