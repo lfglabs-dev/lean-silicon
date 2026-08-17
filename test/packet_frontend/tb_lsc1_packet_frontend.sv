@@ -209,8 +209,9 @@ module tb_lsc1_packet_frontend;
         // Valid SET with deterministic input stalls and output backpressure.
         build_set(32'h11, 0, 4);
         send_frame(1, 8'h03, 0, 51, 0);
-        if ($bits(dut.tx_payload) != 160 || $bits(dut.transmitter.saved_payload) != 160)
-            $fatal(1, "ordinary payload storage was not narrowed to 20 bytes");
+        if ($bits(dut.short_txn_id) + $bits(dut.short_detail) != 40 ||
+            $bits(dut.transmitter.saved_payload) != 160)
+            $fatal(1, "short-response semantic staging is not exactly 40 bits");
         wait (tx_valid);
         wait (dut.tx_payload_external_valid && dut.tx_payload_index == 17);
         #1;
