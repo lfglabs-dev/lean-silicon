@@ -10,9 +10,10 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 sim:
+	$(MAKE) serializer-structure
 	$(MAKE) rx-payload-prefix
 	$(MAKE) lifecycle
 	$(MAKE) blake3-retire-commit
@@ -30,6 +31,26 @@ transport:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_tx_service_required -o tb_lsc1_packet_tx_service_required.vvp \
 	  ../../asic_core/rtl/lsc1_packet_tx.sv tb_lsc1_packet_tx_service_required.sv
 	vvp tb_lsc1_packet_tx_service_required.vvp
+
+serializer-structure:
+	@set -e; tx=../../asic_core/rtl/lsc1_packet_tx.sv; fe=../../asic_core/rtl/lsc1_packet_frontend.sv; \
+	  inline_reg=saved_; inline_reg=$${inline_reg}payload; mode_reg=saved_; mode_reg=$${mode_reg}external; mode_port=payload_; mode_port=$${mode_port}external; \
+	  ! grep -Eq "$$inline_reg|$$mode_reg|input[[:space:]]+wire[[:space:]]+\\[159:0\\][[:space:]]+payload|input[[:space:]]+wire[[:space:]]+$$mode_port([,[:space:]]|$$)" "$$tx"; \
+	  awk '/tx_external_kind <= [1-7];/{kind=NR; value=$$3; sub(/;/,"",value); seen[value]=1} /tx_start <= 1.b1;/{if (!kind || NR-kind != 1) exit 1; kind=0} END{for (i=1;i<=7;i++) if (!seen[i]) exit 1; if (length(seen) != 7) exit 1}' "$$fe"; \
+	  echo "PASS: external-only serializer structure and kinds 1--7 tx_start paths"
+
+serializer-interface-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp ../../asic_core/rtl/lsc1_packet_tx.sv "$$d/dut.sv"; \
+	  test "$$(grep -Foc 'tx_data = payload_external_data;' "$$d/dut.sv")" -eq 1; \
+	  sed -i 's/tx_data = payload_external_data;/tx_data = payload_external_data ^ 8'"'"'h01;/' "$$d/dut.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_tx_service_required -o "$$d/mutation.vvp" \
+	    "$$d/dut.sv" tb_lsc1_packet_tx_service_required.sv; \
+	  if vvp "$$d/mutation.vvp" >"$$d/mutation.out" 2>&1; then \
+	    echo "serializer external-byte mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -q "SERVICE_REQUIRED payload mismatch" "$$d/mutation.out"; \
+	  echo "PASS: serializer external-byte mutant compile/elaboration and behavioral kill"
 
 lifecycle:
 	iverilog -g2012 -Wall -s tb_lsc1_blake3_lifecycle -o tb_lsc1_blake3_lifecycle.vvp \
@@ -115,6 +136,7 @@ mutation:
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
 	$(MAKE) scalar-result-mutation
 	$(MAKE) short-response-mutation
+	$(MAKE) serializer-interface-mutation
 
 short-response-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \

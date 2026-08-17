@@ -8,8 +8,6 @@ module tb_lsc1_packet_tx_service_required;
     reg rst_n = 0, abort = 0, start = 0;
     reg [7:0] status = 8'h01;
     reg [15:0] payload_length = PAYLOAD_BYTES;
-    reg [159:0] payload = 0;
-    reg payload_external = 1;
     wire [15:0] payload_index;
     wire payload_external_valid;
     reg [7:0] source [0:PAYLOAD_BYTES-1];
@@ -27,8 +25,8 @@ module tb_lsc1_packet_tx_service_required;
 
     lsc1_packet_tx dut (
         .clk(clk), .rst_n(rst_n), .abort(abort), .start(start),
-        .status(status), .payload_length(payload_length), .payload(payload),
-        .payload_external(payload_external), .payload_index(payload_index),
+        .status(status), .payload_length(payload_length),
+        .payload_index(payload_index),
         .payload_external_valid(payload_external_valid),
         .payload_external_data(payload_external_data), .busy(busy),
         .done_pulse(done_pulse), .payload_crc(payload_crc),

@@ -1,0 +1,47 @@
+{
+  "schema": "lean-silicon/yosys-structure-receipt/v1",
+  "status": "pass",
+  "source": {
+    "repository": "lfglabs-dev/lean-silicon",
+    "base_commit": "48ac559bde57122656e5fa0d776415b9402f45c3",
+    "base_tree": "f50990a6264fb2b9fe2e9fc557065916e411ee52",
+    "head_commit": "da288b62a1f7434c395244be90363cabfb6f6093",
+    "head_tree": "c5bfcdae626abf243df05d2396d06d720f6d93fe"
+  },
+  "generator": {
+    "lane": "local pinned OSS CAD Suite",
+    "toolchain_manifest": ".github/toolchains/oss-cad-suite-20260809.json",
+    "toolchain_manifest_sha256": "da9334024eaacdfea64a5623279685533445e3f3a1f65fb9b1181b4f853120bd",
+    "yosys_binary_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+    "yosys_banner": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "top": "lean_silicon_lsc1",
+  "flow": "proc; flatten; opt; fsm; opt; memory; opt; check; stat",
+  "command": [
+    "yosys",
+    "-Q",
+    "-p",
+    "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; stat"
+  ],
+  "logs": {
+    "base": {"sha256": "7b4daf6dbf50e2d4e4fc187a1cdeb98d15e7735406b137dd57e45ef8b2ec7e7e", "warnings": 7, "problems": 0},
+    "head": {"sha256": "6d660e73066623d7ebfbb5a5a10e15609a7a9bdf945eb0122a17a6ad18d29433", "warnings": 7, "problems": 0},
+    "retention": "complete logs retained in the private out-of-tree structure cache"
+  },
+  "counts": {
+    "before": {"wires": 4771, "wire_bits": 117805, "public_wires": 545, "public_wire_bits": 21782, "ports": 8, "port_bits": 43, "cells": 4460},
+    "after": {"wires": 4763, "wire_bits": 117434, "public_wires": 541, "public_wire_bits": 21460, "ports": 8, "port_bits": 43, "cells": 4455},
+    "delta_after_minus_before": {"wires": -8, "wire_bits": -371, "public_wires": -4, "public_wire_bits": -322, "ports": 0, "port_bits": 0, "cells": -5}
+  },
+  "rtl_subject_sha256": {
+    "base": "83b658ac3e375a455d95278aa32f2d0d7124bc63c50872ebbe67d142f070662e",
+    "head": "c58e4690e23e5343bf3c11624aef7ebc207f88347d9156c55f68ea37c5696d4f",
+    "method": "sha256sum of the ten ordered RTL command inputs, then sha256sum of that manifest stream"
+  },
+  "authored_state_evidence": {
+    "base": {"saved_payload": "reg [159:0] saved_payload", "saved_external": "reg saved_external", "declared_bits": 161},
+    "head": {"saved_payload_absent": true, "saved_external_absent": true, "declared_bits_removed": 161}
+  },
+  "interpretation": "The exact pinned unmapped flow reports five fewer generic cells and the listed wire deltas. These are structure observations only, not mapped area, timing, power, PPA, FPGA, physical, or P&R results.",
+  "claim_boundary": "bounded source and unmapped generic-structure evidence only; no unbounded equivalence or implementation-quality claim"
+}

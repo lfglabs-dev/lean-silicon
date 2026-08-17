@@ -109,12 +109,14 @@ class SchemaTests(unittest.TestCase):
 
 
 class ScatterGatherDesignContractTests(unittest.TestCase):
-    def test_authored_rtl_exposes_bounded_external_payload_contract(self):
+    def test_authored_rtl_exposes_external_only_payload_contract(self):
         tx = (ROOT / "asic_core" / "rtl" / "lsc1_packet_tx.sv").read_text()
         design = (ROOT / "docs" / "BLAKE3_EXTERNAL_SERVICE.md").read_text()
-        self.assertIn("[159:0]", tx)
-        self.assertGreater(122, 160 // 8)
-        self.assertIn("payload_external", tx)
+        self.assertNotIn("[159:0]", tx)
+        self.assertNotIn("saved_payload", tx)
+        self.assertNotIn("saved_external", tx)
+        self.assertNotRegex(tx, r"input\s+wire\s+payload_external(?:\s|,)")
+        self.assertIn("payload_external_data", tx)
         self.assertIn("payload_index", tx)
         self.assertIn("payload_external_valid", tx)
         self.assertIn("immutable while", tx)

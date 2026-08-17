@@ -186,7 +186,6 @@ module lsc1_packet_frontend (
     lsc1_packet_tx transmitter (
         .clk(clk), .rst_n(rst_n), .abort(abort),
         .start(tx_start), .status(tx_status), .payload_length(tx_length),
-        .payload(160'b0), .payload_external(tx_external_kind != 0),
         .payload_index(tx_payload_index),
         .payload_external_valid(tx_payload_external_valid),
         .payload_external_data(tx_payload_external_data),
