@@ -1,0 +1,247 @@
+{
+  "checkout_head": "d1be00a6d6abe5de30fa6d8daeedd7ee1983dfc2",
+  "checkout_tree": "7663f77f33c95dd4e01386b7b7b1b0940d67f74b",
+  "commands": [
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; rename lean_silicon_lsc1 lean_silicon_lsc1_netlist; write_verilog -noattr /tmp/lsc1-s3-netlist-pinned-UxOxjS/lean_silicon_lsc1.generic.v"
+      ],
+      "exit_code": 0,
+      "name": "synthesize_generic_netlist"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "synthesized_netlist_implemented_opcode_sequences"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /tmp/lsc1-s3-netlist-pinned-UxOxjS/lean_silicon_lsc1.generic.v /tmp/lsc1-s3-netlist-pinned-UxOxjS/whole_design_miter.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 0,
+      "name": "whole_design_bmc_3"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /tmp/lsc1-s3-netlist-pinned-UxOxjS/lean_silicon_lsc1.generic.v /tmp/lsc1-s3-netlist-pinned-UxOxjS/whole_design_miter.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"
+      ],
+      "exit_code": 124,
+      "name": "whole_design_temporal_induction_attempt"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -D FORMAL_FULL_LSC1 -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv formal/full_lsc1_controller_invariants.sv; prep -flatten -top lean_silicon_lsc1; memory_map; opt; async2sync; chformal -cover -remove; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 0,
+      "name": "controller_invariants_bmc_3"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -D FORMAL_FULL_LSC1 -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv formal/full_lsc1_controller_invariants.sv; prep -flatten -top lean_silicon_lsc1; memory_map; opt; async2sync; chformal -cover -remove; chformal -lower; sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"
+      ],
+      "exit_code": 124,
+      "name": "controller_invariants_induction_attempt"
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "sim"
+      ],
+      "exit_code": 0,
+      "name": "opcode_reset_backpressure_fault_nonvacuity"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "all_opcode_model_rtl_sequences"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /tmp/lsc1-s3-netlist-pinned-UxOxjS/lean_silicon_lsc1.generic.v /tmp/lsc1-s3-netlist-pinned-UxOxjS/whole_design_miter.mutated.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 1,
+      "name": "observable_correspondence_mutation"
+    }
+  ],
+  "constraints": [
+    "single rising-edge clock",
+    "two-state digital inputs",
+    "rst_n is asserted on an initialization edge preceding the first comparison",
+    "all inputs on and after the first compared edge are unconstrained, including reset, abort and backpressure",
+    "ena is functionally unused by the canonical top"
+  ],
+  "covers": {
+    "cycle_sequences": {
+      "scope": "all implemented opcodes, including valid NEGOTIATE and a staged instruction followed by valid RETIRE, plus reset, abort, backpressure and faults",
+      "status": "witnessed"
+    }
+  },
+  "host_mandatory": true,
+  "limits": [
+    "LSC-1u release and physical netlists",
+    "SKY26c and shuttle flows",
+    "physical place and route",
+    "FPGA and fabricated-silicon evidence",
+    "host-side BLAKE3 compression datapath"
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_packet_rx.sv",
+      "sha256": "284a57adf8c140ae7896f1c8d43a556c1142735c57bec624d3c9ff3b78b3db76"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_tx.sv",
+      "sha256": "54d01edc5da528e034ee016cf008f33ddd901b599facd54a6c605aa395f774db"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_blake3_lifecycle.sv",
+      "sha256": "af51a2f56073aee7ef95c183e06d0e7c0e0613a0c7193d9f883ed26b026986a8"
+    },
+    {
+      "path": "asic_core/rtl/gf2n_mul_bitstream.sv",
+      "sha256": "4aa363edd4a6b2797191599d838f3d5f81cc97aa5fc8d88f2f0050420ccf6396"
+    },
+    {
+      "path": "asic_core/rtl/gf128_mul_bitstream.sv",
+      "sha256": "d8e83531981677f629877cbeff643e07e169f8f6e8cf3ecd7c1b0c417a79b614"
+    },
+    {
+      "path": "asic_core/rtl/leanvm_b_stream_alu.sv",
+      "sha256": "bf844b461def08fbf5b69093f95f792fd9302b26098351d192e32c76583f001b"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_stream_adapter.sv",
+      "sha256": "41b68a8068f417ff8f0d33f0408405f4fae5a7b5e2fd60b482d11148e541e6c7"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_field_encoder.sv",
+      "sha256": "5fafb0f5fe81ac5aaf32d0d9974d7d7d2e2b66dde05cdb707e2067ab516f5e05"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "39b60474f78dc28133191097b4961b8589fba540f9101320a9df3d798e26aeec"
+    },
+    {
+      "path": "asic_core/rtl/lean_silicon_lsc1.sv",
+      "sha256": "192eddc1727d8976ea48db9a532f44893d06bdec7651c65a1b1b99502b5e70c5"
+    }
+  ],
+  "mutations": [
+    {
+      "killed": true,
+      "name": "invert RTL uo_out bit zero in correspondence property"
+    }
+  ],
+  "netlist": {
+    "bytes": 501826,
+    "path": "lean_silicon_lsc1.generic.v",
+    "sha256": "e2656fa0093bfb8ad5634639ce7aab3914a6655abfc592224a85e842145c84c0"
+  },
+  "observables": [
+    "uo_out[7:0]",
+    "uio_out[7:0]",
+    "uio_oe[7:0]"
+  ],
+  "physical_artifacts_generated": false,
+  "plan_sha256": "23290ef6301e5e1a467234d7a32fc73a36171ceb4ddd726b9b8487240d8c4e9a",
+  "proofs": {
+    "controller_invariants": {
+      "blocker": "15-second HOST limit expired during controller induction attempt\n$31\\val_b[127:0]\n   216/4996: $31\\taken_proposal[7:0]\n   217/4996: $31\\inv_present[7:0]\n   218/4996: $31\\pres_c[7:0]\n   219/4996: $31\\pres_b[7:0]\n   220/4996: $31\\proposed_fp[31:0]\n   221/4996: $31\\proposed_pc[31:0]\n   222/4996: $31\\base_index[31:0]\n   223/4996: $31\\off_c[31:0]\n   224/4996: $31\\off_b[31:0]\n   225/4996: $31\\decision_deferred[0:0]\n   226/4996: $38\\decision_fault[7:0]\n   227/4996: $38\\decision_ok[0:0]\n   228/4996: $37\\decision_fault[7:0]\n   229/4996: $37\\decision_ok[0:0]\n   230/4996: $36\\decision_fault[7:0]\n   231/4996: $36\\decision_ok[0:0]\n   232/4996: $35\\decision_fault[7:0]\n   233/4996: $35\\decision_ok[0:0]\n   234/4996: $34\\decision_fault[7:0]\n   235/4996: $34\\decision_ok[0:0]\n   236/4996: $30\\decision_deferred[0:0]\n   237/4996: $33\\decision_ok[0:0]\n   238/4996: $33\\decision_fault[7:0]\n   239/4996: $30\\staged_access[7][31:0]\n   240/4996: $30\\staged_access[6][31:0]\n   241/4996: $30\\staged_access[5][31:0]\n   242/4996: $30\\staged_access[4][31:0]\n   243/4996: $30\\staged_access[3][31:0]\n   244/4996: $30\\staged_access[2][31:0]\n   245/4996: $30\\staged_access[1][31:0]\n   246/4996: $30\\staged_access[0][31:0]\n   247/4996: $30\\decision_detail[7:0]\n   248/4996: $42\\write_address[31:0]\n   249/4996: $32\\solved_b[127:0]\n   250/4996: $32\\solved_a[127:0]\n   251/4996: $30\\result_value[127:0]\n   252/4996: $30\\inv_value[127:0]\n   253/4996: $30\\val_c[127:0]\n   254/4996: $30\\val_b[127:0]\n   255/4996: $30\\val_a[127:0]\n   256/4996: $30\\taken_proposal[7:0]\n   257/4996: $30\\inv_present[7:0]\n   258/4996: $30\\pres_c[7:0]\n   259/4996: $30\\pres_b[7:0]\n   260/4996: $30\\pres_a[7:0]\n   261/4996: $30\\proposed_fp[31:0]\n   262/4996: $30\\proposed_pc[31:0]\n   263/4996: $30\\base_index[31:0]\n   264/4996: $30\\addr_c[31:0]\n   265/4996: $30\\addr_b[31:0]\n   266/4996: $30\\addr_a[31:0]\n   267/4996: $30\\off_c[31:0]\n   268/4996: $30\\off_b[31:0]\n   269/4996: $30\\off_a[31:0]\n   270/4996: $42\\n_writes[31:0]\n   271/4996: $42\\write_value[127:0]\n   272/4996: $32\\decision_fault[7:0]\n   273/4996: $32\\decision_ok[0:0]\n   274/4996: $31\\decision_fault[7:0]\n   275/4996: $31\\decision_ok[0:0]\n   276/4996: $30\\decision_fault[7:0]\n   277/4996: $30\\decision_ok[0:0]\n   278/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:968$821.bytes[159:0]$4578 [159:40]\n   279/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:968$821.bytes[159:0]$4578 [31:0]\n   280/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:968$821.bytes[159:0]$4578 [39:32]\n   281/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:968$821.txn[31:0]$4577\n   282/4996: $29\\staged_access[7][31:0]\n   283/4996: $29\\staged_access[6][31:0]\n   284/4996: $29\\staged_access[5][31:0]\n   285/4996: $29\\staged_access[4][31:0]\n   286/4996: $29\\staged_access[3][31:0]\n   287/4996: $29\\staged_access[2][31:0]\n   288/4996: $29\\staged_access[1][31:0]\n   289/4996: $29\\staged_access[0][31:0]\n   290/4996: $29\\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:1247$823.access_count[7:0]$4583\n   291/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1245$822.bytes[159:0]$4582\n   292/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1245$822.detail[7:0]$4581\n   293/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1245$822.txn[31:0]$4580\n   294/4996: $29\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1245$822.status[7:0]$4579\n   295/4996: $29\\decision_deferred[0:0]\n   296/4996: $29\\decision_ok[0:0]\n   297/4996: $29\\decision_detail[7:0]\n   298/4996: $29\\decision_fault[7:0]\n   299/4996: $41\\write_address[31:0]\n   300/4996: $31\\solved_b[127:0]\n   301/4996: $31\\solved_a[127:0]\n   302/4996: $29\\result_value[127:0]\n   303/4996: $29\\inv_value[127:0]\n   304/4996: $29\\val_c[127:0]\n   305/4996: $29\\val_b[127:0]\n   306/4996: $29\\val_a[127:0]\n   307/4996: $29\\taken_proposal[7:0]\n   308/4996: $29\\inv_present[7:0]\n   309/4996: $29\\pres_c[7:0]\n   310/4996: $29\\pres_b[7:0]\n   311/4996: $29\\pres_a[7:0]\n   312/4996: $29\\profile[7:0]\n   313/4996: $36\\deferr",
+      "bounded_edges": 3,
+      "method": "temporal induction",
+      "status": "bounded-pass-unbounded-blocked"
+    },
+    "whole_design_bmc": {
+      "edges": 3,
+      "observables": [
+        "uo_out[7:0]",
+        "uio_out[7:0]",
+        "uio_oe[7:0]"
+      ],
+      "post_reset_inputs": "unconstrained",
+      "status": "pass"
+    },
+    "whole_design_equivalence_boundary": {
+      "classification": "bounded-pass-unbounded-blocked",
+      "mandatory_bounded_edges": 3,
+      "soundness_rule": "only a successful induction command may classify the whole design as unbounded",
+      "unbounded_blocker": "15-second HOST limit expired during whole-design induction attempt\n7/4996: $34\\pres_c[7:0]\n    58/4996: $34\\val_b[127:0]\n    59/4996: $34\\pres_b[7:0]\n    60/4996: $34\\val_a[127:0]\n    61/4996: $34\\pres_a[7:0]\n    62/4996: $34\\off_c[31:0]\n    63/4996: $34\\off_b[31:0]\n    64/4996: $34\\off_a[31:0]\n    65/4996: $41\\decision_detail[7:0]\n    66/4996: $58\\decision_fault[7:0]\n    67/4996: $58\\decision_ok[0:0]\n    68/4996: $40\\decision_detail[7:0]\n    69/4996: $57\\decision_fault[7:0]\n    70/4996: $57\\decision_ok[0:0]\n    71/4996: $56\\decision_fault[7:0]\n    72/4996: $56\\decision_ok[0:0]\n    73/4996: $46\\decision_deferred[0:0]\n    74/4996: $55\\decision_fault[7:0]\n    75/4996: $55\\decision_ok[0:0]\n    76/4996: $45\\decision_deferred[0:0]\n    77/4996: $44\\decision_deferred[0:0]\n    78/4996: $54\\decision_ok[0:0]\n    79/4996: $54\\decision_fault[7:0]\n    80/4996: $39\\decision_detail[7:0]\n    81/4996: $38\\decision_detail[7:0]\n    82/4996: $53\\decision_fault[7:0]\n    83/4996: $53\\decision_ok[0:0]\n    84/4996: $43\\decision_deferred[0:0]\n    85/4996: $37\\decision_detail[7:0]\n    86/4996: $52\\decision_fault[7:0]\n    87/4996: $52\\decision_ok[0:0]\n    88/4996: $42\\decision_deferred[0:0]\n    89/4996: $51\\decision_fault[7:0]\n    90/4996: $51\\decision_ok[0:0]\n    91/4996: $41\\decision_deferred[0:0]\n    92/4996: $36\\decision_detail[7:0]\n    93/4996: $50\\decision_fault[7:0]\n    94/4996: $50\\decision_ok[0:0]\n    95/4996: $40\\decision_deferred[0:0]\n    96/4996: $35\\decision_detail[7:0]\n    97/4996: $38\\addr_c[31:0]\n    98/4996: $38\\addr_b[31:0]\n    99/4996: $42\\addr_a[31:0]\n   100/4996: $49\\decision_fault[7:0]\n   101/4996: $49\\decision_ok[0:0]\n   102/4996: $39\\decision_deferred[0:0]\n   103/4996: $34\\decision_detail[7:0]\n   104/4996: $37\\addr_c[31:0]\n   105/4996: $37\\addr_b[31:0]\n   106/4996: $41\\addr_a[31:0]\n   107/4996: $38\\decision_deferred[0:0]\n   108/4996: $48\\decision_ok[0:0]\n   109/4996: $33\\decision_detail[7:0]\n   110/4996: $48\\decision_fault[7:0]\n   111/4996: $36\\addr_c[31:0]\n   112/4996: $36\\addr_b[31:0]\n   113/4996: $40\\addr_a[31:0]\n   114/4996: $33\\inv_value[127:0]\n   115/4996: $33\\inv_present[7:0]\n   116/4996: $33\\proposed_fp[31:0]\n   117/4996: $33\\proposed_pc[31:0]\n   118/4996: $33\\taken_proposal[7:0]\n   119/4996: $33\\val_c[127:0]\n   120/4996: $33\\pres_c[7:0]\n   121/4996: $33\\val_b[127:0]\n   122/4996: $33\\pres_b[7:0]\n   123/4996: $33\\val_a[127:0]\n   124/4996: $33\\pres_a[7:0]\n   125/4996: $33\\off_c[31:0]\n   126/4996: $33\\off_b[31:0]\n   127/4996: $33\\off_a[31:0]\n   128/4996: $35\\solved_b[127:0]\n   129/4996: $35\\solved_a[127:0]\n   130/4996: $47\\decision_fault[7:0]\n   131/4996: $47\\decision_ok[0:0]\n   132/4996: $37\\decision_deferred[0:0]\n   133/4996: $46\\decision_fault[7:0]\n   134/4996: $46\\decision_ok[0:0]\n   135/4996: $36\\decision_deferred[0:0]\n   136/4996: $35\\addr_c[31:0]\n   137/4996: $35\\addr_b[31:0]\n   138/4996: $39\\addr_a[31:0]\n   139/4996: $45\\decision_fault[7:0]\n   140/4996: $45\\decision_ok[0:0]\n   141/4996: $35\\decision_deferred[0:0]\n   142/4996: $34\\addr_c[31:0]\n   143/4996: $34\\addr_b[31:0]\n   144/4996: $38\\addr_a[31:0]\n   145/4996: $44\\decision_fault[7:0]\n   146/4996: $44\\decision_ok[0:0]\n   147/4996: $34\\decision_deferred[0:0]\n   148/4996: $33\\addr_c[31:0]\n   149/4996: $33\\addr_b[31:0]\n   150/4996: $37\\addr_a[31:0]\n   151/4996: $33\\decision_deferred[0:0]\n   152/4996: $43\\decision_ok[0:0]\n   153/4996: $43\\decision_fault[7:0]\n   154/4996: $32\\addr_c[31:0]\n   155/4996: $32\\addr_b[31:0]\n   156/4996: $36\\addr_a[31:0]\n   157/4996: $32\\val_c[127:0]\n   158/4996: $32\\pres_c[7:0]\n   159/4996: $32\\val_b[127:0]\n   160/4996: $32\\pres_b[7:0]\n   161/4996: $32\\base_index[31:0]\n   162/4996: $32\\val_a[127:0]\n   163/4996: $32\\pres_a[7:0]\n   164/4996: $32\\off_c[31:0]\n   165/4996: $32\\off_b[31:0]\n   166/4996: $32\\off_a[31:0]\n   167/4996: $32\\decision_detail[7:0]\n   168/4996: $34\\solved_b[127:0]\n   169/4996: $34\\solved_a[127:0]\n   170/4996: $32\\inv_value[127:0]\n   171/4996: $32\\taken_proposal[7:0]\n   172/4996: $32\\inv_present[7:0]\n   173/4996: $32\\proposed_fp[31:0]\n   174/4996: $32\\proposed_pc[31:0]\n   175/4996: $47\\n_wr",
+      "unbounded_method": "temporal induction"
+    },
+    "whole_design_induction": {
+      "blocker": "15-second HOST limit expired during whole-design induction attempt\n7/4996: $34\\pres_c[7:0]\n    58/4996: $34\\val_b[127:0]\n    59/4996: $34\\pres_b[7:0]\n    60/4996: $34\\val_a[127:0]\n    61/4996: $34\\pres_a[7:0]\n    62/4996: $34\\off_c[31:0]\n    63/4996: $34\\off_b[31:0]\n    64/4996: $34\\off_a[31:0]\n    65/4996: $41\\decision_detail[7:0]\n    66/4996: $58\\decision_fault[7:0]\n    67/4996: $58\\decision_ok[0:0]\n    68/4996: $40\\decision_detail[7:0]\n    69/4996: $57\\decision_fault[7:0]\n    70/4996: $57\\decision_ok[0:0]\n    71/4996: $56\\decision_fault[7:0]\n    72/4996: $56\\decision_ok[0:0]\n    73/4996: $46\\decision_deferred[0:0]\n    74/4996: $55\\decision_fault[7:0]\n    75/4996: $55\\decision_ok[0:0]\n    76/4996: $45\\decision_deferred[0:0]\n    77/4996: $44\\decision_deferred[0:0]\n    78/4996: $54\\decision_ok[0:0]\n    79/4996: $54\\decision_fault[7:0]\n    80/4996: $39\\decision_detail[7:0]\n    81/4996: $38\\decision_detail[7:0]\n    82/4996: $53\\decision_fault[7:0]\n    83/4996: $53\\decision_ok[0:0]\n    84/4996: $43\\decision_deferred[0:0]\n    85/4996: $37\\decision_detail[7:0]\n    86/4996: $52\\decision_fault[7:0]\n    87/4996: $52\\decision_ok[0:0]\n    88/4996: $42\\decision_deferred[0:0]\n    89/4996: $51\\decision_fault[7:0]\n    90/4996: $51\\decision_ok[0:0]\n    91/4996: $41\\decision_deferred[0:0]\n    92/4996: $36\\decision_detail[7:0]\n    93/4996: $50\\decision_fault[7:0]\n    94/4996: $50\\decision_ok[0:0]\n    95/4996: $40\\decision_deferred[0:0]\n    96/4996: $35\\decision_detail[7:0]\n    97/4996: $38\\addr_c[31:0]\n    98/4996: $38\\addr_b[31:0]\n    99/4996: $42\\addr_a[31:0]\n   100/4996: $49\\decision_fault[7:0]\n   101/4996: $49\\decision_ok[0:0]\n   102/4996: $39\\decision_deferred[0:0]\n   103/4996: $34\\decision_detail[7:0]\n   104/4996: $37\\addr_c[31:0]\n   105/4996: $37\\addr_b[31:0]\n   106/4996: $41\\addr_a[31:0]\n   107/4996: $38\\decision_deferred[0:0]\n   108/4996: $48\\decision_ok[0:0]\n   109/4996: $33\\decision_detail[7:0]\n   110/4996: $48\\decision_fault[7:0]\n   111/4996: $36\\addr_c[31:0]\n   112/4996: $36\\addr_b[31:0]\n   113/4996: $40\\addr_a[31:0]\n   114/4996: $33\\inv_value[127:0]\n   115/4996: $33\\inv_present[7:0]\n   116/4996: $33\\proposed_fp[31:0]\n   117/4996: $33\\proposed_pc[31:0]\n   118/4996: $33\\taken_proposal[7:0]\n   119/4996: $33\\val_c[127:0]\n   120/4996: $33\\pres_c[7:0]\n   121/4996: $33\\val_b[127:0]\n   122/4996: $33\\pres_b[7:0]\n   123/4996: $33\\val_a[127:0]\n   124/4996: $33\\pres_a[7:0]\n   125/4996: $33\\off_c[31:0]\n   126/4996: $33\\off_b[31:0]\n   127/4996: $33\\off_a[31:0]\n   128/4996: $35\\solved_b[127:0]\n   129/4996: $35\\solved_a[127:0]\n   130/4996: $47\\decision_fault[7:0]\n   131/4996: $47\\decision_ok[0:0]\n   132/4996: $37\\decision_deferred[0:0]\n   133/4996: $46\\decision_fault[7:0]\n   134/4996: $46\\decision_ok[0:0]\n   135/4996: $36\\decision_deferred[0:0]\n   136/4996: $35\\addr_c[31:0]\n   137/4996: $35\\addr_b[31:0]\n   138/4996: $39\\addr_a[31:0]\n   139/4996: $45\\decision_fault[7:0]\n   140/4996: $45\\decision_ok[0:0]\n   141/4996: $35\\decision_deferred[0:0]\n   142/4996: $34\\addr_c[31:0]\n   143/4996: $34\\addr_b[31:0]\n   144/4996: $38\\addr_a[31:0]\n   145/4996: $44\\decision_fault[7:0]\n   146/4996: $44\\decision_ok[0:0]\n   147/4996: $34\\decision_deferred[0:0]\n   148/4996: $33\\addr_c[31:0]\n   149/4996: $33\\addr_b[31:0]\n   150/4996: $37\\addr_a[31:0]\n   151/4996: $33\\decision_deferred[0:0]\n   152/4996: $43\\decision_ok[0:0]\n   153/4996: $43\\decision_fault[7:0]\n   154/4996: $32\\addr_c[31:0]\n   155/4996: $32\\addr_b[31:0]\n   156/4996: $36\\addr_a[31:0]\n   157/4996: $32\\val_c[127:0]\n   158/4996: $32\\pres_c[7:0]\n   159/4996: $32\\val_b[127:0]\n   160/4996: $32\\pres_b[7:0]\n   161/4996: $32\\base_index[31:0]\n   162/4996: $32\\val_a[127:0]\n   163/4996: $32\\pres_a[7:0]\n   164/4996: $32\\off_c[31:0]\n   165/4996: $32\\off_b[31:0]\n   166/4996: $32\\off_a[31:0]\n   167/4996: $32\\decision_detail[7:0]\n   168/4996: $34\\solved_b[127:0]\n   169/4996: $34\\solved_a[127:0]\n   170/4996: $32\\inv_value[127:0]\n   171/4996: $32\\taken_proposal[7:0]\n   172/4996: $32\\inv_present[7:0]\n   173/4996: $32\\proposed_fp[31:0]\n   174/4996: $32\\proposed_pc[31:0]\n   175/4996: $47\\n_wr",
+      "maxsteps": 32,
+      "method": "temporal induction",
+      "status": "blocked"
+    }
+  },
+  "schema": "lean-silicon/full-lsc1-netlist-receipt/v1",
+  "source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+  "source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
+  "status": "pass",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 14.0 (devel) (s20260301-357-g72998c541-dirty)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "top": "lean_silicon_lsc1",
+  "unbounded_experiments": {
+    "matched_point_decomposition": {
+      "classification": "incomplete-decomposition",
+      "elapsed_seconds_lower_bound": 540,
+      "peak_rss_gib_approx": 1.9,
+      "proved_scope": "thousands of matched state bits",
+      "solver": "Yosys direct SAT",
+      "sound_cut_relation": false,
+      "unresolved_point": "packet_core.addr_c[20]"
+    },
+    "provenance": {
+      "evidence_kind": "historical-plan-evidence",
+      "receipt_run": false,
+      "subject_source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+      "subject_source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
+      "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09"
+    },
+    "whole_design_reset_prefix": {
+      "classification": "bounded-evidence-only",
+      "depth_edges": 5,
+      "elapsed_seconds": 195,
+      "peak_rss_gib_approx": 15.9,
+      "result": "no-proof-result-before-resource-kill",
+      "solver": "Yosys SAT",
+      "timeout_seconds": 195
+    }
+  }
+}

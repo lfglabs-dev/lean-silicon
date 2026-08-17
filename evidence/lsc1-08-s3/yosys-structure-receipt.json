@@ -1,0 +1,121 @@
+{
+  "claim_boundary": "unmapped generic Yosys structure counts only; no PPA, mapped-area, timing, unbounded-equivalence, P&R, FPGA, or hardware claim",
+  "commands": {
+    "base": [
+      "yosys",
+      "-Q",
+      "-p",
+      "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; stat"
+    ],
+    "head": [
+      "yosys",
+      "-Q",
+      "-p",
+      "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; stat"
+    ]
+  },
+  "counts": {
+    "after": {
+      "cell_types": {
+        "$add": 39,
+        "$and": 11,
+        "$dffe": 50,
+        "$div": 1,
+        "$eq": 201,
+        "$ge": 10,
+        "$gt": 27,
+        "$le": 2,
+        "$logic_and": 152,
+        "$logic_not": 51,
+        "$logic_or": 135,
+        "$lt": 12,
+        "$mod": 1,
+        "$mul": 2,
+        "$mux": 2659,
+        "$ne": 480,
+        "$neg": 3,
+        "$not": 98,
+        "$or": 3,
+        "$pmux": 56,
+        "$reduce_and": 77,
+        "$reduce_bool": 91,
+        "$reduce_or": 32,
+        "$scopeinfo": 13,
+        "$sdff": 19,
+        "$sdffe": 105,
+        "$shift": 6,
+        "$shiftx": 18,
+        "$sub": 16,
+        "$xor": 11
+      },
+      "cells": 4381,
+      "log_sha256": "92a4140103190d5886a37673f5a22537e08a9b508e8833e7b8422dcb540115f6",
+      "port_bits": 43,
+      "ports": 8,
+      "public_wire_bits": 27101,
+      "public_wires": 585,
+      "warnings": 7,
+      "wire_bits": 134587,
+      "wires": 4732
+    },
+    "before": {
+      "cell_types": {
+        "$add": 39,
+        "$and": 11,
+        "$dffe": 50,
+        "$div": 1,
+        "$eq": 169,
+        "$ge": 10,
+        "$gt": 27,
+        "$le": 2,
+        "$logic_and": 160,
+        "$logic_not": 53,
+        "$logic_or": 135,
+        "$lt": 16,
+        "$mod": 1,
+        "$mul": 2,
+        "$mux": 2721,
+        "$ne": 480,
+        "$neg": 3,
+        "$not": 98,
+        "$or": 3,
+        "$pmux": 55,
+        "$reduce_and": 77,
+        "$reduce_bool": 91,
+        "$reduce_or": 32,
+        "$scopeinfo": 13,
+        "$sdff": 19,
+        "$sdffe": 105,
+        "$shift": 6,
+        "$shiftx": 28,
+        "$sub": 22,
+        "$xor": 11
+      },
+      "cells": 4440,
+      "log_sha256": "140a83e0961573663405065ec8c5e1bfa2f254aeac6517a221abe4fd3abce79d",
+      "port_bits": 43,
+      "ports": 8,
+      "public_wire_bits": 27005,
+      "public_wires": 582,
+      "warnings": 7,
+      "wire_bits": 136681,
+      "wires": 4795
+    }
+  },
+  "flow": "proc; flatten; opt; fsm; opt; memory; opt; check; stat",
+  "generator": {
+    "lane": "GitHub Actions pinned OSS CAD Suite lane",
+    "setup_action": ".github/actions/setup-oss-cad-suite/action.yml",
+    "toolchain_manifest": ".github/toolchains/oss-cad-suite-20260809.json",
+    "toolchain_manifest_sha256": "da9334024eaacdfea64a5623279685533445e3f3a1f65fb9b1181b4f853120bd",
+    "yosys_banner": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "schema": "lean-silicon/yosys-structure-receipt/v1",
+  "source": {
+    "base_commit": "79d926462cbaf51a2c87c3fa112527dd28f610aa",
+    "head_commit": "d1be00a6d6abe5de30fa6d8daeedd7ee1983dfc2",
+    "repository": "lfglabs-dev/lean-silicon"
+  },
+  "status": "pass",
+  "top": "lean_silicon_lsc1"
+}

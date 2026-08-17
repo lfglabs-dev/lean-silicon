@@ -16,6 +16,7 @@ __pycache__/
 !assurance/full-profile/plan.json
 !assurance/full-profile/schema.json
 !assurance/full-lsc1-netlist/plan.json
+!evidence/lsc1-08-s3/*.json
 lean/.lake/
 formal/gf8_mul/
 formal/gf128_serialize/
