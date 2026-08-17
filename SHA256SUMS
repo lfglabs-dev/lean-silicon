@@ -89,7 +89,7 @@ b0afb9a5a826e8a468f3bae65991c624abb01fa3796b889fc854e8cc76872a9e  ./evidence/lsc
 cfa734602cf69a09a9d7d2a5219e59dc4ec89e73afbf9007b00b0b2d24c0de8c  ./evidence/lsc1-08-s3/yosys-structure-receipt.json
 b954bbd1a96b146b15df8fa0d675c44af3737a6191baa1fb00e29e2cb9f40e90  ./evidence/lsc1-08-s4/receipt.json
 9504c6fe4ce0dc07554d6436dc51e924ee3434f15ac44d217c0c6c4bfb3dc966  ./evidence/lsc1-08-s4/receipt.json.sha256
-504a911ff6bc18cc676110f50d21afd21dcb0a8848771f04fcb66ec7676d736d  ./evidence/lsc1-08-s4/yosys-structure-receipt.json
+b850723aa43de7c28e10d0633dc1e5fdf859fbde57fd134c4b98c84b0a87ad77  ./evidence/lsc1-08-s4/yosys-structure-receipt.json
 386956c565ea8a78d5ad39ed988dab49aeeff7c7f901f7ec166c89b4d039455d  ./formal/LSC1U_COMPOSITIONAL_REFINEMENT.md
 ff660d3e6022c71f3dad4ad9f61565f137a9130c7c48d45fed892bd572beafc2  ./formal/LSC1U_XOR_REFINEMENT.md
 05401a99f2d5ec82dba92a60a54c11a697174566aff9aa9a19bd8092d059615d  ./formal/README.md

@@ -56,6 +56,6 @@
     "selector_width_change_bits": 1,
     "net_response_path_state_reduction_bits": 279
   },
-  "regression_explanation": "Fixed byte cases increase mux/pmux structure while eliminating both generic 160-bit registered vectors; total wire bits fall by 14078 and public wire bits by 6839. Cell count rises by 79 because the explicit serializers trade generic storage for selection logic.",
+  "regression_explanation": "Eliminating both generic 160-bit registered vectors reduces the measured unmapped structure; total wire bits fall by 14196, public wire bits fall by 6839, and cell count falls by 52.",
   "claim_boundary": "unmapped generic Yosys structure counts only; no PPA, mapped-area, timing, unbounded-equivalence, P&R, FPGA, or hardware claim"
 }
