@@ -7,7 +7,7 @@ b9281ac2016a10a8e4a1049cbb345c2f9f34ba0451c8837054060fc52bf5b5b5  ./.github/work
 df4e1d1edf946720575070a4e567b61046bfd985b3232cfa45a233ca48993e9f  ./.github/workflows/gds.yaml
 02aaec17b225fbca77453ae4cd08184bc82b7e01342a84671f81a0a999b375d0  ./.github/workflows/release-bundle.yml
 dc4fd27671dc6184c8106cac4193bada03706186206784f4cd872ca183592494  ./.github/workflows/tt-test.yaml
-60fad88ec994d29d368547791085115fbe71837d95ba42619968f9d119632f1a  ./.gitignore
+dab1b175b7de029e4bc85180f261d26d4c63850f0bc1f28477bb3e91a5e3d4f0  ./.gitignore
 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  ./LICENSE
 6e3ce8bd9c03e8a089c469de50450f30806ccec946f47e383ad335efca7d6192  ./MANIFEST.md
 e9b05d88ba18f7a4e6ebc7ad962f3da243e82fb205ae4825457f6a387368a7e8  ./Makefile
@@ -85,6 +85,8 @@ c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semanti
 3e896ee33e3804876f6e169c872746146c1b3d773811683616986a4148b9f785  ./docs/semantics/reference/oracle.py
 c49a013eb503060394007d07395e625024d7c1ff0e9b177bc71e691e1a4efec8  ./docs/semantics/reference/vectors.json
 961d9f2f85fe6a6e2a5f586412e03759cb94a80683959e7f0271f37f200a4f1d  ./docs/upstream-clarifications/README.md
+b0afb9a5a826e8a468f3bae65991c624abb01fa3796b889fc854e8cc76872a9e  ./evidence/lsc1-08-s3/full-lsc1-netlist-receipt.json
+cfa734602cf69a09a9d7d2a5219e59dc4ec89e73afbf9007b00b0b2d24c0de8c  ./evidence/lsc1-08-s3/yosys-structure-receipt.json
 386956c565ea8a78d5ad39ed988dab49aeeff7c7f901f7ec166c89b4d039455d  ./formal/LSC1U_COMPOSITIONAL_REFINEMENT.md
 ff660d3e6022c71f3dad4ad9f61565f137a9130c7c48d45fed892bd572beafc2  ./formal/LSC1U_XOR_REFINEMENT.md
 05401a99f2d5ec82dba92a60a54c11a697174566aff9aa9a19bd8092d059615d  ./formal/README.md
