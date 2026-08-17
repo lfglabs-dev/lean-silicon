@@ -57,10 +57,11 @@ module lsc1_packet_frontend (
     reg tx_start;
     reg [7:0] tx_status;
     reg [15:0] tx_length;
-    // Non-external responses top out at the 20-byte STATUS payload.  RESULT
-    // payloads use stable semantic staging below instead of this byte vector.
-    reg [159:0] tx_payload;
-    reg [1:0] tx_external_kind;
+    // Every response is serialized from stable semantic state.  Short replies
+    // share only a transaction field and one detail/snapshot byte.
+    reg [2:0] tx_external_kind;
+    reg [31:0] short_txn_id;
+    reg [7:0] short_detail;
     wire [15:0] tx_payload_index;
     wire tx_payload_external_valid;
     reg [7:0] tx_payload_external_data;
@@ -185,7 +186,7 @@ module lsc1_packet_frontend (
     lsc1_packet_tx transmitter (
         .clk(clk), .rst_n(rst_n), .abort(abort),
         .start(tx_start), .status(tx_status), .payload_length(tx_length),
-        .payload(tx_payload), .payload_external(tx_external_kind != 0),
+        .payload(160'b0), .payload_external(tx_external_kind != 0),
         .payload_index(tx_payload_index),
         .payload_external_valid(tx_payload_external_valid),
         .payload_external_data(tx_payload_external_data),
@@ -387,6 +388,78 @@ module lsc1_packet_frontend (
                     end
                 end
             endcase
+        end else if (tx_external_kind == 4) begin
+            case (tx_payload_index)
+                0: tx_payload_external_data = short_txn_id[7:0];
+                1: tx_payload_external_data = short_txn_id[15:8];
+                2: tx_payload_external_data = short_txn_id[23:16];
+                3: tx_payload_external_data = short_txn_id[31:24];
+                4: tx_payload_external_data = short_detail;
+                default: tx_payload_external_data = 0;
+            endcase
+        end else if (tx_external_kind == 5) begin
+            case (tx_payload_index)
+                0: tx_payload_external_data = blake_service_pending ? 8'h02 :
+                                              (blake_result_pending || result_pending) ? 8'h01 : 8'h00;
+                1: tx_payload_external_data = short_txn_id[7:0];
+                2: tx_payload_external_data = short_txn_id[15:8];
+                3: tx_payload_external_data = short_txn_id[23:16];
+                4: tx_payload_external_data = short_txn_id[31:24];
+                5: tx_payload_external_data = short_detail;
+                6: tx_payload_external_data = retire_seq[7:0];
+                7: tx_payload_external_data = retire_seq[15:8];
+                8: tx_payload_external_data = retire_seq[23:16];
+                9: tx_payload_external_data = retire_seq[31:24];
+                10: tx_payload_external_data = last_fault;
+                11: tx_payload_external_data = committed_pc[7:0];
+                12: tx_payload_external_data = committed_pc[15:8];
+                13: tx_payload_external_data = committed_pc[23:16];
+                14: tx_payload_external_data = committed_pc[31:24];
+                15: tx_payload_external_data = committed_fp[7:0];
+                16: tx_payload_external_data = committed_fp[15:8];
+                17: tx_payload_external_data = committed_fp[23:16];
+                18: tx_payload_external_data = committed_fp[31:24];
+                19: tx_payload_external_data = state_valid;
+                default: tx_payload_external_data = 0;
+            endcase
+        end else if (tx_external_kind == 6) begin
+            case (tx_payload_index)
+                0: tx_payload_external_data = 1;
+                1: tx_payload_external_data = short_detail;
+                2: tx_payload_external_data = 0;
+                3: tx_payload_external_data = 1;
+                4: tx_payload_external_data = 16;
+                5: tx_payload_external_data = 0;
+                6: tx_payload_external_data = 8'h06;
+                7: tx_payload_external_data = 0;
+                8: tx_payload_external_data = 0;
+                9: tx_payload_external_data = 0;
+                10: tx_payload_external_data = 8'h31;
+                11: tx_payload_external_data = 8'h43;
+                12: tx_payload_external_data = 8'h53;
+                13: tx_payload_external_data = 8'h4c;
+                default: tx_payload_external_data = 0;
+            endcase
+        end else if (tx_external_kind == 7) begin
+            case (tx_payload_index)
+                0: tx_payload_external_data = short_txn_id[7:0];
+                1: tx_payload_external_data = short_txn_id[15:8];
+                2: tx_payload_external_data = short_txn_id[23:16];
+                3: tx_payload_external_data = short_txn_id[31:24];
+                4: tx_payload_external_data = retire_seq[7:0];
+                5: tx_payload_external_data = retire_seq[15:8];
+                6: tx_payload_external_data = retire_seq[23:16];
+                7: tx_payload_external_data = retire_seq[31:24];
+                8: tx_payload_external_data = committed_pc[7:0];
+                9: tx_payload_external_data = committed_pc[15:8];
+                10: tx_payload_external_data = committed_pc[23:16];
+                11: tx_payload_external_data = committed_pc[31:24];
+                12: tx_payload_external_data = committed_fp[7:0];
+                13: tx_payload_external_data = committed_fp[15:8];
+                14: tx_payload_external_data = committed_fp[23:16];
+                15: tx_payload_external_data = committed_fp[31:24];
+                default: tx_payload_external_data = 0;
+            endcase
         end
     end
 
@@ -425,15 +498,12 @@ module lsc1_packet_frontend (
         input [7:0] status;
         input [31:0] txn;
         input [7:0] detail;
-        reg [159:0] bytes;
         begin
-            bytes = 0;
-            bytes[0 +: 32] = txn;
-            bytes[32 +: 8] = detail;
+            short_txn_id <= txn;
+            short_detail <= detail;
             tx_status <= status;
             tx_length <= 5;
-            tx_payload <= bytes;
-            tx_external_kind <= 0;
+            tx_external_kind <= 4;
             tx_start <= 1'b1;
             fault <= 1'b1;
             last_status <= status;
@@ -459,7 +529,6 @@ module lsc1_packet_frontend (
     reg [7:0] taken_proposal;
     reg [127:0] val_a, val_b, val_c, inv_value, result_value;
     reg [127:0] solved_a, solved_b;
-    reg [159:0] response_bytes;
     reg [31:0] write_address;
     reg [7:0] decision_fault, decision_detail;
     reg decision_ok, decision_deferred;
@@ -576,8 +645,9 @@ module lsc1_packet_frontend (
             tx_start <= 1'b0;
             tx_status <= 0;
             tx_length <= 0;
-            tx_payload <= 0;
             tx_external_kind <= 0;
+            short_txn_id <= 0;
+            short_detail <= 0;
             capture_result_crc <= 1'b0;
             compute_state <= C_IDLE;
             alu_start <= 1'b0;
@@ -750,21 +820,13 @@ module lsc1_packet_frontend (
                     if (frame_length != 0) begin
                         emit_fault(BAD_LENGTH, 0, 2);
                     end else begin
-                        response_bytes = 0;
-                        response_bytes[0 +: 8] = blake_service_pending ? 8'h02 :
-                                                   ((result_pending || blake_result_pending) ? 8'h01 : 8'h00);
-                        response_bytes[8 +: 32] = (blake_result_pending || blake_service_pending) ?
-                                                   blake_staged_txn_id : (result_pending ? staged_txn_id : 0);
-                        response_bytes[40 +: 8] = last_status;
-                        response_bytes[48 +: 32] = retire_seq;
-                        response_bytes[80 +: 8] = last_fault;
-                        response_bytes[88 +: 32] = committed_pc;
-                        response_bytes[120 +: 32] = committed_fp;
-                        response_bytes[152 +: 8] = state_valid;
+                        short_txn_id <= (blake_result_pending || blake_service_pending) ?
+                                        blake_staged_txn_id : (result_pending ? staged_txn_id : 0);
+                        // Snapshot before last_status is changed to INFO below.
+                        short_detail <= last_status;
                         tx_status <= INFO;
                         tx_length <= 20;
-                        tx_payload <= response_bytes;
-                        tx_external_kind <= 0;
+                        tx_external_kind <= 5;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= INFO;
@@ -786,18 +848,10 @@ module lsc1_packet_frontend (
                         emit_fault(BAD_PROFILE, 0, 0);
                     end else begin
                         active_profile <= frame_payload[16 +: 8];
-                        response_bytes = 0;
-                        response_bytes[0 +: 8] = 1;
-                        response_bytes[8 +: 8] = frame_payload[16 +: 8];
-                        response_bytes[16 +: 16] = 16'd256;
-                        response_bytes[32 +: 8] = 16;
-                        response_bytes[40 +: 8] = 0;
-                        response_bytes[48 +: 32] = 32'h00000006;
-                        response_bytes[80 +: 32] = 32'h4c534331;
+                        short_detail <= frame_payload[16 +: 8];
                         tx_status <= OK;
                         tx_length <= 14;
-                        tx_payload <= response_bytes;
-                        tx_external_kind <= 0;
+                        tx_external_kind <= 6;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= OK;
@@ -815,15 +869,10 @@ module lsc1_packet_frontend (
                             committed_fp <= blake_staged_next_fp;
                             state_valid <= 1'b1;
                             retire_seq <= retire_seq + 1'b1;
-                            response_bytes = 0;
-                            response_bytes[0 +: 32] = txn_id;
-                            response_bytes[32 +: 32] = retire_seq + 1'b1;
-                            response_bytes[64 +: 32] = blake_staged_next_pc;
-                            response_bytes[96 +: 32] = blake_staged_next_fp;
+                            short_txn_id <= txn_id;
                             tx_status <= RETIRED;
                             tx_length <= 16;
-                            tx_payload <= response_bytes;
-                            tx_external_kind <= 0;
+                            tx_external_kind <= 7;
                             tx_start <= 1'b1;
                             fault <= 1'b0;
                             last_status <= RETIRED;
@@ -842,15 +891,10 @@ module lsc1_packet_frontend (
                         retire_seq <= retire_seq + 1'b1;
                         result_pending <= 1'b0;
                         core_done_pulse <= 1'b1;
-                        response_bytes = 0;
-                        response_bytes[0 +: 32] = txn_id;
-                        response_bytes[32 +: 32] = retire_seq + 1'b1;
-                        response_bytes[64 +: 32] = staged_next_pc;
-                        response_bytes[96 +: 32] = staged_next_fp;
+                        short_txn_id <= txn_id;
                         tx_status <= RETIRED;
                         tx_length <= 16;
-                        tx_payload <= response_bytes;
-                        tx_external_kind <= 0;
+                        tx_external_kind <= 7;
                         tx_start <= 1'b1;
                         fault <= 1'b0;
                         last_status <= RETIRED;

@@ -10,7 +10,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation clean
+.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation clean
 
 sim:
 	$(MAKE) lifecycle
@@ -113,6 +113,26 @@ mutation:
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
 	$(MAKE) scalar-result-mutation
+	$(MAKE) short-response-mutation
+
+short-response-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  for mutation in fault_detail status_snapshot retire_offset length unstable_source; do \
+	    rm -f "$$d"/*.sv; cp ../../asic_core/rtl/*.sv "$$d/"; \
+	    case $$mutation in \
+	      fault_detail) sed -i 's/4: tx_payload_external_data = short_detail;/4: tx_payload_external_data = short_txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      status_snapshot) sed -i 's/short_detail <= last_status;/short_detail <= INFO;/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      retire_offset) sed -i 's/8: tx_payload_external_data = committed_pc\[7:0\];/8: tx_payload_external_data = committed_fp[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      length) sed -i '0,/tx_length <= 16;/s//tx_length <= 15;/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      unstable_source) sed -i 's/0: tx_payload_external_data = short_txn_id\[7:0\];/0: tx_payload_external_data = txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	    esac; \
+	    if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential >"$$d/$$mutation.out" 2>&1; then \
+	      echo "short-response $$mutation mutation unexpectedly survived" >&2; exit 1; \
+	    fi; \
+	    grep -Eq 'FAILED|AssertionError' "$$d/$$mutation.out"; \
+	    echo "short-response $$mutation mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  done; \
+	  echo "PASS: FAULT detail, STATUS snapshot, RETIRE offset/length, and stable-source mutations detected"
 
 scalar-result-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
