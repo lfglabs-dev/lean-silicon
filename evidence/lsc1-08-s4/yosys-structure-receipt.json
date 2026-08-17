@@ -1,0 +1,61 @@
+{
+  "schema": "lean-silicon/yosys-structure-receipt/v1",
+  "status": "pass",
+  "source": {
+    "repository": "lfglabs-dev/lean-silicon",
+    "base_commit": "121d26f5ae143eb2df14109719dde4d616008a7a",
+    "head_commit": "123e21ca00cf449cc1c01e27ce6c10775aeae2b6"
+  },
+  "generator": {
+    "lane": "local pinned OSS CAD Suite",
+    "toolchain_manifest": ".github/toolchains/oss-cad-suite-20260809.json",
+    "toolchain_manifest_sha256": "da9334024eaacdfea64a5623279685533445e3f3a1f65fb9b1181b4f853120bd",
+    "yosys_banner": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "top": "lean_silicon_lsc1",
+  "flow": "proc; flatten; opt; fsm; opt; memory; opt; check; stat",
+  "command": [
+    "yosys",
+    "-Q",
+    "-p",
+    "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; stat"
+  ],
+  "counts": {
+    "before": {
+      "wires": 4732,
+      "wire_bits": 134587,
+      "public_wires": 585,
+      "public_wire_bits": 27101,
+      "cells": 4381,
+      "warnings": 7,
+      "log_sha256": "8ceb8b2be3873b9edd94d1c869289823b84cd93bc61b3849db6820590fd63da0"
+    },
+    "after": {
+      "wires": 4770,
+      "wire_bits": 120509,
+      "public_wires": 544,
+      "public_wire_bits": 20262,
+      "cells": 4460,
+      "warnings": 7,
+      "log_sha256": "b16e7d93cf3448590b3f7a0ce733c64fed6a6022ca535f53d89f7d76e78b6b04"
+    }
+  },
+  "registered_payload_evidence": {
+    "base": [
+      "tx_payload[159:0]",
+      "response_bytes[159:0]"
+    ],
+    "head_absent": [
+      "tx_payload",
+      "response_bytes"
+    ],
+    "head_added": [
+      "short_txn_id[31:0]",
+      "short_detail[7:0]"
+    ],
+    "selector_width_change_bits": 1,
+    "net_response_path_state_reduction_bits": 279
+  },
+  "regression_explanation": "Fixed byte cases increase mux/pmux structure while eliminating both generic 160-bit registered vectors; total wire bits fall by 14078 and public wire bits by 6839. Cell count rises by 79 because the explicit serializers trade generic storage for selection logic.",
+  "claim_boundary": "unmapped generic Yosys structure counts only; no PPA, mapped-area, timing, unbounded-equivalence, P&R, FPGA, or hardware claim"
+}
