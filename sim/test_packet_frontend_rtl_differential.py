@@ -160,6 +160,7 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
             cv_cells=(protocol.Cell(True, 55), protocol.Cell(True, 66)),
             out_cells=(protocol.ABSENT, protocol.ABSENT),
         )
+        self.assertEqual(len(request.payload), 190)
         endpoint = protocol.Lsc1Endpoint()
         service_raw, _ = protocol.drive(endpoint, request.encode())
         service = protocol.decode_response(service_raw)
@@ -177,6 +178,23 @@ class PacketFrontendRtlDifferentialTests(unittest.TestCase):
         retired_raw, _ = protocol.drive(endpoint, retire.encode())
         self.assertEqual(self.rtl_workload([request, response, retire]),
                          [service_raw, result_raw, retired_raw])
+
+    def test_oversized_accepted_frames_consume_crc_checked_discarded_tails(self) -> None:
+        for length, mutation_index in ((191, 190), (255, 190), (256, 255)):
+            baseline_payload = bytes((index ^ 0xA5) & 0xFF for index in range(length))
+            mutated_payload = bytearray(baseline_payload)
+            mutated_payload[mutation_index] ^= 1
+            baseline = protocol.RequestFrame(protocol.Opcode.BLAKE3_REQUEST,
+                                             baseline_payload)
+            mutated = protocol.RequestFrame(protocol.Opcode.BLAKE3_REQUEST,
+                                            bytes(mutated_payload))
+            with self.subTest(length=length, mutation_index=mutation_index):
+                self.assertNotEqual(baseline.encode()[-4:], mutated.encode()[-4:])
+                baseline_response = self.rtl_exchange(baseline)
+                mutated_response = self.rtl_exchange(mutated)
+                self.assertEqual(mutated_response, baseline_response)
+                self.assertIs(protocol.decode_response(baseline_response).status,
+                              protocol.Status.BAD_LENGTH)
 
     def test_blake3_bad_service_retry_and_abort_reset_recovery(self) -> None:
         request = protocol.build_blake3(

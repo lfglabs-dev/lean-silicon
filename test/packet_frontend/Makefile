@@ -10,9 +10,10 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation clean
+.PHONY: sim transport lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 sim:
+	$(MAKE) rx-payload-prefix
 	$(MAKE) lifecycle
 	$(MAKE) blake3-retire-commit
 	$(MAKE) transport
@@ -172,7 +173,7 @@ scalar-result-mutation:
 differential-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  cp $(RTL) "$$d/"; \
-	  sed -i.bak 's/body_index < MAX_PAYLOAD/body_index < 16'"'"'d94/' "$$d/lsc1_packet_rx.sv"; \
+	  sed -i.bak 's/body_index < 16'"'"'d190/body_index < 16'"'"'d94/' "$$d/lsc1_packet_rx.sv"; \
 	  if PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model >"$$d/jump.out" 2>&1; then \
 	    echo "JUMP inverse payload-bound mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
@@ -186,5 +187,23 @@ differential-mutation:
 	  grep -q "AssertionError" "$$d/xor.out"; \
 	  echo "PASS: JUMP inverse-width and XOR deferred-decision mutations were detected"
 
+rx-payload-prefix:
+	iverilog -g2012 -Wall -s tb_lsc1_packet_rx_payload_prefix -o tb_lsc1_packet_rx_payload_prefix.vvp \
+	  ../../asic_core/rtl/lsc1_packet_rx.sv tb_lsc1_packet_rx_payload_prefix.sv
+	vvp tb_lsc1_packet_rx_payload_prefix.vvp
+
+rx-payload-prefix-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp ../../asic_core/rtl/lsc1_packet_rx.sv "$$d/dut.sv"; \
+	  test "$$(grep -Foc 'crc <= crc_byte(crc, rx_data);' "$$d/dut.sv")" -eq 2; \
+	  sed -i '/S_BODY: begin/,/end else begin/ s/crc <= crc_byte(crc, rx_data);/if (body_index < 16'"'"'d190) crc <= crc_byte(crc, rx_data);/' "$$d/dut.sv"; \
+	  iverilog -g2012 -s tb_lsc1_packet_rx_payload_prefix -o "$$d/mutation.vvp" \
+	    "$$d/dut.sv" tb_lsc1_packet_rx_payload_prefix.sv; \
+	  if vvp "$$d/mutation.vvp" >"$$d/mutation.out" 2>&1; then \
+	    echo "discarded-tail CRC mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -Eq "length 191 was not accepted byte-exactly|discarded-tail mutation did not produce BAD_CRC" "$$d/mutation.out"; \
+	  echo "PASS: discarded-tail CRC-coverage mutation detected"
+
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp
+	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp

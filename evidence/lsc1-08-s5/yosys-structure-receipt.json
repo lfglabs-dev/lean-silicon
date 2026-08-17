@@ -1,0 +1,66 @@
+{
+  "schema": "lean-silicon/yosys-structure-receipt/v1",
+  "status": "pass",
+  "source": {
+    "repository": "lfglabs-dev/lean-silicon",
+    "base_commit": "6d727d29600ed4bb2500a4ae9e54ce524e67bf03",
+    "head_commit": "fc30905bed4e0bab0d26e3e79d01e27f5e724ad8",
+    "head_tree": "4d2073bff978b30b5688eb50cf1a89acd0d60763"
+  },
+  "generator": {
+    "lane": "local pinned OSS CAD Suite",
+    "toolchain_manifest": ".github/toolchains/oss-cad-suite-20260809.json",
+    "toolchain_manifest_sha256": "da9334024eaacdfea64a5623279685533445e3f3a1f65fb9b1181b4f853120bd",
+    "yosys_binary_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+    "yosys_banner": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "top": "lean_silicon_lsc1",
+  "flow": "proc; flatten; opt; fsm; opt; memory; opt; check; stat",
+  "command": [
+    "yosys",
+    "-Q",
+    "-p",
+    "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; stat"
+  ],
+  "counts": {
+    "before": {
+      "wires": 4770,
+      "wire_bits": 120509,
+      "public_wires": 544,
+      "public_wire_bits": 20262,
+      "cells": 4460,
+      "warnings": 7,
+      "log_sha256": "782b9a146018e1173245fd90cf5c14392139fa51cb89f139f06c1b5a43461587"
+    },
+    "after": {
+      "wires": 4771,
+      "wire_bits": 117805,
+      "public_wires": 545,
+      "public_wire_bits": 21782,
+      "cells": 4460,
+      "warnings": 7,
+      "log_sha256": "2a1d87ba4b7a599f58bbb2a3257410cc6015bb3497641b0b3b3e6c456f397bc6"
+    },
+    "delta_after_minus_before": {
+      "wires": 1,
+      "wire_bits": -2704,
+      "public_wires": 1,
+      "public_wire_bits": 1520,
+      "cells": 0,
+      "warnings": 0
+    }
+  },
+  "registered_payload_evidence": {
+    "base_register": "packet_core.receiver.frame_payload[2047:0]",
+    "base_register_bits": 2048,
+    "head_absent": "packet_core.receiver.frame_payload register",
+    "head_register": "packet_core.receiver.frame_payload_prefix[1519:0]",
+    "head_register_bits": 1520,
+    "upper_interface_constant": "frame_payload[2047:1520] = 528'b0",
+    "upper_interface_constant_bits": 528,
+    "net_registered_payload_reduction_bits": 528
+  },
+  "rtl_subject_sha256": "5ce2edcd9e18a02ea276a541623c981b523945936e198e04c379981efe5f81a3",
+  "regression_explanation": "The RX payload register changes from 2048 bits to a 1520-bit implemented-opcode prefix while the 2048-bit module output remains present; its upper 528 bits are combinational constants. In the complete unmapped flow, wire bits fall by 2704, public wire bits rise by 1520 because the named prefix is retained as an additional public wire, wire count rises by one, and cell count is unchanged.",
+  "claim_boundary": "unmapped generic Yosys structure counts and registered-state inspection only; no implementation-quality, unbounded-equivalence, release, physical, P&R, FPGA, or hardware claim"
+}
