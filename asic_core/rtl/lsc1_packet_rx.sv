@@ -13,7 +13,7 @@ module lsc1_packet_rx (
     input  wire          frame_ready,
     output reg  [7:0]    frame_opcode,
     output reg  [15:0]   frame_length,
-    output reg  [2047:0] frame_payload,
+    output wire [2047:0] frame_payload,
     output reg           fault_valid,
     output reg  [7:0]    fault_status,
     output wire          busy
@@ -33,6 +33,9 @@ module lsc1_packet_rx (
     reg [7:0] flags;
     reg [31:0] crc;
     reg [31:0] received_crc;
+    reg [1519:0] frame_payload_prefix;
+    assign frame_payload[1519:0] = frame_payload_prefix;
+    assign frame_payload[2047:1520] = 528'b0;
     assign busy = state != S_SOF || frame_valid || fault_valid;
 
     function automatic [31:0] crc_byte;
@@ -73,7 +76,7 @@ module lsc1_packet_rx (
             frame_valid <= 1'b0;
             frame_opcode <= 0;
             frame_length <= 0;
-            frame_payload <= 0;
+            frame_payload_prefix <= 0;
             fault_valid <= 1'b0;
             fault_status <= 0;
         end else begin
@@ -89,7 +92,7 @@ module lsc1_packet_rx (
             if (rx_fire) begin
                 case (state)
                     S_SOF: begin
-                        frame_payload <= 0;
+                        frame_payload_prefix <= 0;
                         body_index <= 0;
                         received_crc <= 0;
                         if (rx_data != SOF) begin
@@ -121,10 +124,8 @@ module lsc1_packet_rx (
                     end
                     S_BODY: begin
                         if (body_index < declared_length) begin
-                            // Keep this bound coupled to the declared storage capacity.
-                            // JUMP's inverse witness occupies payload bytes 86 through 102.
-                            if (body_index < MAX_PAYLOAD)
-                                frame_payload[body_index*8 +: 8] <= rx_data;
+                            if (body_index < 16'd190)
+                                frame_payload_prefix[body_index*8 +: 8] <= rx_data;
                             crc <= crc_byte(crc, rx_data);
                         end else begin
                             case (body_index - declared_length)
