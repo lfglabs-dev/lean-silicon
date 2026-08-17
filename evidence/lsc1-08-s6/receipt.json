@@ -1,0 +1,247 @@
+{
+  "checkout_head": "da288b62a1f7434c395244be90363cabfb6f6093",
+  "checkout_tree": "c5bfcdae626abf243df05d2396d06d720f6d93fe",
+  "commands": [
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; flatten; opt; fsm; opt; memory; opt; check; rename lean_silicon_lsc1 lean_silicon_lsc1_netlist; write_verilog -noattr /root/lsc1-s6-full-pinned/lean_silicon_lsc1.generic.v"
+      ],
+      "exit_code": 0,
+      "name": "synthesize_generic_netlist"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "synthesized_netlist_implemented_opcode_sequences"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /root/lsc1-s6-full-pinned/lean_silicon_lsc1.generic.v /root/lsc1-s6-full-pinned/whole_design_miter.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 0,
+      "name": "whole_design_bmc_3"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /root/lsc1-s6-full-pinned/lean_silicon_lsc1.generic.v /root/lsc1-s6-full-pinned/whole_design_miter.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 32 -set-def-inputs"
+      ],
+      "exit_code": 124,
+      "name": "whole_design_temporal_induction_attempt"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -D FORMAL_FULL_LSC1 -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv formal/full_lsc1_controller_invariants.sv; prep -flatten -top lean_silicon_lsc1; memory_map; opt; async2sync; chformal -cover -remove; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 0,
+      "name": "controller_invariants_bmc_3"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -D FORMAL_FULL_LSC1 -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv formal/full_lsc1_controller_invariants.sv; prep -flatten -top lean_silicon_lsc1; memory_map; opt; async2sync; chformal -cover -remove; chformal -lower; sat -verify -prove-asserts -set-assumes -tempinduct -seq 4 -maxsteps 64 -set-def-inputs"
+      ],
+      "exit_code": 124,
+      "name": "controller_invariants_induction_attempt"
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "sim"
+      ],
+      "exit_code": 0,
+      "name": "opcode_reset_backpressure_fault_nonvacuity"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "all_opcode_model_rtl_sequences"
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-p",
+        "read_verilog -formal -sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv /root/lsc1-s6-full-pinned/lean_silicon_lsc1.generic.v /root/lsc1-s6-full-pinned/whole_design_miter.mutated.sv; prep -flatten -top whole_design_miter; memory_map; opt; async2sync; chformal -lower; sat -verify -prove-asserts -set-assumes -seq 3 -set-def-inputs"
+      ],
+      "exit_code": 1,
+      "name": "observable_correspondence_mutation"
+    }
+  ],
+  "constraints": [
+    "single rising-edge clock",
+    "two-state digital inputs",
+    "rst_n is asserted on an initialization edge preceding the first comparison",
+    "all inputs on and after the first compared edge are unconstrained, including reset, abort and backpressure",
+    "ena is functionally unused by the canonical top"
+  ],
+  "covers": {
+    "cycle_sequences": {
+      "scope": "all implemented opcodes, including valid NEGOTIATE and a staged instruction followed by valid RETIRE, plus reset, abort, backpressure and faults",
+      "status": "witnessed"
+    }
+  },
+  "host_mandatory": true,
+  "limits": [
+    "LSC-1u release and physical netlists",
+    "SKY26c and shuttle flows",
+    "physical place and route",
+    "FPGA and fabricated-silicon evidence",
+    "host-side BLAKE3 compression datapath"
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_packet_rx.sv",
+      "sha256": "5ce2edcd9e18a02ea276a541623c981b523945936e198e04c379981efe5f81a3"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_tx.sv",
+      "sha256": "8a9a1c80b85fbeb253f955e618dc1521aff6fb432698c8bb5eef743e1eefcb2e"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_blake3_lifecycle.sv",
+      "sha256": "af51a2f56073aee7ef95c183e06d0e7c0e0613a0c7193d9f883ed26b026986a8"
+    },
+    {
+      "path": "asic_core/rtl/gf2n_mul_bitstream.sv",
+      "sha256": "4aa363edd4a6b2797191599d838f3d5f81cc97aa5fc8d88f2f0050420ccf6396"
+    },
+    {
+      "path": "asic_core/rtl/gf128_mul_bitstream.sv",
+      "sha256": "d8e83531981677f629877cbeff643e07e169f8f6e8cf3ecd7c1b0c417a79b614"
+    },
+    {
+      "path": "asic_core/rtl/leanvm_b_stream_alu.sv",
+      "sha256": "bf844b461def08fbf5b69093f95f792fd9302b26098351d192e32c76583f001b"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_stream_adapter.sv",
+      "sha256": "41b68a8068f417ff8f0d33f0408405f4fae5a7b5e2fd60b482d11148e541e6c7"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_field_encoder.sv",
+      "sha256": "5fafb0f5fe81ac5aaf32d0d9974d7d7d2e2b66dde05cdb707e2067ab516f5e05"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "0a45dffb8ff07a9d14d729f4f8ed96a0934c16b670ba3f05562e5780396793c8"
+    },
+    {
+      "path": "asic_core/rtl/lean_silicon_lsc1.sv",
+      "sha256": "192eddc1727d8976ea48db9a532f44893d06bdec7651c65a1b1b99502b5e70c5"
+    }
+  ],
+  "mutations": [
+    {
+      "killed": true,
+      "name": "invert RTL uo_out bit zero in correspondence property"
+    }
+  ],
+  "netlist": {
+    "bytes": 500631,
+    "path": "lean_silicon_lsc1.generic.v",
+    "sha256": "80226ed67dbacf7a7688d07d721fa399305223e0cfac046be0fbb2247292f0d5"
+  },
+  "observables": [
+    "uo_out[7:0]",
+    "uio_out[7:0]",
+    "uio_oe[7:0]"
+  ],
+  "physical_artifacts_generated": false,
+  "plan_sha256": "23290ef6301e5e1a467234d7a32fc73a36171ceb4ddd726b9b8487240d8c4e9a",
+  "proofs": {
+    "controller_invariants": {
+      "blocker": "15-second HOST limit expired during controller induction attempt\n2/4148: $25\\addr_a[31:0]\n   603/4148: $25\\off_c[31:0]\n   604/4148: $25\\off_b[31:0]\n   605/4148: $25\\off_a[31:0]\n   606/4148: $25\\fp[31:0]\n   607/4148: $25\\pc[31:0]\n   608/4148: $25\\txn_id[31:0]\n   609/4148: $56\\result_length[31:0]\n   610/4148: $32\\n_deferred[31:0]\n   611/4148: $37\\n_writes[31:0]\n   612/4148: $37\\write_value[127:0]\n   613/4148: $24\\staged_access[7][31:0]\n   614/4148: $24\\staged_access[6][31:0]\n   615/4148: $24\\staged_access[5][31:0]\n   616/4148: $24\\staged_access[4][31:0]\n   617/4148: $24\\staged_access[3][31:0]\n   618/4148: $24\\staged_access[2][31:0]\n   619/4148: $24\\staged_access[1][31:0]\n   620/4148: $24\\staged_access[0][31:0]\n   621/4148: $24\\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:1290$817.access_count[7:0]$3606\n   622/4148: $24\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.detail[7:0]$3605\n   623/4148: $24\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.txn[31:0]$3604\n   624/4148: $24\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.status[7:0]$3603\n   625/4148: $24\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1011$815.txn[31:0]$3602\n   626/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.value[127:0]$3601\n   627/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.present[7:0]$3600\n   628/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.$result[0:0]$3599\n   629/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.value[127:0]$3598\n   630/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.present[7:0]$3597\n   631/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.$result[0:0]$3596\n   632/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.value[127:0]$3595\n   633/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.present[7:0]$3594\n   634/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.$result[0:0]$3593\n   635/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:999$810.value[127:0]$3592\n   636/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:999$810.present[7:0]$3591\n   637/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:999$810.$result[0:0]$3590\n   638/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:996$808.value[127:0]$3589\n   639/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:996$808.present[7:0]$3588\n   640/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:996$808.$result[0:0]$3587\n   641/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:995$807.value[127:0]$3586\n   642/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:995$807.present[7:0]$3585\n   643/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:995$807.$result[0:0]$3584\n   644/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:994$806.value[127:0]$3583\n   645/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:994$806.present[7:0]$3582\n   646/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:994$806.$result[0:0]$3581\n   647/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:993$805.value[127:0]$3580\n   648/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:993$805.present[7:0]$3579\n   649/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:993$805.$result[0:0]$3578\n   650/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:992$804.value[127:0]$3577\n   651/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:992$804.present[7:0]$3576\n   652/4148: $24\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:992$804.$result[0:0]$3575\n   653/4148: $24\\cell_is_malformed$func$as",
+      "bounded_edges": 3,
+      "method": "temporal induction",
+      "status": "bounded-pass-unbounded-blocked"
+    },
+    "whole_design_bmc": {
+      "edges": 3,
+      "observables": [
+        "uo_out[7:0]",
+        "uio_out[7:0]",
+        "uio_oe[7:0]"
+      ],
+      "post_reset_inputs": "unconstrained",
+      "status": "pass"
+    },
+    "whole_design_equivalence_boundary": {
+      "classification": "bounded-pass-unbounded-blocked",
+      "mandatory_bounded_edges": 3,
+      "soundness_rule": "only a successful induction command may classify the whole design as unbounded",
+      "unbounded_blocker": "15-second HOST limit expired during whole-design induction attempt\nlue[127:0]$3683\n   480/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:991$803.present[7:0]$3682\n   481/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:991$803.$result[0:0]$3681\n   482/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.value[127:0]$3680\n   483/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.present[7:0]$3679\n   484/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.$result[0:0]$3678\n   485/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.value[127:0]$3677\n   486/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.present[7:0]$3676\n   487/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.$result[0:0]$3675\n   488/4148: $26\\decision_deferred[0:0]\n   489/4148: $26\\decision_ok[0:0]\n   490/4148: $26\\decision_detail[7:0]\n   491/4148: $26\\decision_fault[7:0]\n   492/4148: $38\\write_address[31:0]\n   493/4148: $28\\solved_b[127:0]\n   494/4148: $28\\solved_a[127:0]\n   495/4148: $26\\result_value[127:0]\n   496/4148: $26\\inv_value[127:0]\n   497/4148: $26\\val_c[127:0]\n   498/4148: $26\\val_b[127:0]\n   499/4148: $26\\val_a[127:0]\n   500/4148: $26\\taken_proposal[7:0]\n   501/4148: $26\\inv_present[7:0]\n   502/4148: $26\\pres_c[7:0]\n   503/4148: $26\\pres_b[7:0]\n   504/4148: $26\\pres_a[7:0]\n   505/4148: $26\\profile[7:0]\n   506/4148: $33\\deferred_local[31:0]\n   507/4148: $33\\deferred_target[31:0]\n   508/4148: $28\\next_fp_value[31:0]\n   509/4148: $28\\next_pc_value[31:0]\n   510/4148: $26\\proposed_fp[31:0]\n   511/4148: $26\\proposed_pc[31:0]\n   512/4148: $26\\base_index[31:0]\n   513/4148: $26\\addr_c[31:0]\n   514/4148: $26\\addr_b[31:0]\n   515/4148: $26\\addr_a[31:0]\n   516/4148: $26\\off_c[31:0]\n   517/4148: $26\\off_b[31:0]\n   518/4148: $26\\off_a[31:0]\n   519/4148: $26\\fp[31:0]\n   520/4148: $26\\pc[31:0]\n   521/4148: $26\\txn_id[31:0]\n   522/4148: $57\\result_length[31:0]\n   523/4148: $33\\n_deferred[31:0]\n   524/4148: $38\\n_writes[31:0]\n   525/4148: $38\\write_value[127:0]\n   526/4148: $25\\staged_access[7][31:0]\n   527/4148: $25\\staged_access[6][31:0]\n   528/4148: $25\\staged_access[5][31:0]\n   529/4148: $25\\staged_access[4][31:0]\n   530/4148: $25\\staged_access[3][31:0]\n   531/4148: $25\\staged_access[2][31:0]\n   532/4148: $25\\staged_access[1][31:0]\n   533/4148: $25\\staged_access[0][31:0]\n   534/4148: $25\\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:1290$817.access_count[7:0]$3671\n   535/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.detail[7:0]$3670\n   536/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.txn[31:0]$3669\n   537/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.status[7:0]$3668\n   538/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1011$815.txn[31:0]$3667\n   539/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.value[127:0]$3666\n   540/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.present[7:0]$3665\n   541/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.$result[0:0]$3664\n   542/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.value[127:0]$3663\n   543/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.present[7:0]$3662\n   544/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.$result[0:0]$3661\n   545/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.value[127:0]$3660\n   546/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.present[7:0]$3659\n   547/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.$result[0:0]$3658\n   548/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:999$810.value[127:0]$3657\n   549/4148: $25\\cell_is_malformed$func$a",
+      "unbounded_method": "temporal induction"
+    },
+    "whole_design_induction": {
+      "blocker": "15-second HOST limit expired during whole-design induction attempt\nlue[127:0]$3683\n   480/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:991$803.present[7:0]$3682\n   481/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:991$803.$result[0:0]$3681\n   482/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.value[127:0]$3680\n   483/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.present[7:0]$3679\n   484/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:990$802.$result[0:0]$3678\n   485/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.value[127:0]$3677\n   486/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.present[7:0]$3676\n   487/4148: $26\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:989$801.$result[0:0]$3675\n   488/4148: $26\\decision_deferred[0:0]\n   489/4148: $26\\decision_ok[0:0]\n   490/4148: $26\\decision_detail[7:0]\n   491/4148: $26\\decision_fault[7:0]\n   492/4148: $38\\write_address[31:0]\n   493/4148: $28\\solved_b[127:0]\n   494/4148: $28\\solved_a[127:0]\n   495/4148: $26\\result_value[127:0]\n   496/4148: $26\\inv_value[127:0]\n   497/4148: $26\\val_c[127:0]\n   498/4148: $26\\val_b[127:0]\n   499/4148: $26\\val_a[127:0]\n   500/4148: $26\\taken_proposal[7:0]\n   501/4148: $26\\inv_present[7:0]\n   502/4148: $26\\pres_c[7:0]\n   503/4148: $26\\pres_b[7:0]\n   504/4148: $26\\pres_a[7:0]\n   505/4148: $26\\profile[7:0]\n   506/4148: $33\\deferred_local[31:0]\n   507/4148: $33\\deferred_target[31:0]\n   508/4148: $28\\next_fp_value[31:0]\n   509/4148: $28\\next_pc_value[31:0]\n   510/4148: $26\\proposed_fp[31:0]\n   511/4148: $26\\proposed_pc[31:0]\n   512/4148: $26\\base_index[31:0]\n   513/4148: $26\\addr_c[31:0]\n   514/4148: $26\\addr_b[31:0]\n   515/4148: $26\\addr_a[31:0]\n   516/4148: $26\\off_c[31:0]\n   517/4148: $26\\off_b[31:0]\n   518/4148: $26\\off_a[31:0]\n   519/4148: $26\\fp[31:0]\n   520/4148: $26\\pc[31:0]\n   521/4148: $26\\txn_id[31:0]\n   522/4148: $57\\result_length[31:0]\n   523/4148: $33\\n_deferred[31:0]\n   524/4148: $38\\n_writes[31:0]\n   525/4148: $38\\write_value[127:0]\n   526/4148: $25\\staged_access[7][31:0]\n   527/4148: $25\\staged_access[6][31:0]\n   528/4148: $25\\staged_access[5][31:0]\n   529/4148: $25\\staged_access[4][31:0]\n   530/4148: $25\\staged_access[3][31:0]\n   531/4148: $25\\staged_access[2][31:0]\n   532/4148: $25\\staged_access[1][31:0]\n   533/4148: $25\\staged_access[0][31:0]\n   534/4148: $25\\emit_result$func$asic_core/rtl/lsc1_packet_frontend.sv:1290$817.access_count[7:0]$3671\n   535/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.detail[7:0]$3670\n   536/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.txn[31:0]$3669\n   537/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1288$816.status[7:0]$3668\n   538/4148: $25\\emit_fault$func$asic_core/rtl/lsc1_packet_frontend.sv:1011$815.txn[31:0]$3667\n   539/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.value[127:0]$3666\n   540/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.present[7:0]$3665\n   541/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1006$813.$result[0:0]$3664\n   542/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.value[127:0]$3663\n   543/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.present[7:0]$3662\n   544/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1003$812.$result[0:0]$3661\n   545/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.value[127:0]$3660\n   546/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.present[7:0]$3659\n   547/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:1001$811.$result[0:0]$3658\n   548/4148: $25\\cell_is_malformed$func$asic_core/rtl/lsc1_packet_frontend.sv:999$810.value[127:0]$3657\n   549/4148: $25\\cell_is_malformed$func$a",
+      "maxsteps": 32,
+      "method": "temporal induction",
+      "status": "blocked"
+    }
+  },
+  "schema": "lean-silicon/full-lsc1-netlist-receipt/v1",
+  "source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+  "source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
+  "status": "pass",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 14.0 (devel) (s20260301-357-g72998c541-dirty)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.68+40 (git sha1 0f2bcb94b-dirty, Release, Clang /usr/bin/clang++ 21.1.8)"
+  },
+  "top": "lean_silicon_lsc1",
+  "unbounded_experiments": {
+    "matched_point_decomposition": {
+      "classification": "incomplete-decomposition",
+      "elapsed_seconds_lower_bound": 540,
+      "peak_rss_gib_approx": 1.9,
+      "proved_scope": "thousands of matched state bits",
+      "solver": "Yosys direct SAT",
+      "sound_cut_relation": false,
+      "unresolved_point": "packet_core.addr_c[20]"
+    },
+    "provenance": {
+      "evidence_kind": "historical-plan-evidence",
+      "receipt_run": false,
+      "subject_source_commit": "13de62cca3f6f237b599001aac0b65123ddec8ce",
+      "subject_source_tree": "a9a72ce35ca4431ecd047d1f2388a6d1dfd72476",
+      "toolchain_distribution": "YosysHQ OSS CAD Suite 2026-08-09"
+    },
+    "whole_design_reset_prefix": {
+      "classification": "bounded-evidence-only",
+      "depth_edges": 5,
+      "elapsed_seconds": 195,
+      "peak_rss_gib_approx": 15.9,
+      "result": "no-proof-result-before-resource-kill",
+      "solver": "Yosys SAT",
+      "timeout_seconds": 195
+    }
+  }
+}
