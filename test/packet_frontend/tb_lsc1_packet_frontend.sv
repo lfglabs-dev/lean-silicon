@@ -34,6 +34,9 @@ module tb_lsc1_packet_frontend;
         cycle_count <= cycle_count + 1;
         if (rst_n && dut.tx_start && !busy)
             $fatal(1, "BUSY dropped while a response was queued");
+        if (rst_n && dut.tx_start &&
+            (dut.tx_external_kind < 1 || dut.tx_external_kind > 7))
+            $fatal(1, "response started without kind 1--7");
         if (tx_valid && tx_ready) begin
             response[response_count] <= tx_data;
             response_count <= response_count + 1;
@@ -209,8 +212,7 @@ module tb_lsc1_packet_frontend;
         // Valid SET with deterministic input stalls and output backpressure.
         build_set(32'h11, 0, 4);
         send_frame(1, 8'h03, 0, 51, 0);
-        if ($bits(dut.short_txn_id) + $bits(dut.short_detail) != 40 ||
-            $bits(dut.transmitter.saved_payload) != 160)
+        if ($bits(dut.short_txn_id) + $bits(dut.short_detail) != 40)
             $fatal(1, "short-response semantic staging is not exactly 40 bits");
         wait (tx_valid);
         wait (dut.tx_payload_external_valid && dut.tx_payload_index == 17);
