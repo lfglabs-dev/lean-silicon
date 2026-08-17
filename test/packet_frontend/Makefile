@@ -34,7 +34,8 @@ transport:
 
 serializer-structure:
 	@set -e; tx=../../asic_core/rtl/lsc1_packet_tx.sv; fe=../../asic_core/rtl/lsc1_packet_frontend.sv; \
-	  ! grep -Eq 'saved_payload|saved_external|input[[:space:]]+wire[[:space:]]+\[159:0\][[:space:]]+payload|input[[:space:]]+wire[[:space:]]+payload_external([,[:space:]]|$$)' "$$tx"; \
+	  inline_reg=saved_; inline_reg=$${inline_reg}payload; mode_reg=saved_; mode_reg=$${mode_reg}external; mode_port=payload_; mode_port=$${mode_port}external; \
+	  ! grep -Eq "$$inline_reg|$$mode_reg|input[[:space:]]+wire[[:space:]]+\\[159:0\\][[:space:]]+payload|input[[:space:]]+wire[[:space:]]+$$mode_port([,[:space:]]|$$)" "$$tx"; \
 	  awk '/tx_external_kind <= [1-7];/{kind=NR; value=$$3; sub(/;/,"",value); seen[value]=1} /tx_start <= 1.b1;/{if (!kind || NR-kind != 1) exit 1; kind=0} END{for (i=1;i<=7;i++) if (!seen[i]) exit 1; if (length(seen) != 7) exit 1}' "$$fe"; \
 	  echo "PASS: external-only serializer structure and kinds 1--7 tx_start paths"
 
