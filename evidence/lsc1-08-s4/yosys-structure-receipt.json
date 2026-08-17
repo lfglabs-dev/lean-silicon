@@ -4,7 +4,7 @@
   "source": {
     "repository": "lfglabs-dev/lean-silicon",
     "base_commit": "121d26f5ae143eb2df14109719dde4d616008a7a",
-    "head_commit": "123e21ca00cf449cc1c01e27ce6c10775aeae2b6"
+    "head_commit": "b0bb28c23d9ec102f209fc33eb2ddc0d728f60db"
   },
   "generator": {
     "lane": "local pinned OSS CAD Suite",
@@ -28,16 +28,16 @@
       "public_wire_bits": 27101,
       "cells": 4381,
       "warnings": 7,
-      "log_sha256": "8ceb8b2be3873b9edd94d1c869289823b84cd93bc61b3849db6820590fd63da0"
+      "log_sha256": "869908dfe3d941f904e5477efc7accd10dfb216d0083a7879ec4407465d2c060"
     },
     "after": {
-      "wires": 4770,
-      "wire_bits": 120509,
+      "wires": 4652,
+      "wire_bits": 120391,
       "public_wires": 544,
       "public_wire_bits": 20262,
-      "cells": 4460,
-      "warnings": 7,
-      "log_sha256": "b16e7d93cf3448590b3f7a0ce733c64fed6a6022ca535f53d89f7d76e78b6b04"
+      "cells": 4329,
+      "warnings": 6,
+      "log_sha256": "33233e442315ae93acaadb852504ae0105c139657f8cbd17b178df5bc8dfb739"
     }
   },
   "registered_payload_evidence": {
