@@ -390,7 +390,7 @@ module lsc1_packet_frontend (
             endcase
         end else if (tx_external_kind == 4) begin
             case (tx_payload_index)
-                0: tx_payload_external_data = short_txn_id[7:0];
+                0: tx_payload_external_data = short_txn_id[0 +: 8];
                 1: tx_payload_external_data = short_txn_id[15:8];
                 2: tx_payload_external_data = short_txn_id[23:16];
                 3: tx_payload_external_data = short_txn_id[31:24];
@@ -893,7 +893,7 @@ module lsc1_packet_frontend (
                         core_done_pulse <= 1'b1;
                         short_txn_id <= txn_id;
                         tx_status <= RETIRED;
-                        tx_length <= 16;
+                        tx_length <= 16'd16;
                         tx_external_kind <= 7;
                         tx_start <= 1'b1;
                         fault <= 1'b0;

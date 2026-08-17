@@ -119,12 +119,17 @@ short-response-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  for mutation in fault_detail status_snapshot retire_offset length unstable_source; do \
 	    rm -f "$$d"/*.sv; cp ../../asic_core/rtl/*.sv "$$d/"; \
+	    test "$$(grep -Foc '4: tx_payload_external_data = short_detail;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc 'short_detail <= last_status;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc '8: tx_payload_external_data = committed_pc[7:0];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc "tx_length <= 16'd16;" "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc '0: tx_payload_external_data = short_txn_id[0 +: 8];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
 	    case $$mutation in \
 	      fault_detail) sed -i 's/4: tx_payload_external_data = short_detail;/4: tx_payload_external_data = short_txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
 	      status_snapshot) sed -i 's/short_detail <= last_status;/short_detail <= INFO;/' "$$d/lsc1_packet_frontend.sv" ;; \
 	      retire_offset) sed -i 's/8: tx_payload_external_data = committed_pc\[7:0\];/8: tx_payload_external_data = committed_fp[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
-	      length) sed -i '0,/tx_length <= 16;/s//tx_length <= 15;/' "$$d/lsc1_packet_frontend.sv" ;; \
-	      unstable_source) sed -i 's/0: tx_payload_external_data = short_txn_id\[7:0\];/0: tx_payload_external_data = txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      length) sed -i "s/tx_length <= 16'd16;/tx_length <= 16'd15;/" "$$d/lsc1_packet_frontend.sv" ;; \
+	      unstable_source) sed -i 's/0: tx_payload_external_data = short_txn_id\[0 +: 8\];/0: tx_payload_external_data = txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
 	    esac; \
 	    if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential >"$$d/$$mutation.out" 2>&1; then \
 	      echo "short-response $$mutation mutation unexpectedly survived" >&2; exit 1; \
