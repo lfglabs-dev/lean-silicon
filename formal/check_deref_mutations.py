@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RTL = [
     "lsc1_packet_rx.sv", "lsc1_packet_tx.sv", "lsc1_response_payload_mux.sv",
-    "lsc1_blake3_alias_check.sv", "gf2n_mul_bitstream.sv",
+    "lsc1_blake3_alias_check.sv", "lsc1_request_validator.sv", "gf2n_mul_bitstream.sv",
     "gf128_mul_bitstream.sv", "leanvm_b_stream_alu.sv", "lsc1_stream_adapter.sv",
     "lsc1_field_encoder.sv", "lsc1_blake3_lifecycle.sv", "lsc1_packet_frontend.sv",
 ]
@@ -24,7 +24,7 @@ MUTATIONS = [
     ("pc_plus_two", "lsc1_packet_frontend.sv", "pc[15:0] + 16'd2", "pc[15:0] + 16'd1"),
     ("profile_guard", "lsc1_packet_frontend.sv", "if (profile != active_profile) begin", "if (1'b0) begin"),
     ("crc_bypass", "lsc1_packet_rx.sv", "if ({rx_data, received_crc[23:0]} != ~crc)", "if (1'b0)"),
-    ("hidden_absent_value", "lsc1_packet_frontend.sv", "cell_is_malformed = present > 1 || (!present && value != 0);", "cell_is_malformed = present > 1;"),
+    ("hidden_absent_value", "lsc1_request_validator.sv", "cell_malformed = cell_present > 1 || (!cell_present && cell_value != 0);", "cell_malformed = cell_present > 1;"),
     ("same_edge_abort", "lsc1_packet_frontend.sv", "end else if (abort) begin", "end else if (1'b0 && abort) begin"),
     ("result_byte", "lsc1_packet_frontend.sv", "write_value = val_b;", "write_value = val_b ^ 1'b1;"),
     ("duplicate_retirement", "lsc1_packet_frontend.sv", "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b0;", "retire_seq <= retire_seq + 1'b1;\n                        result_pending <= 1'b1;"),

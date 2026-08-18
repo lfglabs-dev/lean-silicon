@@ -155,6 +155,27 @@ module lsc1_packet_frontend (
         .alias_inconsistent(blake_alias_inconsistent)
     );
 
+    wire request_reject;
+    wire [7:0] request_fault_status, request_fault_detail;
+    wire [31:0] request_fault_txn;
+
+    // Static admission check for compute request frames.  It is computed
+    // unconditionally because none of its inputs depend on which arm of the frame
+    // ladder is taken; the ladder position of the arm that consumes `request_reject`
+    // is what orders it after the RX fault and the four non-compute opcodes.
+    lsc1_request_validator request_validator (
+        .frame_opcode(frame_opcode),
+        .frame_length(frame_length),
+        .frame_payload(frame_payload[1519:0]),
+        .result_pending(result_pending),
+        .blake_result_pending(blake_result_pending),
+        .blake_service_pending(blake_service_pending),
+        .reject(request_reject),
+        .fault_status(request_fault_status),
+        .fault_txn(request_fault_txn),
+        .fault_detail(request_fault_detail)
+    );
+
     wire event_valid = frame_valid || rx_fault_valid;
     wire event_ready = !tx_busy && !tx_start &&
                        compute_state == C_IDLE;
@@ -312,14 +333,6 @@ module lsc1_packet_frontend (
             last_fault <= status;
         end
     endtask
-
-    function automatic cell_is_malformed;
-        input [7:0] present;
-        input [127:0] value;
-        begin
-            cell_is_malformed = present > 1 || (!present && value != 0);
-        end
-    endfunction
 
     integer n_writes, n_deferred, result_length;
     reg [31:0] txn_id, pc, fp, off_a, off_b, off_c;
@@ -736,82 +749,9 @@ module lsc1_packet_frontend (
                         end
                         emit_blake_result();
                     end
-                end else if (frame_opcode != OP_XOR &&
-                             frame_opcode != OP_MUL &&
-                             frame_opcode != OP_SET &&
-                             frame_opcode != OP_DEREF_CELL &&
-                             frame_opcode != OP_DEREF_PC &&
-                             frame_opcode != OP_DEREF_FP &&
-                             frame_opcode != OP_JUMP &&
-                             frame_opcode != OP_BLAKE3) begin
-                    emit_fault(BAD_OPCODE, 0, 0);
-                end else if ((frame_opcode == OP_SET && frame_length != 51) ||
-                             (frame_opcode == OP_XOR && frame_length != 77) ||
-                             (frame_opcode == OP_MUL && frame_length != 94) ||
-                             ((frame_opcode == OP_DEREF_CELL ||
-                               frame_opcode == OP_DEREF_PC ||
-                               frame_opcode == OP_DEREF_FP) && frame_length != 81) ||
-                             (frame_opcode == OP_JUMP && frame_length != 103) ||
-                             (frame_opcode == OP_BLAKE3 && frame_length != 190)) begin
-                    emit_fault(BAD_LENGTH, frame_payload[0 +: 32], 2);
-                // Match decode_request_payload: malformed payloads are rejected
-                // before dispatch sees the pending transaction, and decoder
-                // faults do not acquire the payload transaction ID.
-                end else if (frame_payload[12*8 +: 8] > 1) begin
-                    emit_fault(BAD_PROFILE, 0, 0);
-                end else if (frame_payload[13*8 +: 8] != 0) begin
-                    emit_fault(BAD_FLAGS, 0, 1);
-                end else if (frame_opcode == OP_SET &&
-                             cell_is_malformed(frame_payload[34*8 +: 8],
-                                               frame_payload[280 +: 128])) begin
-                    emit_fault(BAD_CELL, 0, 0);
-                end else if ((frame_opcode == OP_DEREF_CELL ||
-                              frame_opcode == OP_DEREF_PC ||
-                              frame_opcode == OP_DEREF_FP) &&
-                             (cell_is_malformed(frame_payload[26*8 +: 8],
-                                                frame_payload[216 +: 128]) ||
-                              cell_is_malformed(frame_payload[47*8 +: 8],
-                                                frame_payload[384 +: 128]) ||
-                              cell_is_malformed(frame_payload[64*8 +: 8],
-                                                frame_payload[520 +: 128]))) begin
-                    emit_fault(BAD_CELL, 0, 0);
-                end else if (frame_opcode == OP_JUMP &&
-                             (cell_is_malformed(frame_payload[26*8 +: 8],
-                                                frame_payload[216 +: 128]) ||
-                              cell_is_malformed(frame_payload[43*8 +: 8],
-                                                frame_payload[352 +: 128]) ||
-                              cell_is_malformed(frame_payload[60*8 +: 8],
-                                                frame_payload[488 +: 128]) ||
-                              cell_is_malformed(frame_payload[86*8 +: 8],
-                                                frame_payload[696 +: 128]))) begin
-                    emit_fault(BAD_CELL, 0, 0);
-                end else if (frame_opcode == OP_JUMP &&
-                             frame_payload[77*8 +: 8] > 1) begin
-                    emit_fault(BAD_BRANCH_PROPOSAL, 0, 3);
-                end else if (frame_opcode == OP_BLAKE3 &&
-                             (cell_is_malformed(frame_payload[54*8 +: 8], frame_payload[55*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[71*8 +: 8], frame_payload[72*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[88*8 +: 8], frame_payload[89*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[105*8 +: 8], frame_payload[106*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[122*8 +: 8], frame_payload[123*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[139*8 +: 8], frame_payload[140*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[156*8 +: 8], frame_payload[157*8 +: 128]) ||
-                              cell_is_malformed(frame_payload[173*8 +: 8], frame_payload[174*8 +: 128]))) begin
-                    emit_fault(BAD_CELL, 0, 0);
-                end else if ((frame_opcode == OP_XOR || frame_opcode == OP_MUL) &&
-                             (cell_is_malformed(frame_payload[26*8 +: 8],
-                                                frame_payload[216 +: 128]) ||
-                              cell_is_malformed(frame_payload[43*8 +: 8],
-                                                frame_payload[352 +: 128]) ||
-                              cell_is_malformed(frame_payload[60*8 +: 8],
-                                                frame_payload[488 +: 128]) ||
-                              (frame_opcode == OP_MUL &&
-                               cell_is_malformed(frame_payload[77*8 +: 8],
-                                                 frame_payload[624 +: 128])))) begin
-                    emit_fault(BAD_CELL, 0, 0);
-                end else if (result_pending ||
-                             blake_result_pending || blake_service_pending) begin
-                    emit_fault(BAD_STATE, frame_payload[0 +: 32], 0);
+                end else if (request_reject) begin
+                    emit_fault(request_fault_status, request_fault_txn,
+                               request_fault_detail);
                 end else begin
                     // Preserve the decoded authored-RTL instruction identity
                     // across compute, service response, and RETIRE frames.

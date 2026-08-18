@@ -1,0 +1,227 @@
+{
+  "ac1_proof": {
+    "base_side": "verbatim transcription of frontend lines 739-814 at d2e9d250b426b11fb6f6155e28ac57d36a85d460; the sole edit is that line 1 drops the leading `end else ` because the region starts mid-ladder, confirmed by diffing the 76 transcribed lines against the base file (1 differing line, 0 others)",
+    "free_input_bits": 1547,
+    "free_input_decomposition": "8 frame_opcode + 16 frame_length + 1520 frame_payload + 1 result_pending + 1 blake_result_pending + 1 blake_service_pending",
+    "head_side": "instantiates the shipped lsc1_request_validator, not a transcription of it, so the proof binds the artifact compiled into the design",
+    "method": "combinational miter, complete SAT (yosys `miter -equiv -flatten -make_assert` then `sat -verify -prove-asserts -set-def-inputs`)",
+    "note": "Both sides drive all four outputs on every path, and the non-rejecting case drives them to zero on both sides, so the miter constrains the outputs over the entire input space rather than only where `reject` holds.",
+    "quantification": "exhaustive over all 2^1547 input assignments",
+    "solver_problem": "28435 variables, 78750 clauses"
+  },
+  "base_commit": "d2e9d250b426b11fb6f6155e28ac57d36a85d460",
+  "base_commit_note": "The tasking brief quoted `d2e9d250b426b11fb6f6e28ac57d36a85d460`, which is 45 hex characters and therefore not a valid object name. The live `git ls-remote origin refs/heads/main` and the GitHub API both resolve main to d2e9d250b426b11fb6f6155e28ac57d36a85d460, committed 2026-08-18T08:35:08Z as the squash of PR #83. That commit is the base used here, and the base tree was independently confirmed by hashing asic_core/rtl/lsc1_packet_frontend.sv out of it (b5100e7480cc4ff56522010e9aa9f7ecec5155022faf13b0122051969d8fd70a).",
+  "cells": {
+    "baseline_lsc1_packet_frontend": 30292,
+    "caveat": "A generic-gate count is not area, power or timing. It is reported only to show the extraction did not inflate the design. No PPA claim is made.",
+    "delta": -57,
+    "head_combined": 30235,
+    "head_lsc1_packet_frontend": 28339,
+    "head_lsc1_request_validator": 1896,
+    "measurement_note": "Own cells per module; a submodule instance counts as one cell. Baseline and head were measured with the same yosys invocation and the same version, the baseline on a pristine checkout of the base tree.",
+    "metric": "yosys generic-gate count after `synth -top lean_silicon_lsc1`",
+    "non_increase": true
+  },
+  "classification": "bounded-pass-unbounded-blocked",
+  "commands": [
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv asic_core/rtl/lsc1_request_validator.sv evidence/lsc1-08-s9/request_validator_equiv_miter.sv; prep; miter -equiv -flatten -make_assert request_validation_base request_validation_head miter; hierarchy -top miter; sat -verify -prove-asserts -set-def-inputs'"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with 'SAT proof finished - no model found: SUCCESS!'",
+      "name": "ac1_chain_equivalence_shipped_module",
+      "observed": "Solving problem with 28435 variables and 78750 clauses.. SAT proof finished - no model found: SUCCESS!"
+    },
+    {
+      "argv": [
+        "bash -c 'for each of four perturbations of the head module, rerun the ac1 miter'"
+      ],
+      "exit_code": 1,
+      "expectation": "exit 1 on each of the four; a miter that cannot fail proves nothing",
+      "name": "ac1_non_vacuity_four_perturbations",
+      "observed": "jump_length_103_to_102 EXIT=1, cell_offset_43_to_44 EXIT=1, bad_length_detail_2_to_1 EXIT=1, bad_profile_to_bad_flags EXIT=1; each reported 'Called with -verify and proof did fail!'. Each perturbation asserted its anchor occurs exactly once and that the edit changed the file, so none of the four can pass by editing nothing."
+    },
+    {
+      "argv": [
+        "python3",
+        "/tmp/ac2/run_ac2.py"
+      ],
+      "exit_code": 0,
+      "expectation": "at least 300 rejecting frames over all 8 compute opcodes with zero (status, detail) mismatches between the frozen transcription and the real d2e9d250 frontend",
+      "name": "ac2_frozen_transcription_agrees_with_base_frontend",
+      "observed": "413 trials, 400 rejecting, 0 status/detail mismatches, 8/8 compute opcodes covered (XOR 55, MUL 32, SET 41, DEREF_CELL 59, DEREF_PC 63, DEREF_FP 56, JUMP 41, BLAKE3 53), 13 frames accepted by the chain"
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "request-validator",
+        "request-validator-mutation"
+      ],
+      "exit_code": 0,
+      "expectation": "the standalone testbench passes and all eight mutants are killed",
+      "name": "ac3_standalone_testbench_and_mutation_kills",
+      "observed": "PASS: 78 directed request-validator vectors and 6000 constrained random trials (accept=685 opcode=323 length=1168 profile=545 flags=726 cell=1563 proposal=34 state=956); PASS: eight request-validation chain mutations behaviorally killed"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "sim.test_packet_frontend_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "18 tests OK with no edit to any assertion",
+      "name": "ac4_packet_frontend_rtl_differential",
+      "observed": "Ran 18 tests in 5.636s -- OK"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "sim.test_conformance_v3_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "1 test OK with no edit to any assertion",
+      "name": "ac4_conformance_v3_rtl_differential",
+      "observed": "Ran 1 test in 0.158s -- OK"
+    },
+    {
+      "argv": [
+        "bash -c 'copy the RTL with lsc1_request_validator.reject tied to 1b0, rerun the two named differential tests under LSC1_RTL_DIR'"
+      ],
+      "exit_code": 1,
+      "expectation": "both named tests must fail; a differential suite that stays green when the validator never rejects is not covering this slice",
+      "name": "ac4_falsifier_reject_tied_to_zero",
+      "observed": "test_deref_and_jump_faults_match_the_executable_model FAILED (failures=1); test_partial_transaction_prefix_length_faults_match_rtl FAILED (failures=5). Both are genuine AssertionErrors on the response fault triple, not import or elaboration errors."
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/lsc1_authored_rtl_contract.py",
+        "--verify"
+      ],
+      "exit_code": 0,
+      "expectation": "LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces",
+      "name": "ac6_authored_rtl_contract",
+      "observed": "LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces"
+    },
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv <ci.yml source list extended with lsc1_request_validator.sv>; hierarchy -check -top lean_silicon_lsc1; proc; check; synth -top lean_silicon_lsc1; stat'"
+      ],
+      "exit_code": 0,
+      "expectation": "hierarchy -check and check report no problems; no warning class absent from the base run",
+      "name": "ac8_ci_lint_and_synthesis_with_new_file",
+      "observed": "'Found and reported 0 problems.' at all three CHECK passes; Warnings: 6 unique messages, 6 total. The base run reports the same 6 unique messages, all of the pre-existing 'Replacing memory ... with list of registers' class, so no new warning class appears."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test",
+        "sim"
+      ],
+      "exit_code": 0,
+      "expectation": "the new testbench and the new mutation target are visibly executed by the repository regression",
+      "name": "ac10_anti_orphan_full_simulation_suite",
+      "observed": "exit 0; grep -c 'request-validator' over the log is 11, covering the `make request-validator` testbench line, the `make request-validator-mutation` eight kills, and the two differential suites. `make -C test/packet_frontend mutation` separately exits 0 with a grep count of 9."
+    }
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_request_validator.sv",
+      "sha256": "0d0cee24aea05b1a2ae2691a1cc46518af79b79e6228b8bb41031394c15b8d4f"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "4d2edc9a52a89673c27834b8f76e8342a5029bd42fc693691ee7352cdd4c1b90"
+    },
+    {
+      "path": "test/packet_frontend/tb_lsc1_request_validator.sv",
+      "sha256": "9262b695ead60570f78bc3618ef748d776888624a707bb7e8bb8f6ff4843fe8e"
+    },
+    {
+      "path": "evidence/lsc1-08-s9/request_validator_equiv_miter.sv",
+      "sha256": "39f80a1f105ab1a1031fa74a1c232a1e4c8f196e2329f20947768b199c86b4b6"
+    }
+  ],
+  "mutations": [
+    {
+      "killed": true,
+      "name": "jump_length"
+    },
+    {
+      "killed": true,
+      "name": "blake_length"
+    },
+    {
+      "killed": true,
+      "name": "cell_offset"
+    },
+    {
+      "killed": true,
+      "name": "blake_stride"
+    },
+    {
+      "killed": true,
+      "name": "detail_swap"
+    },
+    {
+      "killed": true,
+      "name": "status_swap"
+    },
+    {
+      "killed": true,
+      "name": "state_priority"
+    },
+    {
+      "killed": true,
+      "name": "proposal_order"
+    }
+  ],
+  "not_evidenced": [
+    "PPA (power, performance, area)",
+    "place and route",
+    "static timing analysis",
+    "gate-level netlist equivalence of the whole design",
+    "FPGA synthesis, bitstream or hardware bring-up",
+    "fabricated silicon",
+    "end-to-end system testing",
+    "any universal or unbounded claim about the sequential design",
+    "SymbiYosys lanes (sby absent locally; CI is the authority)",
+    "Lean lanes (not exercised locally; CI is the authority)",
+    "LSC-1u profile (out of scope; this slice is full LSC-1 only)"
+  ],
+  "physical_artifacts_generated": false,
+  "pinned_not_fixed": {
+    "isolation": "The two r10_ vectors live only in test/packet_frontend/tb_lsc1_request_validator.sv. The differential suite was not given an R10 vector; its single pre-existing BAD_BRANCH_PROPOSAL assertion is untouched.",
+    "observable": "A JUMP frame with payload[77] = 2 and a malformed cell at offset 86 reports BAD_CELL (0x88) with detail 0, not BAD_BRANCH_PROPOSAL (0x8f).",
+    "ticket": "LSC1-08 R10",
+    "why": "The cell scan outranking the JUMP branch-proposal check is the behaviour at d2e9d250. This slice preserves it and characterises it so it cannot drift silently. Changing it is a separate ticket and is deliberately not done here."
+  },
+  "schema": "lean-silicon/lsc1-08-slice-receipt/v1",
+  "sealing_note": "`make checksums`, its post-regeneration verification and the root `make check` ladder necessarily run after this receipt is written, because the receipt is itself a checksummed tracked artifact. Their exit codes are reported in the pull request body.",
+  "slice": "LSC1-08 S9",
+  "subject": "Extract the eleven-arm static request validation chain out of lsc1_packet_frontend.sv into the purely combinational module lsc1_request_validator, restructured into a case-derived length table, an indexed cell-malformed reduction and one priority ladder over named predicates.",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 12.0 (stable)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.33 (git sha1 2584903a060)"
+  },
+  "unbounded_status": {
+    "combinational_block": "complete: the extracted chain is purely combinational and the SAT proof is exhaustive over its whole 1547-bit input space, so for this block there is no residual bound",
+    "surrounding_sequential_design": "blocked: no induction was attempted or claimed over lsc1_packet_frontend or the top level"
+  },
+  "repaired_pre_existing_gate": {
+    "note": "This is a repair of a gate the extraction broke, not a weakening of it. The retargeted mutant was confirmed killed, and a `cmp -s` guard now makes the same rot fail loudly instead of passing silently. Every other `sed -i` anchor in test/packet_frontend/Makefile and test/Makefile was audited and still occurs the expected number of times.",
+    "symptom": "The last sub-mutation of test/packet_frontend/Makefile's `mutation:` target anchored on `frame_opcode == OP_SET && frame_length != 51`, which the extraction moved out of lsc1_packet_frontend.sv into the validator's length table. The sed therefore edited nothing, the mutant was byte-identical to the original, and it 'survived' -- a gate that had silently stopped testing.",
+    "target": "test/packet_frontend/Makefile BAD_LENGTH-order mutation",
+    "repair": "Retargeted at asic_core/rtl/lsc1_request_validator.sv (`OP_SET: expected_length = 16'd51;` -> `= frame_length;`) and added a `cmp -s` 'edited nothing' guard. The downstream assertion `grep -q \"status got=87 expected=83\"` is unchanged and still holds."
+  }
+}
