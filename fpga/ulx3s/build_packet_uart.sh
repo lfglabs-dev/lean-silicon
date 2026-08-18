@@ -49,6 +49,7 @@ SOURCES="ulx3s_packet_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv \
          ../../asic_core/rtl/lsc1_response_payload_mux.sv \
          ../../asic_core/rtl/lsc1_blake3_alias_check.sv \
          ../../asic_core/rtl/lsc1_request_validator.sv \
+         ../../asic_core/rtl/lsc1_cell_alias_check.sv \
          ../../asic_core/rtl/leanvm_b_stream_alu.sv \
          ../../asic_core/rtl/gf128_mul_bitstream.sv \
          ../../asic_core/rtl/gf2n_mul_bitstream.sv"
