@@ -26,7 +26,7 @@ af51a2f56073aee7ef95c183e06d0e7c0e0613a0c7193d9f883ed26b026986a8  ./asic_core/rt
 d89d5cef0c529810a8a456892aaf13134e3b7ce34894f4c45da43ba81c7e066d  ./asic_core/rtl/lsc1_cell_alias_check.sv
 5fafb0f5fe81ac5aaf32d0d9974d7d7d2e2b66dde05cdb707e2067ab516f5e05  ./asic_core/rtl/lsc1_field_encoder.sv
 320e989e5480b6641f99f18822edeee5634f3d277f2faa408aaee2d21503d625  ./asic_core/rtl/lsc1_gf128_mul.sv
-f3c78f924da3d84870b0beb447084c2cbe947536b0c719fbe616d164defac8c3  ./asic_core/rtl/lsc1_packet_frontend.sv
+73801f1c662270f021ded1ab9e2d525afe6b5cb693d83a8397a35d2502e615d3  ./asic_core/rtl/lsc1_packet_frontend.sv
 5ce2edcd9e18a02ea276a541623c981b523945936e198e04c379981efe5f81a3  ./asic_core/rtl/lsc1_packet_rx.sv
 8a9a1c80b85fbeb253f955e618dc1521aff6fb432698c8bb5eef743e1eefcb2e  ./asic_core/rtl/lsc1_packet_tx.sv
 0d0cee24aea05b1a2ae2691a1cc46518af79b79e6228b8bb41031394c15b8d4f  ./asic_core/rtl/lsc1_request_validator.sv
@@ -95,6 +95,11 @@ ec0be722d23f23486060648e705689d862f6dd50c8440059b285ccedb430e6c9  ./evidence/lsc
 0aaecc851509f3ec11381aeca14e39e3526a96cdff4ccc85f13433660271a4b6  ./evidence/lsc1-08-s10/directed_alias_differential.py
 2d1996d9fc65797bf4628e7347895d6ad6158abc1e8da44dcaacb7b183d41990  ./evidence/lsc1-08-s10/receipt.json
 7d775092dcf134f817eb2e746bbeb9c1a6277b483953de0b696a44a1b3edc0cd  ./evidence/lsc1-08-s10/receipt.json.sha256
+3b03340ca00d038f3c2482bf9a5b222062eb8651899f985c909c49df13fbee98  ./evidence/lsc1-08-s11/check_validator_dominance.sh
+4fb73d26eb931ead9b40c76106ff09e71cbf48363b4bbecb50f030f773117dfe  ./evidence/lsc1-08-s11/dead_store_poison.md
+3da9065a4d97a00c735b10e92739b598b1309f13ce58c02f35e4cb1d69566ee6  ./evidence/lsc1-08-s11/dominance_probe.sv
+a6da3737284a64f9fd8f71e2ecb0b63a557232cbf069ed2e534ac097c54ec372  ./evidence/lsc1-08-s11/receipt.json
+ae3d9bc7b886cd8acdac310195130c582fe4bb235ded5f61cd53df732cc034af  ./evidence/lsc1-08-s11/receipt.json.sha256
 b0afb9a5a826e8a468f3bae65991c624abb01fa3796b889fc854e8cc76872a9e  ./evidence/lsc1-08-s3/full-lsc1-netlist-receipt.json
 cfa734602cf69a09a9d7d2a5219e59dc4ec89e73afbf9007b00b0b2d24c0de8c  ./evidence/lsc1-08-s3/yosys-structure-receipt.json
 b954bbd1a96b146b15df8fa0d675c44af3737a6191baa1fb00e29e2cb9f40e90  ./evidence/lsc1-08-s4/receipt.json

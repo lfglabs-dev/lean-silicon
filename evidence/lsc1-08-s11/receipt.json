@@ -1,0 +1,397 @@
+{
+  "ac1_proof": {
+    "base_side": "frozen transcriptions of the five static admission predicates exactly as they stood at a28e00656ba886288af24d9f3cd0cafd7796eb7e: P1 lsc1_packet_frontend.sv:860-861 (SET -> BAD_CELL), P2 :892-895 (DEREF -> BAD_CELL), P3 :927-931 (JUMP -> BAD_CELL), P4 :936-938 (JUMP -> BAD_BRANCH_PROPOSAL detail 3), P5 :979-983 (XOR/MUL -> BAD_CELL). Every quantity is read from the same raw bit offset of frame_payload that the base arm read it from, and the offsets are written as literal expressions copied from the frontend rather than as localparams, so a drift between the frontend and the validator's offset localparams cannot be hidden behind a shared definition.",
+    "free_input_bits": 1547,
+    "free_input_decomposition": "8 frame_opcode + 16 frame_length + 1520 frame_payload + 1 result_pending + 1 blake_result_pending + 1 blake_service_pending",
+    "head_side": "instantiates the shipped, unmodified lsc1_request_validator, not a transcription of it, so the proof binds the artifact compiled into the design. sha256 of the instantiated file: 0d0cee24aea05b1a2ae2691a1cc46518af79b79e6228b8bb41031394c15b8d4f, byte-identical to base.",
+    "method": "combinational dominance probe, complete SAT (yosys `prep -top probe_top; flatten; hierarchy -top probe_top; sat -verify -prove-asserts -set-def-inputs`). For each predicate P_X the probe exposes viol_X = !request_reject && arm_X && P_X and asserts viol_X == 1'b0.",
+    "obligation": "The decode ladder that carries P1..P5 sits on the `else` branch of `request_reject` (lsc1_packet_frontend.sv:768-771). If the shipped validator rejects every frame that satisfies any P_X, the ladder never evaluates P_X on an accepted frame and the five arms are unreachable. UNSAT of `!reject && arm && P_X` over the whole input space is exactly that statement.",
+    "quantification": "exhaustive over all 2^1547 input assignments; no input constraints, no assumptions, no abstraction",
+    "solver_problem": "19410 variables, 54181 clauses (identical for all six obligations)",
+    "strengthening_note": "The probe's arm guards are deliberately WEAKER than the RTL's. The frontend enters an arm only when `decision_ok` still holds and only after the earlier arms of the same if/else-if chain have been excluded; P4 additionally sits behind the U32_OVERFLOW, P3 and cell_alias_inconsistent arms. Dropping those conditions enlarges the set of inputs the proof must discharge, so the UNSAT result is strictly stronger than the reachability question actually asked.",
+    "obligations_discharged": [
+      "viol_any (aggregate)",
+      "viol_set (P1)",
+      "viol_deref (P2)",
+      "viol_jump_cell (P3)",
+      "viol_jump_prop (P4)",
+      "viol_alu (P5)"
+    ]
+  },
+  "base_commit": "a28e00656ba886288af24d9f3cd0cafd7796eb7e",
+  "base_commit_note": "Verified via `git ls-remote https://github.com/lfglabs-dev/lean-silicon main` before work began and re-verified immediately before push; main had not moved, so no re-pinning was required and the scope's anchor lines hold as written. a28e0065 is the squash merge of PR #85 (LSC1-08 S10, cell-alias-check extraction).",
+  "cells": {
+    "baseline_lsc1_packet_frontend": 26700,
+    "baseline_total_design": 72779,
+    "baseline_measurement_discrepancy": "The scoping document quotes base 26718 (frontend) / 72792 (total). Measuring the pinned base tree with this sandbox's yosys 0.33 (git sha1 2584903a060) gives 26700 / 72779 -- 18 and 13 cells lower respectively, with lsc1_request_validator at 1896 rather than the quoted 1897. Base and head here were measured with the same script, the same yosys build and the same source list, so the delta reported below is internally consistent. The AC-5 obligations are upper bounds plus an exact-zero flip-flop delta, and are met on either baseline.",
+    "caveat": "A generic-gate count is not area, power or timing. It is reported only to show the deletion did not perturb the design pathologically. No PPA claim is made, and no netlist, place-and-route, static-timing, FPGA or silicon claim is made anywhere in this slice.",
+    "head_lsc1_packet_frontend": 25725,
+    "head_total_design": 71838,
+    "frontend_delta": -975,
+    "total_delta": -941,
+    "measurement_note": "Own cells per module; a submodule instance counts as one cell. The baseline was measured on a pristine `git archive a28e0065` extraction at /tmp/base_repo, the head on the working tree, with the identical yosys invocation `read_verilog -sv <15 PROJECT_SOURCES files>; synth -top lean_silicon_lsc1; stat`.",
+    "metric": "yosys generic-gate count after `synth -top lean_silicon_lsc1`",
+    "sequential_cells_unchanged": "lsc1_packet_frontend flip-flop count is EXACTLY 4275 at base and at head, with an identical per-cell-type decomposition ($_DFFE_PP_ 3152, $_SDFFCE_PN0P_ 96, $_SDFFE_PN0N_ 32, $_SDFFE_PN0P_ 970, $_SDFFE_PN1P_ 1, $_SDFFE_PP0P_ 16, $_SDFF_PP0_ 8). Zero sequential delta: the deletions are combinational only. This is the AC-5 `ff-delta-guard` obligation.",
+    "thresholds": "AC-5 requires frontend <= 25725, total <= 71838, flip-flops exactly 4275. Observed 25725 / 71838 / 4275: all three met, the two cell bounds exactly."
+  },
+  "classification": "bounded-pass-unbounded-blocked",
+  "commands": [
+    {
+      "argv": [
+        "sh",
+        "evidence/lsc1-08-s11/check_validator_dominance.sh"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with six 'SAT proof finished - no model found: SUCCESS!' results, then five perturbations each reporting 'Called with -verify and proof did fail!'",
+      "name": "ac1_dominance_and_five_non_vacuity_perturbations",
+      "observed": "Solving problem with 19410 variables and 54181 clauses.. SAT proof finished - no model found: SUCCESS! for viol_any, viol_set, viol_deref, viol_jump_cell, viol_jump_prop and viol_alu; then drop-cells_bad-arm broke viol_deref, drop-bad_proposal broke viol_jump_prop, mul-cell3-offset broke viol_alu, jump-cell3-offset broke viol_jump_cell and set-cell-offset broke viol_set -- each exactly the obligation the scoping document named. Every perturbation asserts five `grep -Foc <anchor> -eq 1` anchors and a `cmp -s` guard, so none can pass by editing nothing. The perturbations are applied to a mktemp copy; asic_core/rtl/lsc1_request_validator.sv is never modified in the commit."
+    },
+    {
+      "argv": [
+        "bash -c 'clobber all four removed scratch writes with 8'hA5 at the top of their arms, then make -C test/packet_frontend sim'"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0, twelve pass markers -- the four deleted writes have no reachable consumer",
+      "name": "ac2_dead_store_poison_four_removed_writes",
+      "observed": "exit 0 with the identical twelve-marker set as base. All four targets were poisoned simultaneously, which is strictly harder than poisoning them one at a time. Method, sentinel rationale and the static dead-store argument are in evidence/lsc1-08-s11/dead_store_poison.md."
+    },
+    {
+      "argv": [
+        "bash -c 'clobber the LIVE DEREF write pres_b = frame_payload[47*8 +: 8]; with 8'hA5, then make -C test/packet_frontend sim'"
+      ],
+      "exit_code": 2,
+      "expectation": "the gate must go RED, demonstrating the poisoning method can detect a live store",
+      "name": "ac2_falsifier_poison_live_store",
+      "observed": "exit 2 with 'FATAL: tb_deref_retire_trace.sv:57: result CRC mismatch got=00000000'. This is the falsifier with teeth: the same sentinel, the same register and the same arm are demonstrably observable when the store is live, so the green result above carries information. Scope line-number correction: the scoping document cites this store at :881; the actual base line is :882 (:881 is `base_index = frame_payload[43*8 +: 32];`). The byte-exact anchor occurs once and is unambiguous."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "sim"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with 12 pass markers, identical marker set to base",
+      "name": "ac3_frontend_simulation_gate",
+      "observed": "exit 0, 12 markers. Marker set diffed against the base run and found identical: BLAKE3_LIFECYCLE_SHELL_PASS, BLAKE3_RETIRE_COMMIT_PASS, DEREF_RETIRE_TRACE_PASS, JUMP_RETIRE_TRACE_PASS, SCALAR_RETIRE_TRACE_PASS, plus 'PASS: 13 directed alias vectors and 4000 constrained random trials (2224 positive)', 'PASS: 190-byte prefix storage, 191/255/256 consumption, tail CRC, and 257 limit', 'PASS: 37 directed cell-alias vectors and 6000 constrained random trials (2394 positive)', 'PASS: 78 directed request-validator vectors and 6000 constrained random trials (accept=685 opcode=323 length=1168 profile=545 flags=726 cell=1563 proposal=34 state=956)', 'PASS: external-only serializer structure and kinds 1--7 tx_start paths', 'PASS: immutable 122-byte SERVICE_REQUIRED transport, CRC, and every-beat stalls', 'PASS: LSC-1 Phase-3 packet frontend adversarial test'. The request-validator counter line is byte-identical to base, which independently confirms the validator was not perturbed."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "mutation"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with 7 PASS lines identical to base",
+      "name": "ac3_frontend_mutation_gate",
+      "observed": "exit 0, 7 PASS lines, identical to base: BUSY/SET value/RETIRE ID/ABORT/length-order; seven BLAKE3 alias-precheck mutations; eight request-validation chain mutations; six three-cell alias-precheck mutations; scalar RESULT byte selection/length/CRC-stall/stable-staging; FAULT detail/STATUS snapshot/RETIRE offset-length/stable-source; serializer external-byte mutant compile-elaboration and behavioral kill."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "lifecycle-mutation"
+      ],
+      "exit_code": 0,
+      "expectation": "green at base and head; it is a separate .PHONY target, not a dependency of `mutation`",
+      "name": "ac3_lifecycle_mutation_gate",
+      "observed": "exit 0 at both base and head with the identical line 'PASS: lifecycle ID, exactly-once done, abort, and commit-edge mutations detected'."
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--stat",
+        "--",
+        "test/"
+      ],
+      "exit_code": 0,
+      "expectation": "zero lines changed under test/ -- no testbench assertion, vector or expected value may be edited",
+      "name": "ac3_falsifier_assertion_edit_guard",
+      "observed": "empty output. `git diff --stat` for the whole slice is exactly ' asic_core/rtl/lsc1_packet_frontend.sv | 23 -----------------------' / '1 file changed, 23 deletions(-)' -- zero insertions, one file, 1053 -> 1030 lines. No testbench was weakened to make any gate pass."
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "sim.test_packet_frontend_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "18 tests OK with no edit to any assertion",
+      "name": "ac4_packet_frontend_rtl_differential",
+      "observed": "Ran 18 tests in 5.892s -- OK"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "sim.test_conformance_v3_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "1 test OK with no edit to any assertion",
+      "name": "ac4_conformance_v3_rtl_differential",
+      "observed": "Ran 1 test in 0.151s -- OK (run with PYTHONDONTWRITEBYTECODE=1)"
+    },
+    {
+      "argv": [
+        "bash -c 'on a scratch copy, additionally delete the reachable SET U32_OVERFLOW arm at :858-859, then rerun both differential suites'"
+      ],
+      "exit_code": 0,
+      "expectation": "the scoping document predicted this falsifier would turn the suites red; it does NOT",
+      "name": "ac4_falsifier_as_scoped_DOES_NOT_FIRE",
+      "observed": "Ran 18 tests -- OK and Ran 1 test -- OK, exit 0; `sim` (12 markers) and `mutation` (7 PASS) also stay green. Root cause: the 18-test differential suite carries no scalar SET-arm fault vector at all -- its only U32_OVERFLOW vector is test_blake3_overflow_precedes_terminal_pc_rejection, a BLAKE3 overflow, not a SET one. A positive control in the same scratch tree (mutating `write_value = result_value;` to `write_value = 0;`) gives exit 1 with failures=8, so the scratch harness was genuinely live and the null result is a coverage gap in the seeded suite, not a broken run. Deleting a second reachable arm (SET WRITE_CONFLICT) is likewise not caught. This is a pre-existing coverage gap, not a regression introduced by this slice. The load-bearing substitute is ac4_falsifier_substitute below."
+    },
+    {
+      "argv": [
+        "bash -c 'on a scratch copy, delete the reachable BLAKE3 ALIAS_INCONSISTENT arm from the decode ladder, then rerun both differential suites'"
+      ],
+      "exit_code": 1,
+      "expectation": "the suites must go RED, proving they are not blind to decode-ladder deletions",
+      "name": "ac4_falsifier_substitute_over_deletion_blake3_alias",
+      "observed": "exit 1 with failures=1. This preserves the intent of the scoped `over-deletion` falsifier -- distinguishing a semantics-preserving deletion of unreachable arms from an over-deletion that removes a reachable one -- against an arm the seeded suite can actually see. Neither scratch tree is committed."
+    },
+    {
+      "argv": [
+        "make",
+        "smoke"
+      ],
+      "exit_code": 0,
+      "expectation": "PASS(0)",
+      "name": "ac5_smoke",
+      "observed": "exit 0; every listed source reported 'structurally balanced'."
+    },
+    {
+      "argv": [
+        "make",
+        "interface-check"
+      ],
+      "exit_code": 0,
+      "expectation": "PASS(0)",
+      "name": "ac5_interface_check",
+      "observed": "exit 0; status 01 01 0f 08, top tt_um_lfglabs_lsc1u, sources 4 -- identical to base."
+    },
+    {
+      "argv": [
+        "make",
+        "consistency"
+      ],
+      "exit_code": 0,
+      "expectation": "PASS(0)",
+      "name": "ac5_consistency",
+      "observed": "exit 0; 'LSC-1u TT profile and full LSC-1 source boundary: OK'."
+    },
+    {
+      "argv": [
+        "make",
+        "mincore-state-count"
+      ],
+      "exit_code": 0,
+      "expectation": "PASS(0)",
+      "name": "ac5_mincore_state_count",
+      "observed": "exit 0; TOTAL 273 bits, identical to base."
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--stat",
+        "--",
+        "test/Makefile"
+      ],
+      "exit_code": 0,
+      "expectation": "empty -- PROJECT_SOURCES unchanged, zero RTL registration delta",
+      "name": "ac5_registration_surface_unchanged",
+      "observed": "empty output. asic_core/rtl/ still contains the same 16 .sv files as base; the slice adds no RTL file, so there is nothing to register. This is the first LSC1-08 slice with a zero RTL registration delta, and it is asserted rather than assumed."
+    },
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv <15 PROJECT_SOURCES files>; synth -top lean_silicon_lsc1; stat'"
+      ],
+      "exit_code": 0,
+      "expectation": "frontend cells <= 25725, total <= 71838, frontend flip-flops exactly 4275",
+      "name": "ac5_netlist_cell_and_flipflop_obligations",
+      "observed": "head frontend 25725 cells, total design 71838 cells, frontend flip-flops 4275. Base measured identically on a pristine a28e0065 extraction: 26700 / 72779 / 4275. Flip-flop delta is exactly zero with an identical per-cell-type decomposition, discharging the `ff-delta-guard` falsifier. See cells.baseline_measurement_discrepancy for the 18/13-cell difference from the scoping document's quoted baseline."
+    },
+    {
+      "argv": [
+        "python3",
+        "<AC-6 directed JUMP vector harness>",
+        "<base-tree|head-tree>"
+      ],
+      "exit_code": 0,
+      "expectation": "identical status/detail pair at base and head: BAD_CELL (0x88) detail 0, not BAD_BRANCH_PROPOSAL (0x8f) detail 3",
+      "name": "ac6_r10_directed_vector_base_vs_head",
+      "observed": "base status=0x88 detail=0; head status=0x88 detail=0 -- bit-identical. The vector is a JUMP frame with payload[77] = 2 (branch proposal outside {0,1}) AND a malformed cell at payload offset 86 (presence byte 2), driven through the integrated frontend via tb_lsc1_packet_vector, with the response status byte and the fault-payload detail byte decoded from the RESPONSE line. The harness is kept in /tmp and deliberately not committed, because this slice ships exactly the five new files named in the scoping document."
+    },
+    {
+      "argv": [
+        "bash -c 'on scratch RTL copies of base and head, swap the validator cells_bad and bad_proposal arms, then rerun the directed vector'"
+      ],
+      "exit_code": 0,
+      "expectation": "the verdict must CHANGE, proving the vector observes the ordering rather than passing vacuously",
+      "name": "ac6_falsifier_r10_reorder",
+      "observed": "status=0x8f detail=3 at BOTH base and head -- the verdict flips from BAD_CELL to BAD_BRANCH_PROPOSAL exactly as required. The perturbation is guarded by four `grep -Foc <anchor> -eq 1` assertions plus a `cmp -s` no-op guard and is applied only to copies under /tmp; asic_core/rtl/lsc1_request_validator.sv in the commit is byte-identical to base (sha256 0d0cee24aea05b1a2ae2691a1cc46518af79b79e6228b8bb41031394c15b8d4f)."
+    },
+    {
+      "argv": [
+        "make",
+        "formal-mutations"
+      ],
+      "exit_code": 2,
+      "expectation": "sandbox-blocked, base parity",
+      "name": "formal_mutation_ladder_sandbox_blocked",
+      "observed": "'sby is required', exit 2. The identical command at a pristine base checkout of a28e0065 also exits 2 with the same message; sby is not installed in this sandbox. CI is the authority for the SymbiYosys lanes. This is unchanged from S9 and S10."
+    }
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "73801f1c662270f021ded1ab9e2d525afe6b5cb693d83a8397a35d2502e615d3"
+    },
+    {
+      "path": "evidence/lsc1-08-s11/dominance_probe.sv",
+      "sha256": "3da9065a4d97a00c735b10e92739b598b1309f13ce58c02f35e4cb1d69566ee6"
+    },
+    {
+      "path": "evidence/lsc1-08-s11/check_validator_dominance.sh",
+      "sha256": "3b03340ca00d038f3c2482bf9a5b222062eb8651899f985c909c49df13fbee98"
+    },
+    {
+      "path": "evidence/lsc1-08-s11/dead_store_poison.md",
+      "sha256": "4fb73d26eb931ead9b40c76106ff09e71cbf48363b4bbecb50f030f773117dfe"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_request_validator.sv",
+      "sha256": "0d0cee24aea05b1a2ae2691a1cc46518af79b79e6228b8bb41031394c15b8d4f",
+      "note": "NOT modified by this slice; listed so the AC-1 proof's dependence on the shipped artifact is pinned."
+    }
+  ],
+  "deletions": [
+    {
+      "anchor": "end else if (pres_a > 1 || (!pres_a && val_a != 0)) begin",
+      "base_line": 860,
+      "id": "P1",
+      "kind": "predicate",
+      "arm": "SET",
+      "fault": "BAD_CELL",
+      "dominated_by": "lsc1_request_validator cells_bad via set_cells_bad (SET_CELL_AT = 34)"
+    },
+    {
+      "anchor": "end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||",
+      "base_line": 892,
+      "id": "P2",
+      "kind": "predicate",
+      "arm": "DEREF",
+      "fault": "BAD_CELL",
+      "dominated_by": "lsc1_request_validator cells_bad via deref_cells_bad (DEREF_CELL_0/1/2_AT = 26/47/64)"
+    },
+    {
+      "anchor": "end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||",
+      "base_line": 927,
+      "id": "P3",
+      "kind": "predicate",
+      "arm": "JUMP",
+      "fault": "BAD_CELL",
+      "dominated_by": "lsc1_request_validator cells_bad via jump_cells_bad (JUMP_CELL_0/1/2/3_AT = 26/43/60/86)"
+    },
+    {
+      "anchor": "end else if (taken_proposal > 1) begin",
+      "base_line": 936,
+      "id": "P4",
+      "kind": "predicate",
+      "arm": "JUMP",
+      "fault": "BAD_BRANCH_PROPOSAL detail 3",
+      "dominated_by": "lsc1_request_validator bad_proposal (JUMP_PROPOSAL_AT = 77)"
+    },
+    {
+      "anchor": "end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||",
+      "base_line": 979,
+      "id": "P5",
+      "kind": "predicate",
+      "arm": "XOR/MUL",
+      "fault": "BAD_CELL",
+      "dominated_by": "lsc1_request_validator cells_bad via alu_cells_bad (ALU_CELL_0/1/2_AT = 26/43/60, MUL_CELL_3_AT = 77 gated on is_mul)"
+    },
+    {
+      "anchor": "pres_a = frame_payload[26*8 +: 8];",
+      "base_line": 879,
+      "id": "D1",
+      "kind": "dead_scratch_store",
+      "arm": "DEREF",
+      "sole_consumer": "P2"
+    },
+    {
+      "anchor": "pres_a = frame_payload[26*8 +: 8];",
+      "base_line": 913,
+      "id": "D2",
+      "kind": "dead_scratch_store",
+      "arm": "JUMP",
+      "sole_consumer": "P3"
+    },
+    {
+      "anchor": "pres_b = frame_payload[43*8 +: 8];",
+      "base_line": 915,
+      "id": "D3",
+      "kind": "dead_scratch_store",
+      "arm": "JUMP",
+      "sole_consumer": "P3"
+    },
+    {
+      "anchor": "pres_c = frame_payload[60*8 +: 8];",
+      "base_line": 917,
+      "id": "D4",
+      "kind": "dead_scratch_store",
+      "arm": "JUMP",
+      "sole_consumer": "P3"
+    }
+  ],
+  "not_evidenced": [
+    "PPA (power, performance, area)",
+    "place and route",
+    "static timing analysis",
+    "gate-level netlist equivalence of the whole design",
+    "FPGA synthesis, bitstream or hardware bring-up",
+    "fabricated silicon",
+    "end-to-end system testing",
+    "any universal or unbounded claim about the sequential design",
+    "dead-store elimination as a proof (AC-2 is bounded poisoning against the existing suite)",
+    "SymbiYosys lanes (sby absent locally; CI is the authority)",
+    "Lean lanes (not exercised locally; CI is the authority)",
+    "LSC-1u profile (out of scope; this slice is full LSC-1 only)",
+    "LSC1-09 and later scope"
+  ],
+  "physical_artifacts_generated": false,
+  "pinned_not_fixed": {
+    "isolation": "This slice does not add, remove or retarget any r10_ vector. The two r10_ vectors introduced by S9 live only in test/packet_frontend/tb_lsc1_request_validator.sv, which this slice does not touch; `git diff --stat -- test/` is empty. The AC-6 directed vector is driven from a throwaway harness under /tmp and adds no committed test.",
+    "observable": "A JUMP frame with payload[77] = 2 and a malformed cell at offset 86 reports BAD_CELL (0x88) with detail 0, not BAD_BRANCH_PROPOSAL (0x8f).",
+    "ticket": "LSC1-08 R10",
+    "verified_this_slice": "Directed vector driven through the integrated frontend at both a28e0065 and this head: status 0x88 detail 0 on both sides, bit-identical. The `r10-reorder` falsifier (swapping the validator's cells_bad and bad_proposal arms on scratch copies) flips both sides to 0x8f detail 3, so the vector observes the ordering rather than passing vacuously.",
+    "why": "The cell scan outranking the JUMP branch-proposal check is the behaviour at a28e0065. S9 characterised it, S10 preserved it, and S11 preserves it bit-exactly and asserts nothing new about it. Note that P3 and P4 -- the two frontend arms this slice deletes -- are precisely the frontend's copies of that ordering; after this slice the ordering is expressed once, in the validator, which is where the wire protocol's behaviour has always come from because the ladder sits on the `else` branch of request_reject. Changing the ordering remains a separate ticket and is explicitly not done here."
+  },
+  "registration_surface": {
+    "modified": 1,
+    "new": 5,
+    "note": "Exactly as the scoping document specifies: one modified file (asic_core/rtl/lsc1_packet_frontend.sv, 1053 -> 1030 lines, 23 deletions and zero insertions) and the five named new files under evidence/lsc1-08-s11/. No RTL file is added, so test/Makefile PROJECT_SOURCES is unchanged -- a zero RTL registration delta, the first in LSC1-08. Two additional harnesses were written for AC-4's substitute falsifier and AC-6's directed vector; both are kept under /tmp and deliberately NOT committed, so the five-file budget is honoured exactly rather than exceeded.",
+    "total": 6
+  },
+  "schema": "lean-silicon/lsc1-08-slice-receipt/v1",
+  "sealing_note": "`make checksums`, its post-regeneration verification and the root `make check` ladder necessarily run after this receipt is written, because the receipt is itself a checksummed tracked artifact. Their exit codes are reported in the pull request body. The regeneration is run fail-then-pass: `make checksum-check` is expected to fail before regeneration precisely because the five new evidence files are not yet in SHA256SUMS, then to exit 0 after. The root `make check` is separately sandbox-blocked: it exits 2 because git commit is disabled in this environment (exit 73), which the scoping mission established before this slice began.",
+  "slice": "LSC1-08 S11",
+  "subject": "Delete from asic_core/rtl/lsc1_packet_frontend.sv the five static admission predicates that the shipped lsc1_request_validator provably dominates (P1 SET :860, P2 DEREF :892, P3 JUMP :927, P4 JUMP branch-proposal :936, P5 XOR/MUL :979) together with the four scratch stores that fed only those predicates (D1 :879, D2 :913, D3 :915, D4 :917). The decode ladder carrying these arms sits on the `else` branch of request_reject, so a frame the validator accepts can never satisfy any of them; the arms are unreachable and their operand loads are dead. No module is added, no RTL file is created, and no testbench, vector or expected value is touched.",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 12.0 (stable)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.33 (git sha1 2584903a060)"
+  },
+  "unbounded_status": {
+    "combinational_block": "complete for the reachability question: the dominance obligation is purely combinational and the SAT proof is exhaustive over the validator's whole 1547-bit input space, with no constraints, assumptions or abstraction, so for the question 'can an accepted frame satisfy any deleted predicate' there is no residual bound. The probe's arm guards are weaker than the RTL's, so the discharged obligation is strictly stronger than the one required.",
+    "surrounding_sequential_design": "blocked: no induction was attempted or claimed over lsc1_packet_frontend or the top level. The frontend-level evidence -- AC-2 poisoning, AC-3 sim and mutation gates, AC-4 differential suites and the AC-6 directed vector -- is bounded testing, not proof. No unbounded-equivalence claim is made for the frontend or for the design as a whole."
+  }
+}
