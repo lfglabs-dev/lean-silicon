@@ -731,6 +731,7 @@ class Blake3PendingInvariantHarnessTest(unittest.TestCase):
 
         def fake_run(work, mode):
             self.assertTrue((work / "lsc1_response_payload_mux.sv").is_file())
+            self.assertTrue((work / "lsc1_blake3_alias_check.sv").is_file())
             frontend = (work / "lsc1_packet_frontend.sv").read_text()
             invariant = (work / check.INVARIANT).read_text()
             observations.append((work.name, mode,

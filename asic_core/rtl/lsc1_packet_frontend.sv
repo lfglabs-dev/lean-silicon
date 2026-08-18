@@ -124,50 +124,36 @@ module lsc1_packet_frontend (
     reg [1:0] staged_write_count;
     reg [31:0] staged_write_address [0:1];
     reg [127:0] staged_write_value [0:1];
-    wire [31:0] blake_address [0:7];
-    wire [7:0] blake_present [0:7];
-    wire [127:0] blake_value [0:7];
-    wire [63:0] blake_alias_pair;
-    wire blake_alias_inconsistent = |blake_alias_pair;
+    wire blake_alias_inconsistent;
 
-    assign blake_address[0] = frame_payload[14*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[1] = frame_payload[18*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[2] = frame_payload[22*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[3] = frame_payload[26*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[4] = frame_payload[30*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[5] = blake_address[4] + 1'b1;
-    assign blake_address[6] = frame_payload[34*8 +: 32] + frame_payload[32 +: 32];
-    assign blake_address[7] = blake_address[6] + 1'b1;
-    assign blake_present[0] = frame_payload[54*8 +: 8];
-    assign blake_present[1] = frame_payload[71*8 +: 8];
-    assign blake_present[2] = frame_payload[88*8 +: 8];
-    assign blake_present[3] = frame_payload[105*8 +: 8];
-    assign blake_present[4] = frame_payload[122*8 +: 8];
-    assign blake_present[5] = frame_payload[139*8 +: 8];
-    assign blake_present[6] = frame_payload[156*8 +: 8];
-    assign blake_present[7] = frame_payload[173*8 +: 8];
-    assign blake_value[0] = frame_payload[55*8 +: 128];
-    assign blake_value[1] = frame_payload[72*8 +: 128];
-    assign blake_value[2] = frame_payload[89*8 +: 128];
-    assign blake_value[3] = frame_payload[106*8 +: 128];
-    assign blake_value[4] = frame_payload[123*8 +: 128];
-    assign blake_value[5] = frame_payload[140*8 +: 128];
-    assign blake_value[6] = frame_payload[157*8 +: 128];
-    assign blake_value[7] = frame_payload[174*8 +: 128];
-    genvar alias_i, alias_j;
-    generate
-        for (alias_i = 0; alias_i < 8; alias_i = alias_i + 1) begin : g_alias_i
-            for (alias_j = 0; alias_j < 8; alias_j = alias_j + 1) begin : g_alias_j
-                if (alias_j > alias_i)
-                    assign blake_alias_pair[alias_i*8+alias_j] =
-                        blake_address[alias_i] == blake_address[alias_j] &&
-                        (blake_present[alias_i] != blake_present[alias_j] ||
-                         blake_value[alias_i] != blake_value[alias_j]);
-                else
-                    assign blake_alias_pair[alias_i*8+alias_j] = 1'b0;
-            end
-        end
-    endgenerate
+    // The precheck compares the eight service-cell addresses against each other.
+    // Those addresses share one transaction base addend, which cancels in every
+    // pairwise equality, so the extracted module takes bare offsets.
+    lsc1_blake3_alias_check blake3_alias_check (
+        .message_offset_0(frame_payload[14*8 +: 32]),
+        .message_offset_1(frame_payload[18*8 +: 32]),
+        .message_offset_2(frame_payload[22*8 +: 32]),
+        .message_offset_3(frame_payload[26*8 +: 32]),
+        .cv_offset(frame_payload[30*8 +: 32]),
+        .out_offset(frame_payload[34*8 +: 32]),
+        .cell_present_0(frame_payload[54*8 +: 8]),
+        .cell_present_1(frame_payload[71*8 +: 8]),
+        .cell_present_2(frame_payload[88*8 +: 8]),
+        .cell_present_3(frame_payload[105*8 +: 8]),
+        .cell_present_4(frame_payload[122*8 +: 8]),
+        .cell_present_5(frame_payload[139*8 +: 8]),
+        .cell_present_6(frame_payload[156*8 +: 8]),
+        .cell_present_7(frame_payload[173*8 +: 8]),
+        .cell_value_0(frame_payload[55*8 +: 128]),
+        .cell_value_1(frame_payload[72*8 +: 128]),
+        .cell_value_2(frame_payload[89*8 +: 128]),
+        .cell_value_3(frame_payload[106*8 +: 128]),
+        .cell_value_4(frame_payload[123*8 +: 128]),
+        .cell_value_5(frame_payload[140*8 +: 128]),
+        .cell_value_6(frame_payload[157*8 +: 128]),
+        .cell_value_7(frame_payload[174*8 +: 128]),
+        .alias_inconsistent(blake_alias_inconsistent)
+    );
 
     wire event_valid = frame_valid || rx_fault_valid;
     wire event_ready = !tx_busy && !tx_start &&

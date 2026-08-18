@@ -3,6 +3,7 @@ PYTHON ?= python3
 RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_packet_tx.sv \
       ../../asic_core/rtl/lsc1_response_payload_mux.sv \
+      ../../asic_core/rtl/lsc1_blake3_alias_check.sv \
       ../../asic_core/rtl/lsc1_blake3_lifecycle.sv \
       ../../asic_core/rtl/gf2n_mul_bitstream.sv \
       ../../asic_core/rtl/gf128_mul_bitstream.sv \
@@ -11,7 +12,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport response-payload-mux response-payload-mux-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 response-payload-mux:
 	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
@@ -38,8 +39,44 @@ response-payload-mux-mutation:
 	  done; \
 	  echo "PASS: seven response-schema byte-selection mutations behaviorally killed"
 
+blake3-alias-check:
+	iverilog -g2012 -Wall -s tb_lsc1_blake3_alias_check -o tb_lsc1_blake3_alias_check.vvp \
+	  ../../asic_core/rtl/lsc1_blake3_alias_check.sv tb_lsc1_blake3_alias_check.sv
+	vvp tb_lsc1_blake3_alias_check.vvp
+
+blake3-alias-check-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  src=../../asic_core/rtl/lsc1_blake3_alias_check.sv; \
+	  for mutation in cv_companion out_companion base_swap value_blind present_blind pair_skip reduce_flip; do \
+	    cp "$$src" "$$d/dut.sv"; \
+	    test "$$(grep -Foc "assign address[5] = cv_offset + 1'b1;" "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc "assign address[7] = out_offset + 1'b1;" "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'assign address[4] = cv_offset;' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'assign address[6] = out_offset;' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'value[alias_i] != value[alias_j]);' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'present[alias_i] != present[alias_j] ||' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'if (alias_j > alias_i)' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'assign alias_inconsistent = |alias_pair;' "$$d/dut.sv")" -eq 1; \
+	    case $$mutation in \
+	      cv_companion) sed -i "s/assign address\[5\] = cv_offset + 1'b1;/assign address[5] = cv_offset;/" "$$d/dut.sv" ;; \
+	      out_companion) sed -i "s/assign address\[7\] = out_offset + 1'b1;/assign address[7] = out_offset;/" "$$d/dut.sv" ;; \
+	      base_swap) sed -i 's/assign address\[4\] = cv_offset;/assign address[4] = out_offset;/; s/assign address\[6\] = out_offset;/assign address[6] = cv_offset;/' "$$d/dut.sv" ;; \
+	      value_blind) sed -i "s/value\[alias_i\] != value\[alias_j\]);/1'b0);/" "$$d/dut.sv" ;; \
+	      present_blind) sed -i "s/present\[alias_i\] != present\[alias_j\] ||/1'b0 ||/" "$$d/dut.sv" ;; \
+	      pair_skip) sed -i 's/if (alias_j > alias_i)/if (alias_j > alias_i + 1)/' "$$d/dut.sv" ;; \
+	      reduce_flip) sed -i 's/assign alias_inconsistent = |alias_pair;/assign alias_inconsistent = \&alias_pair;/' "$$d/dut.sv" ;; \
+	    esac; \
+	    if cmp -s "$$src" "$$d/dut.sv"; then echo "blake3-alias $$mutation mutation edited nothing" >&2; exit 1; fi; \
+	    iverilog -g2012 -s tb_lsc1_blake3_alias_check -o "$$d/$$mutation.vvp" "$$d/dut.sv" tb_lsc1_blake3_alias_check.sv; \
+	    if vvp "$$d/$$mutation.vvp" >"$$d/$$mutation.out" 2>&1; then echo "blake3-alias $$mutation mutation unexpectedly survived" >&2; exit 1; fi; \
+	    grep -q 'FATAL:' "$$d/$$mutation.out"; \
+	    echo "blake3-alias $$mutation mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  done; \
+	  echo "PASS: seven BLAKE3 alias-precheck mutations behaviorally killed"
+
 sim:
 	$(MAKE) serializer-structure
+	$(MAKE) blake3-alias-check
 	$(MAKE) rx-payload-prefix
 	$(MAKE) lifecycle
 	$(MAKE) blake3-retire-commit
@@ -162,6 +199,7 @@ mutation:
 	  fi; \
 	  grep -q "status got=87 expected=83" "$$d/length.out"; \
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
+	$(MAKE) blake3-alias-check-mutation
 	$(MAKE) scalar-result-mutation
 	$(MAKE) short-response-mutation
 	$(MAKE) serializer-interface-mutation
@@ -258,4 +296,4 @@ rx-payload-prefix-mutation:
 	  echo "PASS: discarded-tail CRC-coverage mutation detected"
 
 clean:
-	rm -f tb_lsc1_response_payload_mux.vvp tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp
+	rm -f tb_lsc1_response_payload_mux.vvp tb_lsc1_blake3_alias_check.vvp tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp
