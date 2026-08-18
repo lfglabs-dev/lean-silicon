@@ -176,6 +176,22 @@ module lsc1_packet_frontend (
         .fault_detail(request_fault_detail)
     );
 
+    wire cell_alias_inconsistent;
+
+    // The three-cell alias precheck shared by the DEREF, JUMP and XOR/MUL arms of
+    // the decode ladder below.  It is driven from the frame rather than from the
+    // decoded scratch regs those arms fill in, because a continuous assignment and
+    // the blocking assignments in the clocked block settle in different delta
+    // cycles; see the header of lsc1_cell_alias_check.sv.  Computing it
+    // unconditionally is safe because it is a pure function of the frame, and the
+    // ladder position of each of the three uses is what orders it after the
+    // overflow and cell-malformedness tests in its arm.
+    lsc1_cell_alias_check cell_alias_check (
+        .frame_opcode(frame_opcode),
+        .frame_payload(frame_payload[647:0]),
+        .alias_inconsistent(cell_alias_inconsistent)
+    );
+
     wire event_valid = frame_valid || rx_fault_valid;
     wire event_ready = !tx_busy && !tx_start &&
                        compute_state == C_IDLE;
@@ -881,9 +897,7 @@ module lsc1_packet_frontend (
                             addr_a = fp + off_a;
                             addr_b = base_index + off_b;
                             addr_c = fp + off_c;
-                            if ((addr_a == addr_b && (pres_a != pres_b || val_a != val_b)) ||
-                                (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
-                                (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
+                            if (cell_alias_inconsistent) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
                             end else begin
                                 encoder_index <= base_index[15:0];
@@ -917,9 +931,7 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = BAD_CELL;
                         end else begin
                             addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
-                            if ((addr_a == addr_b && (pres_a != pres_b || val_a != val_b)) ||
-                                (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
-                                (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
+                            if (cell_alias_inconsistent) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
                             end else if (taken_proposal > 1) begin
                                 decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
@@ -971,9 +983,7 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = BAD_CELL;
                         end else begin
                             addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
-                            if ((addr_a == addr_b && (pres_a != pres_b || val_a != val_b)) ||
-                                (addr_a == addr_c && (pres_a != pres_c || val_a != val_c)) ||
-                                (addr_b == addr_c && (pres_b != pres_c || val_b != val_c))) begin
+                            if (cell_alias_inconsistent) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
                             end
                         end

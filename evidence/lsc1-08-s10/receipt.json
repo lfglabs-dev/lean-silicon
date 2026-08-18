@@ -1,0 +1,278 @@
+{
+  "ac1_proof": {
+    "base_side": "verbatim transcription of the three inline predicate arms as they stood at 497b905bbd85b85eaa3d222ab9775fdb1b27b643: the DEREF arm at lines 876-886, the JUMP arm at lines 910-922 and the XOR/MUL arm at lines 964-976 of asic_core/rtl/lsc1_packet_frontend.sv. Every quantity is read from the same raw bit offset of frame_payload that the base arms read it from, and the arm dispatch reproduces the base decode ladder's opcode tests, so the base side is a frozen copy of the deleted code rather than a restatement of it in the extracted module's vocabulary.",
+    "free_input_bits": 656,
+    "free_input_decomposition": "8 frame_opcode + 648 frame_payload",
+    "head_side": "instantiates the shipped lsc1_cell_alias_check, not a transcription of it, so the proof binds the artifact compiled into the design",
+    "method": "combinational miter, complete SAT (yosys `miter -equiv -flatten -make_assert` then `sat -verify -prove-asserts -set-def-inputs`)",
+    "note": "Opcodes outside the six that evaluate the predicate are tied low on both sides. The base frontend never evaluated the predicate for them, so its value there was a don't-care; tying it low makes both sides total functions and turns the obligation into a comparison of two total functions with no don't-care reasoning. What preserves the fault priority is the ladder position of the three uses, which this slice does not move, and which the AC-5 directed frontend differential pins.",
+    "quantification": "exhaustive over all 2^656 input assignments",
+    "solver_problem": "27718 variables, 80574 clauses"
+  },
+  "base_commit": "497b905bbd85b85eaa3d222ab9775fdb1b27b643",
+  "base_commit_note": "Verified via `git ls-remote https://github.com/lfglabs-dev/lean-silicon main` before work began and re-verified immediately before push. 497b905b is the squash merge of PR #84 (LSC1-08 S9, request-validator extraction).",
+  "cells": {
+    "baseline_lsc1_packet_frontend": 28339,
+    "baseline_total_design": 71887,
+    "caveat": "A generic-gate count is not area, power or timing. It is reported only to show the extraction did not inflate the design pathologically. No PPA claim is made.",
+    "head_lsc1_cell_alias_check": 2508,
+    "head_lsc1_packet_frontend": 26701,
+    "head_total_design": 72833,
+    "measurement_note": "Own cells per module; a submodule instance counts as one cell. Baseline and head were measured with the same yosys invocation and the same version, the baseline on a pristine checkout of the base tree at /root/work/s10/base.",
+    "metric": "yosys generic-gate count after `synth -top lean_silicon_lsc1`",
+    "sequential_cells_unchanged": "flip-flop count is 4275 at both base and head; the extraction added zero state",
+    "total_delta_percent": 1.32
+  },
+  "classification": "bounded-pass-unbounded-blocked",
+  "commands": [
+    {
+      "argv": [
+        "sh",
+        "evidence/lsc1-08-s10/check_cell_alias_equiv.sh"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with 'SAT proof finished - no model found: SUCCESS!' then four perturbations each reporting 'Called with -verify and proof did fail!'",
+      "name": "ac1_equivalence_and_four_non_vacuity_perturbations",
+      "observed": "Solving problem with 27718 variables and 80574 clauses.. SAT proof finished - no model found: SUCCESS!; then pair_drop, deref_base_addend, deref_cell_offset and scalar_cell_offsets each correctly FAILED. Each perturbation asserts five `grep -Foc <anchor> -eq 1` anchors and a `cmp -s` guard, so none can pass by editing nothing."
+    },
+    {
+      "argv": [
+        "bash -c 'narrow the frame_payload port of lsc1_cell_alias_check below the highest bit the predicate reads, recompile the standalone testbench'"
+      ],
+      "exit_code": 1,
+      "expectation": "elaboration or behavioural failure; a module whose port is wider than anything it reads would be silently over-declared",
+      "name": "ac2_port_width_falsifier",
+      "observed": "VVP_EXIT=1 with FATAL:. The 648-bit frame_payload port is load-bearing: the DEREF cell-c presence byte at 64 and its 128-bit value span bytes 64..80, so bit 647 is read."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "cell-alias-check",
+        "cell-alias-check-mutation"
+      ],
+      "exit_code": 0,
+      "expectation": "the standalone testbench passes and all six mutants are killed",
+      "name": "ac3_standalone_testbench_and_mutation_kills",
+      "observed": "PASS: 37 directed cell-alias vectors and 6000 constrained random trials (2394 positive); PASS: six three-cell alias-precheck mutations behaviorally killed"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "18 tests OK with no edit to any assertion",
+      "name": "ac4_packet_frontend_rtl_differential",
+      "observed": "Ran 18 tests in 5.644s -- OK"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "sim.test_conformance_v3_rtl_differential"
+      ],
+      "exit_code": 0,
+      "expectation": "1 test OK with no edit to any assertion",
+      "name": "ac4_conformance_v3_rtl_differential",
+      "observed": "Ran 1 test in 0.150s -- OK"
+    },
+    {
+      "argv": [
+        "bash -c 'tie lsc1_cell_alias_check.alias_inconsistent to 1b0, rerun sim.test_packet_frontend_rtl_differential'"
+      ],
+      "exit_code": 0,
+      "expectation": "the scoping document predicted this falsifier would turn the suite red; it does NOT",
+      "name": "ac4_falsifier_as_scoped_DOES_NOT_FIRE",
+      "observed": "Ran 18 tests -- OK, exit 0. Tying the predicate HIGH instead gives exit 1 with 30 failures, so the predicate IS reached and IS observable; the seeded suite simply never builds a frame on which it is true. Confirmed pre-existing: forcing the three INLINE arms to `if (1'b0)` in a pristine base checkout at 497b905b also leaves the suite green (exit 0). This is a pre-existing coverage gap in the seeded suite, not a regression introduced by this slice. Full analysis and root cause in evidence/lsc1-08-s10/alias_coverage.md. The load-bearing substitute is ac5 below."
+    },
+    {
+      "argv": [
+        "python3",
+        "evidence/lsc1-08-s10/directed_alias_differential.py",
+        "<base-tree>",
+        "<head-tree>"
+      ],
+      "exit_code": 0,
+      "expectation": "at least 300 directed frames byte-identical between an independently compiled base frontend and the head frontend, with every opcode/pair combination reaching a positive alias-inconsistent verdict and no verdict on non-aliasing or consistent frames",
+      "name": "ac5_directed_frontend_differential_base_vs_head",
+      "observed": "333 directed frames, 0 response mismatches, 162 alias-inconsistent verdicts covering all 18 (opcode, pair) combinations: DEREF_CELL/DEREF_PC/DEREF_FP ab=8 ac=10 bc=6 each, JUMP/XOR/MUL ab=10 ac=10 bc=10 each. Zero verdicts fired on 'distinct' or 'agree' mode frames, so the negative direction is pinned too."
+    },
+    {
+      "argv": [
+        "bash -c 'tie lsc1_cell_alias_check.alias_inconsistent to 1b0, rerun the ac5 directed differential'"
+      ],
+      "exit_code": 1,
+      "expectation": "exit 1 with one mismatch per positive verdict; this is the AC-4 obligation discharged against a suite that can actually see the predicate",
+      "name": "ac5_falsifier_predicate_tied_to_zero",
+      "observed": "FAIL: 162 base/head response mismatches, exit 1 -- exactly one per positive verdict observed in the clean run."
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/lsc1_authored_rtl_contract.py",
+        "--verify"
+      ],
+      "exit_code": 0,
+      "expectation": "LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces",
+      "name": "ac6_authored_rtl_contract",
+      "observed": "LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces"
+    },
+    {
+      "argv": [
+        "python3",
+        "test/test_lsc1_authored_rtl_contract.py"
+      ],
+      "exit_code": 0,
+      "expectation": "the contract unit tests pass with the new file registered",
+      "name": "ac6_authored_rtl_contract_unit_tests",
+      "observed": "Ran 6 tests in 3.477s -- OK"
+    },
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv <ci.yml source list extended with lsc1_cell_alias_check.sv>; hierarchy -check -top lean_silicon_lsc1; proc; check; synth -top lean_silicon_lsc1; stat'"
+      ],
+      "exit_code": 0,
+      "expectation": "hierarchy -check and check report no problems; no warning class absent from the base run",
+      "name": "ac8_ci_lint_and_synthesis_with_new_file",
+      "observed": "'Found and reported 0 problems.' at all CHECK passes; Warnings: 6 unique messages, 6 total. The base run at 497b905b reports the same 6 unique messages, all of the pre-existing 'Replacing memory ... with list of registers' class, so no new warning class appears."
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test",
+        "sim"
+      ],
+      "exit_code": 0,
+      "expectation": "the new testbench and the new mutation target are visibly executed by the repository regression",
+      "name": "ac9_anti_orphan_full_simulation_suite",
+      "observed": "exit 0. `make -C test/packet_frontend sim` exits 0 and its log contains the `make cell-alias-check` invocation, the iverilog line naming ../../asic_core/rtl/lsc1_cell_alias_check.sv, and 'PASS: 37 directed cell-alias vectors and 6000 constrained random trials (2394 positive)'. `make -C test/packet_frontend mutation` separately exits 0 with 'PASS: six three-cell alias-precheck mutations behaviorally killed'. The new module also appears in the compile line of tb_lsc1_packet_frontend, tb_deref_retire_trace, tb_jump_retire_trace and tb_blake3_retire_commit."
+    },
+    {
+      "argv": [
+        "make",
+        "full-profile-assurance"
+      ],
+      "exit_code": 0,
+      "expectation": "status pass; the lane reaches the RTL only through tools/full_profile_assurance.py, so a missed registration there would surface here",
+      "name": "ac9_full_profile_assurance",
+      "observed": "{\"receipt\": \"/tmp/s10-full-profile/receipt.json\", \"snapshot_sha256\": \"bb8d667837ddc286d494f211e19a773ad1890dc78c33801d18809b48d7e74bd9\", \"status\": \"pass\"}. Requires LSC1_FULL_CACHE (or --cache-dir) pointed outside the checkout, and requires the working tree to match HEAD, so it is run after the slice is committed."
+    },
+    {
+      "argv": [
+        "make",
+        "formal-mutations"
+      ],
+      "exit_code": 2,
+      "expectation": "sandbox-blocked, base parity",
+      "name": "formal_mutation_ladder_sandbox_blocked",
+      "observed": "'sby is required', exit 2. The identical command at a pristine base checkout of 497b905b also exits 2 with the same message; sby is not installed in this sandbox. CI is the authority for this lane. Likewise formal/test_blake3_pending_invariant.py reports Ran 30 tests / FAILED (failures=30) / exit 1 at BOTH base and head, so that failure is pre-existing and sby-blocked, not introduced."
+    }
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_cell_alias_check.sv",
+      "sha256": "d89d5cef0c529810a8a456892aaf13134e3b7ce34894f4c45da43ba81c7e066d"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "f3c78f924da3d84870b0beb447084c2cbe947536b0c719fbe616d164defac8c3"
+    },
+    {
+      "path": "test/packet_frontend/tb_lsc1_cell_alias_check.sv",
+      "sha256": "aa043dcadc280735504a4b3e7aad1f403869fd87c6bae8f1c197d1efa8a223bd"
+    },
+    {
+      "path": "evidence/lsc1-08-s10/cell_alias_equiv_miter.sv",
+      "sha256": "211721d4afdb9ed4041f66edbd4c5a127b651b13e036b817955c9e3122dea6f2"
+    },
+    {
+      "path": "evidence/lsc1-08-s10/check_cell_alias_equiv.sh",
+      "sha256": "ec0be722d23f23486060648e705689d862f6dd50c8440059b285ccedb430e6c9"
+    },
+    {
+      "path": "evidence/lsc1-08-s10/directed_alias_differential.py",
+      "sha256": "0aaecc851509f3ec11381aeca14e39e3526a96cdff4ccc85f13433660271a4b6"
+    },
+    {
+      "path": "evidence/lsc1-08-s10/alias_coverage.md",
+      "sha256": "4a49c625caf15c76ca82f489b170bcbaea8597c79a61ace055b4a9b1a54bd0d5"
+    }
+  ],
+  "mutations": [
+    {
+      "killed": true,
+      "name": "deref_base",
+      "what": "give the DEREF middle address fp instead of base_index"
+    },
+    {
+      "killed": true,
+      "name": "cell_offset",
+      "what": "move the DEREF cell-b presence byte from 47 to 43"
+    },
+    {
+      "killed": true,
+      "name": "pair_skip",
+      "what": "drop the b-c pair from the disjunction"
+    },
+    {
+      "killed": true,
+      "name": "present_blind",
+      "what": "stop comparing presence bytes"
+    },
+    {
+      "killed": true,
+      "name": "value_blind",
+      "what": "stop comparing cell values"
+    },
+    {
+      "killed": true,
+      "name": "opcode_widen",
+      "what": "evaluate the predicate for opcode 0x03, which never evaluated it"
+    }
+  ],
+  "not_evidenced": [
+    "PPA (power, performance, area)",
+    "place and route",
+    "static timing analysis",
+    "gate-level netlist equivalence of the whole design",
+    "FPGA synthesis, bitstream or hardware bring-up",
+    "fabricated silicon",
+    "end-to-end system testing",
+    "any universal or unbounded claim about the sequential design",
+    "SymbiYosys lanes (sby absent locally; CI is the authority)",
+    "Lean lanes (not exercised locally; CI is the authority)",
+    "LSC-1u profile (out of scope; this slice is full LSC-1 only)"
+  ],
+  "physical_artifacts_generated": false,
+  "pinned_not_fixed": {
+    "isolation": "This slice does not add, remove or retarget any r10_ vector. The two r10_ vectors introduced by S9 live only in test/packet_frontend/tb_lsc1_request_validator.sv, which this slice does not touch.",
+    "observable": "A JUMP frame with payload[77] = 2 and a malformed cell at offset 86 reports BAD_CELL (0x88) with detail 0, not BAD_BRANCH_PROPOSAL (0x8f).",
+    "ticket": "LSC1-08 R10",
+    "why": "The cell scan outranking the JUMP branch-proposal check is the behaviour at 497b905b. S9 characterised it; S10 preserves it bit-exactly and asserts nothing new about it. Changing it remains a separate ticket."
+  },
+  "registration_surface": {
+    "modified": 21,
+    "new": 8,
+    "note": "The scoping document specified 26 files (21 modified + 5 new), matching how S8 and S9 landed. The 21 modified files and the 5 named new files are all present and unchanged in intent. Three further evidence artifacts were added because the acceptance criteria demand receipts that the named five cannot carry: check_cell_alias_equiv.sh (the AC-1 driver -- the miter is not self-executing and the four non-vacuity perturbations need a harness), directed_alias_differential.py (the AC-5 directed frontend differential) and alias_coverage.md (the AC-4 falsifier correction). Total 29 files. Deleting any of the three to hit the 26-file target would delete the receipt for an acceptance criterion.",
+    "total": 29
+  },
+  "schema": "lean-silicon/lsc1-08-slice-receipt/v1",
+  "sealing_note": "`make checksums`, its post-regeneration verification and the root `make check` ladder necessarily run after this receipt is written, because the receipt is itself a checksummed tracked artifact. Their exit codes are reported in the pull request body. The root `make check` is separately sandbox-blocked: it exits 2 because git commit is disabled in this environment (exit 73), which the scoping mission established before this slice began.",
+  "slice": "LSC1-08 S10",
+  "subject": "Extract the three byte-identical three-cell alias-inconsistency predicates out of lsc1_packet_frontend.sv (DEREF arm lines 884-886, JUMP arm 920-922, XOR/MUL arm 974-976) into the purely combinational module lsc1_cell_alias_check, restructured into named opcode-class predicates, a per-arm address triple and one reusable pair_inconsistent function over the three pairs.",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 12.0 (stable)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.33 (git sha1 2584903a060)"
+  },
+  "unbounded_status": {
+    "combinational_block": "complete: the extracted predicate is purely combinational and the SAT proof is exhaustive over its whole 656-bit input space, so for this block there is no residual bound",
+    "surrounding_sequential_design": "blocked: no induction was attempted or claimed over lsc1_packet_frontend or the top level. The frontend-level evidence (AC-5) is 333 directed frames, which is bounded testing, not proof."
+  }
+}

@@ -5,6 +5,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_response_payload_mux.sv \
       ../../asic_core/rtl/lsc1_blake3_alias_check.sv \
       ../../asic_core/rtl/lsc1_request_validator.sv \
+      ../../asic_core/rtl/lsc1_cell_alias_check.sv \
       ../../asic_core/rtl/lsc1_blake3_lifecycle.sv \
       ../../asic_core/rtl/gf2n_mul_bitstream.sv \
       ../../asic_core/rtl/gf128_mul_bitstream.sv \
@@ -13,7 +14,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 response-payload-mux:
 	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
@@ -110,10 +111,43 @@ request-validator-mutation:
 	  done; \
 	  echo "PASS: eight request-validation chain mutations behaviorally killed"
 
+cell-alias-check:
+	iverilog -g2012 -Wall -s tb_lsc1_cell_alias_check -o tb_lsc1_cell_alias_check.vvp \
+	  ../../asic_core/rtl/lsc1_cell_alias_check.sv tb_lsc1_cell_alias_check.sv
+	vvp tb_lsc1_cell_alias_check.vvp
+
+cell-alias-check-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  src=../../asic_core/rtl/lsc1_cell_alias_check.sv; \
+	  for mutation in deref_base cell_offset pair_skip present_blind value_blind opcode_widen; do \
+	    cp "$$src" "$$d/dut.sv"; \
+	    test "$$(grep -Foc 'wire [31:0] address_b = is_deref ? base_index + offset_b : fp + offset_b;' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'localparam integer DEREF_CELL_1_AT = 47;' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'assign alias_inconsistent = checked && (alias_ab || alias_ac || alias_bc);' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'present_x != present_y ||' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'value_x != value_y);' "$$d/dut.sv")" -eq 1; \
+	    test "$$(grep -Foc 'wire is_scalar = frame_opcode == OP_JUMP ||' "$$d/dut.sv")" -eq 1; \
+	    case $$mutation in \
+	      deref_base) sed -i 's/wire \[31:0\] address_b = is_deref ? base_index + offset_b : fp + offset_b;/wire [31:0] address_b = fp + offset_b;/' "$$d/dut.sv" ;; \
+	      cell_offset) sed -i 's/localparam integer DEREF_CELL_1_AT = 47;/localparam integer DEREF_CELL_1_AT = 43;/' "$$d/dut.sv" ;; \
+	      pair_skip) sed -i 's/assign alias_inconsistent = checked \&\& (alias_ab || alias_ac || alias_bc);/assign alias_inconsistent = checked \&\& (alias_ab || alias_ac);/' "$$d/dut.sv" ;; \
+	      present_blind) sed -i "s/present_x != present_y ||/1'b0 ||/" "$$d/dut.sv" ;; \
+	      value_blind) sed -i "s/value_x != value_y);/1'b0);/" "$$d/dut.sv" ;; \
+	      opcode_widen) sed -i "s/wire is_scalar = frame_opcode == OP_JUMP ||/wire is_scalar = frame_opcode == 8'h03 || frame_opcode == OP_JUMP ||/" "$$d/dut.sv" ;; \
+	    esac; \
+	    if cmp -s "$$src" "$$d/dut.sv"; then echo "cell-alias $$mutation mutation edited nothing" >&2; exit 1; fi; \
+	    iverilog -g2012 -s tb_lsc1_cell_alias_check -o "$$d/$$mutation.vvp" "$$d/dut.sv" tb_lsc1_cell_alias_check.sv; \
+	    if vvp "$$d/$$mutation.vvp" >"$$d/$$mutation.out" 2>&1; then echo "cell-alias $$mutation mutation unexpectedly survived" >&2; exit 1; fi; \
+	    grep -q 'FATAL:' "$$d/$$mutation.out"; \
+	    echo "cell-alias $$mutation mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  done; \
+	  echo "PASS: six three-cell alias-precheck mutations behaviorally killed"
+
 sim:
 	$(MAKE) serializer-structure
 	$(MAKE) blake3-alias-check
 	$(MAKE) request-validator
+	$(MAKE) cell-alias-check
 	$(MAKE) rx-payload-prefix
 	$(MAKE) lifecycle
 	$(MAKE) blake3-retire-commit
@@ -241,6 +275,7 @@ mutation:
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
 	$(MAKE) blake3-alias-check-mutation
 	$(MAKE) request-validator-mutation
+	$(MAKE) cell-alias-check-mutation
 	$(MAKE) scalar-result-mutation
 	$(MAKE) short-response-mutation
 	$(MAKE) serializer-interface-mutation
@@ -337,4 +372,4 @@ rx-payload-prefix-mutation:
 	  echo "PASS: discarded-tail CRC-coverage mutation detected"
 
 clean:
-	rm -f tb_lsc1_response_payload_mux.vvp tb_lsc1_blake3_alias_check.vvp tb_lsc1_request_validator.vvp tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp
+	rm -f tb_lsc1_response_payload_mux.vvp tb_lsc1_blake3_alias_check.vvp tb_lsc1_request_validator.vvp tb_lsc1_cell_alias_check.vvp tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp

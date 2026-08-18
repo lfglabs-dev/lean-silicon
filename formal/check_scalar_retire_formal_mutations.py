@@ -12,6 +12,7 @@ checks.TEMP_PREFIX = "scalar"
 assert "lsc1_response_payload_mux.sv" in checks.SOURCES
 assert "lsc1_blake3_alias_check.sv" in checks.SOURCES
 assert "lsc1_request_validator.sv" in checks.SOURCES
+assert "lsc1_cell_alias_check.sv" in checks.SOURCES
 checks.MUTATIONS = [
     ("set_wrong_result_value", "set_accepted_result_safety", "lsc1_packet_frontend.sv",
      "write_value = result_value;", "write_value = 0;"),
