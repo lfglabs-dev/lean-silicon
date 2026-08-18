@@ -8,6 +8,8 @@ except ModuleNotFoundError:
 
 checks.SBY_NAME = "scalar_lifecycle.sby"
 checks.TEMP_PREFIX = "scalar"
+# The scalar harness elaborates the frontend hierarchy, including its extracted selector.
+assert "lsc1_response_payload_mux.sv" in checks.SOURCES
 checks.MUTATIONS = [
     ("set_wrong_result_value", "set_accepted_result_safety", "lsc1_packet_frontend.sv",
      "write_value = result_value;", "write_value = 0;"),

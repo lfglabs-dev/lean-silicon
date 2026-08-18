@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RTL = ROOT / "asic_core" / "rtl"
 FORMAL = ROOT / "formal"
 SOURCES = [
-    "lsc1_packet_rx.sv", "lsc1_packet_tx.sv", "gf2n_mul_bitstream.sv",
+    "lsc1_packet_rx.sv", "lsc1_packet_tx.sv", "lsc1_response_payload_mux.sv", "gf2n_mul_bitstream.sv",
     "gf128_mul_bitstream.sv", "leanvm_b_stream_alu.sv", "lsc1_stream_adapter.sv",
     "lsc1_field_encoder.sv", "lsc1_blake3_lifecycle.sv", "lsc1_packet_frontend.sv",
 ]

@@ -30,6 +30,7 @@ RTL = [
     "asic_core/rtl/leanvm_b_stream_alu.sv",
     "asic_core/rtl/lsc1_stream_adapter.sv",
     "asic_core/rtl/lsc1_field_encoder.sv",
+    "asic_core/rtl/lsc1_response_payload_mux.sv",
     "asic_core/rtl/lsc1_packet_frontend.sv",
 ]
 

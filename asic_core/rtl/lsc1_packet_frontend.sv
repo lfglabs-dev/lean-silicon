@@ -64,7 +64,7 @@ module lsc1_packet_frontend (
     reg [7:0] short_detail;
     wire [15:0] tx_payload_index;
     wire tx_payload_external_valid;
-    reg [7:0] tx_payload_external_data;
+    wire [7:0] tx_payload_external_data;
     reg capture_result_crc;
     reg [3:0] compute_state;
     reg alu_start;
@@ -246,222 +246,39 @@ module lsc1_packet_frontend (
     // Long service/result payloads are scattered directly from semantic staging
     // registers.  The selected byte is purely a function of the stable index,
     // so arbitrary TX backpressure cannot change it.
-    integer ext_word;
-    always @(*) begin
-        tx_payload_external_data = 0;
-        if (tx_external_kind == 1) begin
-            if (tx_payload_index < 4)
-                tx_payload_external_data = blake_staged_txn_id[tx_payload_index*8 +: 8];
-            else if (tx_payload_index < 8)
-                tx_payload_external_data = blake_staged_service_id[(tx_payload_index-4)*8 +: 8];
-            else if (tx_payload_index == 8) tx_payload_external_data = 8'h01;
-            else if (tx_payload_index == 9) tx_payload_external_data = 0;
-            else if (tx_payload_index < 74) begin
-                ext_word = (tx_payload_index-10) / 16;
-                tx_payload_external_data = staged_message[ext_word][((tx_payload_index-10)%16)*8 +: 8];
-            end else if (tx_payload_index < 106) begin
-                ext_word = (tx_payload_index-74) / 16;
-                tx_payload_external_data = staged_cv[ext_word][((tx_payload_index-74)%16)*8 +: 8];
-            end else
-                tx_payload_external_data = staged_metadata[(tx_payload_index-106)*8 +: 8];
-        end else if (tx_external_kind == 2) begin
-            if (tx_payload_index < 4)
-                tx_payload_external_data = blake_staged_txn_id[tx_payload_index*8 +: 8];
-            else if (tx_payload_index < 8)
-                tx_payload_external_data = blake_staged_next_pc[(tx_payload_index-4)*8 +: 8];
-            else if (tx_payload_index < 12)
-                tx_payload_external_data = blake_staged_next_fp[(tx_payload_index-8)*8 +: 8];
-            else if (tx_payload_index == 12) tx_payload_external_data = staged_write_count;
-            else if (tx_payload_index < 13 + staged_write_count*20) begin
-                ext_word = (tx_payload_index-13) / 20;
-                if (((tx_payload_index-13)%20) < 4)
-                    tx_payload_external_data = staged_write_address[ext_word][((tx_payload_index-13)%20)*8 +: 8];
-                else
-                    tx_payload_external_data = staged_write_value[ext_word][(((tx_payload_index-13)%20)-4)*8 +: 8];
-            end else if (tx_payload_index == 13 + staged_write_count*20)
-                tx_payload_external_data = 0; // n_deferred
-            else if (tx_payload_index == 14 + staged_write_count*20)
-                tx_payload_external_data = 8; // n_accesses
-            else begin
-                ext_word = (tx_payload_index-(15 + staged_write_count*20)) / 4;
-                tx_payload_external_data = staged_access[ext_word][((tx_payload_index-(15 + staged_write_count*20))%4)*8 +: 8];
-            end
-        end else if (tx_external_kind == 3) begin
-            case (tx_payload_index)
-                0: tx_payload_external_data = staged_txn_id[7:0];
-                1: tx_payload_external_data = staged_txn_id[15:8];
-                2: tx_payload_external_data = staged_txn_id[23:16];
-                3: tx_payload_external_data = staged_txn_id[31:24];
-                4: tx_payload_external_data = staged_next_pc[7:0];
-                5: tx_payload_external_data = staged_next_pc[15:8];
-                6: tx_payload_external_data = staged_next_pc[23:16];
-                7: tx_payload_external_data = staged_next_pc[31:24];
-                8: tx_payload_external_data = staged_next_fp[7:0];
-                9: tx_payload_external_data = staged_next_fp[15:8];
-                10: tx_payload_external_data = staged_next_fp[23:16];
-                11: tx_payload_external_data = staged_next_fp[31:24];
-                12: tx_payload_external_data = scalar_staged_write_count;
-                default: begin
-                    if (scalar_staged_write_count != 0) begin
-                        case (tx_payload_index)
-                            13: tx_payload_external_data = scalar_staged_write_address[7:0];
-                            14: tx_payload_external_data = scalar_staged_write_address[15:8];
-                            15: tx_payload_external_data = scalar_staged_write_address[23:16];
-                            16: tx_payload_external_data = scalar_staged_write_address[31:24];
-                            17: tx_payload_external_data = scalar_staged_write_value[7:0];
-                            18: tx_payload_external_data = scalar_staged_write_value[15:8];
-                            19: tx_payload_external_data = scalar_staged_write_value[23:16];
-                            20: tx_payload_external_data = scalar_staged_write_value[31:24];
-                            21: tx_payload_external_data = scalar_staged_write_value[39:32];
-                            22: tx_payload_external_data = scalar_staged_write_value[47:40];
-                            23: tx_payload_external_data = scalar_staged_write_value[55:48];
-                            24: tx_payload_external_data = scalar_staged_write_value[63:56];
-                            25: tx_payload_external_data = scalar_staged_write_value[71:64];
-                            26: tx_payload_external_data = scalar_staged_write_value[79:72];
-                            27: tx_payload_external_data = scalar_staged_write_value[87:80];
-                            28: tx_payload_external_data = scalar_staged_write_value[95:88];
-                            29: tx_payload_external_data = scalar_staged_write_value[103:96];
-                            30: tx_payload_external_data = scalar_staged_write_value[111:104];
-                            31: tx_payload_external_data = scalar_staged_write_value[119:112];
-                            32: tx_payload_external_data = scalar_staged_write_value[127:120];
-                            33: tx_payload_external_data = 0;
-                            34: tx_payload_external_data = scalar_staged_access_count;
-                            35: tx_payload_external_data = scalar_staged_access_0[7:0];
-                            36: tx_payload_external_data = scalar_staged_access_0[15:8];
-                            37: tx_payload_external_data = scalar_staged_access_0[23:16];
-                            38: tx_payload_external_data = scalar_staged_access_0[31:24];
-                            39: tx_payload_external_data = scalar_staged_access_1[7:0];
-                            40: tx_payload_external_data = scalar_staged_access_1[15:8];
-                            41: tx_payload_external_data = scalar_staged_access_1[23:16];
-                            42: tx_payload_external_data = scalar_staged_access_1[31:24];
-                            43: tx_payload_external_data = scalar_staged_access_2[7:0];
-                            44: tx_payload_external_data = scalar_staged_access_2[15:8];
-                            45: tx_payload_external_data = scalar_staged_access_2[23:16];
-                            46: tx_payload_external_data = scalar_staged_access_2[31:24];
-                            default: tx_payload_external_data = 0;
-                        endcase
-                    end else if (scalar_staged_deferred) begin
-                        case (tx_payload_index)
-                            13: tx_payload_external_data = 1;
-                            14: tx_payload_external_data = scalar_staged_deferred_target[7:0];
-                            15: tx_payload_external_data = scalar_staged_deferred_target[15:8];
-                            16: tx_payload_external_data = scalar_staged_deferred_target[23:16];
-                            17: tx_payload_external_data = scalar_staged_deferred_target[31:24];
-                            18: tx_payload_external_data = scalar_staged_deferred_local[7:0];
-                            19: tx_payload_external_data = scalar_staged_deferred_local[15:8];
-                            20: tx_payload_external_data = scalar_staged_deferred_local[23:16];
-                            21: tx_payload_external_data = scalar_staged_deferred_local[31:24];
-                            22: tx_payload_external_data = scalar_staged_access_count;
-                            23: tx_payload_external_data = scalar_staged_access_0[7:0];
-                            24: tx_payload_external_data = scalar_staged_access_0[15:8];
-                            25: tx_payload_external_data = scalar_staged_access_0[23:16];
-                            26: tx_payload_external_data = scalar_staged_access_0[31:24];
-                            27: tx_payload_external_data = scalar_staged_access_1[7:0];
-                            28: tx_payload_external_data = scalar_staged_access_1[15:8];
-                            29: tx_payload_external_data = scalar_staged_access_1[23:16];
-                            30: tx_payload_external_data = scalar_staged_access_1[31:24];
-                            31: tx_payload_external_data = scalar_staged_access_2[7:0];
-                            32: tx_payload_external_data = scalar_staged_access_2[15:8];
-                            33: tx_payload_external_data = scalar_staged_access_2[23:16];
-                            34: tx_payload_external_data = scalar_staged_access_2[31:24];
-                            default: tx_payload_external_data = 0;
-                        endcase
-                    end else begin
-                        case (tx_payload_index)
-                            13: tx_payload_external_data = 0;
-                            14: tx_payload_external_data = scalar_staged_access_count;
-                            15: tx_payload_external_data = scalar_staged_access_0[7:0];
-                            16: tx_payload_external_data = scalar_staged_access_0[15:8];
-                            17: tx_payload_external_data = scalar_staged_access_0[23:16];
-                            18: tx_payload_external_data = scalar_staged_access_0[31:24];
-                            19: tx_payload_external_data = scalar_staged_access_1[7:0];
-                            20: tx_payload_external_data = scalar_staged_access_1[15:8];
-                            21: tx_payload_external_data = scalar_staged_access_1[23:16];
-                            22: tx_payload_external_data = scalar_staged_access_1[31:24];
-                            23: tx_payload_external_data = scalar_staged_access_2[7:0];
-                            24: tx_payload_external_data = scalar_staged_access_2[15:8];
-                            25: tx_payload_external_data = scalar_staged_access_2[23:16];
-                            26: tx_payload_external_data = scalar_staged_access_2[31:24];
-                            default: tx_payload_external_data = 0;
-                        endcase
-                    end
-                end
-            endcase
-        end else if (tx_external_kind == 4) begin
-            case (tx_payload_index)
-                0: tx_payload_external_data = short_txn_id[0 +: 8];
-                1: tx_payload_external_data = short_txn_id[15:8];
-                2: tx_payload_external_data = short_txn_id[23:16];
-                3: tx_payload_external_data = short_txn_id[31:24];
-                4: tx_payload_external_data = short_detail;
-                default: tx_payload_external_data = 0;
-            endcase
-        end else if (tx_external_kind == 5) begin
-            case (tx_payload_index)
-                0: tx_payload_external_data = blake_service_pending ? 8'h02 :
-                                              (blake_result_pending || result_pending) ? 8'h01 : 8'h00;
-                1: tx_payload_external_data = short_txn_id[7:0];
-                2: tx_payload_external_data = short_txn_id[15:8];
-                3: tx_payload_external_data = short_txn_id[23:16];
-                4: tx_payload_external_data = short_txn_id[31:24];
-                5: tx_payload_external_data = short_detail;
-                6: tx_payload_external_data = retire_seq[7:0];
-                7: tx_payload_external_data = retire_seq[15:8];
-                8: tx_payload_external_data = retire_seq[23:16];
-                9: tx_payload_external_data = retire_seq[31:24];
-                10: tx_payload_external_data = last_fault;
-                11: tx_payload_external_data = committed_pc[7:0];
-                12: tx_payload_external_data = committed_pc[15:8];
-                13: tx_payload_external_data = committed_pc[23:16];
-                14: tx_payload_external_data = committed_pc[31:24];
-                15: tx_payload_external_data = committed_fp[7:0];
-                16: tx_payload_external_data = committed_fp[15:8];
-                17: tx_payload_external_data = committed_fp[23:16];
-                18: tx_payload_external_data = committed_fp[31:24];
-                19: tx_payload_external_data = state_valid;
-                default: tx_payload_external_data = 0;
-            endcase
-        end else if (tx_external_kind == 6) begin
-            case (tx_payload_index)
-                0: tx_payload_external_data = 1;
-                1: tx_payload_external_data = short_detail;
-                2: tx_payload_external_data = 0;
-                3: tx_payload_external_data = 1;
-                4: tx_payload_external_data = 16;
-                5: tx_payload_external_data = 0;
-                6: tx_payload_external_data = 8'h06;
-                7: tx_payload_external_data = 0;
-                8: tx_payload_external_data = 0;
-                9: tx_payload_external_data = 0;
-                10: tx_payload_external_data = 8'h31;
-                11: tx_payload_external_data = 8'h43;
-                12: tx_payload_external_data = 8'h53;
-                13: tx_payload_external_data = 8'h4c;
-                default: tx_payload_external_data = 0;
-            endcase
-        end else if (tx_external_kind == 7) begin
-            case (tx_payload_index)
-                0: tx_payload_external_data = short_txn_id[7:0];
-                1: tx_payload_external_data = short_txn_id[15:8];
-                2: tx_payload_external_data = short_txn_id[23:16];
-                3: tx_payload_external_data = short_txn_id[31:24];
-                4: tx_payload_external_data = retire_seq[7:0];
-                5: tx_payload_external_data = retire_seq[15:8];
-                6: tx_payload_external_data = retire_seq[23:16];
-                7: tx_payload_external_data = retire_seq[31:24];
-                8: tx_payload_external_data = committed_pc[7:0];
-                9: tx_payload_external_data = committed_pc[15:8];
-                10: tx_payload_external_data = committed_pc[23:16];
-                11: tx_payload_external_data = committed_pc[31:24];
-                12: tx_payload_external_data = committed_fp[7:0];
-                13: tx_payload_external_data = committed_fp[15:8];
-                14: tx_payload_external_data = committed_fp[23:16];
-                15: tx_payload_external_data = committed_fp[31:24];
-                default: tx_payload_external_data = 0;
-            endcase
-        end
-    end
-
+    // The extracted mux retains tx_external_kind == 3 as the scalar RESULT schema.
+    lsc1_response_payload_mux response_payload_mux (
+        .kind(tx_external_kind), .payload_index(tx_payload_index),
+        .blake_staged_txn_id(blake_staged_txn_id), .blake_staged_service_id(blake_staged_service_id),
+        .blake_staged_next_pc(blake_staged_next_pc), .blake_staged_next_fp(blake_staged_next_fp),
+        .staged_message_0(staged_message[0]), .staged_message_1(staged_message[1]),
+        .staged_message_2(staged_message[2]), .staged_message_3(staged_message[3]),
+        .staged_cv_0(staged_cv[0]), .staged_cv_1(staged_cv[1]), .staged_metadata(staged_metadata),
+        .staged_write_count(staged_write_count),
+        .staged_write_address_0(staged_write_address[0]), .staged_write_address_1(staged_write_address[1]),
+        .staged_write_value_0(staged_write_value[0]), .staged_write_value_1(staged_write_value[1]),
+        .staged_access_0(staged_access[0]), .staged_access_1(staged_access[1]),
+        .staged_access_2(staged_access[2]), .staged_access_3(staged_access[3]),
+        .staged_access_4(staged_access[4]), .staged_access_5(staged_access[5]),
+        .staged_access_6(staged_access[6]), .staged_access_7(staged_access[7]),
+        .staged_txn_id(staged_txn_id), .staged_next_pc(staged_next_pc), .staged_next_fp(staged_next_fp),
+        .scalar_staged_write_count(scalar_staged_write_count),
+        .scalar_staged_deferred(scalar_staged_deferred),
+        .scalar_staged_access_count(scalar_staged_access_count),
+        .scalar_staged_write_address(scalar_staged_write_address),
+        .scalar_staged_write_value(scalar_staged_write_value),
+        .scalar_staged_deferred_target(scalar_staged_deferred_target),
+        .scalar_staged_deferred_local(scalar_staged_deferred_local),
+        .scalar_staged_access_0(scalar_staged_access_0),
+        .scalar_staged_access_1(scalar_staged_access_1),
+        .scalar_staged_access_2(scalar_staged_access_2),
+        .short_txn_id(short_txn_id), .short_detail(short_detail),
+        .blake_service_pending(blake_service_pending),
+        .blake_result_pending(blake_result_pending), .result_pending(result_pending),
+        .retire_seq(retire_seq), .committed_pc(committed_pc), .committed_fp(committed_fp),
+        .last_fault(last_fault), .state_valid(state_valid),
+        .payload_data(tx_payload_external_data)
+    );
 `ifdef FORMAL_FULL_LSC1
     full_lsc1_controller_invariants formal_controller_invariants (
         .clk(clk), .rst_n(rst_n), .abort(abort), .rx_ready(rx_ready),

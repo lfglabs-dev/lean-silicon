@@ -2,6 +2,7 @@ PYTHON ?= python3
 
 RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_packet_tx.sv \
+      ../../asic_core/rtl/lsc1_response_payload_mux.sv \
       ../../asic_core/rtl/lsc1_blake3_lifecycle.sv \
       ../../asic_core/rtl/gf2n_mul_bitstream.sv \
       ../../asic_core/rtl/gf128_mul_bitstream.sv \
@@ -10,7 +11,32 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+
+response-payload-mux:
+	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
+	  ../../asic_core/rtl/lsc1_response_payload_mux.sv tb_lsc1_response_payload_mux.sv
+	vvp tb_lsc1_response_payload_mux.vvp
+
+response-payload-mux-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  for mutation in service result scalar fault status negotiate retired; do \
+	    cp ../../asic_core/rtl/lsc1_response_payload_mux.sv "$$d/dut.sv"; \
+	    case $$mutation in \
+	      service) sed -i 's/blake_staged_service_id\[(payload_index-4)\*8 +: 8\]/blake_staged_txn_id[(payload_index-4)*8 +: 8]/' "$$d/dut.sv" ;; \
+	      result) sed -i 's/staged_write_address\[ext_word\]/staged_write_address[0]/' "$$d/dut.sv" ;; \
+	      scalar) sed -i 's/17: payload_data = scalar_staged_write_value\[7:0\];/17: payload_data = scalar_staged_write_value[15:8];/' "$$d/dut.sv" ;; \
+	      fault) sed -i 's/4: payload_data = short_detail;/4: payload_data = last_fault;/' "$$d/dut.sv" ;; \
+	      status) sed -i 's/10: payload_data = last_fault;/10: payload_data = short_detail;/' "$$d/dut.sv" ;; \
+	      negotiate) sed -i "s/10: payload_data = 8'h31;/10: payload_data = 8'h30;/" "$$d/dut.sv" ;; \
+	      retired) sed -i 's/8: payload_data = committed_pc\[7:0\];/8: payload_data = committed_fp[7:0];/' "$$d/dut.sv" ;; \
+	    esac; \
+	    iverilog -g2012 -s tb_lsc1_response_payload_mux -o "$$d/$$mutation.vvp" "$$d/dut.sv" tb_lsc1_response_payload_mux.sv; \
+	    if vvp "$$d/$$mutation.vvp" >"$$d/$$mutation.out" 2>&1; then echo "response-payload $$mutation mutation unexpectedly survived" >&2; exit 1; fi; \
+	    grep -q 'FATAL:' "$$d/$$mutation.out"; \
+	    echo "response-payload $$mutation mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
+	  done; \
+	  echo "PASS: seven response-schema byte-selection mutations behaviorally killed"
 
 sim:
 	$(MAKE) serializer-structure
@@ -100,6 +126,7 @@ mutation:
 	  fi; \
 	  grep -q "BUSY dropped while a response was queued" "$$d/busy.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  cp ../../asic_core/rtl/lsc1_response_payload_mux.sv "$$d/lsc1_response_payload_mux.sv"; \
 	  sed -i.bak 's/write_value = result_value;/write_value = 0;/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/set.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
@@ -108,6 +135,7 @@ mutation:
 	  fi; \
 	  grep -Eq "staged write byte zero|SET result write value mismatch" "$$d/set.out"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  cp ../../asic_core/rtl/lsc1_response_payload_mux.sv "$$d/lsc1_response_payload_mux.sv"; \
 	  sed -i.bak 's/txn_id != staged_txn_id ||/1'"'"'b0 ||/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/txn.vvp" \
 	    "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
@@ -142,17 +170,17 @@ short-response-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  for mutation in fault_detail status_snapshot retire_offset length unstable_source; do \
 	    rm -f "$$d"/*.sv; cp ../../asic_core/rtl/*.sv "$$d/"; \
-	    test "$$(grep -Foc '4: tx_payload_external_data = short_detail;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc '4: payload_data = short_detail;' "$$d/lsc1_response_payload_mux.sv")" -eq 1; \
 	    test "$$(grep -Foc 'short_detail <= last_status;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
-	    test "$$(grep -Foc '8: tx_payload_external_data = committed_pc[7:0];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc '8: payload_data = committed_pc[7:0];' "$$d/lsc1_response_payload_mux.sv")" -eq 1; \
 	    test "$$(grep -Foc "tx_length <= 16'd16;" "$$d/lsc1_packet_frontend.sv")" -eq 1; \
-	    test "$$(grep -Foc '0: tx_payload_external_data = short_txn_id[0 +: 8];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	    test "$$(grep -Foc '0: payload_data = short_txn_id[0 +: 8];' "$$d/lsc1_response_payload_mux.sv")" -eq 1; \
 	    case $$mutation in \
-	      fault_detail) sed -i 's/4: tx_payload_external_data = short_detail;/4: tx_payload_external_data = short_txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      fault_detail) sed -i 's/4: payload_data = short_detail;/4: payload_data = short_txn_id[7:0];/' "$$d/lsc1_response_payload_mux.sv" ;; \
 	      status_snapshot) sed -i 's/short_detail <= last_status;/short_detail <= INFO;/' "$$d/lsc1_packet_frontend.sv" ;; \
-	      retire_offset) sed -i 's/8: tx_payload_external_data = committed_pc\[7:0\];/8: tx_payload_external_data = committed_fp[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      retire_offset) sed -i 's/8: payload_data = committed_pc\[7:0\];/8: payload_data = committed_fp[7:0];/' "$$d/lsc1_response_payload_mux.sv" ;; \
 	      length) sed -i "s/tx_length <= 16'd16;/tx_length <= 16'd15;/" "$$d/lsc1_packet_frontend.sv" ;; \
-	      unstable_source) sed -i 's/0: tx_payload_external_data = short_txn_id\[0 +: 8\];/0: tx_payload_external_data = txn_id[7:0];/' "$$d/lsc1_packet_frontend.sv" ;; \
+	      unstable_source) sed -i 's/0: payload_data = short_txn_id\[0 +: 8\];/0: payload_data = staged_txn_id[7:0];/' "$$d/lsc1_response_payload_mux.sv" ;; \
 	    esac; \
 	    if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential >"$$d/$$mutation.out" 2>&1; then \
 	      echo "short-response $$mutation mutation unexpectedly survived" >&2; exit 1; \
@@ -165,18 +193,19 @@ short-response-mutation:
 scalar-result-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  cp $(RTL) "$$d/"; \
-	  test "$$(grep -Fxc '                            17: tx_payload_external_data = scalar_staged_write_value[7:0];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	  test "$$(grep -Fxc '                            17: payload_data = scalar_staged_write_value[7:0];' "$$d/lsc1_response_payload_mux.sv")" -eq 1; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/baseline.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  vvp "$$d/baseline.vvp" >"$$d/baseline.out" 2>&1; \
 	  echo "scalar-result baseline: anchor_exactly_once=PASS compile_elaboration=PASS behavior=PASS"; \
 	  cp $(RTL) "$$d/"; \
-	  test "$$(grep -Foc '17: tx_payload_external_data = scalar_staged_write_value[7:0];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
-	  sed -i 's/17: tx_payload_external_data = scalar_staged_write_value\[7:0\];/17: tx_payload_external_data = scalar_staged_write_value[15:8];/' "$$d/lsc1_packet_frontend.sv"; \
+	  test "$$(grep -Foc '17: payload_data = scalar_staged_write_value[7:0];' "$$d/lsc1_response_payload_mux.sv")" -eq 1; \
+	  sed -i 's/17: payload_data = scalar_staged_write_value\[7:0\];/17: payload_data = scalar_staged_write_value[15:8];/' "$$d/lsc1_response_payload_mux.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/byte.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  if vvp "$$d/byte.vvp" >"$$d/byte.out" 2>&1; then echo "scalar byte-selection mutation unexpectedly survived" >&2; exit 1; fi; \
 	  grep -Eq "staged write byte zero|SET result write value mismatch" "$$d/byte.out"; \
 	  echo "scalar byte-selection mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
+	  cp ../../asic_core/rtl/lsc1_response_payload_mux.sv "$$d/lsc1_response_payload_mux.sv"; \
 	  test "$$(grep -Foc 'result_length = 39;' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
 	  sed -i 's/result_length = 39;/result_length = 38;/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/length.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
@@ -184,8 +213,9 @@ scalar-result-mutation:
 	  grep -q "SET result payload schema mismatch" "$$d/length.out"; \
 	  echo "scalar length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS"; \
 	  cp ../../asic_core/rtl/lsc1_packet_frontend.sv "$$d/lsc1_packet_frontend.sv"; \
-	  test "$$(grep -Foc '17: tx_payload_external_data = scalar_staged_write_value[7:0];' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
-	  sed -i 's/17: tx_payload_external_data = scalar_staged_write_value\[7:0\];/17: tx_payload_external_data = write_value[7:0];/' "$$d/lsc1_packet_frontend.sv"; \
+	  cp ../../asic_core/rtl/lsc1_response_payload_mux.sv "$$d/lsc1_response_payload_mux.sv"; \
+	  test "$$(grep -Foc '.scalar_staged_write_value(scalar_staged_write_value),' "$$d/lsc1_packet_frontend.sv")" -eq 1; \
+	  sed -i 's/\.scalar_staged_write_value(scalar_staged_write_value),/.scalar_staged_write_value(write_value),/' "$$d/lsc1_packet_frontend.sv"; \
 	  iverilog -g2012 -s tb_lsc1_packet_frontend -o "$$d/staging.vvp" "$$d"/*.sv tb_lsc1_packet_frontend.sv; \
 	  if vvp "$$d/staging.vvp" >"$$d/staging.out" 2>&1; then echo "scalar stable-staging mutation unexpectedly survived" >&2; exit 1; fi; \
 	  grep -q "scalar staged-byte/backpressure stability failed" "$$d/staging.out"; \
@@ -228,4 +258,4 @@ rx-payload-prefix-mutation:
 	  echo "PASS: discarded-tail CRC-coverage mutation detected"
 
 clean:
-	rm -f tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp
+	rm -f tb_lsc1_response_payload_mux.vvp tb_lsc1_packet_frontend.vvp tb_lsc1_packet_tx_service_required.vvp tb_lsc1_blake3_lifecycle.vvp tb_blake3_retire_commit.vvp tb_deref_retire_trace.vvp tb_jump_retire_trace.vvp tb_scalar_retire_trace.vvp tb_lsc1_packet_rx_payload_prefix.vvp
