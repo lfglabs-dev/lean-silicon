@@ -1,0 +1,207 @@
+{
+  "ac1_proof": {
+    "base_side": "verbatim transcription of frontend lines 127-170 at 392b7d5e, base addend lifted to a free input",
+    "dead_addend_argument": "Adding a constant is a bijection on Z/2^32 and Verilog `+` wraps, so a base addend shared by all eight addresses cancels out of every pairwise equality. The miter discharges this rather than relying on the argument.",
+    "free_input_bits": 1312,
+    "free_input_decomposition": "7 x 32 offsets incl. the lifted base addend, 8 x 8 present, 8 x 128 value",
+    "head_side": "instantiates the shipped lsc1_blake3_alias_check, not a transcription of it",
+    "method": "combinational miter, complete SAT (yosys `sat -verify -prove-asserts -set-def-inputs`)",
+    "note": "The scoping document quotes 1376 free bits. That figure counts nine independent 32-bit address inputs; the authored RTL derives the two companion addresses (cv+1, out+1) rather than accepting them, so the faithful lifting has seven. The smaller number is reported here because it is the one this proof actually discharged.",
+    "quantification": "exhaustive over all 2^1312 input assignments",
+    "solver_problem": "64482 variables, 194669 clauses"
+  },
+  "base_commit": "392b7d5ef4b750cbf720ddafa960b5b314a74df3",
+  "cells": {
+    "baseline_lsc1_packet_frontend": 40446,
+    "caveat": "A generic-gate count is not area, power or timing. It is reported only to show the extraction did not inflate the design.",
+    "delta": -1099,
+    "head_combined": 39347,
+    "head_lsc1_blake3_alias_check": 9055,
+    "head_lsc1_packet_frontend": 30292,
+    "metric": "yosys generic-gate count after `synth -top lean_silicon_lsc1`",
+    "non_increase": true
+  },
+  "classification": "bounded-pass-unbounded-blocked",
+  "commands": [
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv asic_core/rtl/lsc1_blake3_alias_check.sv evidence/lsc1-08-s8/alias_equiv_miter.sv; prep; miter -equiv -flatten -make_assert alias_precheck_base alias_precheck_head miter; hierarchy -top miter; sat -verify -prove-asserts -set-def-inputs'"
+      ],
+      "exit_code": 0,
+      "expectation": "exit 0 with 'SAT proof finished - no model found: SUCCESS!'",
+      "name": "ac1_predicate_equivalence_shipped_module",
+      "observed": "SAT proof finished - no model found: SUCCESS!"
+    },
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv <copy of lsc1_blake3_alias_check.sv with address[5] = cv_offset + 2'd2> evidence/lsc1-08-s8/alias_equiv_miter.sv; prep; miter -equiv -flatten -make_assert alias_precheck_base alias_precheck_head miter; hierarchy -top miter; sat -verify -prove-asserts -set-def-inputs'"
+      ],
+      "exit_code": 1,
+      "expectation": "exit 1; a miter that cannot fail proves nothing",
+      "name": "ac1_non_vacuity_injection",
+      "observed": "ERROR: Called with -verify and proof did fail!"
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test/packet_frontend",
+        "blake3-alias-check",
+        "blake3-alias-check-mutation"
+      ],
+      "exit_code": 0,
+      "name": "ac2_standalone_testbench_and_mutation_kills",
+      "observed": "13 directed vectors and 4000 constrained random trials (2224 positive); 7/7 mutants killed"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "ac3_packet_frontend_rtl_differential",
+      "observed": "Ran 18 tests - OK"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "sim.test_conformance_v3_rtl_differential",
+        "-v"
+      ],
+      "exit_code": 0,
+      "name": "ac3_conformance_v3_rtl_differential",
+      "observed": "Ran 1 test - OK"
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_alias_inconsistent_precedes_terminal_pc_rejection"
+      ],
+      "exit_code": 1,
+      "expectation": "must FAIL while alias_inconsistent is forced to 1'b0, then be reverted",
+      "name": "ac3_falsifier_forced_constant_zero",
+      "observed": "FAILED (failures=1); response status byte 0x95 instead of 0x96"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/lsc1_authored_rtl_contract.py",
+        "--verify"
+      ],
+      "exit_code": 0,
+      "name": "ac4_authored_rtl_contract",
+      "observed": "LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/generate_checksums.py",
+        "--check"
+      ],
+      "exit_code": 1,
+      "expectation": "must FAIL before `make checksums`",
+      "name": "ac5_checksum_gate_before_regeneration",
+      "observed": "SHA256SUMS is stale; run `make checksums`"
+    },
+    {
+      "argv": [
+        "yosys -p 'read_verilog -sv asic_core/rtl/gf2n_mul_bitstream.sv asic_core/rtl/gf128_mul_bitstream.sv asic_core/rtl/leanvm_b_stream_alu.sv asic_core/rtl/lsc1_packet_rx.sv asic_core/rtl/lsc1_packet_tx.sv asic_core/rtl/lsc1_stream_adapter.sv asic_core/rtl/lsc1_field_encoder.sv asic_core/rtl/lsc1_blake3_lifecycle.sv asic_core/rtl/lsc1_response_payload_mux.sv asic_core/rtl/lsc1_blake3_alias_check.sv asic_core/rtl/lsc1_packet_frontend.sv asic_core/rtl/lean_silicon_lsc1.sv; hierarchy -check -top lean_silicon_lsc1; proc; check; synth -top lean_silicon_lsc1; stat'"
+      ],
+      "exit_code": 0,
+      "name": "ac6_ci_lint_and_synthesis_with_new_file",
+      "observed": "hierarchy -check and check clean; 6 unique warnings, all of the pre-existing 'Replacing memory ... with list of registers' class"
+    },
+    {
+      "argv": [
+        "make",
+        "-C",
+        "test",
+        "sim"
+      ],
+      "exit_code": 0,
+      "name": "ac8_full_simulation_suite",
+      "observed": "blake3-alias-check and blake3-alias-check-mutation both execute; 9 'blake3-alias' lines in the log, 0 at the base commit"
+    }
+  ],
+  "manifest": [
+    {
+      "path": "asic_core/rtl/lsc1_blake3_alias_check.sv",
+      "sha256": "37a01a30bfa5dd52e05854ec4f9c0cb11c0959d95d610d0fb383e5fdd08af4f9"
+    },
+    {
+      "path": "asic_core/rtl/lsc1_packet_frontend.sv",
+      "sha256": "b5100e7480cc4ff56522010e9aa9f7ecec5155022faf13b0122051969d8fd70a"
+    },
+    {
+      "path": "test/packet_frontend/tb_lsc1_blake3_alias_check.sv",
+      "sha256": "cc65ca32072121c54fa51b0be66e4a58f4c89f0e2e60b844577a8ed3ac74b106"
+    },
+    {
+      "path": "evidence/lsc1-08-s8/alias_equiv_miter.sv",
+      "sha256": "6306179d5c76448302661af47990026bfb49f3d238b1473b4f07a7931566be48"
+    }
+  ],
+  "mutations": [
+    {
+      "killed": true,
+      "name": "cv_companion"
+    },
+    {
+      "killed": true,
+      "name": "out_companion"
+    },
+    {
+      "killed": true,
+      "name": "base_swap"
+    },
+    {
+      "killed": true,
+      "name": "value_blind"
+    },
+    {
+      "killed": true,
+      "name": "present_blind"
+    },
+    {
+      "killed": true,
+      "name": "pair_skip"
+    },
+    {
+      "killed": true,
+      "name": "reduce_flip"
+    }
+  ],
+  "not_evidenced": [
+    "PPA (power, performance, area)",
+    "place and route",
+    "static timing analysis",
+    "gate-level netlist equivalence of the whole design",
+    "FPGA synthesis, bitstream or hardware bring-up",
+    "fabricated silicon",
+    "end-to-end system testing",
+    "any universal or unbounded claim about the sequential design",
+    "SymbiYosys lanes (sby absent locally; CI is the authority)",
+    "Lean lanes (no toolchain configured locally; CI is the authority)"
+  ],
+  "physical_artifacts_generated": false,
+  "schema": "lean-silicon/lsc1-08-slice-receipt/v1",
+  "sealing_note": "`make checksums`, its post-regeneration verification and the root `make check` ladder necessarily run after this receipt is written, because the receipt is itself a checksummed tracked artifact. Their exit codes are reported in the pull request body.",
+  "slice": "LSC1-08 S8",
+  "subject": "Extract the eight-cell BLAKE3 alias precheck out of lsc1_packet_frontend.sv into the purely combinational module lsc1_blake3_alias_check, and drop the transaction base addend that the predicate never observes.",
+  "toolchain": {
+    "iverilog": "Icarus Verilog version 12.0 (stable)",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "yosys": "Yosys 0.33 (git sha1 2584903a060)"
+  },
+  "unbounded_status": {
+    "combinational_predicate": "complete: the extracted predicate is purely combinational and the SAT proof is exhaustive over its whole input space, so for this block there is no residual bound",
+    "surrounding_sequential_design": "blocked: no induction was attempted or claimed over lsc1_packet_frontend or the top level"
+  }
+}

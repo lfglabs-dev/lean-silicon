@@ -87,7 +87,7 @@ mul_matching_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_
 mul_matching_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_MATCHING_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
 mul_post_retire_reachability: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
 mul_post_retire_safety: read -formal -D FORMAL_DEREF_BRIDGE -D FORMAL_DEREF_REACHABILITY -D FORMAL_DEREF_POST_RETIRE -D FORMAL_SCALAR_MUL full_lsc1_deref_bridge_checker.sv
-read -formal -D FORMAL_DEREF_BRIDGE lsc1_response_payload_mux.sv lsc1_packet_frontend.sv
+read -formal -D FORMAL_DEREF_BRIDGE lsc1_response_payload_mux.sv lsc1_blake3_alias_check.sv lsc1_packet_frontend.sv
 prep -top lsc1_packet_frontend
 setundef -undriven -anyseq
 opt_clean
@@ -97,6 +97,7 @@ full_lsc1_deref_bridge_checker.sv
 ../asic_core/rtl/lsc1_packet_rx.sv
 ../asic_core/rtl/lsc1_packet_tx.sv
 ../asic_core/rtl/lsc1_response_payload_mux.sv
+../asic_core/rtl/lsc1_blake3_alias_check.sv
 ../asic_core/rtl/gf2n_mul_bitstream.sv
 ../asic_core/rtl/gf128_mul_bitstream.sv
 ../asic_core/rtl/leanvm_b_stream_alu.sv

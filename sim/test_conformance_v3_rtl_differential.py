@@ -22,6 +22,7 @@ RTL = [
     "asic_core/rtl/lsc1_packet_rx.sv",
     "asic_core/rtl/lsc1_packet_tx.sv",
     "asic_core/rtl/lsc1_response_payload_mux.sv",
+    "asic_core/rtl/lsc1_blake3_alias_check.sv",
     "asic_core/rtl/lsc1_blake3_lifecycle.sv",
     "asic_core/rtl/gf2n_mul_bitstream.sv",
     "asic_core/rtl/gf128_mul_bitstream.sv",
