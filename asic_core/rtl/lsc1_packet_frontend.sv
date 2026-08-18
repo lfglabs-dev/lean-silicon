@@ -857,8 +857,6 @@ module lsc1_packet_frontend (
                         val_a = frame_payload[280 +: 128];
                         if (off_a > 32'hffffffff - fp) begin
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
-                        end else if (pres_a > 1 || (!pres_a && val_a != 0)) begin
-                            decision_ok = 0; decision_fault = BAD_CELL;
                         end else if (pres_a && val_a != result_value) begin
                             decision_ok = 0; decision_fault = WRITE_CONFLICT;
                         end else if (!pres_a) begin
@@ -876,7 +874,6 @@ module lsc1_packet_frontend (
                         off_a = frame_payload[112 +: 32];
                         off_b = frame_payload[144 +: 32];
                         off_c = frame_payload[176 +: 32];
-                        pres_a = frame_payload[26*8 +: 8];
                         val_a = frame_payload[216 +: 128];
                         base_index = frame_payload[43*8 +: 32];
                         pres_b = frame_payload[47*8 +: 8];
@@ -889,10 +886,6 @@ module lsc1_packet_frontend (
                         end else if (base_index >= 32'h00010000 ||
                                      (frame_opcode == OP_DEREF_PC && pc > 32'h0000fffd)) begin
                             decision_ok = 0; decision_fault = INDEX_RANGE;
-                        end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||
-                            (!pres_a && val_a != 0) || (!pres_b && val_b != 0) ||
-                            (!pres_c && val_c != 0)) begin
-                            decision_ok = 0; decision_fault = BAD_CELL;
                         end else begin
                             addr_a = fp + off_a;
                             addr_b = base_index + off_b;
@@ -910,11 +903,8 @@ module lsc1_packet_frontend (
                         off_a = frame_payload[112 +: 32];
                         off_b = frame_payload[144 +: 32];
                         off_c = frame_payload[176 +: 32];
-                        pres_a = frame_payload[26*8 +: 8];
                         val_a = frame_payload[216 +: 128];
-                        pres_b = frame_payload[43*8 +: 8];
                         val_b = frame_payload[352 +: 128];
-                        pres_c = frame_payload[60*8 +: 8];
                         val_c = frame_payload[488 +: 128];
                         taken_proposal = frame_payload[77*8 +: 8];
                         proposed_pc = frame_payload[78*8 +: 32];
@@ -924,18 +914,10 @@ module lsc1_packet_frontend (
                         if (off_a > 32'hffffffff-fp || off_b > 32'hffffffff-fp ||
                             off_c > 32'hffffffff-fp) begin
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
-                        end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||
-                            (!pres_a && val_a != 0) || (!pres_b && val_b != 0) ||
-                            (!pres_c && val_c != 0) || inv_present > 1 ||
-                            (!inv_present && inv_value != 0)) begin
-                            decision_ok = 0; decision_fault = BAD_CELL;
                         end else begin
                             addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
                             if (cell_alias_inconsistent) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
-                            end else if (taken_proposal > 1) begin
-                                decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
-                                decision_detail = 3;
                             end else if (taken_proposal != (val_a != 0)) begin
                                 decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
                                 decision_detail = 1;
@@ -976,11 +958,6 @@ module lsc1_packet_frontend (
                         if (off_a > 32'hffffffff-fp || off_b > 32'hffffffff-fp ||
                             off_c > 32'hffffffff-fp) begin
                             decision_ok = 0; decision_fault = U32_OVERFLOW;
-                        end else if (pres_a > 1 || pres_b > 1 || pres_c > 1 ||
-                            (!pres_a && val_a != 0) || (!pres_b && val_b != 0) ||
-                            (!pres_c && val_c != 0) || inv_present > 1 ||
-                            (!inv_present && inv_value != 0)) begin
-                            decision_ok = 0; decision_fault = BAD_CELL;
                         end else begin
                             addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
                             if (cell_alias_inconsistent) begin
