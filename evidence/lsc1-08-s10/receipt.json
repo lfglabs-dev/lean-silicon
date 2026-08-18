@@ -156,6 +156,16 @@
     {
       "argv": [
         "make",
+        "full-profile-assurance"
+      ],
+      "exit_code": 0,
+      "expectation": "status pass; the lane reaches the RTL only through tools/full_profile_assurance.py, so a missed registration there would surface here",
+      "name": "ac9_full_profile_assurance",
+      "observed": "{\"receipt\": \"/tmp/s10-full-profile/receipt.json\", \"snapshot_sha256\": \"bb8d667837ddc286d494f211e19a773ad1890dc78c33801d18809b48d7e74bd9\", \"status\": \"pass\"}. Requires LSC1_FULL_CACHE (or --cache-dir) pointed outside the checkout, and requires the working tree to match HEAD, so it is run after the slice is committed."
+    },
+    {
+      "argv": [
+        "make",
         "formal-mutations"
       ],
       "exit_code": 2,
