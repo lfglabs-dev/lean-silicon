@@ -357,7 +357,6 @@ module lsc1_packet_frontend (
     reg [31:0] next_pc_value, next_fp_value;
     reg [31:0] deferred_target, deferred_local;
     reg [7:0] profile, pres_a, pres_b, pres_c, inv_present;
-    reg [7:0] taken_proposal;
     reg [127:0] val_a, val_b, val_c, inv_value, result_value;
     reg [127:0] solved_a, solved_b;
     reg [31:0] write_address;
@@ -906,7 +905,6 @@ module lsc1_packet_frontend (
                         val_a = frame_payload[216 +: 128];
                         val_b = frame_payload[352 +: 128];
                         val_c = frame_payload[488 +: 128];
-                        taken_proposal = frame_payload[77*8 +: 8];
                         proposed_pc = frame_payload[78*8 +: 32];
                         proposed_fp = frame_payload[82*8 +: 32];
                         inv_present = frame_payload[86*8 +: 8];
@@ -918,10 +916,10 @@ module lsc1_packet_frontend (
                             addr_a = fp + off_a; addr_b = fp + off_b; addr_c = fp + off_c;
                             if (cell_alias_inconsistent) begin
                                 decision_ok = 0; decision_fault = ALIAS_INCONSISTENT;
-                            end else if (taken_proposal != (val_a != 0)) begin
+                            end else if (frame_payload[77*8 +: 8] != (val_a != 0)) begin
                                 decision_ok = 0; decision_fault = BAD_BRANCH_PROPOSAL;
                                 decision_detail = 1;
-                            end else if (taken_proposal) begin
+                            end else if (frame_payload[77*8 +: 8]) begin
                                 if (proposed_pc >= 32'h00010000 ||
                                     proposed_fp >= 32'h00010000) begin
                                     decision_ok = 0; decision_fault = INDEX_RANGE;
