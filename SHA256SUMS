@@ -89,6 +89,11 @@ c8dbcf0008931bfd0d6a27c00425480de54d322dd27367ae83f54f93e3382b8c  ./docs/semanti
 3e896ee33e3804876f6e169c872746146c1b3d773811683616986a4148b9f785  ./docs/semantics/reference/oracle.py
 c49a013eb503060394007d07395e625024d7c1ff0e9b177bc71e691e1a4efec8  ./docs/semantics/reference/vectors.json
 961d9f2f85fe6a6e2a5f586412e03759cb94a80683959e7f0271f37f200a4f1d  ./docs/upstream-clarifications/README.md
+3f259dbe299cfb52d576fee105aeb6a5f16470a7464341a64a1d4f2bbfec4138  ./evidence/lsc1-05-v2/adversarial-regressions.txt
+30343345195f94a62094cde992084a292c830901da60a57ac5f0d36c6d497f1e  ./evidence/lsc1-05-v2/authored-rtl-contract.txt
+03022c234ea7cd54568304e4e852d4d6a73ae9a57be4558b25d55315f0fa6593  ./evidence/lsc1-05-v2/checksum-check.txt
+a4379b3293a3743e1506fc263ef7bc9e7958b1a79847ed7c5dcd08b9e708a761  ./evidence/lsc1-05-v2/lean-build.txt
+0237cca5976ac4db7cb5a042c2393ff9e31cb46938dd2760b4b7b59a8a113ea1  ./evidence/lsc1-05-v2/sim-output.txt
 4a49c625caf15c76ca82f489b170bcbaea8597c79a61ace055b4a9b1a54bd0d5  ./evidence/lsc1-08-s10/alias_coverage.md
 211721d4afdb9ed4041f66edbd4c5a127b651b13e036b817955c9e3122dea6f2  ./evidence/lsc1-08-s10/cell_alias_equiv_miter.sv
 ec0be722d23f23486060648e705689d862f6dd50c8440059b285ccedb430e6c9  ./evidence/lsc1-08-s10/check_cell_alias_equiv.sh
@@ -539,6 +544,7 @@ b78b938f396ae20d1fdccde99281430778a879808e60a35788b6fe044151329c  ./test/tb_stre
 1cdfef46a813dd43f5700b5e3ed7ec0bfb07e07403c82f8ac8fa4fb4dfbd0d55  ./test/tb_uart_bridge.sv
 99ef82ee5229bf354f2ef01ad1b4ca857cc166e01f432e44a8acc82b692ad07f  ./test/test_fabrication_bundle.py
 7e48109d5d5de13461f79a3cba829748040741644bf119393c9cf0f2d675c284  ./test/test_lean_mutation_workflow.py
+35973f5dec33bee955394cc0e7d4d3ca6d28b972bccdca968ec4152ecb6c99fb  ./test/test_lsc1_05_v2_adversarial_regressions.py
 e9e334081265e38bcb8112537430c0f479725d93ef8add7aa21fc272a1ff6be0  ./test/test_lsc1_authored_rtl_contract.py
 2dd4a7cbfcb2cf765e3068526fd1f68c5ab738d752ff6b60c0fa4260cab87219  ./test/test_lsc1_host_authored_rtl_boundary.py
 7220320ea36a1436e5f982e6af56444dbf21768be2b38ad3f01e90fde2820cc6  ./test/test_oss_cad_suite_workflow.py
