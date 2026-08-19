@@ -1,0 +1,25 @@
+test_missing_rtl_transaction_record_is_rejected (__main__.DefectClass1RTLTraceDerivation.test_missing_rtl_transaction_record_is_rejected)
+A trace missing RTL_TRANSACTION records is rejected. ... ok
+test_python_injected_label_set_is_rejected (__main__.DefectClass1RTLTraceDerivation.test_python_injected_label_set_is_rejected)
+A Python-injected label set that merely mirrors Lean is rejected. ... ok
+test_rx_stall_requires_valid_and_not_ready (__main__.DefectClass2RXStallWitness.test_rx_stall_requires_valid_and_not_ready)
+RX_STALL is only recorded when rx_valid && !rx_ready. ... ok
+test_done_cannot_be_borrowed_across_transactions (__main__.DefectClass3OperationIdentity.test_done_cannot_be_borrowed_across_transactions)
+A done pulse cannot be attributed to a different transaction. ... ok
+test_relabeling_set_as_blake3_is_rejected (__main__.DefectClass3OperationIdentity.test_relabeling_set_as_blake3_is_rejected)
+An authentic SET trace relabeled as BLAKE3 is rejected. ... ok
+test_stalls_remain_transaction_local (__main__.DefectClass3OperationIdentity.test_stalls_remain_transaction_local)
+Stall observations are scoped to the transaction where they occur. ... ok
+test_done_without_retire_status_is_rejected (__main__.DefectClass4RETIREWitness.test_done_without_retire_status_is_rejected)
+A done pulse without RETIRE status is rejected. ... ok
+test_retire_requires_exactly_one_cooccurring_done (__main__.DefectClass4RETIREWitness.test_retire_requires_exactly_one_cooccurring_done)
+RETIRE status without a co-occurring done pulse is rejected. ... ok
+test_retire_requires_retire_request_opcode (__main__.DefectClass4RETIREWitness.test_retire_requires_retire_request_opcode)
+RETIRE status with a non-RETIRE request opcode is rejected. ... ok
+test_lean_contract_requires_explicit_semantic_premises (__main__.LeanContractSemanticBinding.test_lean_contract_requires_explicit_semantic_premises)
+The Lean contract explicitly requires each semantic premise. ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 3.201s
+
+OK

@@ -1,0 +1,309 @@
+⚠ [2/18] Replayed LeanVMBMinCore.CheckedIndex
+warning: LeanVMBMinCore/CheckedIndex.lean:45:13: This simp argument is unused:
+  valid
+
+Hint: Omit it from the simp argument list.
+  simp [add,̵ ̵v̵a̵l̵i̵d̵] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [5/18] Replayed LeanVMBMinCore.Deref
+warning: LeanVMBMinCore/Deref.lean:79:21: This simp argument is unused:
+  Ne.symm h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h,̵ ̵N̵e̵.̵s̵y̵m̵m̵ ̵h̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Deref.lean:86:18: This simp argument is unused:
+  h
+
+Hint: Omit it from the simp argument list.
+  simp [writeRaw, h̵,̵ ̵Ne.symm h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [8/18] Replayed LeanVMBMinCore.FullProfile
+warning: LeanVMBMinCore/FullProfile.lean:682:10: This simp argument is unused:
+  endpointStep
+
+Hint: Omit it from the simp argument list.
+  simp [e̵n̵d̵p̵o̵i̵n̵t̵S̵t̵e̵p̵,̵ ̵Transaction.step, transitionOf]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+info: LeanVMBMinCore/FullProfile.lean:1439:0: 'LeanVMBMinCore.FullProfile.decided_result_stages' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1440:0: 'LeanVMBMinCore.FullProfile.protocol_rejects_u16_boundary' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1441:0: 'LeanVMBMinCore.FullProfile.staged_result_matching_retire_commits' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1442:0: 'LeanVMBMinCore.FullProfile.staged_result_abort_never_commits' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1443:0: 'LeanVMBMinCore.FullProfile.staged_result_reset_restores_initial' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1444:0: 'LeanVMBMinCore.FullProfile.staged_result_matching_retire_is_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1445:0: 'LeanVMBMinCore.FullProfile.blake3_never_decides_digest' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1446:0: 'LeanVMBMinCore.FullProfile.blake3_rejects_pc_overflow_before_service' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1447:0: 'LeanVMBMinCore.FullProfile.service_start_assigns_endpoint_id' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1448:0: 'LeanVMBMinCore.FullProfile.malformed_blake3_metadata_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1449:0: 'LeanVMBMinCore.FullProfile.noncanonical_blake3_cell_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1450:0: 'LeanVMBMinCore.FullProfile.noncanonical_blake3_cell_precedes_metadata' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1451:0: 'LeanVMBMinCore.FullProfile.blake3_assigned_kind_is_compress' does not depend on any axioms
+info: LeanVMBMinCore/FullProfile.lean:1452:0: 'LeanVMBMinCore.FullProfile.supplied_alias_presence_mismatch_is_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1453:0: 'LeanVMBMinCore.FullProfile.blake3_output_base_overflow_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1454:0: 'LeanVMBMinCore.FullProfile.blake3_second_output_overflow_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1455:0: 'LeanVMBMinCore.FullProfile.service_reset_restarts_at_one' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1456:0: 'LeanVMBMinCore.FullProfile.service_id_overflow_is_rejected' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1457:0: 'LeanVMBMinCore.FullProfile.successful_service_response_stages' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1458:0: 'LeanVMBMinCore.FullProfile.successful_service_response_matching_retire_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1459:0: 'LeanVMBMinCore.FullProfile.endpoint_reset_restores_protocol_initial' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1460:0: 'LeanVMBMinCore.FullProfile.endpoint_forward_only_profile_is_reachable' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1461:0: 'LeanVMBMinCore.FullProfile.endpoint_noncanonical_blake3_cell_precedes_state_guards' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1462:0: 'LeanVMBMinCore.FullProfile.endpoint_profile_mismatch_precedes_state_guards' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1463:0: 'LeanVMBMinCore.FullProfile.service_start_requires_committed_control' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1464:0: 'LeanVMBMinCore.FullProfile.endpoint_pending_service_start_is_bad_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1465:0: 'LeanVMBMinCore.FullProfile.finishWrite_rejects_pc_overflow' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1466:0: 'LeanVMBMinCore.FullProfile.finishWrite_conflict_precedes_pc_overflow' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1467:0: 'LeanVMBMinCore.FullProfile.blake3_rejects_wrong_kind' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1468:0: 'LeanVMBMinCore.FullProfile.completed_blake3_checksum_is_payload_crc' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1469:0: 'LeanVMBMinCore.FullProfile.finished_blake3_checksum_is_payload_crc' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1470:0: 'LeanVMBMinCore.FullProfile.service_match_rejects_wrong_transaction' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfile.lean:1471:0: 'LeanVMBMinCore.FullProfile.service_match_rejects_wrong_kind' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1472:0: 'LeanVMBMinCore.FullProfile.blake3_rejects_first_output_conflict' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1473:0: 'LeanVMBMinCore.FullProfile.blake3_rejects_second_output_conflict' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1474:0: 'LeanVMBMinCore.FullProfile.service_response_consumes_pending' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1475:0: 'LeanVMBMinCore.FullProfile.idle_service_response_is_bad_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1476:0: 'LeanVMBMinCore.FullProfile.pending_service_start_is_bad_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1477:0: 'LeanVMBMinCore.FullProfile.mismatched_service_response_preserves_pending' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1478:0: 'LeanVMBMinCore.FullProfile.service_replay_is_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1479:0: 'LeanVMBMinCore.FullProfile.service_abort_rejects_late_response' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1480:0: 'LeanVMBMinCore.FullProfile.service_reset_rejects_late_response' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1481:0: 'LeanVMBMinCore.FullProfile.service_reset_preserves_sequence' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1482:0: 'LeanVMBMinCore.FullProfile.mul_uses_canonical_ghash' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1483:0: 'LeanVMBMinCore.FullProfile.mul_forward_uses_canonical_ghash' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1484:0: 'LeanVMBMinCore.FullProfile.forward_only_rejects_absent_left' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1485:0: 'LeanVMBMinCore.FullProfile.forward_only_rejects_absent_right' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1486:0: 'LeanVMBMinCore.FullProfile.mul_backsolve_rejects_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1487:0: 'LeanVMBMinCore.FullProfile.mul_backsolve_rejects_unverified_inverse' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1488:0: 'LeanVMBMinCore.FullProfile.deref_uses_canonical_control' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1489:0: 'LeanVMBMinCore.FullProfile.deref_rejects_prepared_control_mismatch' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1490:0: 'LeanVMBMinCore.FullProfile.forward_only_deref_cell_requires_local' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1491:0: 'LeanVMBMinCore.FullProfile.deref_pointer_fault_precedes_profile_guard' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1492:0: 'LeanVMBMinCore.FullProfile.deref_rejects_out_of_range_base' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1493:0: 'LeanVMBMinCore.FullProfile.jump_uses_canonical_control' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfile.lean:1494:0: 'LeanVMBMinCore.FullProfile.jump_success_preserves_memory' depends on axioms: [propext, Quot.sound]
+ℹ [9/18] Replayed LeanVMBMinCore.FullProfilePacket
+info: LeanVMBMinCore/FullProfilePacket.lean:579:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.left_address_overflow_precedes_alias' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:580:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.set_address_overflow_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:581:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepare_set_success' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:582:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_set_refines_decide' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:583:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_set_result_stages' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:584:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.output_address_overflow_precedes_alias' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:585:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.inconsistent_left_right_alias_is_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:586:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.any_binary_alias_conflict_is_rejected' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:587:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepare_binary_success' depends on axioms: [propext]
+info: LeanVMBMinCore/FullProfilePacket.lean:588:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_decision_refines_binary' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:589:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_binary_result_stages' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:590:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_deref_refines_decide' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/FullProfilePacket.lean:591:0: 'LeanVMBMinCore.FullProfile.PacketPreparation.prepared_jump_refines_decide' depends on axioms: [propext, Quot.sound]
+ℹ [10/18] Replayed LeanVMBMinCore.FullProfilePayload
+info: LeanVMBMinCore/FullProfilePayload.lean:229:0: 'LeanVMBMinCore.FullProfile.Payload.decode_refines_preparation' depends on axioms: [propext, Quot.sound]
+⚠ [12/18] Replayed LeanVMBMinCore.AcceptedDeref
+warning: LeanVMBMinCore/AcceptedDeref.lean:54:5: Variable name `h` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LeanVMBMinCore/AcceptedDeref.lean:59:5: Variable name `h` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LeanVMBMinCore/AcceptedDeref.lean:63:5: Variable name `h` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LeanVMBMinCore/AcceptedDeref.lean:67:5: Variable name `h` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+info: LeanVMBMinCore/AcceptedDeref.lean:153:0: 'LeanVMBMinCore.AcceptedDeref.accepted_refines_prepared' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedDeref.lean:154:0: 'LeanVMBMinCore.AcceptedDeref.transition_checksum_from_effect' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedDeref.lean:155:0: 'LeanVMBMinCore.AcceptedDeref.accepted_effect_matching_retire_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/AcceptedDeref.lean:156:0: 'LeanVMBMinCore.AcceptedDeref.accepted_effect_binding_reachable' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+⚠ [13/18] Replayed LeanVMBMinCore.AcceptedJump
+warning: LeanVMBMinCore/AcceptedJump.lean:49:27: Variable name `h` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+info: LeanVMBMinCore/AcceptedJump.lean:129:0: 'LeanVMBMinCore.AcceptedJump.accepted_refines_prepared' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedJump.lean:130:0: 'LeanVMBMinCore.AcceptedJump.transition_checksum_from_effect' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedJump.lean:131:0: 'LeanVMBMinCore.AcceptedJump.accepted_effect_matching_retire_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/AcceptedJump.lean:132:0: 'LeanVMBMinCore.AcceptedJump.accepted_effect_binding_reachable' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+ℹ [14/18] Replayed LeanVMBMinCore.AcceptedScalar
+info: LeanVMBMinCore/AcceptedScalar.lean:158:0: 'LeanVMBMinCore.AcceptedScalar.accepted_refines_prepared' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedScalar.lean:159:0: 'LeanVMBMinCore.AcceptedScalar.accepted_effect_matching_retire_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/AcceptedScalar.lean:160:0: 'LeanVMBMinCore.AcceptedScalar.set_decision_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedScalar.lean:161:0: 'LeanVMBMinCore.AcceptedScalar.xor_decision_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedScalar.lean:162:0: 'LeanVMBMinCore.AcceptedScalar.mul_decision_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]
+ℹ [15/18] Replayed LeanVMBMinCore.AcceptedSequence
+info: LeanVMBMinCore/AcceptedSequence.lean:175:0: 'LeanVMBMinCore.AcceptedSequence.result_wire_byte_exact' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:176:0: 'LeanVMBMinCore.AcceptedSequence.complete_retires_once' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:177:0: 'LeanVMBMinCore.AcceptedSequence.duplicate_retire_rejected' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:178:0: 'LeanVMBMinCore.AcceptedSequence.legal_sequence_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:179:0: 'LeanVMBMinCore.AcceptedSequence.legal_sequence_no_loss' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:180:0: 'LeanVMBMinCore.AcceptedSequence.legal_sequence_finishes_idle' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/AcceptedSequence.lean:181:0: 'LeanVMBMinCore.AcceptedSequence.legal_sequence_representable' depends on axioms: [propext, Quot.sound]
+⚠ [17/18] Replayed LeanVMBMinCore.Blake3ServiceLifecycle
+warning: LeanVMBMinCore/Blake3ServiceLifecycle.lean:288:2: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+warning: LeanVMBMinCore/Blake3ServiceLifecycle.lean:672:12: This simp argument is unused:
+  endpointStep
+
+Hint: Omit it from the simp argument list.
+  simp [e̵n̵d̵p̵o̵i̵n̵t̵S̵t̵e̵p̵,̵ ̵Transaction.step, transitionOf]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Blake3ServiceLifecycle.lean:734:10: This simp argument is unused:
+  endpointStep
+
+Hint: Omit it from the simp argument list.
+  simp [e̵n̵d̵p̵o̵i̵n̵t̵S̵t̵e̵p̵,̵ ̵Transaction.step, transitionOf, serviceStep]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Blake3ServiceLifecycle.lean:734:42: This simp argument is unused:
+  transitionOf
+
+Hint: Omit it from the simp argument list.
+  simp [endpointStep, Transaction.step, t̵r̵a̵n̵s̵i̵t̵i̵o̵n̵O̵f̵,̵ ̵serviceStep]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: LeanVMBMinCore/Blake3ServiceLifecycle.lean:734:56: This simp argument is unused:
+  serviceStep
+
+Hint: Omit it from the simp argument list.
+  simp [endpointStep, Transaction.step, transitionOf,̵ ̵s̵e̵r̵v̵i̵c̵e̵S̵t̵e̵p̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:846:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.encodeServiceRequired_length' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:847:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.encodeServiceResponse_length' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:848:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.decodeServiceResponse_rejects_length' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:849:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_required_binding_is_canonical' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:850:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validateWireServiceResponse_rejects_schema' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:851:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validateWireServiceResponse_rejects_status' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:852:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validateWireServiceResponse_rejects_digest_length' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:853:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.decodeValidatedServiceResponse_rejects_decoded_schema' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:854:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.decodeValidatedServiceResponse_rejects_decoded_status' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:855:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.decodeValidatedServiceResponse_rejects_decoded_digest_length' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:856:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validateWireServiceResponse_preserves_wire' does not depend on any axioms
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:857:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.keyMatches_refl' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:858:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wireBinding_implies_serviceResponseMatches' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:859:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wireBinding_rejects_wrong_epoch' depends on axioms: [propext]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:860:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validated_wire_binding_enters_canonical_model' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:861:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validated_response_digest_is_byte_exact' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:862:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.admitted_wire_response_matches_canonical' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:863:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.admitWireResponse_rejects_wrong_epoch' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:864:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.admitWireResponseBytes_only_after_validation' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:865:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validation_canonical_cells_first' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:866:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validation_profile_before_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:867:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validation_metadata_rejects_block_length_over_64' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:868:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.validation_metadata_rejects_flags_over_127' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:869:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.suspension_idle_to_pending' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:870:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.suspension_blake3_never_computes_locally' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:871:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.suspension_assigns_monotone_id' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:872:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.binding_matching_response_writes_digest' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:873:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.binding_wrong_txn_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:874:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.binding_wrong_service_id_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:875:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.binding_wrong_kind_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:876:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.binding_mismatched_response_preserves_state' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:877:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stall_holds_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:878:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stalls_hold_state' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:879:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stall_holds_bytes' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:880:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stall_holds_valid_and_data' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:881:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stalls_preserve_fullProfile_pending' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:882:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_is_canonical_service_required' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:883:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.wire_output_stall_holds_index' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:884:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.abort_invalidates_pending_preserves_sequence' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:885:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.abort_rejects_late_response' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:886:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.reset_restores_endpoint_initial' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:887:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.reset_rejects_late_response' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:888:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.reset_restarts_service_sequence' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:889:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.abort_then_new_request_succeeds' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:890:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.retirement_full_lifecycle' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:891:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.retirement_exactly_once' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:892:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.retirement_checksum_is_result_payload_crc' depends on axioms: [propext,
+ Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:893:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.retirement_transition_checksum_matches' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:894:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.retirement_abort_preserves_committed' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:895:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.replay_after_consume_is_rejected' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:896:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.pending_blocks_second_start' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:897:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.lifecycle_abort_recovery_permits_retry' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:898:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.lifecycle_reset_permits_fresh_epoch' depends on axioms: [propext, Quot.sound]
+info: LeanVMBMinCore/Blake3ServiceLifecycle.lean:899:0: 'LeanVMBMinCore.Blake3ServiceLifecycle.lifecycle_service_id_overflow_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+⚠ [18/18] Replayed LeanVMBMinCore.AuthoredRTLContract
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:51:0: Definition `set_semantics_reachable` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:52:0: Definition `xor_semantics_reachable` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:53:0: Definition `mul_semantics_reachable` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:54:0: Definition `deref_semantics_reachable` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:55:0: Definition `jump_semantics_reachable` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:60:0: Definition `result_retire_semantics` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:61:0: Definition `result_replay_semantics` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:62:0: Definition `abort_semantics` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:63:0: Definition `reset_semantics` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+warning: LeanVMBMinCore/AuthoredRTLContract.lean:64:0: Definition `blake3_retire_semantics` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+info: LeanVMBMinCore/AuthoredRTLContract.lean:150:0: 'LeanVMBMinCore.AuthoredRTLContract.required_scope_is_exact' does not depend on any axioms
+info: LeanVMBMinCore/AuthoredRTLContract.lean:151:0: 'LeanVMBMinCore.AuthoredRTLContract.set_semantics_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: LeanVMBMinCore/AuthoredRTLContract.lean:152:0: 'LeanVMBMinCore.AuthoredRTLContract.blake3_semantics_reachable' depends on axioms: [propext]
+Build completed successfully (18 jobs).
