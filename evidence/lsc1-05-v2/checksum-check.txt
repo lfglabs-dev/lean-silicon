@@ -1,0 +1,2 @@
+python3 tools/generate_checksums.py --check
+SHA256SUMS matches tracked source artifacts

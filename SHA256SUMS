@@ -1,7 +1,7 @@
 070d359a747dd04ed512ed80874f34df46df03ae84560686f31c1193d2c72b69  ./.github/actions/setup-oss-cad-suite/action.yml
 da9334024eaacdfea64a5623279685533445e3f3a1f65fb9b1181b4f853120bd  ./.github/toolchains/oss-cad-suite-20260809.json
 91308e9d5f422ba40d9ea2e7f1595eae18cecaaadde8e4209ad99a9a7c83722f  ./.github/viewer-index.html
-767e795f2513d2326c221092804e30b0cf67ac3e03b95f12bdb6c8dc821d98e7  ./.github/workflows/ci.yml
+1a015da77957cae7986699214fa075cb2392b46818c939be6cfc2b32af5b9d56  ./.github/workflows/ci.yml
 b9281ac2016a10a8e4a1049cbb345c2f9f34ba0451c8837054060fc52bf5b5b5  ./.github/workflows/docs.yaml
 91195d747b16476611be845bd50443536c12fa6c43d347f95e5c98df0cafeaf6  ./.github/workflows/fpga-asic-simulator.yaml
 df4e1d1edf946720575070a4e567b61046bfd985b3232cfa45a233ca48993e9f  ./.github/workflows/gds.yaml

@@ -1,0 +1,2 @@
+python3 tools/lsc1_authored_rtl_contract.py --verify
+LSC1_AUTHORED_RTL_CONTRACT_PASS observations=30 source=rtl-traces

@@ -81,6 +81,8 @@ jobs:
         run: cd lean && python3 check_accepted_sequence_mutations.py
       - name: Lean/authored RTL observable contract
         run: make lsc1-authored-rtl-contract
+      - name: LSC1-05 v2 adversarial regressions (defect classes from PR #73)
+        run: python3 test/test_lsc1_05_v2_adversarial_regressions.py -v
       - name: Host-prepared memory/fetch boundary
         run: make lsc1-host-authored-rtl-boundary
 

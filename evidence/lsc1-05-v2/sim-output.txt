@@ -1,0 +1,390 @@
+make: Entering directory '/tmp/lean-silicon/test'
+iverilog -g2012 -Wall -s tb_stream_alu -o tb_stream_alu.vvp ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv ../asic_core/rtl/leanvm_b_stream_alu.sv ../asic_core/rtl/lsc1_packet_rx.sv ../asic_core/rtl/lsc1_packet_tx.sv ../asic_core/rtl/lsc1_response_payload_mux.sv ../asic_core/rtl/lsc1_blake3_alias_check.sv ../asic_core/rtl/lsc1_request_validator.sv ../asic_core/rtl/lsc1_cell_alias_check.sv ../asic_core/rtl/lsc1_blake3_lifecycle.sv ../asic_core/rtl/lsc1_stream_adapter.sv ../asic_core/rtl/lsc1_field_encoder.sv ../asic_core/rtl/lsc1_packet_frontend.sv ../asic_core/rtl/lean_silicon_lsc1_mincore.sv ../asic_core/rtl/lean_silicon_lsc1.sv tb_stream_alu.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module lean_silicon_lsc1 declared here: ../asic_core/rtl/lean_silicon_lsc1.sv:7
+       :   -- module lean_silicon_lsc1_mincore declared here: ../asic_core/rtl/lean_silicon_lsc1_mincore.sv:6
+       :   -- module leanvm_b_stream_alu declared here: ../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../asic_core/rtl/lsc1_stream_adapter.sv:6
+vvp tb_stream_alu.vvp
+PASS: leanVM-b MinCore stream ALU
+tb_stream_alu.sv:171: $finish called at 21300000 (1ps)
+iverilog -g2012 -Wall -s tb_uart_bridge -o tb_uart_bridge.vvp ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv ../asic_core/rtl/leanvm_b_stream_alu.sv ../asic_core/rtl/lsc1_packet_rx.sv ../asic_core/rtl/lsc1_packet_tx.sv ../asic_core/rtl/lsc1_response_payload_mux.sv ../asic_core/rtl/lsc1_blake3_alias_check.sv ../asic_core/rtl/lsc1_request_validator.sv ../asic_core/rtl/lsc1_cell_alias_check.sv ../asic_core/rtl/lsc1_blake3_lifecycle.sv ../asic_core/rtl/lsc1_stream_adapter.sv ../asic_core/rtl/lsc1_field_encoder.sv ../asic_core/rtl/lsc1_packet_frontend.sv ../asic_core/rtl/lean_silicon_lsc1_mincore.sv ../asic_core/rtl/lean_silicon_lsc1.sv ../fpga/ulx3s/uart_rx.sv ../fpga/ulx3s/uart_tx.sv ../fpga/ulx3s/uart_bridge.sv tb_uart_bridge.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module lean_silicon_lsc1 declared here: ../asic_core/rtl/lean_silicon_lsc1.sv:7
+       :   -- module lean_silicon_lsc1_mincore declared here: ../asic_core/rtl/lean_silicon_lsc1_mincore.sv:6
+       :   -- module leanvm_b_stream_alu declared here: ../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../asic_core/rtl/lsc1_stream_adapter.sv:6
+       :   -- module uart_bridge declared here: ../fpga/ulx3s/uart_bridge.sv:13
+       :   -- module uart_rx declared here: ../fpga/ulx3s/uart_rx.sv:8
+       :   -- module uart_tx declared here: ../fpga/ulx3s/uart_tx.sv:6
+vvp tb_uart_bridge.vvp
+tb_uart_bridge start
+tb_uart_bridge PASSED
+tb_uart_bridge.sv:255: $finish called at 1460000000 (1ps)
+iverilog -g2012 -Wall -s tb_packet_uart_bridge -o tb_packet_uart_bridge.vvp ../asic_core/rtl/gf2n_mul_bitstream.sv ../asic_core/rtl/gf128_mul_bitstream.sv ../asic_core/rtl/leanvm_b_stream_alu.sv ../asic_core/rtl/lsc1_packet_rx.sv ../asic_core/rtl/lsc1_packet_tx.sv ../asic_core/rtl/lsc1_response_payload_mux.sv ../asic_core/rtl/lsc1_blake3_alias_check.sv ../asic_core/rtl/lsc1_request_validator.sv ../asic_core/rtl/lsc1_cell_alias_check.sv ../asic_core/rtl/lsc1_blake3_lifecycle.sv ../asic_core/rtl/lsc1_stream_adapter.sv ../asic_core/rtl/lsc1_field_encoder.sv ../asic_core/rtl/lsc1_packet_frontend.sv ../asic_core/rtl/lean_silicon_lsc1_mincore.sv ../asic_core/rtl/lean_silicon_lsc1.sv ../fpga/ulx3s/uart_rx.sv ../fpga/ulx3s/uart_tx.sv ../fpga/ulx3s/uart_bridge.sv tb_packet_uart_bridge.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module lean_silicon_lsc1 declared here: ../asic_core/rtl/lean_silicon_lsc1.sv:7
+       :   -- module lean_silicon_lsc1_mincore declared here: ../asic_core/rtl/lean_silicon_lsc1_mincore.sv:6
+       :   -- module leanvm_b_stream_alu declared here: ../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../asic_core/rtl/lsc1_stream_adapter.sv:6
+       :   -- module uart_bridge declared here: ../fpga/ulx3s/uart_bridge.sv:13
+       :   -- module uart_rx declared here: ../fpga/ulx3s/uart_rx.sv:8
+       :   -- module uart_tx declared here: ../fpga/ulx3s/uart_tx.sv:6
+../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+vvp tb_packet_uart_bridge.vvp
+PASS: packetized LSC-1 UART bridge
+tb_packet_uart_bridge.sv:206: $finish called at 3024000000 (1ps)
+make -C packet_frontend sim
+make[1]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+make serializer-structure
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+PASS: external-only serializer structure and kinds 1--7 tx_start paths
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make blake3-alias-check
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_blake3_alias_check -o tb_lsc1_blake3_alias_check.vvp \
+  ../../asic_core/rtl/lsc1_blake3_alias_check.sv tb_lsc1_blake3_alias_check.sv
+vvp tb_lsc1_blake3_alias_check.vvp
+PASS: 13 directed alias vectors and 4000 constrained random trials (2224 positive)
+tb_lsc1_blake3_alias_check.sv:191: $finish called at 4013 (1s)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make request-validator
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_request_validator -o tb_lsc1_request_validator.vvp \
+  ../../asic_core/rtl/lsc1_request_validator.sv tb_lsc1_request_validator.sv
+vvp tb_lsc1_request_validator.vvp
+PASS: 78 directed request-validator vectors and 6000 constrained random trials (accept=685 opcode=323 length=1168 profile=545 flags=726 cell=1563 proposal=34 state=956)
+tb_lsc1_request_validator.sv:433: $finish called at 6078 (1s)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make cell-alias-check
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_cell_alias_check -o tb_lsc1_cell_alias_check.vvp \
+  ../../asic_core/rtl/lsc1_cell_alias_check.sv tb_lsc1_cell_alias_check.sv
+vvp tb_lsc1_cell_alias_check.vvp
+PASS: 37 directed cell-alias vectors and 6000 constrained random trials (2394 positive)
+tb_lsc1_cell_alias_check.sv:336: $finish called at 6037 (1s)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make rx-payload-prefix
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_packet_rx_payload_prefix -o tb_lsc1_packet_rx_payload_prefix.vvp \
+  ../../asic_core/rtl/lsc1_packet_rx.sv tb_lsc1_packet_rx_payload_prefix.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+vvp tb_lsc1_packet_rx_payload_prefix.vvp
+PASS: 190-byte prefix storage, 191/255/256 consumption, tail CRC, and 257 limit
+tb_lsc1_packet_rx_payload_prefix.sv:135: $finish called at 28250000 (1ps)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make lifecycle
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_blake3_lifecycle -o tb_lsc1_blake3_lifecycle.vvp \
+  ../../asic_core/rtl/lsc1_blake3_lifecycle.sv tb_lsc1_blake3_lifecycle.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+vvp tb_lsc1_blake3_lifecycle.vvp
+BLAKE3_LIFECYCLE_SHELL_PASS
+tb_lsc1_blake3_lifecycle.sv:56: $finish called at 156000 (1ps)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make blake3-retire-commit
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_blake3_retire_commit -o tb_blake3_retire_commit.vvp \
+  ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/lsc1_response_payload_mux.sv ../../asic_core/rtl/lsc1_blake3_alias_check.sv ../../asic_core/rtl/lsc1_request_validator.sv ../../asic_core/rtl/lsc1_cell_alias_check.sv ../../asic_core/rtl/lsc1_blake3_lifecycle.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_blake3_retire_commit.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+../../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+vvp tb_blake3_retire_commit.vvp
+BLAKE3_RETIRE_COMMIT_PASS accept=773 done_sample=774
+tb_blake3_retire_commit.sv:126: $finish called at 8056000 (1ps)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make transport
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_packet_tx_service_required -o tb_lsc1_packet_tx_service_required.vvp \
+  ../../asic_core/rtl/lsc1_packet_tx.sv tb_lsc1_packet_tx_service_required.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+vvp tb_lsc1_packet_tx_service_required.vvp
+PASS: immutable 122-byte SERVICE_REQUIRED transport, CRC, and every-beat stalls
+tb_lsc1_packet_tx_service_required.sv:152: $finish called at 6716000 (1ps)
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+iverilog -g2012 -Wall -s tb_lsc1_packet_frontend -o tb_lsc1_packet_frontend.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/lsc1_response_payload_mux.sv ../../asic_core/rtl/lsc1_blake3_alias_check.sv ../../asic_core/rtl/lsc1_request_validator.sv ../../asic_core/rtl/lsc1_cell_alias_check.sv ../../asic_core/rtl/lsc1_blake3_lifecycle.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_lsc1_packet_frontend.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+../../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+tb_lsc1_packet_frontend.sv:240: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:240: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:270: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:270: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:315: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:315: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:331: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:331: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:395: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:395: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:405: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:405: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:423: warning: @* is sensitive to all 256 words in array 'response'.
+tb_lsc1_packet_frontend.sv:423: warning: @* is sensitive to all 256 words in array 'response'.
+vvp tb_lsc1_packet_frontend.vvp
+PASS: LSC-1 Phase-3 packet frontend adversarial test
+tb_lsc1_packet_frontend.sv:432: $finish called at 43900000 (1ps)
+iverilog -g2012 -Wall -s tb_deref_retire_trace -o tb_deref_retire_trace.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/lsc1_response_payload_mux.sv ../../asic_core/rtl/lsc1_blake3_alias_check.sv ../../asic_core/rtl/lsc1_request_validator.sv ../../asic_core/rtl/lsc1_cell_alias_check.sv ../../asic_core/rtl/lsc1_blake3_lifecycle.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_deref_retire_trace.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+../../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+vvp tb_deref_retire_trace.vvp
+DEREF_RETIRE_FIRST_DONE_CYCLE=2784
+DEREF_LIFECYCLE_CYCLES result_last=2763 retire_accept=2783
+DEREF_RETIRE_TRACE_PASS accept_cycle=92 result_envelope_bytes=44 done_count=1
+tb_deref_retire_trace.sv:72: $finish called at 27865000 (1ps)
+iverilog -g2012 -Wall -s tb_jump_retire_trace -o tb_jump_retire_trace.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/lsc1_response_payload_mux.sv ../../asic_core/rtl/lsc1_blake3_alias_check.sv ../../asic_core/rtl/lsc1_request_validator.sv ../../asic_core/rtl/lsc1_cell_alias_check.sv ../../asic_core/rtl/lsc1_blake3_lifecycle.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_jump_retire_trace.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+../../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+vvp tb_jump_retire_trace.vvp
+JUMP_RETIRE_FIRST_DONE_CYCLE=5588
+JUMP_LIFECYCLE_CYCLES accept=114 result_last=5567 retire_accept=5587
+JUMP_RETIRE_TRACE_PASS result_envelope_bytes=36 done_count=1
+tb_jump_retire_trace.sv:80: $finish called at 55905000 (1ps)
+iverilog -g2012 -Wall -s tb_scalar_retire_trace -o tb_scalar_retire_trace.vvp ../../asic_core/rtl/lsc1_packet_rx.sv ../../asic_core/rtl/lsc1_packet_tx.sv ../../asic_core/rtl/lsc1_response_payload_mux.sv ../../asic_core/rtl/lsc1_blake3_alias_check.sv ../../asic_core/rtl/lsc1_request_validator.sv ../../asic_core/rtl/lsc1_cell_alias_check.sv ../../asic_core/rtl/lsc1_blake3_lifecycle.sv ../../asic_core/rtl/gf2n_mul_bitstream.sv ../../asic_core/rtl/gf128_mul_bitstream.sv ../../asic_core/rtl/leanvm_b_stream_alu.sv ../../asic_core/rtl/lsc1_stream_adapter.sv ../../asic_core/rtl/lsc1_field_encoder.sv ../../asic_core/rtl/lsc1_packet_frontend.sv tb_scalar_retire_trace.sv
+warning: Some design elements have no explicit time unit and/or
+       : time precision. This may cause confusing timing results.
+       : Affected design elements are:
+       :   -- module gf128_mul_bitstream declared here: ../../asic_core/rtl/gf128_mul_bitstream.sv:9
+       :   -- module gf2n_mul_bitstream declared here: ../../asic_core/rtl/gf2n_mul_bitstream.sv:22
+       :   -- module leanvm_b_stream_alu declared here: ../../asic_core/rtl/leanvm_b_stream_alu.sv:28
+       :   -- module lsc1_blake3_alias_check declared here: ../../asic_core/rtl/lsc1_blake3_alias_check.sv:5
+       :   -- module lsc1_blake3_lifecycle declared here: ../../asic_core/rtl/lsc1_blake3_lifecycle.sv:6
+       :   -- module lsc1_cell_alias_check declared here: ../../asic_core/rtl/lsc1_cell_alias_check.sv:25
+       :   -- module lsc1_field_encoder declared here: ../../asic_core/rtl/lsc1_field_encoder.sv:6
+       :   -- module lsc1_packet_frontend declared here: ../../asic_core/rtl/lsc1_packet_frontend.sv:6
+       :   -- module lsc1_packet_rx declared here: ../../asic_core/rtl/lsc1_packet_rx.sv:5
+       :   -- module lsc1_packet_tx declared here: ../../asic_core/rtl/lsc1_packet_tx.sv:4
+       :   -- module lsc1_request_validator declared here: ../../asic_core/rtl/lsc1_request_validator.sv:15
+       :   -- module lsc1_response_payload_mux declared here: ../../asic_core/rtl/lsc1_response_payload_mux.sv:4
+       :   -- module lsc1_stream_adapter declared here: ../../asic_core/rtl/lsc1_stream_adapter.sv:6
+../../asic_core/rtl/lsc1_response_payload_mux.sv:59: warning: @* is sensitive to all 4 words in array 'staged_message'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:62: warning: @* is sensitive to all 2 words in array 'staged_cv'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:76: warning: @* is sensitive to all 2 words in array 'staged_write_address'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:78: warning: @* is sensitive to all 2 words in array 'staged_write_value'.
+../../asic_core/rtl/lsc1_response_payload_mux.sv:85: warning: @* is sensitive to all 8 words in array 'staged_access'.
+vvp tb_scalar_retire_trace.vvp
+     SET_LIFECYCLE accept=61 result_last=130 retire_accept=150 done=151 bytes=48
+     XOR_LIFECYCLE accept=87 result_last=180 retire_accept=200 done=201 bytes=56
+     MUL_LIFECYCLE accept=104 result_last=325 retire_accept=345 done=346 bytes=56
+SCALAR_RETIRE_TRACE_PASS
+tb_scalar_retire_trace.sv:80: $finish called at 7095000 (1ps)
+make[1]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make -C packet_frontend mutation
+make[1]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected
+make blake3-alias-check-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+blake3-alias cv_companion mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias out_companion mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias base_swap mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias value_blind mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias present_blind mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias pair_skip mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+blake3-alias reduce_flip mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+PASS: seven BLAKE3 alias-precheck mutations behaviorally killed
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make request-validator-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+request-validator jump_length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator blake_length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator cell_offset mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator blake_stride mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator detail_swap mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator status_swap mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator state_priority mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+request-validator proposal_order mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+PASS: eight request-validation chain mutations behaviorally killed
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make cell-alias-check-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+cell-alias deref_base mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+cell-alias cell_offset mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+cell-alias pair_skip mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+cell-alias present_blind mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+cell-alias value_blind mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+cell-alias opcode_widen mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+PASS: six three-cell alias-precheck mutations behaviorally killed
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make scalar-result-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+scalar-result baseline: anchor_exactly_once=PASS compile_elaboration=PASS behavior=PASS
+scalar byte-selection mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+scalar length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+scalar stable-staging mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+PASS: scalar RESULT byte selection, length, CRC/stall, and stable-staging mutations detected
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make short-response-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+short-response fault_detail mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+short-response status_snapshot mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+short-response retire_offset mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+short-response length mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+short-response unstable_source mutant: compile_elaboration=PASS expected_behavioral_kill=PASS
+PASS: FAULT detail, STATUS snapshot, RETIRE offset/length, and stable-source mutations detected
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make serializer-interface-mutation
+make[2]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+PASS: serializer external-byte mutant compile/elaboration and behavioral kill
+make[2]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make[1]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+make -C packet_frontend lifecycle-mutation
+make[1]: Entering directory '/tmp/lean-silicon/test/packet_frontend'
+PASS: lifecycle ID, exactly-once done, abort, and commit-edge mutations detected
+make[1]: Leaving directory '/tmp/lean-silicon/test/packet_frontend'
+cd .. && python3 -m unittest sim.test_packet_frontend_rtl_differential -v
+test_adversarial_jump_inverse_and_xor_backsolve_match_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model) ... ok
+test_blake3_alias_inconsistent_precedes_terminal_pc_rejection (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_alias_inconsistent_precedes_terminal_pc_rejection) ... ok
+test_blake3_bad_service_retry_and_abort_reset_recovery (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_bad_service_retry_and_abort_reset_recovery) ... ok
+test_blake3_invalid_metadata_is_rejected_before_service_admission (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_invalid_metadata_is_rejected_before_service_admission) ... ok
+test_blake3_invalid_metadata_precedes_other_execution_faults (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_invalid_metadata_precedes_other_execution_faults) ... ok
+test_blake3_overflow_precedes_terminal_pc_rejection (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_overflow_precedes_terminal_pc_rejection) ... ok
+test_blake3_reserved_service_id_exhaustion_is_rejected_without_wrap (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_reserved_service_id_exhaustion_is_rejected_without_wrap) ... ok
+test_blake3_service_id_exhaustion_precedes_execution_faults (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_service_id_exhaustion_precedes_execution_faults) ... ok
+test_blake3_service_result_and_retirement_match_model_byte_exactly (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_service_result_and_retirement_match_model_byte_exactly) ... ok
+test_blake3_terminal_pc_is_rejected_without_suspending (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_terminal_pc_is_rejected_without_suspending) ... ok
+test_blake3_write_once_shapes_and_conflict_match_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_blake3_write_once_shapes_and_conflict_match_model) ... ok
+test_deref_and_jump_faults_match_the_executable_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_deref_and_jump_faults_match_the_executable_model) ... ok
+test_deref_and_jump_match_the_executable_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_deref_and_jump_match_the_executable_model) ... ok
+test_oversized_accepted_frames_consume_crc_checked_discarded_tails (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_oversized_accepted_frames_consume_crc_checked_discarded_tails) ... ok
+test_partial_transaction_prefix_length_faults_match_rtl (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_partial_transaction_prefix_length_faults_match_rtl) ... ok
+test_realistic_three_transaction_workload_matches_model_byte_exactly (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_realistic_three_transaction_workload_matches_model_byte_exactly) ... ok
+test_seeded_set_xor_mul_and_frame_faults (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_seeded_set_xor_mul_and_frame_faults) ... ok
+test_valid_negotiate_and_staged_retire_match_model (sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_valid_negotiate_and_staged_retire_match_model) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.581s
+
+OK
+cd .. && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v sim.test_conformance_v3_rtl_differential
+test_nominal_lifecycle_wire_frames_match_model_and_authored_rtl (sim.test_conformance_v3_rtl_differential.ConformanceV3RtlDifferentialTests.test_nominal_lifecycle_wire_frames_match_model_and_authored_rtl) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.135s
+
+OK
+make: Leaving directory '/tmp/lean-silicon/test'
