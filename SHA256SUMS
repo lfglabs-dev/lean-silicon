@@ -100,6 +100,7 @@ ec0be722d23f23486060648e705689d862f6dd50c8440059b285ccedb430e6c9  ./evidence/lsc
 3da9065a4d97a00c735b10e92739b598b1309f13ce58c02f35e4cb1d69566ee6  ./evidence/lsc1-08-s11/dominance_probe.sv
 a6da3737284a64f9fd8f71e2ecb0b63a557232cbf069ed2e534ac097c54ec372  ./evidence/lsc1-08-s11/receipt.json
 ae3d9bc7b886cd8acdac310195130c582fe4bb235ded5f61cd53df732cc034af  ./evidence/lsc1-08-s11/receipt.json.sha256
+76e24c05a2f298378e7f85a06b8b90cb58a9c94e41d6567a38b20272a9136e8c  ./evidence/lsc1-08-s12/jump_taken_proposal_differential.py
 b0afb9a5a826e8a468f3bae65991c624abb01fa3796b889fc854e8cc76872a9e  ./evidence/lsc1-08-s3/full-lsc1-netlist-receipt.json
 cfa734602cf69a09a9d7d2a5219e59dc4ec89e73afbf9007b00b0b2d24c0de8c  ./evidence/lsc1-08-s3/yosys-structure-receipt.json
 b954bbd1a96b146b15df8fa0d675c44af3737a6191baa1fb00e29e2cb9f40e90  ./evidence/lsc1-08-s4/receipt.json
