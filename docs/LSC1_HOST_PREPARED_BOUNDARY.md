@@ -49,3 +49,26 @@ committed scalar states are compared independently.
 This adds no general refinement or end-to-end claim. It does not exercise or
 make claims about Lean semantics, netlists, P&R, FPGA, hardware, LSC-1µ, or
 LSC1-07 and later work.
+
+## First-SET RETIRE transaction-ID mismatch slice
+
+`make lsc1-retire-txn-mismatch-host-boundary` is a distinct finite regression
+for fixture step 0. A real `HostRuntime` prepares transaction 1 and the same
+`SET_CONSTANT` proposal described above. The lane preserves its generated
+result CRC and flips only bit 0 of the RETIRE `txn_id`, producing transaction
+0. The endpoint must answer `RETIRE_MISMATCH` while echoing transaction 0 with
+detail 1 and discard the staged transition. Because that echo does not match
+the host's in-flight transaction 1, `HostRuntime` must reject the response as a
+`ProtocolViolation`, with its memory, `pc`, and `fp` unchanged.
+
+Independently, a fresh executable endpoint and the authored packet RTL consume
+the same exact five frames: negotiate, SET, corrupt-ID RETIRE, identical SET,
+and untouched host RETIRE. Their response bytes must match with statuses
+`OK`, `OK`, `RETIRE_MISMATCH`, `OK`, and `RETIRED`. After frame 3 each must be
+idle with no pending result, invalid committed state, `pc = fp = 0`, and
+`retire_seq = 0`; after frame 5 each must be idle with no pending result, valid
+committed state, `pc = 1`, `fp = 0`, and `retire_seq = 1`.
+
+This is bounded executable-model and authored-RTL simulation evidence only.
+It makes no Lean, synthesized-netlist, P&R, FPGA, hardware, LSC-1µ, unbounded,
+or end-to-end claim.
