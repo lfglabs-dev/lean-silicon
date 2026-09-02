@@ -32,3 +32,20 @@ simulation evidence. Those are separate layers. It is not an inductive
 Lean-to-SystemVerilog refinement, unbounded proof, or end-to-end verification.
 It consumes no synthesized netlist, P&R result, FPGA observation, or hardware
 observation and makes no claim about them. LSC-1µ and LSC1-07+ are out of scope.
+
+## First-SET RETIRE mismatch slice
+
+`make lsc1-retire-mismatch-host-boundary` is a separate, finite regression for
+fixture step 0 only. A real `HostRuntime` fetches and prepares the first
+write-producing `SET_CONSTANT` from the initial `{m[0] = 1, m[1] = 0}` host
+memory. The lane flips exactly bit 0 of the host-generated RETIRE `result_crc`.
+It requires the host, a fresh executable endpoint, and the authored packet RTL
+to leave the proposed `m[2] = 3`, `pc = 1`, `fp = 0` transition uncommitted.
+The exact SET request is then staged again and the untouched host-generated
+RETIRE is replayed, which must commit once. Both endpoint implementations
+consume the same five recorded frames; response bytes and their observable
+committed scalar states are compared independently.
+
+This adds no general refinement or end-to-end claim. It does not exercise or
+make claims about Lean semantics, netlists, P&R, FPGA, hardware, LSC-1µ, or
+LSC1-07 and later work.
