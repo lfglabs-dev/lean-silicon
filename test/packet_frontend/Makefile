@@ -275,6 +275,7 @@ mutation:
 	  echo "PASS: BUSY, SET value, RETIRE ID, ABORT, and length-order mutations were detected"
 	$(MAKE) blake3-alias-check-mutation
 	$(MAKE) request-validator-mutation
+	$(MAKE) duplicate-pending-mutation
 	$(MAKE) cell-alias-check-mutation
 	$(MAKE) scalar-result-mutation
 	$(MAKE) short-response-mutation
