@@ -87,6 +87,8 @@ jobs:
         run: make lsc1-host-authored-rtl-boundary
       - name: Host-prepared corrupted RETIRE discard boundary
         run: make lsc1-retire-mismatch-host-boundary
+      - name: Host-prepared corrupted RETIRE transaction-id discard boundary
+        run: make lsc1-retire-txn-mismatch-host-boundary
 
   formal-toolchain:
     runs-on: ubuntu-latest
