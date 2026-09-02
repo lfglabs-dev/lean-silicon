@@ -1,12 +1,12 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, the six frozen
-``blake3.reject.{txn_id,service_id,kind,digest,metadata.counter,metadata.block_len}``
+This covers only ``blake3.lifecycle.nominal``, the seven frozen
+``blake3.reject.{txn_id,service_id,kind,digest,metadata.counter,metadata.block_len,metadata.flags}``
 mutations, and
 ``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
-implementation, or hardware.  The valid counter and block_len mutations are
+implementation, or hardware.  The valid counter, block_len, and flags mutations are
 compared only from IDLE through SERVICE_REQUIRED, followed by reset recovery; a
 second BLAKE3 request while SERVICE_PENDING is rejected as BAD_STATE before
 either implementation inspects its metadata.
@@ -91,6 +91,9 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.counter_rejection = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.reject.metadata.counter")
+        cls.flags_rejection = next(
+            case for case in corpus["cases"]
+            if case["case_id"] == "blake3.reject.metadata.flags")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -429,6 +432,112 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         paths = []
         for index, raw in enumerate(requests):
             path = Path(self.temporary.name) / f"counter-request-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            paths.append(path)
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+REQUEST={paths[0]}",
+             f"+LENGTH={len(requests[0])}", "+RESET_AFTER_FIRST",
+             f"+REQUEST2={paths[1]}", f"+LENGTH2={len(requests[1])}",
+             f"+REQUEST3={paths[2]}", f"+LENGTH3={len(requests[2])}",
+             f"+REQUEST4={paths[3]}", f"+LENGTH4={len(requests[3])}",
+             "+V3_FINITE_STALLS"],
+            cwd=ROOT, check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "01", "00", "02"])
+        before = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_CONTROL RESET BEFORE"))
+        after = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_CONTROL RESET AFTER"))
+        self.assertIn("origin_opcode=08 result=0 service=1", before)
+        self.assertIn("result=0 service=0 tx=0", after)
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_flags_variant_at_idle_then_reset_recovers_and_retires(self) -> None:
+        case = self.flags_rejection
+        self.assertEqual(
+            case["fingerprint"],
+            "sha256:213f6a88d73dbd51870329210a6136adbc32653c07425e995fafa3581367e7fe",
+        )
+        wire = self.nominal["wire"]
+        nominal_request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+
+        flags_one_request = protocol.build_blake3(
+            txn_id=0x10203040, pc=2, fp=64,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 1, 2, 3), cv_offset=8, out_offset=10,
+            metadata=(1 << 96) | (64 << 64),
+            message_cells=tuple(protocol.Cell(True, value)
+                                for value in (11, 22, 33, 44)),
+            cv_cells=tuple(protocol.Cell(True, value) for value in (55, 66)),
+            out_cells=(protocol.Cell(False, 0), protocol.Cell(False, 0)),
+        ).encode()
+        expected_flags_service = bytes.fromhex(
+            case["evidence"]["internal_payload_hex"])
+        nominal_frame = request_from_wire(nominal_request)
+        flags_one_frame = request_from_wire(flags_one_request)
+
+        # Pin mutation sensitivity at the request boundary: only the low byte
+        # of the little-endian 32-bit flags field changes, from zero to one.
+        # The envelope CRC necessarily changes and is decoded independently.
+        changed = [
+            index for index, (nominal, variant) in
+            enumerate(zip(nominal_request[:-4], flags_one_request[:-4]))
+            if nominal != variant
+        ]
+        self.assertEqual(len(nominal_request), len(flags_one_request))
+        self.assertEqual(changed, [56])
+        self.assertEqual(nominal_request[56:60], bytes(4))
+        self.assertEqual(flags_one_request[56:60], b"\x01" + bytes(3))
+        self.assertEqual(flags_one_frame.payload[50:54], b"\x01" + bytes(3))
+        self.assertEqual(nominal_frame.payload[50:54], bytes(4))
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = [protocol.drive(endpoint, flags_one_frame.encode())[0]]
+        flags_reply = protocol.decode_response(model_responses[0])
+        self.assertIs(flags_reply.status, protocol.Status.SERVICE_REQUIRED)
+        self.assertEqual(flags_reply.payload, expected_flags_service)
+        self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+        endpoint.step(reset_n=False)
+        endpoint.step(reset_n=True)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+        self.assertIsNone(endpoint.staged)
+
+        requests = [flags_one_request, nominal_request, good_service, retire]
+        for raw in requests[1:]:
+            model_responses.append(
+                protocol.drive(endpoint, request_from_wire(raw).encode())[0])
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.SERVICE_REQUIRED,
+             protocol.Status.OK, protocol.Status.RETIRED],
+        )
+        self.assertEqual(model_responses[1], bytes.fromhex(
+            wire["service_required_frame_hex"]))
+        self.assertEqual(model_responses[2], bytes.fromhex(wire["result_frame_hex"]))
+        self.assertEqual(model_responses[3], bytes.fromhex(wire["retire_response_hex"]))
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        paths = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"flags-request-{index}.hex"
             path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
             paths.append(path)
         run = subprocess.run(
