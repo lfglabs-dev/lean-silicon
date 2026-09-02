@@ -5,7 +5,9 @@ This covers only ``blake3.lifecycle.nominal``, the seven frozen
 mutations, ``blake3.control.{abort,reset}`` with their frozen bytes, and one
 additional duplicate ``SERVICE_RESPONSE`` differential derived from the nominal
 wire frames, plus one trailing-CRC-bit rejection followed by an unchanged valid
-``SERVICE_RESPONSE`` retry.  The duplicate response is not the adapter-level
+``SERVICE_RESPONSE`` retry, and one identical ``BLAKE3_REQUEST`` rejected while
+the original service is pending before that original request completes.  The
+duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
@@ -18,6 +20,7 @@ either implementation inspects its metadata.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -44,6 +47,14 @@ RTL = [
     "asic_core/rtl/lsc1_packet_frontend.sv",
     "test/packet_frontend/tb_lsc1_packet_vector.sv",
 ]
+
+
+def rtl_path(path: str) -> Path:
+    """Allow the mutation lane to substitute only authored RTL sources."""
+    override = os.environ.get("LSC1_RTL_DIR")
+    if override and path.startswith("asic_core/rtl/"):
+        return Path(override) / Path(path).name
+    return ROOT / path
 
 
 def request_from_wire(raw: bytes) -> protocol.RequestFrame:
@@ -101,7 +112,7 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
             ["iverilog", "-g2012", "-s", "tb_lsc1_packet_vector", "-o",
-             str(cls.simulator), *[str(ROOT / source) for source in RTL]],
+             str(cls.simulator), *[str(rtl_path(source)) for source in RTL]],
             cwd=ROOT, check=True, capture_output=True, text=True)
 
     @classmethod
@@ -682,6 +693,105 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
                          if line.startswith("RTL_V3_STABILITY "))
         self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
         self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_duplicate_blake3_request_preserves_original_pending_then_retires(self) -> None:
+        """Reject one exact duplicate while the original service remains pending.
+
+        ``FullProfile.pending_service_start_is_bad_state`` proves the analogous
+        abstract service-controller step.  This finite wire replay is separate
+        executable-model/authored-RTL evidence, not universal Lean-to-RTL
+        refinement or netlist, P&R, hardware, or end-to-end evidence.
+        """
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        requests = [request, request, service, retire]
+        frames = [request_from_wire(raw) for raw in requests]
+        self.assertEqual(requests[0], requests[1])
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        pending_identity = None
+        for index, frame in enumerate(frames):
+            model_responses.append(protocol.drive(endpoint, frame.encode())[0])
+            if index == 0:
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+                pending_identity = endpoint.staged
+                pending_snapshot = (endpoint.staged, endpoint.service_seq,
+                                    endpoint.state_valid, endpoint.committed_pc,
+                                    endpoint.committed_fp, endpoint.retire_seq,
+                                    endpoint.pins().done_pulse)
+                self.assertEqual(endpoint.staged.service.service_id, 1)
+            elif index == 1:
+                duplicate = protocol.decode_response(model_responses[-1])
+                self.assertIs(duplicate.status, protocol.Status.BAD_STATE)
+                self.assertEqual(duplicate.payload,
+                                 int(0x10203040).to_bytes(4, "little") + b"\x00")
+                self.assertEqual(
+                    (endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                     endpoint.committed_pc, endpoint.committed_fp,
+                     endpoint.retire_seq, endpoint.pins().done_pulse),
+                    pending_snapshot)
+                self.assertIs(endpoint.staged, pending_identity)
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            bytes.fromhex("5a018705004030201000893d568b"),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.BAD_STATE,
+             protocol.Status.OK, protocol.Status.RETIRED])
+        self.assertEqual(endpoint.service_seq, 1)
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "duplicate-pending-request.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"duplicate-pending-request-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS"], cwd=ROOT, check=True,
+            capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "87", "00", "02"])
+        self.assertEqual([line.split("done=")[1] for line in transactions],
+                         ["0", "0", "0", "1"])
+        duplicate_state = next(
+            line for line in run.stdout.splitlines()
+            if line.startswith("RTL_V3_DUPLICATE_PENDING "))
+        self.assertEqual(
+            duplicate_state,
+            "RTL_V3_DUPLICATE_PENDING service_pending=1 service_seq=00000001 "
+            "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
+            "fp=00000000 retire_seq=00000000 done=0")
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        final_states = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_STATE ")]
+        self.assertEqual(final_states[-1],
+                         "RTL_STATE valid=1 pc=00000003 fp=00000040 "
+                         "retire_seq=00000001 result_pending=0")
 
     def test_completed_service_response_replay_preserves_result_then_retires(self) -> None:
         wire = self.nominal["wire"]
