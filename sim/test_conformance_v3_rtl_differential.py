@@ -1,7 +1,7 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, the four frozen
-``blake3.reject.{txn_id,service_id,kind,digest}`` mutations, and
+This covers only ``blake3.lifecycle.nominal``, the five frozen
+``blake3.reject.{txn_id,service_id,kind,digest,metadata.block_len}`` mutations, and
 ``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
@@ -81,6 +81,9 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.digest_rejection = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.reject.digest")
+        cls.block_len_rejection = next(
+            case for case in corpus["cases"]
+            if case["case_id"] == "blake3.reject.metadata.block_len")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -246,6 +249,116 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
                 counts = next(line for line in run.stdout.splitlines()
                               if line.startswith("RTL_COUNTS "))
                 self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+
+    def test_block_len_retry_preserves_service_then_recovers_and_retires(self) -> None:
+        case = self.block_len_rejection
+        self.assertEqual(
+            case["fingerprint"],
+            "sha256:89c7905cca8d24c000ba2b2812af883be44f442ed4614a5c6d47df7c4a5cae8d",
+        )
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+
+        retry = protocol.build_blake3(
+            txn_id=0x10203040, pc=2, fp=64,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 1, 2, 3), cv_offset=8, out_offset=10,
+            metadata=63 << 64,
+            message_cells=tuple(protocol.Cell(True, value)
+                                for value in (11, 22, 33, 44)),
+            cv_cells=tuple(protocol.Cell(True, value) for value in (55, 66)),
+            out_cells=(protocol.Cell(False, 0), protocol.Cell(False, 0)),
+        ).encode()
+        retry_frame = request_from_wire(retry)
+        expected_retry_service = bytes.fromhex(case["evidence"]["internal_payload_hex"])
+        self.assertEqual(len(expected_retry_service), 122)
+        retry_probe = protocol.Lsc1Endpoint()
+        retry_required = protocol.decode_response(
+            protocol.drive(retry_probe, retry_frame.encode())[0])
+        self.assertIs(retry_required.status, protocol.Status.SERVICE_REQUIRED)
+        self.assertEqual(retry_required.payload, expected_retry_service)
+
+        requests = [request, retry, good_service, retire]
+        frames = [request_from_wire(raw) for raw in requests]
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        original_staged = None
+        original_service = None
+        for index, frame in enumerate(frames):
+            model_responses.append(protocol.drive(endpoint, frame.encode())[0])
+            if index == 0:
+                original_staged = endpoint.staged
+                original_service = endpoint.staged.service
+            elif index == 1:
+                self.assertIs(endpoint.staged, original_staged)
+                self.assertIs(endpoint.staged.service, original_service)
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                self.assertEqual(endpoint.retire_seq, 0)
+            elif index == 2:
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertEqual(endpoint.retire_seq, 0)
+
+        decoded_model = [protocol.decode_response(raw) for raw in model_responses]
+        self.assertEqual([reply.status for reply in decoded_model], [
+            protocol.Status.SERVICE_REQUIRED,
+            protocol.Status.BAD_STATE,
+            protocol.Status.OK,
+            protocol.Status.RETIRED,
+        ])
+        self.assertEqual(decoded_model[1].payload,
+                         int(0x10203040).to_bytes(4, "little") + b"\x00")
+        self.assertEqual(model_responses[0], bytes.fromhex(
+            wire["service_required_frame_hex"]))
+        self.assertEqual(model_responses[2], bytes.fromhex(wire["result_frame_hex"]))
+        self.assertEqual(model_responses[3], bytes.fromhex(wire["retire_response_hex"]))
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "block-len.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"block-len-request-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS"],
+            cwd=ROOT, check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "87", "00", "02"])
+        rejected = next(line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_V3_BAD_STATE "))
+        self.assertEqual(
+            rejected,
+            "RTL_V3_BAD_STATE origin_opcode=08 service_pending=1 result_pending=0 done=0",
+        )
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
 
     def test_digest_write_conflict_discards_and_replay_is_bad_state(self) -> None:
         case = self.digest_rejection
