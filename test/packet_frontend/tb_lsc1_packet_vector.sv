@@ -158,6 +158,9 @@ module tb_lsc1_packet_vector;
                      transaction_opcode, origin_opcode, response[2],
                      transaction_rx_blocked, transaction_tx_blocked,
                      transaction_done);
+            if (v3_finite_stalls && response[2] == 8'h91)
+                $display("RTL_V3_BAD_SERVICE service_pending=%0d",
+                         dut.blake_service_pending);
         end
     endtask
 
