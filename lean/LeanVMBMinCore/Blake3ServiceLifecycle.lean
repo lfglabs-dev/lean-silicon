@@ -530,6 +530,32 @@ theorem binding_mismatched_response_preserves_state (nextServiceId : UInt32)
       .pending nextServiceId pending :=
   by simp [serviceStep, hmismatch]
 
+/-- A correctly bound response that conflicts at the first output is
+destructive: the write conflict is returned, the pending service is consumed,
+and replay is consequently rejected from idle.  In particular, the conflict
+does not produce an `Effect` that could supply a retirement premise. -/
+theorem binding_digest_conflict_discards_and_replay_is_bad_state
+    (nextServiceId : UInt32) (pending : ServicePending)
+    (response : Blake3Response)
+    (htxn : response.txnId = pending.request.common.txnId)
+    (hservice : response.serviceId = pending.request.serviceId)
+    (hrequest : pending.request.serviceKind = 1)
+    (hkind : response.serviceKind = 1)
+    (hconflict : writeOnce pending.request.memory
+      pending.request.outputAddresses.1 response.digest.1 = none) :
+    let conflict := serviceStep (.pending nextServiceId pending) (.respond response)
+    conflict.decision = some (.fault .writeConflict) ∧
+      conflict.state = .idle nextServiceId ∧
+      (serviceStep conflict.state (.respond response)).decision =
+        some (.fault .badState) ∧
+      ¬ ∃ effect : Effect, conflict.decision = some (.result effect) := by
+  have hmatch : serviceResponseMatches pending response = true := by
+    simp [serviceResponseMatches, htxn, hservice, hrequest, hkind]
+  have hfinish : finishBlake3 pending response = .fault .writeConflict :=
+    blake3_rejects_first_output_conflict pending response htxn hservice
+      hrequest hkind hconflict
+  simp [serviceStep, hmatch, hfinish]
+
 /-! ## Stall invariance -/
 
 /-- Minimal ready/valid output state.  A cycle advances only on a handshake;
@@ -765,6 +791,36 @@ example : serviceResponseMatches witnessBlake3Pending witnessBlake3Response = tr
 example : finishBlake3 witnessBlake3Pending witnessBlake3Response =
     .result witnessBlake3Effect := by rfl
 
+def witnessDigestConflictMemory : Mem :=
+  writeRaw (writeRaw witnessBlake3Pending.request.memory 15
+    witnessBlake3Response.digest.1) 16 witnessBlake3Response.digest.2
+
+def witnessDigestConflictPending : ServicePending := {
+  witnessBlake3Pending with request := {
+    witnessBlake3Pending.request with memory :=
+      witnessDigestConflictMemory } }
+
+def witnessDigestConflictResponse : Blake3Response := {
+  witnessBlake3Response with digest := (0xab#128, 0xbb#128) }
+
+example : serviceResponseMatches witnessDigestConflictPending
+    witnessDigestConflictResponse = true := by native_decide
+
+example : writeOnce witnessDigestConflictPending.request.memory
+    witnessDigestConflictPending.request.outputAddresses.1
+    witnessDigestConflictResponse.digest.1 = none := by native_decide
+
+example :
+    let conflict := serviceStep (.pending 2 witnessDigestConflictPending)
+      (.respond witnessDigestConflictResponse)
+    conflict.decision = some (.fault .writeConflict) ∧
+      conflict.state = .idle 2 ∧
+      (serviceStep conflict.state (.respond witnessDigestConflictResponse)).decision =
+        some (.fault .badState) ∧
+      ¬ ∃ effect : Effect, conflict.decision = some (.result effect) := by
+  apply binding_digest_conflict_discards_and_replay_is_bad_state
+  all_goals native_decide
+
 example : witnessBlake3Effect.common.resultChecksum =
     crc32 (blake3ResultPayload witnessBlake3Pending witnessBlake3Response) := by rfl
 
@@ -874,6 +930,7 @@ theorem lifecycle_service_id_overflow_rejected (raw : RawBlake3Request) :
 #print axioms binding_wrong_service_id_rejected
 #print axioms binding_wrong_kind_rejected
 #print axioms binding_mismatched_response_preserves_state
+#print axioms binding_digest_conflict_discards_and_replay_is_bad_state
 #print axioms wire_output_stall_holds_state
 #print axioms wire_output_stalls_hold_state
 #print axioms wire_output_stall_holds_bytes
