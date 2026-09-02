@@ -1,10 +1,11 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, ``blake3.control.abort``, and
-``blake3.control.reset`` with their frozen bytes.  It does not claim coverage
-of the other v3 negative cases, arbitrary ready/valid schedules, universal
-Lean-to-RTL refinement, synthesized netlists, physical implementation, or
-hardware.
+This covers only ``blake3.lifecycle.nominal``, the three frozen
+``blake3.reject.{txn_id,service_id,kind}`` binding mutations, and
+``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
+coverage of the other v3 negative cases, arbitrary ready/valid schedules,
+universal Lean-to-RTL refinement, synthesized netlists, physical
+implementation, or hardware.
 """
 
 from __future__ import annotations
@@ -66,6 +67,15 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
             for case in corpus["cases"]
             if case["case_id"] in {
                 "blake3.control.abort", "blake3.control.reset"
+            }
+        }
+        cls.binding_rejections = {
+            case["case_id"].removeprefix("blake3.reject."): case
+            for case in corpus["cases"]
+            if case["case_id"] in {
+                "blake3.reject.txn_id",
+                "blake3.reject.service_id",
+                "blake3.reject.kind",
             }
         }
         cls.temporary = tempfile.TemporaryDirectory()
@@ -159,6 +169,80 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         tx_checks = int(stability.split("tx_checks=")[1])
         self.assertGreater(rx_checks, 0, stability)
         self.assertGreater(tx_checks, 0, stability)
+
+    def test_binding_rejections_preserve_service_then_recover_and_retire(self) -> None:
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        expected_required = bytes.fromhex(wire["service_required_frame_hex"])
+        expected_result = bytes.fromhex(wire["result_frame_hex"])
+        expected_retired = bytes.fromhex(wire["retire_response_hex"])
+
+        for field, detail in (("txn_id", 1), ("service_id", 1), ("kind", 2)):
+            with self.subTest(field=field):
+                case = self.binding_rejections[field]
+                host_envelope = bytes.fromhex(case["evidence"]["host_envelope_hex"])
+                self.assertEqual(host_envelope[0], protocol.PROTOCOL_VERSION)
+                self.assertEqual(host_envelope[1:9], bytes.fromhex("8877665544332211"))
+                self.assertEqual(int.from_bytes(host_envelope[19:21], "little"), 32)
+                mutated_service = protocol.RequestFrame(
+                    protocol.Opcode.SERVICE_RESPONSE,
+                    host_envelope[9:19] + host_envelope[21:]).encode()
+                requests = [request, mutated_service, good_service, retire]
+                frames = [request_from_wire(raw) for raw in requests]
+
+                endpoint = protocol.Lsc1Endpoint()
+                model_responses = []
+                for index, frame in enumerate(frames):
+                    model_responses.append(protocol.drive(endpoint, frame.encode())[0])
+                    if index == 1:
+                        self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                        self.assertIsNotNone(endpoint.staged)
+                        self.assertIsNotNone(endpoint.staged.service)
+
+                decoded_model = [protocol.decode_response(raw) for raw in model_responses]
+                self.assertEqual([reply.status for reply in decoded_model], [
+                    protocol.Status.SERVICE_REQUIRED,
+                    protocol.Status.BAD_SERVICE,
+                    protocol.Status.OK,
+                    protocol.Status.RETIRED,
+                ])
+                self.assertEqual(decoded_model[1].payload,
+                                 host_envelope[9:13] + bytes([detail]))
+                self.assertEqual(model_responses[0], expected_required)
+                self.assertEqual(model_responses[2:], [expected_result, expected_retired])
+
+                manifest = Path(self.temporary.name) / f"{field}.manifest"
+                manifest_lines = []
+                for index, raw in enumerate(requests):
+                    path = Path(self.temporary.name) / f"{field}-request-{index}.hex"
+                    path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+                    manifest_lines.append(f"{path} {len(raw)}")
+                manifest.write_text("\n".join(manifest_lines) + "\n")
+                run = subprocess.run(
+                    ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+                     "+V3_FINITE_STALLS"],
+                    cwd=ROOT, check=True, capture_output=True, text=True)
+                rtl_responses = [
+                    bytes.fromhex(line.removeprefix("RESPONSE "))
+                    for line in run.stdout.splitlines() if line.startswith("RESPONSE ")
+                ]
+                self.assertEqual(rtl_responses, model_responses)
+                for raw in rtl_responses:
+                    protocol.decode_response(raw)  # includes the complete RTL CRC
+
+                transactions = [line for line in run.stdout.splitlines()
+                                if line.startswith("RTL_TRANSACTION ")]
+                self.assertEqual(len(transactions), 4)
+                self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                                 ["01", "91", "00", "02"])
+                pending = next(line for line in run.stdout.splitlines()
+                               if line.startswith("RTL_V3_BAD_SERVICE "))
+                self.assertEqual(pending, "RTL_V3_BAD_SERVICE service_pending=1")
+                counts = next(line for line in run.stdout.splitlines()
+                              if line.startswith("RTL_COUNTS "))
+                self.assertEqual(int(counts.split("done=")[1]), 1, counts)
 
     def test_control_cases_clear_service_and_reject_frozen_stale_response(self) -> None:
         nominal_wire = self.nominal["wire"]
