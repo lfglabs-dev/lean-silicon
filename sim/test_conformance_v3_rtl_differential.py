@@ -1,8 +1,10 @@
-"""Bounded v3 nominal-lifecycle replay: executable model versus authored RTL.
+"""Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal`` and its frozen wire frames.  It
-does not claim coverage of v3 negative cases, arbitrary ready/valid schedules,
-or universal Lean-to-RTL refinement.
+This covers only ``blake3.lifecycle.nominal``, ``blake3.control.abort``, and
+``blake3.control.reset`` with their frozen bytes.  It does not claim coverage
+of the other v3 negative cases, arbitrary ready/valid schedules, universal
+Lean-to-RTL refinement, synthesized netlists, physical implementation, or
+hardware.
 """
 
 from __future__ import annotations
@@ -59,6 +61,13 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.nominal = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.lifecycle.nominal")
+        cls.controls = {
+            case["case_id"].removeprefix("blake3.control."): case
+            for case in corpus["cases"]
+            if case["case_id"] in {
+                "blake3.control.abort", "blake3.control.reset"
+            }
+        }
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -150,6 +159,77 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         tx_checks = int(stability.split("tx_checks=")[1])
         self.assertGreater(rx_checks, 0, stability)
         self.assertGreater(tx_checks, 0, stability)
+
+    def test_control_cases_clear_service_and_reject_frozen_stale_response(self) -> None:
+        nominal_wire = self.nominal["wire"]
+        request = bytes.fromhex(nominal_wire["blake3_request_hex"])
+        stale_request = bytes.fromhex(nominal_wire["service_response_frame_hex"])
+        expected_required = bytes.fromhex(nominal_wire["service_required_frame_hex"])
+        expected_host_envelope = self.nominal["service_response"]["host_envelope_hex"]
+
+        # The two frozen controls name the same already-computed host response.
+        # Its LSC-1 wire representation is the nominal SERVICE_RESPONSE frame;
+        # validate both complete encodings before either implementation sees it.
+        request_from_wire(request)
+        request_from_wire(stale_request)
+        for case in self.controls.values():
+            self.assertEqual(case["evidence"]["stale_host_envelope_hex"],
+                             expected_host_envelope)
+            self.assertEqual(case["evidence"]["endpoint_state"], "idle")
+
+        for action in ("abort", "reset"):
+            with self.subTest(action=action):
+                endpoint = protocol.Lsc1Endpoint()
+                model_required = protocol.drive(endpoint, request)[0]
+                self.assertEqual(model_required, expected_required)
+                if action == "abort":
+                    endpoint.step(abort=True)
+                else:
+                    endpoint.step(reset_n=False)
+                self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+                self.assertIsNone(endpoint.staged)
+                model_stale_rejection = protocol.drive(endpoint, stale_request)[0]
+                decoded_model = protocol.decode_response(model_stale_rejection)
+                self.assertEqual(decoded_model.status, protocol.Status.BAD_STATE)
+                self.assertEqual(decoded_model.payload,
+                                 int(0x10203040).to_bytes(4, "little") + b"\x00")
+
+                request_path = Path(self.temporary.name) / f"{action}-request.hex"
+                stale_path = Path(self.temporary.name) / f"{action}-stale.hex"
+                for path, raw in ((request_path, request), (stale_path, stale_request)):
+                    path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+                control_arg = "+ABORT_AFTER_FIRST" if action == "abort" else "+RESET_AFTER_FIRST"
+                run = subprocess.run(
+                    ["vvp", str(self.simulator), f"+REQUEST={request_path}",
+                     f"+LENGTH={len(request)}", f"+REQUEST2={stale_path}",
+                     f"+LENGTH2={len(stale_request)}", control_arg,
+                     "+V3_FINITE_STALLS"],
+                    cwd=ROOT, check=True, capture_output=True, text=True)
+                rtl_responses = [
+                    bytes.fromhex(line.removeprefix("RESPONSE "))
+                    for line in run.stdout.splitlines() if line.startswith("RESPONSE ")
+                ]
+                self.assertEqual(rtl_responses,
+                                 [expected_required, model_stale_rejection])
+                for raw in rtl_responses:
+                    protocol.decode_response(raw)
+
+                before = next(line for line in run.stdout.splitlines()
+                              if line.startswith(f"RTL_CONTROL {action.upper()} BEFORE"))
+                after = next(line for line in run.stdout.splitlines()
+                             if line.startswith(f"RTL_CONTROL {action.upper()} AFTER"))
+                self.assertIn("origin_opcode=08 result=0 service=1", before)
+                self.assertIn("result=0 service=0 tx=0", after)
+                transactions = [line for line in run.stdout.splitlines()
+                                if line.startswith("RTL_TRANSACTION ")]
+                self.assertEqual(len(transactions), 2)
+                self.assertIn("request_opcode=08 origin_opcode=08 status=01",
+                              transactions[0])
+                self.assertIn("request_opcode=11", transactions[1])
+                self.assertIn("status=87", transactions[1])
+                counts = next(line for line in run.stdout.splitlines()
+                              if line.startswith("RTL_COUNTS "))
+                self.assertEqual(int(counts.split("done=")[1]), 0, counts)
 
 
 if __name__ == "__main__":
