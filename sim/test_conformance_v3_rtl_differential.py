@@ -1,7 +1,7 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, the seven frozen
-``blake3.reject.{txn_id,service_id,kind,digest,metadata.counter,metadata.block_len,metadata.flags}``
+This covers only ``blake3.lifecycle.nominal``, the eight frozen
+``blake3.reject.{txn_id,service_id,kind,digest,replay,metadata.counter,metadata.block_len,metadata.flags}``
 mutations, and
 ``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
@@ -94,6 +94,9 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.flags_rejection = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.reject.metadata.flags")
+        cls.replay_rejection = next(
+            case for case in corpus["cases"]
+            if case["case_id"] == "blake3.reject.replay")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -668,6 +671,94 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         counts = next(line for line in run.stdout.splitlines()
                       if line.startswith("RTL_COUNTS "))
         self.assertEqual(int(counts.split("done=")[1]), 0, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_completed_service_response_replay_preserves_result_then_retires(self) -> None:
+        case = self.replay_rejection
+        self.assertEqual(
+            case["fingerprint"],
+            "sha256:78bb44fdcf8df26dfc0d70c33ea2b1cb1ebb4184b991d6d4d847f391799d2b2c",
+        )
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        requests = [request, service, service, retire]
+        frames = [request_from_wire(raw) for raw in requests]
+        self.assertEqual(requests[1], requests[2])
+
+        self.assertEqual(
+            bytes.fromhex(case["evidence"]["internal_payload_hex"]),
+            bytes.fromhex(self.nominal["service_required"]["internal_payload_hex"]),
+        )
+        self.assertEqual(case["evidence"]["error"], "replayed SERVICE_REQUIRED")
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        for index, frame in enumerate(frames):
+            model_responses.append(protocol.drive(endpoint, frame.encode())[0])
+            if index == 1:
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+            elif index == 2:
+                replay = protocol.decode_response(model_responses[-1])
+                self.assertIs(replay.status, protocol.Status.BAD_STATE)
+                self.assertEqual(replay.payload,
+                                 int(0x10203040).to_bytes(4, "little") + b"\x00")
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex("5a018705004030201000893d568b"),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.OK,
+             protocol.Status.BAD_STATE, protocol.Status.RETIRED],
+        )
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "service-replay.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"service-replay-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS"],
+            cwd=ROOT, check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "00", "87", "02"])
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
         final = next(line for line in run.stdout.splitlines()
                      if line.startswith("RTL_V3_FINAL "))
         final_fields = dict(field.split("=") for field in final.split()[1:])
