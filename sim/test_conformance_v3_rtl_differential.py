@@ -1,9 +1,11 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, the eight frozen
-``blake3.reject.{txn_id,service_id,kind,digest,replay,metadata.counter,metadata.block_len,metadata.flags}``
-mutations, and
-``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
+This covers only ``blake3.lifecycle.nominal``, the seven frozen
+``blake3.reject.{txn_id,service_id,kind,digest,metadata.counter,metadata.block_len,metadata.flags}``
+mutations, ``blake3.control.{abort,reset}`` with their frozen bytes, and one
+additional duplicate ``SERVICE_RESPONSE`` differential derived from the nominal
+wire frames.  The duplicate response is not the adapter-level
+``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
 implementation, or hardware.  The valid counter, block_len, and flags mutations are
@@ -94,9 +96,6 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.flags_rejection = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.reject.metadata.flags")
-        cls.replay_rejection = next(
-            case for case in corpus["cases"]
-            if case["case_id"] == "blake3.reject.replay")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -684,11 +683,6 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
 
     def test_completed_service_response_replay_preserves_result_then_retires(self) -> None:
-        case = self.replay_rejection
-        self.assertEqual(
-            case["fingerprint"],
-            "sha256:78bb44fdcf8df26dfc0d70c33ea2b1cb1ebb4184b991d6d4d847f391799d2b2c",
-        )
         wire = self.nominal["wire"]
         request = bytes.fromhex(wire["blake3_request_hex"])
         service = bytes.fromhex(wire["service_response_frame_hex"])
@@ -696,12 +690,6 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         requests = [request, service, service, retire]
         frames = [request_from_wire(raw) for raw in requests]
         self.assertEqual(requests[1], requests[2])
-
-        self.assertEqual(
-            bytes.fromhex(case["evidence"]["internal_payload_hex"]),
-            bytes.fromhex(self.nominal["service_required"]["internal_payload_hex"]),
-        )
-        self.assertEqual(case["evidence"]["error"], "replayed SERVICE_REQUIRED")
 
         endpoint = protocol.Lsc1Endpoint()
         model_responses = []
