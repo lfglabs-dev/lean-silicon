@@ -165,10 +165,6 @@ module tb_lsc1_packet_vector;
                 $display("RTL_V3_WRITE_CONFLICT service_pending=%0d result_pending=%0d done=%0d",
                          dut.blake_service_pending, dut.blake_result_pending,
                          trace_done);
-            if (v3_finite_stalls && response[2] == 8'h87)
-                $display("RTL_V3_BAD_STATE origin_opcode=%02x service_pending=%0d result_pending=%0d done=%0d",
-                         dut.staged_operation, dut.blake_service_pending,
-                         dut.blake_result_pending, trace_done);
         end
     endtask
 
