@@ -164,6 +164,9 @@ module tb_lsc1_packet_vector;
             if (v3_finite_stalls && response[2] == 8'h91)
                 $display("RTL_V3_BAD_SERVICE service_pending=%0d",
                          dut.blake_service_pending);
+            if (v3_finite_stalls && response[2] == 8'h84)
+                $display("RTL_V3_BAD_CRC service_pending=%0d done=%0d",
+                         dut.blake_service_pending, trace_done);
             if (v3_finite_stalls && response[2] == 8'h8c)
                 $display("RTL_V3_WRITE_CONFLICT service_pending=%0d result_pending=%0d done=%0d",
                          dut.blake_service_pending, dut.blake_result_pending,
