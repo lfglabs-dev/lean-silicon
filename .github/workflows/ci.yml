@@ -85,6 +85,8 @@ jobs:
         run: python3 test/test_lsc1_05_v2_adversarial_regressions.py -v
       - name: Host-prepared memory/fetch boundary
         run: make lsc1-host-authored-rtl-boundary
+      - name: Host-prepared corrupted RETIRE discard boundary
+        run: make lsc1-retire-mismatch-host-boundary
 
   formal-toolchain:
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary lsc1-retire-mismatch-host-boundary formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -115,6 +115,9 @@ lsc1-authored-rtl-contract:
 
 lsc1-host-authored-rtl-boundary:
 	$(PYTHON) tools/lsc1_host_authored_rtl_boundary.py --verify
+
+lsc1-retire-mismatch-host-boundary:
+	$(PYTHON) tools/lsc1_retire_mismatch_host_boundary.py
 
 formal:
 	$(PYTHON) formal/run_deref_bridge_tasks.py
