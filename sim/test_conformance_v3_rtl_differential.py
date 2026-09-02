@@ -1,11 +1,14 @@
 """Bounded v3 lifecycle replay: executable model versus authored RTL.
 
-This covers only ``blake3.lifecycle.nominal``, the four frozen
-``blake3.reject.{txn_id,service_id,kind,digest}`` mutations, and
+This covers only ``blake3.lifecycle.nominal``, the five frozen
+``blake3.reject.{txn_id,service_id,kind,digest,metadata.block_len}`` mutations, and
 ``blake3.control.{abort,reset}`` with their frozen bytes.  It does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
-implementation, or hardware.
+implementation, or hardware.  The valid block_len mutation is compared only
+from IDLE through SERVICE_REQUIRED, followed by reset recovery; a second BLAKE3
+request while SERVICE_PENDING is rejected as BAD_STATE before either
+implementation inspects its metadata.
 """
 
 from __future__ import annotations
@@ -81,6 +84,9 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         cls.digest_rejection = next(
             case for case in corpus["cases"]
             if case["case_id"] == "blake3.reject.digest")
+        cls.block_len_rejection = next(
+            case for case in corpus["cases"]
+            if case["case_id"] == "blake3.reject.metadata.block_len")
         cls.temporary = tempfile.TemporaryDirectory()
         cls.simulator = Path(cls.temporary.name) / "conformance-v3-vector.vvp"
         subprocess.run(
@@ -246,6 +252,107 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
                 counts = next(line for line in run.stdout.splitlines()
                               if line.startswith("RTL_COUNTS "))
                 self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+
+    def test_block_len_variant_at_idle_then_reset_recovers_and_retires(self) -> None:
+        case = self.block_len_rejection
+        self.assertEqual(
+            case["fingerprint"],
+            "sha256:89c7905cca8d24c000ba2b2812af883be44f442ed4614a5c6d47df7c4a5cae8d",
+        )
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+
+        variant = protocol.build_blake3(
+            txn_id=0x10203040, pc=2, fp=64,
+            profile=protocol.Profile.INTERPRETER_COMPAT,
+            message_offsets=(0, 1, 2, 3), cv_offset=8, out_offset=10,
+            metadata=63 << 64,
+            message_cells=tuple(protocol.Cell(True, value)
+                                for value in (11, 22, 33, 44)),
+            cv_cells=tuple(protocol.Cell(True, value) for value in (55, 66)),
+            out_cells=(protocol.Cell(False, 0), protocol.Cell(False, 0)),
+        ).encode()
+        variant_frame = request_from_wire(variant)
+        expected_variant_service = bytes.fromhex(
+            case["evidence"]["internal_payload_hex"])
+        self.assertEqual(len(expected_variant_service), 122)
+
+        # A second instruction cannot reach BLAKE3 metadata handling while the
+        # endpoint is SERVICE_PENDING: both implementations reject it first as
+        # BAD_STATE.  Exercise the frozen valid block_len=63 mutation at IDLE,
+        # where authored RTL can actually emit and compare its service payload,
+        # then reset it before replaying the frozen nominal lifecycle (ABORT
+        # intentionally preserves service_seq, so service_id=1 would be stale).
+        requests = [variant, request, good_service, retire]
+        frames = [request_from_wire(raw) for raw in requests]
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = [protocol.drive(endpoint, variant_frame.encode())[0]]
+        decoded_variant = protocol.decode_response(model_responses[0])
+        self.assertIs(decoded_variant.status, protocol.Status.SERVICE_REQUIRED)
+        self.assertEqual(decoded_variant.payload, expected_variant_service)
+        self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+        endpoint.step(reset_n=False)
+        endpoint.step(reset_n=True)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+        self.assertIsNone(endpoint.staged)
+        for frame in frames[1:]:
+            model_responses.append(protocol.drive(endpoint, frame.encode())[0])
+
+        decoded_model = [protocol.decode_response(raw) for raw in model_responses]
+        self.assertEqual([reply.status for reply in decoded_model], [
+            protocol.Status.SERVICE_REQUIRED,
+            protocol.Status.SERVICE_REQUIRED,
+            protocol.Status.OK,
+            protocol.Status.RETIRED,
+        ])
+        self.assertEqual(model_responses[1], bytes.fromhex(
+            wire["service_required_frame_hex"]))
+        self.assertEqual(model_responses[2], bytes.fromhex(wire["result_frame_hex"]))
+        self.assertEqual(model_responses[3], bytes.fromhex(wire["retire_response_hex"]))
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"block-len-request-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+        paths = [Path(self.temporary.name) / f"block-len-request-{index}.hex"
+                 for index in range(len(requests))]
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+REQUEST={paths[0]}",
+             f"+LENGTH={len(requests[0])}", "+RESET_AFTER_FIRST",
+             f"+REQUEST2={paths[1]}", f"+LENGTH2={len(requests[1])}",
+             f"+REQUEST3={paths[2]}", f"+LENGTH3={len(requests[2])}",
+             f"+REQUEST4={paths[3]}", f"+LENGTH4={len(requests[3])}",
+             "+V3_FINITE_STALLS"],
+            cwd=ROOT, check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "01", "00", "02"])
+        before = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_CONTROL RESET BEFORE"))
+        after = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_CONTROL RESET AFTER"))
+        self.assertIn("origin_opcode=08 result=0 service=1", before)
+        self.assertIn("result=0 service=0 tx=0", after)
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        # The reset-control harness drains each response before the next frame,
+        # so only the fixed TX backpressure is expected to create held beats.
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
 
     def test_digest_write_conflict_discards_and_replay_is_bad_state(self) -> None:
         case = self.digest_rejection
