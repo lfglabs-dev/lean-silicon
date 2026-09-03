@@ -14,7 +14,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation retire-crc-frame-valid-mutation duplicate-pending-mutation short-service-pending-mutation oversized-service-pending-mutation bad-version-service-mutation unknown-opcode-service-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation retire-crc-frame-valid-mutation short-retire-length-mutation duplicate-pending-mutation short-service-pending-mutation oversized-service-pending-mutation bad-version-service-mutation unknown-opcode-service-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 response-payload-mux:
 	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
@@ -285,6 +285,7 @@ mutation:
 	$(MAKE) short-response-mutation
 	$(MAKE) serializer-interface-mutation
 	$(MAKE) retire-crc-frame-valid-mutation
+	$(MAKE) short-retire-length-mutation
 
 short-response-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -372,6 +373,20 @@ retire-crc-frame-valid-mutation:
 	  fi; \
 	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
 	  echo "PASS: RETIRE frame_valid mutant compile/elaboration and behavioral kill"
+
+short-retire-length-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp $(RTL) "$$d/"; \
+	  src="$$d/lsc1_packet_frontend.sv"; \
+	  test "$$(grep -Foc 'if (frame_length != 8) begin' "$$src")" -eq 1; \
+	  sed -i "s/if (frame_length != 8) begin/if (1'b0) begin/" "$$src"; \
+	  if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest \
+	      sim.test_conformance_v3_rtl_differential.ConformanceV3RtlDifferentialTests.test_short_retire_preserves_result_then_retry_retires \
+	      >"$$d/mutation.out" 2>&1; then \
+	    echo "RETIRE frame_length == 8 guard mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
+	  echo "PASS: RETIRE frame_length == 8 guard mutant compile/elaboration and behavioral kill"
 
 duplicate-pending-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
