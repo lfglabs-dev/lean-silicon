@@ -12,6 +12,9 @@ response and matching ``RETIRE`` complete the original request, plus the
 corresponding CRC-valid one-byte-oversized response with an appended ``0xa5``.
 It also covers an exact-length, CRC-valid ``SERVICE_RESPONSE`` whose reserved
 payload byte 9 is nonzero, followed by the unchanged valid response and RETIRE.
+One further exact-length vector changes only the outer request-envelope flags
+byte to ``0x01`` (plus the recomputed CRC), proving the pending service survives
+the resulting ``BAD_FLAGS`` before the untouched response and RETIRE succeed.
 The duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
@@ -1069,6 +1072,135 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         self.assertEqual(
             pending,
             "RTL_V3_RESERVED_SERVICE service_pending=1 service_seq=00000001 "
+            "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
+            "fp=00000000 retire_seq=00000000 done=0",
+        )
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_service_response_envelope_flags_preserve_pending_then_retry_retires(self) -> None:
+        """Reject outer flags 0x01, then accept the byte-identical valid retry."""
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        good_frame = request_from_wire(good_service)
+        bad_service = protocol.RequestFrame(
+            good_frame.opcode, good_frame.payload, flags=0x01).encode()
+        requests = [request, bad_service, good_service, retire]
+
+        # Pin this slice to outer envelope byte 3 and its necessarily recomputed
+        # CRC.  Opcode, declared length, and all 42 payload bytes stay identical.
+        self.assertEqual(len(bad_service), len(good_service))
+        self.assertEqual(
+            [index for index, (good, bad) in
+             enumerate(zip(good_service[:-4], bad_service[:-4])) if good != bad],
+            [3],
+        )
+        self.assertEqual(good_service[2], protocol.Opcode.SERVICE_RESPONSE)
+        self.assertEqual(bad_service[2], protocol.Opcode.SERVICE_RESPONSE)
+        self.assertEqual(good_service[3], 0x00)
+        self.assertEqual(bad_service[3], 0x01)
+        self.assertEqual(good_service[4:6], bad_service[4:6])
+        self.assertEqual(int.from_bytes(bad_service[4:6], "little"), 42)
+        self.assertEqual(good_service[6:-4], bad_service[6:-4])
+        self.assertEqual(len(bad_service[6:-4]), 42)
+        self.assertEqual(
+            int.from_bytes(bad_service[-4:], "little"),
+            protocol.crc32(bad_service[:-4]),
+        )
+        self.assertNotEqual(bad_service[-4:], good_service[-4:])
+        with self.assertRaisesRegex(ValueError, "request CRC mismatch"):
+            request_from_wire(good_service[:3] + b"\x01" + good_service[4:])
+        decoded_bad_frame = request_from_wire(bad_service)
+        self.assertEqual(decoded_bad_frame.flags, 0x01)
+        self.assertEqual(decoded_bad_frame.payload, good_frame.payload)
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        pending_identity = None
+        for index, raw in enumerate(requests):
+            model_responses.append(protocol.drive(endpoint, raw)[0])
+            if index == 0:
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+                pending_identity = endpoint.staged
+                pending_snapshot = (
+                    endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                    endpoint.committed_pc, endpoint.committed_fp,
+                    endpoint.retire_seq, endpoint.pins().done_pulse,
+                )
+            elif index == 1:
+                rejected = protocol.decode_response(model_responses[-1])
+                self.assertIs(rejected.status, protocol.Status.BAD_FLAGS)
+                self.assertEqual(rejected.payload, bytes(5))
+                self.assertEqual(
+                    (endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                     endpoint.committed_pc, endpoint.committed_fp,
+                     endpoint.retire_seq, endpoint.pins().done_pulse),
+                    pending_snapshot,
+                )
+                self.assertIs(endpoint.staged, pending_identity)
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            protocol.ResponseFrame(protocol.Status.BAD_FLAGS, bytes(5)).encode(),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.BAD_FLAGS,
+             protocol.Status.OK, protocol.Status.RETIRED],
+        )
+        self.assertEqual(endpoint.service_seq, 1)
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "envelope-flags-service-response.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"envelope-flags-service-response-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS", "+V3_ENVELOPE_FLAGS_SERVICE"], cwd=ROOT, check=True,
+            capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "85", "00", "02"])
+        pending = next(line for line in run.stdout.splitlines()
+                       if line.startswith("RTL_V3_ENVELOPE_FLAGS_SERVICE "))
+        self.assertEqual(
+            pending,
+            "RTL_V3_ENVELOPE_FLAGS_SERVICE service_pending=1 service_seq=00000001 "
             "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
             "fp=00000000 retire_seq=00000000 done=0",
         )
