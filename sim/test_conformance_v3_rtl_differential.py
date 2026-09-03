@@ -16,9 +16,12 @@ Two further exact-length vectors change only one outer request-envelope byte
 (plus the recomputed CRC): flags byte 3 to ``0x01`` for ``BAD_FLAGS``, and
 version byte 1 from ``0x01`` to ``0x02`` for ``BAD_VERSION``.  Each proves the
 pending service survives before the untouched response and RETIRE succeed.
-One final exact-length vector changes only outer opcode byte 2 from ``0x11`` to
-``0xff`` (plus the recomputed CRC), proving ``BAD_OPCODE`` takes priority over
-``BAD_STATE`` while the service is pending and that the valid retry still retires.
+One final exact-length vector changes outer opcode byte 2 from ``0x11`` to
+``0xff`` and sanitizes the would-be compute profile/flags payload bytes 12--13
+from opaque digest bytes ``0xa5 0xdd`` to ``0x00 0x00`` (plus the recomputed
+CRC).  This proves ``BAD_OPCODE`` takes priority over ``BAD_STATE`` while the
+service is pending, without an incorrect priority implementation being
+intercepted by ``BAD_PROFILE``, and that the valid retry still retires.
 The duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
@@ -1362,25 +1365,38 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         retire = bytes.fromhex(wire["retire_request_hex"])
         bad_service = bytearray(good_service)
         bad_service[2] = 0xff
+        # An unknown opcode is still presented to the compute validator.  Keep
+        # its would-be compute profile and flags slots valid so that a mutant
+        # which wrongly lets pending-state handling outrank BAD_OPCODE reaches
+        # BAD_STATE rather than being intercepted first by the response digest's
+        # 0xa5/0xdd bytes as BAD_PROFILE/BAD_FLAGS.
+        bad_service[6 + 12] = int(protocol.Profile.INTERPRETER_COMPAT)
+        bad_service[6 + 13] = 0
         bad_service[-4:] = protocol.crc32(bad_service[:-4]).to_bytes(4, "little")
         bad_service = bytes(bad_service)
         requests = [request, bad_service, good_service, retire]
 
-        # Before CRC, byte 2 is the sole difference from the valid response.
+        # Before CRC, only the opcode and the would-be compute profile/flags
+        # slots differ from the valid response.  The latter are deliberately
+        # sanitized from the opaque service digest so this is genuinely an
+        # opcode-vs-pending test.
         self.assertEqual(len(bad_service), len(good_service))
         self.assertEqual(
             [index for index, (good, bad) in
              enumerate(zip(good_service[:-4], bad_service[:-4])) if good != bad],
-            [2],
+            [2, 18, 19],
         )
         self.assertEqual((good_service[2], bad_service[2]), (0x11, 0xff))
+        self.assertEqual(good_service[18], 0xa5)
+        self.assertEqual(bad_service[18], int(protocol.Profile.INTERPRETER_COMPAT))
+        self.assertEqual(good_service[19], 0xdd)
+        self.assertEqual(bad_service[19], 0)
         self.assertEqual(good_service[0:2], bad_service[0:2])
         self.assertEqual(good_service[3:6], bad_service[3:6])
         self.assertEqual(good_service[0], protocol.SOF_REQUEST)
         self.assertEqual(good_service[1], protocol.PROTOCOL_VERSION)
         self.assertEqual(good_service[3], 0)
         self.assertEqual(int.from_bytes(bad_service[4:6], "little"), 42)
-        self.assertEqual(good_service[6:-4], bad_service[6:-4])
         self.assertEqual(len(bad_service[6:-4]), 42)
         self.assertEqual(int.from_bytes(bad_service[-4:], "little"),
                          protocol.crc32(bad_service[:-4]))

@@ -426,7 +426,11 @@ unknown-opcode-service-mutation:
 	    echo "unknown-opcode pending-priority mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \
 	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
-	  echo "PASS: BAD_OPCODE-over-BAD_STATE priority mutant compile/elaboration and behavioral kill"
+	  grep -Fq '\x87\x05' "$$d/mutation.out"; \
+	  if grep -Eq '\\x86\\x05|\\x85\\x05' "$$d/mutation.out"; then \
+	    echo "unknown-opcode mutant was intercepted before BAD_STATE" >&2; exit 1; \
+	  fi; \
+	  echo "PASS: BAD_OPCODE-over-BAD_STATE mutant reached BAD_STATE and was behaviorally killed"
 
 rx-payload-prefix:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_rx_payload_prefix -o tb_lsc1_packet_rx_payload_prefix.vvp \
