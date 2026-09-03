@@ -14,7 +14,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation retire-crc-frame-valid-mutation short-retire-length-mutation oversized-retire-length-mutation duplicate-pending-mutation short-service-pending-mutation oversized-service-pending-mutation bad-version-service-mutation unknown-opcode-service-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation retire-crc-frame-valid-mutation short-retire-length-mutation oversized-retire-length-mutation bad-version-retire-mutation duplicate-pending-mutation short-service-pending-mutation oversized-service-pending-mutation bad-version-service-mutation unknown-opcode-service-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 response-payload-mux:
 	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
@@ -287,6 +287,7 @@ mutation:
 	$(MAKE) retire-crc-frame-valid-mutation
 	$(MAKE) short-retire-length-mutation
 	$(MAKE) oversized-retire-length-mutation
+	$(MAKE) bad-version-retire-mutation
 
 short-response-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
@@ -402,6 +403,20 @@ oversized-retire-length-mutation:
 	  fi; \
 	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
 	  echo "PASS: oversized RETIRE length-guard mutant compile/elaboration and behavioral kill"
+
+bad-version-retire-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp $(RTL) "$$d/"; \
+	  src="$$d/lsc1_packet_rx.sv"; \
+	  test "$$(grep -Foc 'else if (version != VERSION)' "$$src")" -eq 1; \
+	  sed -i 's/else if (version != VERSION)/else if (version == 8'"'"'hff)/' "$$src"; \
+	  if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest \
+	      sim.test_conformance_v3_rtl_differential.ConformanceV3RtlDifferentialTests.test_retire_bad_version_preserves_result_then_retry_retires \
+	      >"$$d/mutation.out" 2>&1; then \
+	    echo "BAD_VERSION RETIRE receiver mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
+	  echo "PASS: BAD_VERSION RETIRE receiver mutant compile/elaboration and behavioral kill"
 
 duplicate-pending-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
