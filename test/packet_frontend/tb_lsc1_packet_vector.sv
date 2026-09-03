@@ -167,6 +167,13 @@ module tb_lsc1_packet_vector;
             if (v3_finite_stalls && response[2] == 8'h84)
                 $display("RTL_V3_BAD_CRC service_pending=%0d done=%0d",
                          dut.blake_service_pending, trace_done);
+            if (v3_finite_stalls && response[2] == 8'h87 &&
+                transaction_opcode == 8'h08)
+                $display("RTL_V3_DUPLICATE_PENDING service_pending=%0d service_seq=%08x txn_id=%08x service_id=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d",
+                         dut.blake_service_pending, dut.blake_service_seq,
+                         dut.blake_staged_txn_id, dut.blake_staged_service_id,
+                         dut.state_valid, dut.committed_pc, dut.committed_fp,
+                         dut.retire_seq, trace_done);
             if (v3_finite_stalls && response[2] == 8'h8c)
                 $display("RTL_V3_WRITE_CONFLICT service_pending=%0d result_pending=%0d done=%0d",
                          dut.blake_service_pending, dut.blake_result_pending,
