@@ -14,7 +14,7 @@ RTL = ../../asic_core/rtl/lsc1_packet_rx.sv \
       ../../asic_core/rtl/lsc1_field_encoder.sv \
       ../../asic_core/rtl/lsc1_packet_frontend.sv
 
-.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation duplicate-pending-mutation short-service-pending-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
+.PHONY: sim transport response-payload-mux response-payload-mux-mutation blake3-alias-check blake3-alias-check-mutation request-validator request-validator-mutation cell-alias-check cell-alias-check-mutation serializer-structure serializer-interface-mutation lifecycle lifecycle-mutation blake3-retire-commit mutation differential-mutation duplicate-pending-mutation short-service-pending-mutation oversized-service-pending-mutation scalar-result-mutation short-response-mutation rx-payload-prefix rx-payload-prefix-mutation clean
 
 response-payload-mux:
 	iverilog -g2012 -Wall -s tb_lsc1_response_payload_mux -o tb_lsc1_response_payload_mux.vvp \
@@ -277,6 +277,7 @@ mutation:
 	$(MAKE) request-validator-mutation
 	$(MAKE) duplicate-pending-mutation
 	$(MAKE) short-service-pending-mutation
+	$(MAKE) oversized-service-pending-mutation
 	$(MAKE) cell-alias-check-mutation
 	$(MAKE) scalar-result-mutation
 	$(MAKE) short-response-mutation
@@ -382,6 +383,20 @@ short-service-pending-mutation:
 	  fi; \
 	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
 	  echo "PASS: short-service pending-length mutant compile/elaboration and behavioral kill"
+
+oversized-service-pending-mutation:
+	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  cp $(RTL) "$$d/"; \
+	  src="$$d/lsc1_packet_frontend.sv"; \
+	  test "$$(grep -Foc 'if (frame_length != 42) begin' "$$src")" -eq 1; \
+	  sed -i 's/if (frame_length != 42) begin/if (frame_length != 43) begin/' "$$src"; \
+	  if PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest \
+	      sim.test_conformance_v3_rtl_differential.ConformanceV3RtlDifferentialTests.test_oversized_service_response_preserves_pending_then_retry_retires \
+	      >"$$d/mutation.out" 2>&1; then \
+	    echo "oversized-service pending-length mutation unexpectedly survived" >&2; exit 1; \
+	  fi; \
+	  grep -Eq 'FAILED|AssertionError' "$$d/mutation.out"; \
+	  echo "PASS: oversized-service pending-length mutant compile/elaboration and behavioral kill"
 
 rx-payload-prefix:
 	iverilog -g2012 -Wall -s tb_lsc1_packet_rx_payload_prefix -o tb_lsc1_packet_rx_payload_prefix.vvp \

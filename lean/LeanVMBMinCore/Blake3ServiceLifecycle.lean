@@ -234,6 +234,45 @@ theorem encodeServiceResponse_length (resp : WireServiceResponse) :
   simp [encodeServiceResponse, u8leBytes, u64leBytes, u32leBytes, u16leBytes,
     resp.hDigest]
 
+/-! ## Full-LSC-1 packet SERVICE_RESPONSE length boundary
+
+The packet frontend receives a 42-byte payload (txn, service id, kind,
+reserved, and two 128-bit digest words).  This boundary is deliberately kept
+separate from the 53-byte host-adapter wire structure above.  Length rejection
+precedes construction or inspection of a semantic service response.
+-/
+
+inductive PacketServiceBoundaryDecision where
+  | semantic
+  | badLength (txnId : UInt32) (detail : UInt8)
+  deriving DecidableEq, Repr
+
+def packetServiceTxnId (payload : List UInt8) : UInt32 :=
+  UInt32.ofNat (bytesNatLE (payload.take 4))
+
+def packetServiceResponseBoundary (payload : List UInt8) (pending : α) :
+    PacketServiceBoundaryDecision × α :=
+  if payload.length = 42 then
+    (.semantic, pending)
+  else
+    (.badLength (packetServiceTxnId payload) 2, pending)
+
+theorem packet_service_exact_length_reaches_semantics
+    (payload : List UInt8) (pending : α) (hLength : payload.length = 42) :
+    packetServiceResponseBoundary payload pending = (.semantic, pending) := by
+  simp [packetServiceResponseBoundary, hLength]
+
+theorem packet_service_oversized_is_bad_length_before_semantics
+    (nominal : List UInt8) (pending : α) (hLength : nominal.length = 42) :
+    packetServiceResponseBoundary (nominal ++ [0xa5]) pending =
+      (.badLength (packetServiceTxnId (nominal ++ [0xa5])) 2, pending) := by
+  simp [packetServiceResponseBoundary, hLength]
+
+theorem packet_service_oversized_preserves_pending
+    (nominal : List UInt8) (pending : α) (hLength : nominal.length = 42) :
+    (packetServiceResponseBoundary (nominal ++ [0xa5]) pending).2 = pending := by
+  rw [packet_service_oversized_is_bad_length_before_semantics nominal pending hLength]
+
 /-! ## Binding key agreement -/
 
 def keyMatches (a b : ServiceKey) : Bool :=
@@ -902,6 +941,8 @@ theorem lifecycle_service_id_overflow_rejected (raw : RawBlake3Request) :
 #print axioms encodeServiceRequired_length
 #print axioms encodeServiceResponse_length
 #print axioms decodeServiceResponse_rejects_length
+#print axioms packet_service_oversized_is_bad_length_before_semantics
+#print axioms packet_service_oversized_preserves_pending
 #print axioms wire_required_binding_is_canonical
 #print axioms validateWireServiceResponse_rejects_schema
 #print axioms validateWireServiceResponse_rejects_status

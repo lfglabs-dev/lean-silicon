@@ -35,6 +35,10 @@ Modules:
   the sequence theorem preserves acceptance
   order, emits one byte-exact CRC-protected RESULT receipt per item, accepts
   the matching RETIRE exactly once, rejects its replay, and finishes idle.
+- `Blake3ServiceLifecycle.lean` — full-LSC-1 host-prepared BLAKE3 suspension,
+  service binding, and retirement semantics, including a packet-boundary oracle
+  that rejects a 43-byte `SERVICE_RESPONSE` with BAD_LENGTH detail 2 before
+  semantic handling and preserves the caller's pending state.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   v1 current-state index bounds, abort preservation, matching commit, mismatch
   rejection, reset, and exactly-once retirement theorems. Arithmetic and
