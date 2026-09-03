@@ -1068,6 +1068,8 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
             "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
             "fp=00000000 retire_seq=00000000 done=0",
         )
+        self.assertFalse(any(line.startswith("RTL_V3_LENGTH_SERVICE ")
+                             for line in run.stdout.splitlines()), run.stdout)
         counts = next(line for line in run.stdout.splitlines()
                       if line.startswith("RTL_COUNTS "))
         self.assertEqual(int(counts.split("done=")[1]), 1, counts)
@@ -1189,6 +1191,8 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
             "service_seq=00000001 txn_id=10203040 service_id=00000001 "
             "state_valid=0 pc=00000000 fp=00000000 retire_seq=00000000 done=0",
         )
+        self.assertFalse(any(line.startswith("RTL_V3_SHORT_SERVICE ")
+                             for line in run.stdout.splitlines()), run.stdout)
         counts = next(line for line in run.stdout.splitlines()
                       if line.startswith("RTL_COUNTS "))
         self.assertEqual(int(counts.split("done=")[1]), 1, counts)
