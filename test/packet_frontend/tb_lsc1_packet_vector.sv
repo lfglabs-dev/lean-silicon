@@ -134,7 +134,8 @@ module tb_lsc1_packet_vector;
             end
             if (v3_finite_stalls && prefetch_next &&
                 !($test$plusargs("V3_BAD_CRC_RETIRE") && manifest_index == 2) &&
-                !($test$plusargs("V3_SHORT_RETIRE") && manifest_index == 2)) begin
+                !($test$plusargs("V3_SHORT_RETIRE") && manifest_index == 2) &&
+                !($test$plusargs("V3_OVERSIZED_RETIRE") && manifest_index == 2)) begin
                 // Present the next frame's common SOF while this response owns
                 // the frontend.  send_byte holds that genuine input beat until
                 // the authored RTL accepts it after the finite TX stall/drain.
@@ -230,6 +231,15 @@ module tb_lsc1_packet_vector;
                 transaction_opcode == 8'h12 && dut.receiver.frame_length == 16'd7 &&
                 $test$plusargs("V3_SHORT_RETIRE"))
                 $display("RTL_V3_SHORT_RETIRE payload_length=%0d result_pending=%0d txn_id=%08x result_crc=%08x next_pc=%08x next_fp=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d parser_state=%0d",
+                         dut.receiver.frame_length, dut.blake_result_pending,
+                         dut.blake_staged_txn_id, dut.blake_staged_result_crc,
+                         dut.blake_staged_next_pc, dut.blake_staged_next_fp,
+                         dut.state_valid, dut.committed_pc, dut.committed_fp,
+                         dut.retire_seq, trace_done, dut.receiver.state);
+            if (v3_finite_stalls && response[2] == 8'h83 &&
+                transaction_opcode == 8'h12 && dut.receiver.frame_length == 16'd9 &&
+                $test$plusargs("V3_OVERSIZED_RETIRE"))
+                $display("RTL_V3_OVERSIZED_RETIRE payload_length=%0d result_pending=%0d txn_id=%08x result_crc=%08x next_pc=%08x next_fp=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d parser_state=%0d",
                          dut.receiver.frame_length, dut.blake_result_pending,
                          dut.blake_staged_txn_id, dut.blake_staged_result_crc,
                          dut.blake_staged_next_pc, dut.blake_staged_next_fp,
