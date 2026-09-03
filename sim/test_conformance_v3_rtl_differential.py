@@ -22,7 +22,10 @@ from opaque digest bytes ``0xa5 0xdd`` to ``0x00 0x00`` (plus the recomputed
 CRC).  This proves ``BAD_OPCODE`` takes priority over ``BAD_STATE`` while the
 service is pending, without an incorrect priority implementation being
 intercepted by ``BAD_PROFILE``, and that the valid retry still retires.
-The duplicate response is not the adapter-level
+The nominal request and service response also feed one matching ``RETIRE`` with
+only the trailing CRC bit flipped, without recomputation, before the untouched
+matching ``RETIRE``.  That bounded case checks that an envelope rejection cannot
+be mistaken for a lifecycle retire attempt.  The duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
 universal Lean-to-RTL refinement, synthesized netlists, physical
@@ -977,6 +980,144 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
                          if line.startswith("RTL_V3_STABILITY "))
         self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
         self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_retire_bad_crc_preserves_result_then_retry_retires(self) -> None:
+        """A receiver CRC fault must not become a lifecycle RETIRE attempt."""
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        service = bytes.fromhex(wire["service_response_frame_hex"])
+        good_retire = bytes.fromhex(wire["retire_request_hex"])
+        bad_retire = good_retire[:-1] + bytes([good_retire[-1] ^ 0x01])
+        requests = [request, service, bad_retire, good_retire]
+
+        # Exactly one bit of only the final CRC byte changes.  In particular,
+        # this is not a semantically changed RETIRE with a recomputed CRC.
+        self.assertEqual(len(bad_retire), len(good_retire))
+        self.assertEqual(bad_retire[:-1], good_retire[:-1])
+        self.assertEqual(bad_retire[-1] ^ good_retire[-1], 0x01)
+        self.assertEqual(
+            int.from_bytes(bad_retire[-4:], "little")
+            ^ int.from_bytes(good_retire[-4:], "little"),
+            0x01000000,
+        )
+        request_from_wire(request)
+        request_from_wire(service)
+        request_from_wire(good_retire)
+        with self.assertRaisesRegex(ValueError, "request CRC mismatch"):
+            request_from_wire(bad_retire)
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        for index, raw in enumerate(requests):
+            model_responses.append(protocol.drive(endpoint, raw)[0])
+            if index == 1:
+                staged = endpoint.staged
+                self.assertIsNotNone(staged)
+                pending_snapshot = (
+                    staged.txn_id, staged.result_crc, staged.next_pc,
+                    staged.next_fp, tuple(staged.writes),
+                )
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertEqual((endpoint.committed_pc, endpoint.committed_fp,
+                                  endpoint.retire_seq, endpoint.state_valid),
+                                 (0, 0, 0, False))
+            elif index == 2:
+                bad_crc = protocol.decode_response(model_responses[-1])
+                self.assertIs(bad_crc.status, protocol.Status.BAD_CRC)
+                self.assertEqual(bad_crc.payload, bytes(5))
+                staged = endpoint.staged
+                self.assertIsNotNone(staged)
+                self.assertEqual(
+                    (staged.txn_id, staged.result_crc, staged.next_pc,
+                     staged.next_fp, tuple(staged.writes)),
+                    pending_snapshot,
+                )
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertEqual((endpoint.committed_pc, endpoint.committed_fp,
+                                  endpoint.retire_seq, endpoint.state_valid),
+                                 (0, 0, 0, False))
+                self.assertFalse(endpoint.pins().done_pulse)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex("5a01840500000000000033ce8edf"),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.OK,
+             protocol.Status.BAD_CRC, protocol.Status.RETIRED],
+        )
+        self.assertEqual((endpoint.committed_pc, endpoint.committed_fp,
+                          endpoint.retire_seq, endpoint.state_valid),
+                         (3, 0x40, 1, True))
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+        self.assertIsNone(endpoint.staged)
+
+        manifest = Path(self.temporary.name) / "retire-bad-crc-retry.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"retire-bad-crc-retry-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS", "+V3_BAD_CRC_RETIRE"],
+            cwd=ROOT, check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "00", "84", "02"])
+        self.assertEqual([line.split("done=")[1] for line in transactions],
+                         ["0", "0", "0", "1"])
+        pending = next(line for line in run.stdout.splitlines()
+                       if line.startswith("RTL_V3_BAD_CRC_RETIRE "))
+        self.assertEqual(
+            pending,
+            "RTL_V3_BAD_CRC_RETIRE result_pending=1 txn_id=10203040 "
+            "result_crc=9d78969c next_pc=00000003 next_fp=00000040 "
+            "state_valid=0 pc=00000000 fp=00000000 retire_seq=00000000 "
+            "done=0 parser_state=0",
+        )
+        states = [line for line in run.stdout.splitlines()
+                  if line.startswith("RTL_STATE ")]
+        self.assertEqual(states[2],
+                         "RTL_STATE valid=0 pc=00000000 fp=00000000 "
+                         "retire_seq=00000000 result_pending=1")
+        self.assertEqual(states[3],
+                         "RTL_STATE valid=1 pc=00000003 fp=00000040 "
+                         "retire_seq=00000001 result_pending=0")
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        count_fields = dict(field.split("=") for field in counts.split()[1:])
+        self.assertGreater(int(count_fields["rx_blocked"]), 0, counts)
+        self.assertGreater(int(count_fields["tx_blocked"]), 0, counts)
+        self.assertEqual(int(count_fields["done"]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        stability_fields = dict(field.split("=")
+                                for field in stability.split()[1:])
+        self.assertGreater(int(stability_fields["rx_checks"]), 0, stability)
+        self.assertGreater(int(stability_fields["tx_checks"]), 0, stability)
 
     def test_nonzero_reserved_service_response_preserves_pending_then_retry_retires(self) -> None:
         """Reject payload byte 9 before binding, then accept the unchanged retry."""
