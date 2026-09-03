@@ -33,7 +33,11 @@ companion four-frame differential appends exactly ``0xa5`` to the untouched
 eight-byte RETIRE payload, declares length 9, and recomputes the CRC.  It reaches
 the same length guard, preserves the pending result, and accepts the untouched
 matching RETIRE under the existing deterministic finite-stall schedule.  A
-further four-frame RETIRE differential changes only outer envelope flags byte 3
+further four-frame RETIRE differential presents exactly one invalid SOF byte
+``0x00`` in place of the nominal request SOF ``0xa1``.  It observes ``BAD_SOF``
+without losing or committing the pending result, then observes ``RETIRED`` for
+the untouched nominal RETIRE.  Another four-frame differential changes only
+outer envelope flags byte 3
 from ``0x00`` to ``0x01`` and recomputes the CRC.  It observes ``BAD_FLAGS``
 without losing or committing the pending result, then observes ``RETIRED`` for
 the untouched nominal RETIRE.  A final four-frame RETIRE differential changes
@@ -1386,6 +1390,133 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
             "txn_id=10203040 result_crc=9d78969c next_pc=00000003 "
             "next_fp=00000040 state_valid=0 pc=00000000 fp=00000000 "
             "retire_seq=00000000 done=0 parser_state=0",
+        )
+        states = [line for line in run.stdout.splitlines()
+                  if line.startswith("RTL_STATE ")]
+        self.assertEqual(states[2],
+                         "RTL_STATE valid=0 pc=00000000 fp=00000000 "
+                         "retire_seq=00000000 result_pending=1")
+        self.assertEqual(states[3],
+                         "RTL_STATE valid=1 pc=00000003 fp=00000040 "
+                         "retire_seq=00000001 result_pending=0")
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        count_fields = dict(field.split("=") for field in counts.split()[1:])
+        self.assertGreater(int(count_fields["rx_blocked"]), 0, counts)
+        self.assertGreater(int(count_fields["tx_blocked"]), 0, counts)
+        self.assertEqual(int(count_fields["done"]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        stability_fields = dict(field.split("=")
+                                for field in stability.split()[1:])
+        self.assertGreater(int(stability_fields["rx_checks"]), 0, stability)
+        self.assertGreater(int(stability_fields["tx_checks"]), 0, stability)
+
+    def test_retire_bad_sof_preserves_result_then_retry_retires(self) -> None:
+        """Reject one invalid SOF byte, then accept the untouched RETIRE."""
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        service = bytes.fromhex(wire["service_response_frame_hex"])
+        good_retire = bytes.fromhex(wire["retire_request_hex"])
+        bad_retire = bytes([0x00])
+        requests = [request, service, bad_retire, good_retire]
+
+        # A bad SOF is a complete receiver transaction at the first byte.  Do
+        # not send a fabricated tail: the following byte must be the untouched
+        # nominal RETIRE's genuine request SOF.
+        self.assertEqual(bad_retire, bytes([0x00]))
+        self.assertEqual(len(bad_retire), 1)
+        self.assertEqual(good_retire[0], protocol.SOF_REQUEST)
+        self.assertEqual(good_retire[0], 0xA1)
+        self.assertEqual(good_retire[2], protocol.Opcode.RETIRE)
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        pending_identity = None
+        for index, raw in enumerate(requests):
+            model_responses.append(protocol.drive(endpoint, raw)[0])
+            if index == 1:
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+                pending_identity = endpoint.staged
+                pending_snapshot = (
+                    endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                    endpoint.committed_pc, endpoint.committed_fp,
+                    endpoint.retire_seq, endpoint.pins().done_pulse,
+                )
+            elif index == 2:
+                rejected = protocol.decode_response(model_responses[-1])
+                self.assertIs(rejected.status, protocol.Status.BAD_SOF)
+                self.assertEqual(rejected.payload, bytes(5))
+                self.assertEqual(
+                    (endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                     endpoint.committed_pc, endpoint.committed_fp,
+                     endpoint.retire_seq, endpoint.pins().done_pulse),
+                    pending_snapshot,
+                )
+                self.assertIs(endpoint.staged, pending_identity)
+                self.assertEqual(endpoint.state, protocol.TxnState.RESULT_PENDING)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            bytes.fromhex(wire["result_frame_hex"]),
+            protocol.ResponseFrame(protocol.Status.BAD_SOF, bytes(5)).encode(),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.OK,
+             protocol.Status.BAD_SOF, protocol.Status.RETIRED],
+        )
+        self.assertEqual((endpoint.committed_pc, endpoint.committed_fp,
+                          endpoint.retire_seq, endpoint.state_valid),
+                         (3, 0x40, 1, True))
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+        self.assertIsNone(endpoint.staged)
+
+        manifest = Path(self.temporary.name) / "bad-sof-retire-retry.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"bad-sof-retire-retry-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS", "+V3_BAD_SOF_RETIRE"], cwd=ROOT,
+            check=False, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "00", "80", "02"])
+        self.assertEqual([line.split("done=")[1] for line in transactions],
+                         ["0", "0", "0", "1"])
+        pending = next(line for line in run.stdout.splitlines()
+                       if line.startswith("RTL_V3_BAD_SOF_RETIRE "))
+        self.assertEqual(
+            pending,
+            "RTL_V3_BAD_SOF_RETIRE result_pending=1 txn_id=10203040 "
+            "result_crc=9d78969c next_pc=00000003 next_fp=00000040 "
+            "state_valid=0 pc=00000000 fp=00000000 retire_seq=00000000 "
+            "done=0 parser_state=0",
         )
         states = [line for line in run.stdout.splitlines()
                   if line.startswith("RTL_STATE ")]
