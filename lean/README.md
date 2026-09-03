@@ -38,7 +38,8 @@ Modules:
 - `Blake3ServiceLifecycle.lean` — full-LSC-1 host-prepared BLAKE3 suspension,
   service binding, and retirement semantics, including a packet-boundary oracle
   that rejects a 43-byte `SERVICE_RESPONSE` with BAD_LENGTH detail 2 before
-  semantic handling and preserves the caller's pending state.
+  semantic handling, rejects an exact-length response whose reserved byte 9 is
+  nonzero with BAD_FLAGS detail 2, and preserves the caller's pending state.
 - `Transaction.lean` — pure staging/retirement state model with atomic staging,
   v1 current-state index bounds, abort preservation, matching commit, mismatch
   rejection, reset, and exactly-once retirement theorems. Arithmetic and
