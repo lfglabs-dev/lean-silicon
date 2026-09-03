@@ -245,6 +245,7 @@ precedes construction or inspection of a semantic service response.
 inductive PacketServiceBoundaryDecision where
   | semantic
   | badLength (txnId : UInt32) (detail : UInt8)
+  | badFlags (txnId : UInt32) (detail : UInt8)
   deriving DecidableEq, Repr
 
 def packetServiceTxnId (payload : List UInt8) : UInt32 :=
@@ -253,14 +254,33 @@ def packetServiceTxnId (payload : List UInt8) : UInt32 :=
 def packetServiceResponseBoundary (payload : List UInt8) (pending : α) :
     PacketServiceBoundaryDecision × α :=
   if payload.length = 42 then
-    (.semantic, pending)
+    if (payload.drop 9).head? = some 0 then
+      (.semantic, pending)
+    else
+      (.badFlags 0 2, pending)
   else
     (.badLength (packetServiceTxnId payload) 2, pending)
 
 theorem packet_service_exact_length_reaches_semantics
-    (payload : List UInt8) (pending : α) (hLength : payload.length = 42) :
+    (payload : List UInt8) (pending : α) (hLength : payload.length = 42)
+    (hReserved : (payload.drop 9).head? = some 0) :
     packetServiceResponseBoundary payload pending = (.semantic, pending) := by
-  simp [packetServiceResponseBoundary, hLength]
+  unfold packetServiceResponseBoundary
+  rw [if_pos hLength, if_pos hReserved]
+
+theorem packet_service_nonzero_reserved_is_bad_flags_before_binding
+    (payload : List UInt8) (pending : α) (hLength : payload.length = 42)
+    (hReserved : (payload.drop 9).head? ≠ some 0) :
+    packetServiceResponseBoundary payload pending = (.badFlags 0 2, pending) := by
+  unfold packetServiceResponseBoundary
+  rw [if_pos hLength, if_neg hReserved]
+
+theorem packet_service_nonzero_reserved_preserves_pending
+    (payload : List UInt8) (pending : α) (hLength : payload.length = 42)
+    (hReserved : (payload.drop 9).head? ≠ some 0) :
+    (packetServiceResponseBoundary payload pending).2 = pending := by
+  rw [packet_service_nonzero_reserved_is_bad_flags_before_binding
+    payload pending hLength hReserved]
 
 theorem packet_service_oversized_is_bad_length_before_semantics
     (nominal : List UInt8) (pending : α) (hLength : nominal.length = 42) :
@@ -943,6 +963,8 @@ theorem lifecycle_service_id_overflow_rejected (raw : RawBlake3Request) :
 #print axioms decodeServiceResponse_rejects_length
 #print axioms packet_service_oversized_is_bad_length_before_semantics
 #print axioms packet_service_oversized_preserves_pending
+#print axioms packet_service_nonzero_reserved_is_bad_flags_before_binding
+#print axioms packet_service_nonzero_reserved_preserves_pending
 #print axioms wire_required_binding_is_canonical
 #print axioms validateWireServiceResponse_rejects_schema
 #print axioms validateWireServiceResponse_rejects_status
