@@ -134,6 +134,7 @@ module tb_lsc1_packet_vector;
             end
             if (v3_finite_stalls && prefetch_next &&
                 !($test$plusargs("V3_BAD_CRC_RETIRE") && manifest_index == 2) &&
+                !($test$plusargs("V3_BAD_VERSION_RETIRE") && manifest_index == 2) &&
                 !($test$plusargs("V3_SHORT_RETIRE") && manifest_index == 2) &&
                 !($test$plusargs("V3_OVERSIZED_RETIRE") && manifest_index == 2)) begin
                 // Present the next frame's common SOF while this response owns
@@ -205,6 +206,14 @@ module tb_lsc1_packet_vector;
                          dut.blake_staged_txn_id, dut.blake_staged_service_id,
                          dut.state_valid, dut.committed_pc, dut.committed_fp,
                          dut.retire_seq, trace_done);
+            if (v3_finite_stalls && response[2] == 8'h81 &&
+                $test$plusargs("V3_BAD_VERSION_RETIRE"))
+                $display("RTL_V3_BAD_VERSION_RETIRE result_pending=%0d txn_id=%08x result_crc=%08x next_pc=%08x next_fp=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d parser_state=%0d",
+                         dut.blake_result_pending, dut.blake_staged_txn_id,
+                         dut.blake_staged_result_crc, dut.blake_staged_next_pc,
+                         dut.blake_staged_next_fp, dut.state_valid,
+                         dut.committed_pc, dut.committed_fp, dut.retire_seq,
+                         trace_done, dut.receiver.state);
             if (v3_finite_stalls && response[2] == 8'h82 &&
                 $test$plusargs("V3_UNKNOWN_OPCODE_SERVICE"))
                 $display("RTL_V3_UNKNOWN_OPCODE_SERVICE service_pending=%0d service_seq=%08x txn_id=%08x service_id=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d",
