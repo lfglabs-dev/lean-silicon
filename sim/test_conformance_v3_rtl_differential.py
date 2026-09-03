@@ -8,7 +8,9 @@ wire frames, plus one trailing-CRC-bit rejection followed by an unchanged valid
 ``SERVICE_RESPONSE`` retry, and one identical ``BLAKE3_REQUEST`` rejected while
 the original service is pending before that original request completes, plus one
 CRC-valid one-byte-short ``SERVICE_RESPONSE`` rejected before the unchanged
-response and matching ``RETIRE`` complete the original request.  The
+response and matching ``RETIRE`` complete the original request, plus the
+corresponding CRC-valid one-byte-oversized response with an appended ``0xa5``.
+The
 duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
@@ -1065,6 +1067,127 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
             "RTL_V3_SHORT_SERVICE service_pending=1 service_seq=00000001 "
             "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
             "fp=00000000 retire_seq=00000000 done=0",
+        )
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_oversized_service_response_preserves_pending_then_retry_retires(self) -> None:
+        """Replay one bounded CRC-valid one-byte-oversized retry trace."""
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        good_frame = request_from_wire(good_service)
+        oversized_service = protocol.RequestFrame(
+            protocol.Opcode.SERVICE_RESPONSE, good_frame.payload + b"\xa5").encode()
+        requests = [request, oversized_service, good_service, retire]
+
+        # Pin the mutation itself: the complete nominal 42-byte payload is an
+        # unchanged prefix, exactly 0xa5 is appended, the declared length is
+        # 43, and the envelope carries a newly computed valid CRC.
+        oversized_frame = request_from_wire(oversized_service)
+        self.assertEqual(len(good_frame.payload), 42)
+        self.assertEqual(len(oversized_frame.payload), 43)
+        self.assertEqual(oversized_frame.payload[:-1], good_frame.payload)
+        self.assertEqual(oversized_frame.payload[-1:], b"\xa5")
+        self.assertEqual(oversized_service[0:4], good_service[0:4])
+        self.assertEqual(oversized_service[4:6], (43).to_bytes(2, "little"))
+        self.assertEqual(
+            int.from_bytes(oversized_service[-4:], "little"),
+            protocol.crc32(oversized_service[:-4]),
+        )
+        self.assertNotEqual(oversized_service[-4:], good_service[-4:])
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        pending_identity = None
+        for index, raw in enumerate(requests):
+            model_responses.append(protocol.drive(endpoint, raw)[0])
+            if index == 0:
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+                pending_identity = endpoint.staged
+                pending_snapshot = (
+                    endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                    endpoint.committed_pc, endpoint.committed_fp,
+                    endpoint.retire_seq, endpoint.pins().done_pulse,
+                )
+            elif index == 1:
+                rejected = protocol.decode_response(model_responses[-1])
+                self.assertIs(rejected.status, protocol.Status.BAD_LENGTH)
+                self.assertEqual(
+                    rejected.payload,
+                    int(0x10203040).to_bytes(4, "little") + b"\x02",
+                )
+                self.assertEqual(
+                    (endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                     endpoint.committed_pc, endpoint.committed_fp,
+                     endpoint.retire_seq, endpoint.pins().done_pulse),
+                    pending_snapshot,
+                )
+                self.assertIs(endpoint.staged, pending_identity)
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            bytes.fromhex("5a0183050040302010025f5212e1"),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.BAD_LENGTH,
+             protocol.Status.OK, protocol.Status.RETIRED],
+        )
+        self.assertEqual(endpoint.service_seq, 1)
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "oversized-service-response.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"oversized-service-response-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS"], cwd=ROOT, check=True,
+            capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "83", "00", "02"])
+        pending = next(line for line in run.stdout.splitlines()
+                       if line.startswith("RTL_V3_LENGTH_SERVICE "))
+        self.assertEqual(
+            pending,
+            "RTL_V3_LENGTH_SERVICE payload_length=43 service_pending=1 "
+            "service_seq=00000001 txn_id=10203040 service_id=00000001 "
+            "state_valid=0 pc=00000000 fp=00000000 retire_seq=00000000 done=0",
         )
         counts = next(line for line in run.stdout.splitlines()
                       if line.startswith("RTL_COUNTS "))
