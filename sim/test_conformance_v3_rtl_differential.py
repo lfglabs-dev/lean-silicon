@@ -16,6 +16,9 @@ Two further exact-length vectors change only one outer request-envelope byte
 (plus the recomputed CRC): flags byte 3 to ``0x01`` for ``BAD_FLAGS``, and
 version byte 1 from ``0x01`` to ``0x02`` for ``BAD_VERSION``.  Each proves the
 pending service survives before the untouched response and RETIRE succeed.
+One final exact-length vector changes only outer opcode byte 2 from ``0x11`` to
+``0xff`` (plus the recomputed CRC), proving ``BAD_OPCODE`` takes priority over
+``BAD_STATE`` while the service is pending and that the valid retry still retires.
 The duplicate response is not the adapter-level
 ``blake3.reject.replay`` corpus case.  This module does not claim
 coverage of the other v3 negative cases, arbitrary ready/valid schedules,
@@ -1333,6 +1336,134 @@ class ConformanceV3RtlDifferentialTests(unittest.TestCase):
         self.assertEqual(
             pending,
             "RTL_V3_BAD_VERSION_SERVICE service_pending=1 service_seq=00000001 "
+            "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
+            "fp=00000000 retire_seq=00000000 done=0",
+        )
+        counts = next(line for line in run.stdout.splitlines()
+                      if line.startswith("RTL_COUNTS "))
+        self.assertEqual(int(counts.split("done=")[1]), 1, counts)
+        final = next(line for line in run.stdout.splitlines()
+                     if line.startswith("RTL_V3_FINAL "))
+        final_fields = dict(field.split("=") for field in final.split()[1:])
+        self.assertEqual(int(final_fields["rx_accepted"]),
+                         sum(len(raw) for raw in requests), final)
+        self.assertEqual(final_fields["rx_valid"], "0", final)
+        self.assertEqual(final_fields["parser_state"], "0", final)
+        stability = next(line for line in run.stdout.splitlines()
+                         if line.startswith("RTL_V3_STABILITY "))
+        self.assertGreater(int(stability.split("rx_checks=")[1].split()[0]), 0)
+        self.assertGreater(int(stability.split("tx_checks=")[1]), 0)
+
+    def test_service_response_unknown_opcode_preserves_pending_then_retry_retires(self) -> None:
+        """Reject CRC-valid opcode 0xff, then accept the untouched valid retry."""
+        wire = self.nominal["wire"]
+        request = bytes.fromhex(wire["blake3_request_hex"])
+        good_service = bytes.fromhex(wire["service_response_frame_hex"])
+        retire = bytes.fromhex(wire["retire_request_hex"])
+        bad_service = bytearray(good_service)
+        bad_service[2] = 0xff
+        bad_service[-4:] = protocol.crc32(bad_service[:-4]).to_bytes(4, "little")
+        bad_service = bytes(bad_service)
+        requests = [request, bad_service, good_service, retire]
+
+        # Before CRC, byte 2 is the sole difference from the valid response.
+        self.assertEqual(len(bad_service), len(good_service))
+        self.assertEqual(
+            [index for index, (good, bad) in
+             enumerate(zip(good_service[:-4], bad_service[:-4])) if good != bad],
+            [2],
+        )
+        self.assertEqual((good_service[2], bad_service[2]), (0x11, 0xff))
+        self.assertEqual(good_service[0:2], bad_service[0:2])
+        self.assertEqual(good_service[3:6], bad_service[3:6])
+        self.assertEqual(good_service[0], protocol.SOF_REQUEST)
+        self.assertEqual(good_service[1], protocol.PROTOCOL_VERSION)
+        self.assertEqual(good_service[3], 0)
+        self.assertEqual(int.from_bytes(bad_service[4:6], "little"), 42)
+        self.assertEqual(good_service[6:-4], bad_service[6:-4])
+        self.assertEqual(len(bad_service[6:-4]), 42)
+        self.assertEqual(int.from_bytes(bad_service[-4:], "little"),
+                         protocol.crc32(bad_service[:-4]))
+        self.assertNotEqual(bad_service[-4:], good_service[-4:])
+        with self.assertRaisesRegex(ValueError, "request CRC mismatch"):
+            request_from_wire(good_service[:2] + b"\xff" + good_service[3:])
+        with self.assertRaises(ValueError):
+            request_from_wire(bad_service)
+
+        endpoint = protocol.Lsc1Endpoint()
+        model_responses = []
+        pending_snapshot = None
+        pending_identity = None
+        for index, raw in enumerate(requests):
+            model_responses.append(protocol.drive(endpoint, raw)[0])
+            if index == 0:
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+                self.assertIsNotNone(endpoint.staged)
+                pending_identity = endpoint.staged
+                pending_snapshot = (
+                    endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                    endpoint.committed_pc, endpoint.committed_fp,
+                    endpoint.retire_seq, endpoint.pins().done_pulse,
+                )
+            elif index == 1:
+                rejected = protocol.decode_response(model_responses[-1])
+                self.assertIs(rejected.status, protocol.Status.BAD_OPCODE)
+                self.assertIsNot(rejected.status, protocol.Status.BAD_STATE)
+                self.assertEqual(rejected.payload, bytes(5))
+                self.assertEqual(
+                    (endpoint.staged, endpoint.service_seq, endpoint.state_valid,
+                     endpoint.committed_pc, endpoint.committed_fp,
+                     endpoint.retire_seq, endpoint.pins().done_pulse),
+                    pending_snapshot,
+                )
+                self.assertIs(endpoint.staged, pending_identity)
+                self.assertEqual(endpoint.state, protocol.TxnState.SERVICE_PENDING)
+
+        expected = [
+            bytes.fromhex(wire["service_required_frame_hex"]),
+            protocol.ResponseFrame(protocol.Status.BAD_OPCODE, bytes(5)).encode(),
+            bytes.fromhex(wire["result_frame_hex"]),
+            bytes.fromhex(wire["retire_response_hex"]),
+        ]
+        self.assertEqual(model_responses, expected)
+        self.assertEqual(
+            [protocol.decode_response(raw).status for raw in model_responses],
+            [protocol.Status.SERVICE_REQUIRED, protocol.Status.BAD_OPCODE,
+             protocol.Status.OK, protocol.Status.RETIRED],
+        )
+        self.assertEqual(endpoint.service_seq, 1)
+        self.assertEqual(endpoint.retire_seq, 1)
+        self.assertEqual(endpoint.state, protocol.TxnState.IDLE)
+
+        manifest = Path(self.temporary.name) / "unknown-opcode-service-response.manifest"
+        manifest_lines = []
+        for index, raw in enumerate(requests):
+            path = Path(self.temporary.name) / f"unknown-opcode-service-response-{index}.hex"
+            path.write_text("\n".join(f"{byte:02x}" for byte in raw) + "\n")
+            manifest_lines.append(f"{path} {len(raw)}")
+        manifest.write_text("\n".join(manifest_lines) + "\n")
+        run = subprocess.run(
+            ["vvp", str(self.simulator), f"+MANIFEST={manifest}",
+             "+V3_FINITE_STALLS", "+V3_UNKNOWN_OPCODE_SERVICE"], cwd=ROOT,
+            check=True, capture_output=True, text=True)
+        rtl_responses = [
+            bytes.fromhex(line.removeprefix("RESPONSE "))
+            for line in run.stdout.splitlines() if line.startswith("RESPONSE ")]
+        self.assertEqual(rtl_responses, expected)
+        self.assertEqual(rtl_responses, model_responses)
+        for raw in rtl_responses:
+            protocol.decode_response(raw)
+
+        transactions = [line for line in run.stdout.splitlines()
+                        if line.startswith("RTL_TRANSACTION ")]
+        self.assertEqual(len(transactions), 4)
+        self.assertEqual([line.split("status=")[1][:2] for line in transactions],
+                         ["01", "82", "00", "02"])
+        pending = next(line for line in run.stdout.splitlines()
+                       if line.startswith("RTL_V3_UNKNOWN_OPCODE_SERVICE "))
+        self.assertEqual(
+            pending,
+            "RTL_V3_UNKNOWN_OPCODE_SERVICE service_pending=1 service_seq=00000001 "
             "txn_id=10203040 service_id=00000001 state_valid=0 pc=00000000 "
             "fp=00000000 retire_seq=00000000 done=0",
         )
