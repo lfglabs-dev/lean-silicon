@@ -23,6 +23,7 @@ module tb_lsc1_packet_vector;
     integer cycle = 0, i;
     integer manifest_fd = 0, manifest_scan = 0, manifest_length = 0;
     integer manifest_current_length = 0;
+    integer manifest_index = 0;
     integer trace_rx_blocked = 0, trace_tx_blocked = 0, trace_done = 0;
     integer trace_rx_accepted = 0;
     integer v3_finite_stalls = 0, rx_stable_checks = 0, tx_stable_checks = 0;
@@ -131,7 +132,8 @@ module tb_lsc1_packet_vector;
                 @(posedge clk);
                 @(negedge clk); rx_valid = 0;
             end
-            if (v3_finite_stalls && prefetch_next) begin
+            if (v3_finite_stalls && prefetch_next &&
+                !($test$plusargs("V3_BAD_CRC_RETIRE") && manifest_index == 2)) begin
                 // Present the next frame's common SOF while this response owns
                 // the frontend.  send_byte holds that genuine input beat until
                 // the authored RTL accepts it after the finite TX stall/drain.
@@ -145,6 +147,9 @@ module tb_lsc1_packet_vector;
                     end
                 join
             end else begin
+                // Any SOF prefetched for this request has now been consumed;
+                // the following request must send its own unless we refill it.
+                v3_rx_prefetched = 0;
                 wait (total != 0 && response_count == total);
             end
             $write("RESPONSE ");
@@ -167,6 +172,14 @@ module tb_lsc1_packet_vector;
             if (v3_finite_stalls && response[2] == 8'h84)
                 $display("RTL_V3_BAD_CRC service_pending=%0d done=%0d",
                          dut.blake_service_pending, trace_done);
+            if (v3_finite_stalls && response[2] == 8'h84 &&
+                $test$plusargs("V3_BAD_CRC_RETIRE"))
+                $display("RTL_V3_BAD_CRC_RETIRE result_pending=%0d txn_id=%08x result_crc=%08x next_pc=%08x next_fp=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d parser_state=%0d",
+                         dut.blake_result_pending, dut.blake_staged_txn_id,
+                         dut.blake_staged_result_crc, dut.blake_staged_next_pc,
+                         dut.blake_staged_next_fp, dut.state_valid,
+                         dut.committed_pc, dut.committed_fp, dut.retire_seq,
+                         trace_done, dut.receiver.state);
             if (v3_finite_stalls && response[2] == 8'h85 &&
                 transaction_opcode == 8'h11)
                 $display("RTL_V3_RESERVED_SERVICE service_pending=%0d service_seq=%08x txn_id=%08x service_id=%08x state_valid=%0d pc=%08x fp=%08x retire_seq=%08x done=%0d",
@@ -262,6 +275,7 @@ module tb_lsc1_packet_vector;
                                          manifest_request_path, manifest_length);
                 run_request(manifest_current_path, manifest_current_length,
                             manifest_scan == 2);
+                manifest_index = manifest_index + 1;
             end
             $fclose(manifest_fd);
             @(negedge clk);
