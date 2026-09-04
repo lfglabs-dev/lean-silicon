@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary lsc1-retire-mismatch-host-boundary lsc1-retire-txn-mismatch-host-boundary lsc1-blake3-status-host-boundary lsc1-blake3-status-host-boundary-mutation formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary lsc1-retire-mismatch-host-boundary lsc1-retire-txn-mismatch-host-boundary lsc1-blake3-status-host-boundary lsc1-blake3-status-host-boundary-mutation lsc1-scalar-status-host-boundary lsc1-scalar-status-host-boundary-mutation formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -13,6 +13,7 @@ workflow-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_viewer_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lean_mutation_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lsc1_blake3_status_workflow.py -v
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lsc1_scalar_status_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_oss_cad_suite_workflow.py -v
 
 fabrication-bundle:
@@ -137,6 +138,22 @@ lsc1-blake3-status-host-boundary-mutation:
 	  fi; \
 	  grep -Fq 'authored RTL response bytes differ from executable model' "$$d/output"; \
 	  echo 'LSC1_BLAKE3_STATUS_MUTATION_PASS compile_elaboration=PASS behavioral_kill=PASS'
+
+lsc1-scalar-status-host-boundary:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_scalar_status_host_boundary.py
+
+lsc1-scalar-status-host-boundary-mutation:
+	@set -eu; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  src=asic_core/rtl/lsc1_packet_frontend.sv; mutant="$$d/lsc1_packet_frontend.sv"; \
+	  cp "$$src" "$$mutant"; \
+	  arm='blake_staged_txn_id : (result_pending ? staged_txn_id : 0)'; \
+	  test "$$(grep -Foc "$$arm" "$$mutant")" -eq 1; \
+	  sed -i 's/blake_staged_txn_id : (result_pending ? staged_txn_id : 0)/blake_staged_txn_id : (result_pending ? 0 : 0)/' "$$mutant"; \
+	  if PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_scalar_status_host_boundary.py --frontend "$$mutant" >"$$d/output" 2>&1; then \
+	    echo "STATUS scalar txn-id selection mutation unexpectedly survived" >&2; cat "$$d/output"; exit 1; \
+	  fi; \
+	  grep -Fq 'authored RTL response bytes differ from executable model' "$$d/output"; \
+	  echo 'LSC1_SCALAR_STATUS_MUTATION_PASS txn_id=0 compile_elaboration=PASS behavioral_kill=PASS'
 
 formal:
 	$(PYTHON) formal/run_deref_bridge_tasks.py
