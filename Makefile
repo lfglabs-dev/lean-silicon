@@ -12,6 +12,7 @@ workflow-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_select_exact_gds_run.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_viewer_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lean_mutation_workflow.py -v
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lsc1_blake3_status_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_oss_cad_suite_workflow.py -v
 
 fabrication-bundle:
@@ -126,7 +127,7 @@ lsc1-blake3-status-host-boundary:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_blake3_status_host_boundary.py
 
 lsc1-blake3-status-host-boundary-mutation:
-	@d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	@set -eu; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  src=asic_core/rtl/lsc1_packet_frontend.sv; mutant="$$d/lsc1_packet_frontend.sv"; \
 	  cp "$$src" "$$mutant"; \
 	  test "$$(grep -Foc '(blake_result_pending || blake_service_pending) ?' "$$mutant")" -eq 1; \
