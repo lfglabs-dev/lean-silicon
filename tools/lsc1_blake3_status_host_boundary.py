@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded host-prepared BLAKE3 RESULT_PENDING/STATUS differential.
+"""Bounded host-prepared BLAKE3 SERVICE_PENDING/STATUS differential.
 
 This is a four-frame executable-model/authored-RTL simulation observation.  It
 does not involve or make claims about Lean, a netlist, P&R, FPGA, hardware,
@@ -69,7 +69,7 @@ def host_prepared_frames():
     status = protocol.build_status_query()
     retire = protocol.build_retire(txn_id=TXN_ID,
                                    result_crc=protocol.crc32(result.payload))
-    return [request, service, status, retire]
+    return [request, status, service, retire]
 
 
 def replay_model(frames):
@@ -78,7 +78,7 @@ def replay_model(frames):
     snapshots = []
     patterns = [([0, 2, 1], [1, 0, 2]), ([1, 0, 2], [2, 1, 0]),
                 ([2, 0, 1], [1, 2, 0]), ([1, 2, 0], [2, 0, 1])]
-    staged_result = None
+    staged_service = None
     for index, (frame, (rx_gaps, tx_gaps)) in enumerate(zip(frames, patterns, strict=True)):
         raw, _ = protocol.drive(endpoint, frame.encode(), rx_gaps=rx_gaps,
                                 tx_gaps=tx_gaps)
@@ -86,22 +86,23 @@ def replay_model(frames):
         snapshots.append((endpoint.state.name, endpoint.staged, endpoint.state_valid,
                           endpoint.committed_pc, endpoint.committed_fp,
                           endpoint.retire_seq, endpoint.last_fault))
-        if index == 1:
-            staged_result = endpoint.staged
-        if index == 2 and endpoint.staged != staged_result:
-            raise SystemExit("model STATUS did not preserve the staged BLAKE3 result")
+        if index == 0:
+            staged_service = endpoint.staged
+        if index == 1 and endpoint.staged != staged_service:
+            raise SystemExit("model STATUS did not preserve the staged BLAKE3 service")
     statuses = [protocol.decode_response(raw).status for raw in responses]
-    if statuses != [protocol.Status.SERVICE_REQUIRED, protocol.Status.OK,
-                    protocol.Status.INFO, protocol.Status.RETIRED]:
+    if statuses != [protocol.Status.SERVICE_REQUIRED, protocol.Status.INFO,
+                    protocol.Status.OK, protocol.Status.RETIRED]:
         raise SystemExit(f"model status sequence differs: {statuses}")
-    info = protocol.decode_response(responses[2]).payload
-    expected_info = (bytes([1]) + protocol.u32le(TXN_ID) + bytes([protocol.Status.OK]) +
+    info = protocol.decode_response(responses[1]).payload
+    expected_info = (bytes([2]) + protocol.u32le(TXN_ID) +
+                     bytes([protocol.Status.SERVICE_REQUIRED]) +
                      protocol.u32le(0) + bytes([protocol.Status.OK]) +
                      protocol.u32le(0) + protocol.u32le(0) + bytes([0]))
     if info != expected_info:
         raise SystemExit(f"model INFO differs: {info.hex()} != {expected_info.hex()}")
-    if snapshots[2][0] != "RESULT_PENDING" or snapshots[2][2:6] != (False, 0, 0, 0):
-        raise SystemExit(f"model STATUS changed committed state: {snapshots[2]}")
+    if snapshots[1][0] != "SERVICE_PENDING" or snapshots[1][2:6] != (False, 0, 0, 0):
+        raise SystemExit(f"model STATUS changed pending/committed state: {snapshots[1]}")
     if snapshots[3][0] != "IDLE" or snapshots[3][2:6] != (True, 1, 0, 1):
         raise SystemExit(f"model RETIRE did not commit exactly once: {snapshots[3]}")
     return responses
@@ -137,13 +138,13 @@ def replay_rtl(frames, expected, frontend: Path | None):
     stability = re.search(r"RTL_V3_STABILITY rx_checks=(\d+) tx_checks=(\d+)", output)
     if len(states) != 4 or len(blake) != 4 or counts is None or stability is None:
         raise SystemExit("authored RTL trace markers are incomplete")
-    if tuple(int(value, 16) for value in states[2]) != (0, 0, 0, 0, 1):
-        raise SystemExit(f"RTL STATUS changed pending/committed state: {states[2]}")
-    if (int(blake[2][0]), int(blake[2][1], 16), int(blake[2][5], 16),
-            int(blake[2][6], 16)) != (1, TXN_ID, int(protocol.Status.INFO), 0):
-        raise SystemExit(f"RTL STATUS did not preserve the staged BLAKE3 result: {blake[2]}")
-    if blake[1][:5] != blake[2][:5]:
-        raise SystemExit(f"RTL STATUS changed staged BLAKE3 fields: {blake[1]} -> {blake[2]}")
+    if tuple(int(value, 16) for value in states[1]) != (0, 0, 0, 0, 0):
+        raise SystemExit(f"RTL STATUS changed pending/committed state: {states[1]}")
+    if (int(blake[1][0]), int(blake[1][1], 16), int(blake[1][5], 16),
+            int(blake[1][6], 16)) != (0, TXN_ID, int(protocol.Status.INFO), 0):
+        raise SystemExit(f"RTL STATUS did not preserve the staged BLAKE3 transaction: {blake[1]}")
+    if blake[0][1:5] != blake[1][1:5]:
+        raise SystemExit(f"RTL STATUS changed staged BLAKE3 fields: {blake[0]} -> {blake[1]}")
     if tuple(int(value, 16) for value in states[3]) != (1, 1, 0, 1, 0):
         raise SystemExit(f"RTL RETIRE did not commit exactly once: {states[3]}")
     if int(counts.group(1)) == 0 or int(counts.group(2)) == 0 or int(counts.group(3)) != 1:
@@ -156,7 +157,7 @@ def verify(frontend: Path | None = None):
     frames = host_prepared_frames()
     expected = replay_model(frames)
     replay_rtl(frames, expected, frontend)
-    print("LSC1_BLAKE3_STATUS_HOST_BOUNDARY_PASS frames=BLAKE3_REQUEST,SERVICE_RESPONSE,STATUS_QUERY,RETIRE txn_id=10203040 info=RESULT_PENDING,OK,retire_seq0,fault0,committed0 status_preserves_result=PASS retire_commits_once=PASS model_rtl_bytes=MATCH finite_stalls=PASS")
+    print("LSC1_BLAKE3_STATUS_HOST_BOUNDARY_PASS frames=BLAKE3_REQUEST,STATUS_QUERY,SERVICE_RESPONSE,RETIRE txn_id=10203040 info=SERVICE_PENDING,SERVICE_REQUIRED,retire_seq0,fault0,committed0 status_preserves_service=PASS lifecycle_completes=PASS retire_commits_once=PASS model_rtl_bytes=MATCH finite_stalls=PASS")
 
 
 if __name__ == "__main__":
