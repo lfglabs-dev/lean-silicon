@@ -174,6 +174,10 @@ module tb_lsc1_packet_vector;
             $display("RTL_STATE valid=%0d pc=%08x fp=%08x retire_seq=%08x result_pending=%0d",
                      dut.state_valid, dut.committed_pc, dut.committed_fp,
                      dut.retire_seq, dut.result_pending || dut.blake_result_pending);
+            $display("RTL_BLAKE_RESULT pending=%0d txn_id=%08x result_crc=%08x next_pc=%08x next_fp=%08x last_status=%02x last_fault=%02x",
+                     dut.blake_result_pending, dut.blake_staged_txn_id,
+                     dut.blake_staged_result_crc, dut.blake_staged_next_pc,
+                     dut.blake_staged_next_fp, dut.last_status, dut.last_fault);
             if (v3_finite_stalls && response[2] == 8'h91)
                 $display("RTL_V3_BAD_SERVICE service_pending=%0d",
                          dut.blake_service_pending);
