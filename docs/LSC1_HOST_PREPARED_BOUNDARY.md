@@ -72,3 +72,22 @@ committed state, `pc = 1`, `fp = 0`, and `retire_seq = 1`.
 This is bounded executable-model and authored-RTL simulation evidence only.
 It makes no Lean, synthesized-netlist, P&R, FPGA, hardware, LSC-1µ, unbounded,
 or end-to-end claim.
+
+## BLAKE3 RESULT_PENDING STATUS_QUERY slice
+
+`make lsc1-blake3-status-host-boundary` uses the full-LSC-1 `HostRuntime`
+preparation path for transaction `0x10203040`, then runs exactly four lifecycle
+frames: `BLAKE3_REQUEST`, its host-computed `SERVICE_RESPONSE`, `STATUS_QUERY`,
+and the untouched CRC-bound `RETIRE`. Deterministic finite RX and TX stalls are
+exercised. The executable endpoint and authored RTL must return identical bytes.
+The INFO payload must report RESULT_PENDING, the same transaction ID, prior OK,
+and zero retirement, fault, and committed state; the staged BLAKE3 result must
+survive the query; and RETIRE must commit once.
+
+`make lsc1-blake3-status-host-boundary-mutation` copies only the packet frontend,
+removes `blake_result_pending` from STATUS transaction-ID selection, proves that
+mutant compiles/elaborates, and requires the differential to kill it.
+
+Production RTL is unchanged. This is a bounded executable-model/authored-RTL
+simulation result only. Lean is unchanged, and no netlist, P&R, FPGA, hardware,
+LSC-1µ, unbounded refinement, or end-to-end claim is made.
