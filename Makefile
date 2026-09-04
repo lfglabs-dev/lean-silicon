@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary lsc1-retire-mismatch-host-boundary lsc1-retire-txn-mismatch-host-boundary lsc1-blake3-status-host-boundary lsc1-blake3-status-host-boundary-mutation lsc1-scalar-status-host-boundary lsc1-scalar-status-host-boundary-mutation formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
+.PHONY: check python workflow-check fabrication-bundle conformance-check conformance-differential scalar-differential m2-differential host-export host-comparison workload-validation design-space exact-xor interface-check consistency checksum-check smoke placeholders fpga-boundary fpga-harness fpga-detect fpga-preflight lsc1u-host-test silicon-bringup-test silicon-bringup-dry-run mincore-state-count sim lean lsc1-authored-rtl-contract lsc1-host-authored-rtl-boundary lsc1-retire-mismatch-host-boundary lsc1-retire-txn-mismatch-host-boundary lsc1-blake3-status-host-boundary lsc1-blake3-status-host-boundary-mutation lsc1-scalar-status-host-boundary lsc1-scalar-status-host-boundary-mutation lsc1-scalar-post-retire-status lsc1-scalar-post-retire-status-mutation formal formal-mutations formal-deref-coverage-mutation formal-jump-coverage-mutation full-profile-assurance full-lsc1-netlist-assurance release-netlist-equivalence clean package checksums
 
 HOST_SOURCE ?= host/fixtures/assert_set_xor_mul.zkdsl
 HOST_ARTIFACT ?= host/fixtures/assert_set_xor_mul.program.json
@@ -154,6 +154,22 @@ lsc1-scalar-status-host-boundary-mutation:
 	  fi; \
 	  grep -Fq 'authored RTL response bytes differ from executable model' "$$d/output"; \
 	  echo 'LSC1_SCALAR_STATUS_MUTATION_PASS txn_id=0 compile_elaboration=PASS behavioral_kill=PASS'
+
+lsc1-scalar-post-retire-status:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_scalar_post_retire_status.py
+
+lsc1-scalar-post-retire-status-mutation:
+	@set -eu; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	  src=asic_core/rtl/lsc1_response_payload_mux.sv; mutant="$$d/lsc1_response_payload_mux.sv"; \
+	  cp "$$src" "$$mutant"; \
+	  arm='19: payload_data = state_valid;'; \
+	  test "$$(grep -Foc "$$arm" "$$mutant")" -eq 1; \
+	  sed -i 's/19: payload_data = state_valid;/19: payload_data = 0;/' "$$mutant"; \
+	  if PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_scalar_post_retire_status.py --payload-mux "$$mutant" >"$$d/output" 2>&1; then \
+	    echo "STATUS state_valid serialization mutation unexpectedly survived" >&2; cat "$$d/output"; exit 1; \
+	  fi; \
+	  grep -Fq 'authored RTL response bytes differ from executable model' "$$d/output"; \
+	  echo 'LSC1_SCALAR_POST_RETIRE_STATUS_MUTATION_PASS state_valid=0 compile_elaboration=PASS behavioral_kill=PASS'
 
 formal:
 	$(PYTHON) formal/run_deref_bridge_tasks.py
