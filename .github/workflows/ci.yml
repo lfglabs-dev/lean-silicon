@@ -97,6 +97,10 @@ jobs:
         run: make lsc1-scalar-status-host-boundary
       - name: Bounded scalar STATUS transaction-id mutation sensitivity
         run: make lsc1-scalar-status-host-boundary-mutation
+      - name: Bounded scalar post-RETIRE STATUS differential
+        run: make lsc1-scalar-post-retire-status
+      - name: Bounded scalar post-RETIRE STATUS state-valid mutation sensitivity
+        run: make lsc1-scalar-post-retire-status-mutation
 
   formal-toolchain:
     runs-on: ubuntu-latest

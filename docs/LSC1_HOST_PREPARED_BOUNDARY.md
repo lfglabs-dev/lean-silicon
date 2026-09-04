@@ -117,3 +117,27 @@ This evidence-only slice remains a finite executable-model observation, a
 separate authored-RTL differential, and a targeted mutant. Lean compiles
 separately and does not prove this RTL trace. Netlist, P&R, hardware, LSC-1µ,
 unbounded refinement, and end-to-end claims remain excluded.
+
+## Scalar post-RETIRE STATUS_QUERY slice
+
+`make lsc1-scalar-post-retire-status` covers the distinct post-retirement
+boundary for frozen fixture step 0. The full-LSC-1 `HostRuntime` emits exactly
+`NEGOTIATE`, transaction 1's `SET_CONSTANT` proposal (`m[2] = 3`, next
+`pc = 1`, `fp = 0`), its untouched matching `RETIRE`, and then an inserted
+`STATUS_QUERY`. Apart from the documented NEGOTIATE feature-mask normalization,
+the executable model and authored RTL responses must match byte-for-byte.
+
+The INFO payload must report IDLE, staged transaction 0, prior status RETIRED,
+`retire_seq = 1`, `last_fault = OK`, committed `pc = 1`, `fp = 0`, and
+`state_valid = 1`. The query must preserve the complete captured post-retirement
+committed and staged state and emit no additional DONE pulse. Deterministic
+finite RX/TX stalls must produce nonzero blocked-beat stability observations.
+`make lsc1-scalar-post-retire-status-mutation` copies the authored response
+payload mux, changes only serialized STATUS `state_valid` to zero, proves that
+the mutant compiles and elaborates, and requires this differential to reject it.
+
+This is one finite seeded executable-model observation and a separate authored-
+RTL simulation differential with a targeted mutant. Lean is only compiled by
+its separate gate. It is not universal refinement, whole-design equivalence,
+or end-to-end verification, and makes no netlist, P&R, FPGA, hardware, LSC-1µ,
+or host fetch/memory claim.

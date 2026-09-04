@@ -18,6 +18,8 @@ class ScalarStatusWorkflowTest(unittest.TestCase):
         for target in (
             "make lsc1-scalar-status-host-boundary",
             "make lsc1-scalar-status-host-boundary-mutation",
+            "make lsc1-scalar-post-retire-status",
+            "make lsc1-scalar-post-retire-status-mutation",
         ):
             with self.subTest(target=target):
                 self.assertEqual(lean_job.count(f"run: {target}\n"), 1)
@@ -29,6 +31,15 @@ class ScalarStatusWorkflowTest(unittest.TestCase):
         )
         self.assertNotEqual(completed.returncode, 0)
         self.assertNotIn("LSC1_SCALAR_STATUS_MUTATION_PASS", completed.stdout)
+
+    def test_post_retire_mutation_fails_closed_when_python_cannot_run(self):
+        completed = subprocess.run(
+            ["make", "PYTHON=false", "lsc1-scalar-post-retire-status-mutation"],
+            cwd=ROOT, text=True, capture_output=True,
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertNotIn("LSC1_SCALAR_POST_RETIRE_STATUS_MUTATION_PASS",
+                         completed.stdout)
 
 
 if __name__ == "__main__":
