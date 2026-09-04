@@ -86,7 +86,12 @@ def verify(directory: Path) -> None:
     receipt_path = directory / "receipt.json"
     capture_path = directory / "capture.json"
     source_path = directory / "SOURCE_MANIFEST.txt"
-    require(all(x.is_file() for x in (receipt_path, capture_path, source_path)), "infrastructure", "required evidence file is missing")
+    required_names = {
+        "receipt.json", "capture.json", "preflight.json", "SOURCE_MANIFEST.txt",
+        "tool_versions.txt", "timing.txt", "yosys.log", "nextpnr.log", "load.log",
+        "SHA256SUMS",
+    }
+    require(all((directory / name).is_file() for name in required_names), "infrastructure", "required evidence file is missing")
     receipt = json.loads(receipt_path.read_text())
     capture = json.loads(capture_path.read_text())
 
@@ -95,14 +100,33 @@ def verify(directory: Path) -> None:
     source_head = receipt.get("source_head", "")
     require(len(source_head) == 40, "provenance", "source HEAD is not a full object ID")
     require(receipt.get("source_tree") == git("rev-parse", f"{source_head}^{{tree}}"), "provenance", "source tree differs from pinned source commit")
-    require(receipt.get("source_clean") is True and receipt.get("build_inputs_clean") is True, "provenance", "source/build cleanliness is not affirmed")
+    require(receipt.get("source_clean") is True and receipt.get("source_status_porcelain") == "" and receipt.get("build_inputs_clean") is True,
+            "provenance", "source/build cleanliness is not affirmed")
     require(receipt.get("board_revision") == "v3.1.8", "provenance", "board revision is not v3.1.8")
     require(receipt.get("ecp5_idcode") == "0x41113043", "provenance", "ECP5 IDCODE is not LFE5U-85F")
     require(receipt.get("programming") == "SRAM-only", "provenance", "programming mode is not SRAM-only")
     require(receipt.get("uart", {}).get("baud") == 1_000_000 and receipt.get("uart", {}).get("path"), "provenance", "UART path/baud missing")
     require(receipt.get("loader", {}).get("name") == "openFPGALoader" and receipt.get("loader", {}).get("version"), "provenance", "loader version missing")
-    require(receipt.get("tools") and receipt.get("clock_constraint_mhz") == 25.0, "provenance", "tool versions or clock constraint missing")
+    require(all(receipt.get("tools", {}).get(name) for name in ("yosys", "nextpnr-ecp5", "ecppack"))
+            and receipt.get("clock_constraint_mhz") == 25.0, "provenance", "tool versions or clock constraint missing")
     require(receipt.get("timestamps", {}).get("reset") and receipt.get("timestamps", {}).get("capture_end"), "provenance", "capture timestamps missing")
+    load_command = receipt.get("loader", {}).get("command")
+    require(load_command == ["openFPGALoader", "-b", "ulx3s", receipt.get("bitstream", {}).get("file")],
+            "provenance", "loader command is not the exact SRAM-only form")
+    require(not any("flash" in str(arg).lower() or arg == "-f" for arg in load_command),
+            "provenance", "persistent programming option is forbidden")
+
+    preflight = json.loads((directory / "preflight.json").read_text())
+    require(preflight.get("schema") == "lean-silicon.ulx3s-preflight.v1", "provenance", "wrong preflight schema")
+    require(preflight.get("git", {}).get("commit") == source_head and preflight.get("git", {}).get("clean") is True,
+            "provenance", "preflight is not bound to the clean source commit")
+    require(preflight.get("jtag", {}).get("idcode") == "0x41113043", "provenance", "preflight JTAG IDCODE mismatch")
+    require(any(item.get("vid") == "0x0403" and item.get("pid") == "0x6015" for item in preflight.get("usb", [])),
+            "provenance", "preflight lacks the ULX3S USB identity")
+    require(any(item.get("path") == receipt["uart"]["path"] for item in preflight.get("uart", {}).get("candidates", [])),
+            "provenance", "preflight does not contain the captured UART path")
+    timing = (directory / "timing.txt").read_text(errors="replace")
+    require("PASS at 25.00 MHz" in timing, "provenance", "timing report does not pass the 25 MHz constraint")
 
     revision, sources = parse_source_manifest(source_path)
     require(revision == receipt["source_head"], "provenance", "manifest revision differs from receipt")

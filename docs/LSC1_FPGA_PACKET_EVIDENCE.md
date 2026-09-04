@@ -15,6 +15,10 @@ programming. It independently replays all four encoded frames through the
 executable model and checks the exact initial state, negotiated scalar subset,
 SET result, result CRC, and committed RETIRE state.
 `SHA256SUMS` must cover every regular evidence file other than itself.
+The packet must include the raw clean-status string plus `preflight.json`,
+`tool_versions.txt`, `timing.txt`, synthesis/route logs, and `load.log`. The
+receipt's only accepted load command is `openFPGALoader -b ulx3s BITSTREAM`;
+`-f` and every flash option are rejected.
 The SET result has exactly one write (`address=2`, `value=3`), no deferred
 equalities, and one access entry whose index 0 is address 2.
 

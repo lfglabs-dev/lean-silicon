@@ -41,12 +41,24 @@ class PacketEvidenceTest(unittest.TestCase):
         manifest = f"=== SOURCE PROVENANCE ===\nrevision: {head}\ninputs-match-revision: yes\n{hashlib.sha256(source.read_bytes()).hexdigest()}  fpga/ulx3s/ulx3s_packet_top.sv\n"
         (directory / "SOURCE_MANIFEST.txt").write_text(manifest)
         (directory / "image.bit").write_bytes(b"synthetic-test-only")
+        preflight = {"schema": "lean-silicon.ulx3s-preflight.v1", "git": {"commit": head, "clean": True},
+                     "jtag": {"idcode": "0x41113043"},
+                     "usb": [{"vid": "0x0403", "pid": "0x6015"}],
+                     "uart": {"candidates": [{"path": "/dev/test-ulx3s"}]}}
+        (directory / "preflight.json").write_text(json.dumps(preflight) + "\n")
+        (directory / "tool_versions.txt").write_text("synthetic test versions\n")
+        (directory / "timing.txt").write_text("Max frequency: 100 MHz (PASS at 25.00 MHz)\n")
+        (directory / "yosys.log").write_text("synthetic test log\n")
+        (directory / "nextpnr.log").write_text("synthetic test log\n")
+        (directory / "load.log").write_text("synthetic test only; no loader was run\n")
         sha = lambda name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
         receipt = {"schema": "lean-silicon.lsc1-09-ulx3s.v1", "physical_capture": True,
-                   "source_head": head, "source_tree": tree, "source_clean": True, "build_inputs_clean": True,
+                   "source_head": head, "source_tree": tree, "source_clean": True,
+                   "source_status_porcelain": "", "build_inputs_clean": True,
                    "board_revision": "v3.1.8", "ecp5_idcode": "0x41113043", "programming": "SRAM-only",
                    "uart": {"path": "/dev/test-ulx3s", "baud": 1_000_000},
-                   "loader": {"name": "openFPGALoader", "version": "test"},
+                   "loader": {"name": "openFPGALoader", "version": "test",
+                              "command": ["openFPGALoader", "-b", "ulx3s", "image.bit"]},
                    "tools": {"yosys": "test", "nextpnr-ecp5": "test", "ecppack": "test"},
                    "clock_constraint_mhz": 25.0, "timestamps": {"reset": "test", "capture_end": "test"},
                    "bitstream": {"file": "image.bit", "sha256": sha("image.bit")},
