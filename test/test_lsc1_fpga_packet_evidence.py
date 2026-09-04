@@ -12,6 +12,12 @@ import lsc1_transaction as p
 
 
 class PacketEvidenceTest(unittest.TestCase):
+    @staticmethod
+    def refresh_checksums(directory: Path) -> None:
+        names = sorted(x.name for x in directory.iterdir() if x.is_file() and x.name != "SHA256SUMS")
+        text = "".join(f"{hashlib.sha256((directory / name).read_bytes()).hexdigest()}  ./{name}\n" for name in names)
+        (directory / "SHA256SUMS").write_text(text)
+
     def fixture(self, directory: Path) -> None:
         endpoint = p.Lsc1Endpoint()
         requests = [p.build_status_query(), p.build_negotiate(profile=p.Profile.INTERPRETER_COMPAT),
@@ -46,6 +52,7 @@ class PacketEvidenceTest(unittest.TestCase):
                    "bitstream": {"file": "image.bit", "sha256": sha("image.bit")},
                    "artifacts": {"capture.json": sha("capture.json"), "SOURCE_MANIFEST.txt": sha("SOURCE_MANIFEST.txt")}}
         (directory / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+        self.refresh_checksums(directory)
 
     def mutate_capture(self, d: Path, exchange: int, byte: int, mask: int) -> None:
         path = d / "capture.json"; value = json.loads(path.read_text())
@@ -54,6 +61,7 @@ class PacketEvidenceTest(unittest.TestCase):
         receipt = json.loads((d / "receipt.json").read_text())
         receipt["artifacts"]["capture.json"] = hashlib.sha256(path.read_bytes()).hexdigest()
         (d / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+        self.refresh_checksums(d)
 
     def test_valid_packet(self):
         with tempfile.TemporaryDirectory() as td:
@@ -74,6 +82,7 @@ class PacketEvidenceTest(unittest.TestCase):
             d = Path(td); self.fixture(d)
             receipt = json.loads((d / "receipt.json").read_text()); receipt["bitstream"]["sha256"] = "0" * 64
             (d / "receipt.json").write_text(json.dumps(receipt) + "\n")
+            self.refresh_checksums(d)
             with self.assertRaisesRegex(EvidenceError, "provenance: bitstream digest mismatch"): verify(d)
 
 

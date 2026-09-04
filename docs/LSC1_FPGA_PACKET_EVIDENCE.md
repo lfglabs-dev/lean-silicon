@@ -8,11 +8,13 @@ and 8-bit ready/valid endpoint pins; hierarchical or wide injection is invalid.
 
 `tools/verify_lsc1_fpga_packet_evidence.py DIRECTORY` is the offline acceptance
 gate. It binds `capture.json`, `SOURCE_MANIFEST.txt`, the archived bitstream,
-the exact checkout HEAD/tree, clean build inputs, v3.1.8/85F IDCODE, explicit
+the exact captured source commit/tree and its Git blobs (the later evidence
+commit is expected to differ), clean build inputs, v3.1.8/85F IDCODE, explicit
 UART path, loader/CAD versions, 25 MHz constraint, timestamps, and SRAM-only
 programming. It independently replays all four encoded frames through the
 executable model and checks the exact initial state, negotiated scalar subset,
 SET result, result CRC, and committed RETIRE state.
+`SHA256SUMS` must cover every regular evidence file other than itself.
 The SET result has exactly one write (`address=2`, `value=3`), no deferred
 equalities, and one access entry whose index 0 is address 2.
 

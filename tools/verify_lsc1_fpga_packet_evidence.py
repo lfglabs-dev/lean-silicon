@@ -28,6 +28,13 @@ def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
 
+def git_bytes(*args: str) -> bytes:
+    try:
+        return subprocess.check_output(["git", *args], cwd=ROOT)
+    except subprocess.CalledProcessError as error:
+        raise EvidenceError(f"provenance: unavailable Git object {' '.join(args)}") from error
+
+
 def require(condition: bool, category: str, message: str) -> None:
     if not condition:
         raise EvidenceError(f"{category}: {message}")
@@ -51,6 +58,23 @@ def parse_source_manifest(path: Path) -> tuple[str, dict[str, str]]:
     return revision, entries
 
 
+def verify_checksums(directory: Path) -> None:
+    checksum_path = directory / "SHA256SUMS"
+    require(checksum_path.is_file(), "provenance", "SHA256SUMS is missing")
+    listed: dict[str, str] = {}
+    for line in checksum_path.read_text(encoding="ascii").splitlines():
+        fields = line.split()
+        require(len(fields) == 2 and len(fields[0]) == 64, "provenance", "malformed SHA256SUMS entry")
+        name = fields[1].removeprefix("./")
+        candidate = (directory / name).resolve()
+        require(candidate.parent == directory.resolve() and candidate.is_file(), "provenance", f"invalid checksum target: {name}")
+        require(name not in listed, "provenance", f"duplicate checksum target: {name}")
+        listed[name] = fields[0]
+        require(digest(candidate) == fields[0], "provenance", f"evidence checksum mismatch: {name}")
+    actual = {x.name for x in directory.iterdir() if x.is_file() and x.name != "SHA256SUMS"}
+    require(set(listed) == actual, "provenance", "SHA256SUMS coverage is incomplete or unexpected")
+
+
 def decode_status(frame: p.ResponseFrame) -> tuple[int, int, int, int, int, int]:
     require(frame.status is p.Status.INFO and len(frame.payload) == 20, "semantic", "pre-STATUS response is not INFO/20")
     b = frame.payload
@@ -68,8 +92,9 @@ def verify(directory: Path) -> None:
 
     require(receipt.get("schema") == "lean-silicon.lsc1-09-ulx3s.v1", "provenance", "wrong receipt schema")
     require(receipt.get("physical_capture") is True, "provenance", "receipt does not claim a physical capture")
-    require(receipt.get("source_head") == git("rev-parse", "HEAD"), "provenance", "source HEAD differs from verifier checkout")
-    require(receipt.get("source_tree") == git("rev-parse", "HEAD^{tree}"), "provenance", "source tree differs from verifier checkout")
+    source_head = receipt.get("source_head", "")
+    require(len(source_head) == 40, "provenance", "source HEAD is not a full object ID")
+    require(receipt.get("source_tree") == git("rev-parse", f"{source_head}^{{tree}}"), "provenance", "source tree differs from pinned source commit")
     require(receipt.get("source_clean") is True and receipt.get("build_inputs_clean") is True, "provenance", "source/build cleanliness is not affirmed")
     require(receipt.get("board_revision") == "v3.1.8", "provenance", "board revision is not v3.1.8")
     require(receipt.get("ecp5_idcode") == "0x41113043", "provenance", "ECP5 IDCODE is not LFE5U-85F")
@@ -83,8 +108,9 @@ def verify(directory: Path) -> None:
     require(revision == receipt["source_head"], "provenance", "manifest revision differs from receipt")
     for rel, expected in sources.items():
         candidate = (ROOT / rel).resolve()
-        require(candidate.is_relative_to(ROOT) and candidate.is_file(), "provenance", f"manifest input unavailable: {rel}")
-        require(digest(candidate) == expected, "provenance", f"source digest mismatch: {rel}")
+        require(candidate.is_relative_to(ROOT), "provenance", f"manifest path escapes repository: {rel}")
+        require(hashlib.sha256(git_bytes("show", f"{revision}:{rel}")).hexdigest() == expected,
+                "provenance", f"source digest mismatch: {rel}")
     artifacts = receipt.get("artifacts", {})
     require(artifacts.get("capture.json") == digest(capture_path), "provenance", "capture digest mismatch")
     require(artifacts.get("SOURCE_MANIFEST.txt") == digest(source_path), "provenance", "source manifest digest mismatch")
@@ -92,6 +118,7 @@ def verify(directory: Path) -> None:
     bit_path = directory / bit_name
     require(bit_path.is_file(), "provenance", "bitstream is missing")
     require(receipt["bitstream"].get("sha256") == digest(bit_path), "provenance", "bitstream digest mismatch")
+    verify_checksums(directory)
 
     require(capture.get("transport") == "ULX3S UART to existing 8-bit ready/valid pins", "semantic", "capture does not bind the pin boundary")
     require(capture.get("reset") == "fresh hardware reset before first byte", "semantic", "fresh reset is not recorded")
