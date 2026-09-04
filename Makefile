@@ -131,7 +131,7 @@ lsc1-blake3-status-host-boundary-mutation:
 	  src=asic_core/rtl/lsc1_packet_frontend.sv; mutant="$$d/lsc1_packet_frontend.sv"; \
 	  cp "$$src" "$$mutant"; \
 	  test "$$(grep -Foc '(blake_result_pending || blake_service_pending) ?' "$$mutant")" -eq 1; \
-	  sed -i 's/(blake_result_pending || blake_service_pending) ?/(blake_service_pending) ?/' "$$mutant"; \
+	  sed -i 's/(blake_result_pending || blake_service_pending) ?/(blake_result_pending) ?/' "$$mutant"; \
 	  if PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/lsc1_blake3_status_host_boundary.py --frontend "$$mutant" >"$$d/output" 2>&1; then \
 	    echo "STATUS BLAKE3 txn-id selection mutation unexpectedly survived" >&2; cat "$$d/output"; exit 1; \
 	  fi; \

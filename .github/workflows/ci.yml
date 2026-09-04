@@ -89,7 +89,7 @@ jobs:
         run: make lsc1-retire-mismatch-host-boundary
       - name: Host-prepared corrupted RETIRE transaction-id discard boundary
         run: make lsc1-retire-txn-mismatch-host-boundary
-      - name: Bounded BLAKE3 RESULT_PENDING STATUS differential
+      - name: Bounded BLAKE3 SERVICE_PENDING STATUS differential
         run: make lsc1-blake3-status-host-boundary
       - name: Bounded BLAKE3 STATUS transaction-id mutation sensitivity
         run: make lsc1-blake3-status-host-boundary-mutation
