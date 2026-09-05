@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from tools.verify_lsc1_fpga_packet_evidence import (
-    ROOT, PACKET_BUILD_INPUTS, verify, EvidenceError,
+    ROOT, PACKET_BUILD_INPUTS, SUPPORTED_CAD_VERSIONS, verify, EvidenceError,
 )
 import lsc1_transaction as p
 
@@ -52,7 +52,11 @@ class PacketEvidenceTest(unittest.TestCase):
                      "usb": [{"vid": "0x0403", "pid": "0x6015"}],
                      "uart": {"candidates": [{"path": "/dev/test-ulx3s"}]}}
         (directory / "preflight.json").write_text(json.dumps(preflight) + "\n")
-        (directory / "tool_versions.txt").write_text("synthetic test versions\n")
+        (directory / "tool_versions.txt").write_text(
+            "=== TOOL VERSIONS (LSC-1 PACKET UART) ===\n"
+            + "\n".join(SUPPORTED_CAD_VERSIONS.values())
+            + "\ndate: 2026-09-05T19:51:10Z\n"
+        )
         (directory / "timing.txt").write_text(
             "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
             "Derived frequency constraint of 10.0 MHz for net core_clk\n"
@@ -73,7 +77,7 @@ class PacketEvidenceTest(unittest.TestCase):
                    "uart": {"path": "/dev/test-ulx3s", "baud": 1_000_000},
                    "loader": {"name": "openFPGALoader", "version": "test",
                               "command": ["openFPGALoader", "-b", "ulx3s", "image.bit"]},
-                   "tools": {"yosys": "test", "nextpnr-ecp5": "test", "ecppack": "test"},
+                   "tools": dict(SUPPORTED_CAD_VERSIONS),
                    "clock_constraint_mhz": 25.0, "core_clock_mhz": 10.0,
                    "timestamps": {"reset": "test", "capture_end": "test"},
                    "bitstream": {"file": "image.bit", "sha256": sha("image.bit")},
@@ -136,6 +140,53 @@ class PacketEvidenceTest(unittest.TestCase):
                 d = Path(td); self.fixture(d); (d / "load.log").write_text(log)
                 self.refresh_checksums(d)
                 with self.assertRaisesRegex(EvidenceError, "provenance: load.log"): verify(d)
+
+    def test_bitstream_must_be_direct_archived_checksum_target(self):
+        mutations = ("/tmp/image.bit", "../image.bit", "nested/image.bit")
+        for bit_name in mutations:
+            with self.subTest(bit_name=bit_name), tempfile.TemporaryDirectory() as td:
+                d = Path(td); self.fixture(d)
+                receipt = json.loads((d / "receipt.json").read_text())
+                receipt["bitstream"]["file"] = bit_name
+                receipt["loader"]["command"][-1] = bit_name
+                (d / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+                (d / "load.log").write_text(
+                    f"loader-command: openFPGALoader -b ulx3s {bit_name}\nloader-exit-code: 0\n"
+                )
+                self.refresh_checksums(d)
+                with self.assertRaisesRegex(EvidenceError, "provenance: bitstream path is not a direct child"):
+                    verify(d)
+
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td); self.fixture(d)
+            lines = (d / "SHA256SUMS").read_text().splitlines(keepends=True)
+            (d / "SHA256SUMS").write_text("".join(line for line in lines if not line.rstrip().endswith("./image.bit")))
+            with self.assertRaisesRegex(EvidenceError, "provenance: archived bitstream is not listed"):
+                verify(d)
+
+    def test_tool_versions_must_be_supported_and_match_receipt(self):
+        mutations = {
+            "empty archive": "",
+            "unrelated archive": "synthetic test versions\n",
+            "mismatched archive": ("=== TOOL VERSIONS (LSC-1 PACKET UART) ===\n"
+                                   "Yosys 0.34\nnextpnr other\necppack other\n"
+                                   "date: 2026-09-05T19:51:10Z\n"),
+        }
+        for name, contents in mutations.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as td:
+                d = Path(td); self.fixture(d); (d / "tool_versions.txt").write_text(contents)
+                self.refresh_checksums(d)
+                with self.assertRaisesRegex(EvidenceError, "provenance: tool_versions.txt"):
+                    verify(d)
+
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td); self.fixture(d)
+            receipt = json.loads((d / "receipt.json").read_text())
+            receipt["tools"]["yosys"] = "Yosys 0.34"
+            (d / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+            self.refresh_checksums(d)
+            with self.assertRaisesRegex(EvidenceError, "provenance: receipt tools do not exactly match"):
+                verify(d)
 
     def test_each_packet_build_input_is_required(self):
         for omitted in sorted(PACKET_BUILD_INPUTS):

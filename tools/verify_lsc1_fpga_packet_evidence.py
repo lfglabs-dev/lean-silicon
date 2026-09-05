@@ -5,10 +5,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shlex
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "sim"))
@@ -51,6 +52,12 @@ PACKET_BUILD_INPUTS = frozenset({
     "tools/portable_build_support.py",
     "tools/source_provenance.py",
 })
+
+SUPPORTED_CAD_VERSIONS = {
+    "yosys": "Yosys 0.33 (git sha1 2584903a060)",
+    "nextpnr-ecp5": '"nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.11.1)',
+    "ecppack": "Project Trellis ecppack Version 1.4-2build4",
+}
 
 
 def digest(path: Path) -> str:
@@ -112,7 +119,19 @@ def verify_load_log(path: Path, expected_command: list[str]) -> None:
             "load.log does not record one successful loader execution")
 
 
-def verify_checksums(directory: Path) -> None:
+def parse_tool_versions(path: Path) -> dict[str, str]:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    require(len(lines) == 5 and lines[0] == "=== TOOL VERSIONS (LSC-1 PACKET UART) ===",
+            "provenance", "tool_versions.txt is malformed or unrelated")
+    require(re.fullmatch(r"date: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", lines[4]) is not None,
+            "provenance", "tool_versions.txt has a malformed UTC timestamp")
+    versions = dict(zip(SUPPORTED_CAD_VERSIONS, lines[1:4]))
+    require(versions == SUPPORTED_CAD_VERSIONS, "provenance",
+            "tool_versions.txt does not contain the exact supported CAD versions")
+    return versions
+
+
+def verify_checksums(directory: Path, required_bitstream: str) -> None:
     checksum_path = directory / "SHA256SUMS"
     require(checksum_path.is_file(), "provenance", "SHA256SUMS is missing")
     listed: dict[str, str] = {}
@@ -125,6 +144,7 @@ def verify_checksums(directory: Path) -> None:
         require(name not in listed, "provenance", f"duplicate checksum target: {name}")
         listed[name] = fields[0]
         require(digest(candidate) == fields[0], "provenance", f"evidence checksum mismatch: {name}")
+    require(required_bitstream in listed, "provenance", "archived bitstream is not listed in SHA256SUMS")
     actual = {x.name for x in directory.iterdir() if x.is_file() and x.name != "SHA256SUMS"}
     require(set(listed) == actual, "provenance", "SHA256SUMS coverage is incomplete or unexpected")
 
@@ -161,8 +181,10 @@ def verify(directory: Path) -> None:
     require(receipt.get("programming") == "SRAM-only", "provenance", "programming mode is not SRAM-only")
     require(receipt.get("uart", {}).get("baud") == 1_000_000 and receipt.get("uart", {}).get("path"), "provenance", "UART path/baud missing")
     require(receipt.get("loader", {}).get("name") == "openFPGALoader" and receipt.get("loader", {}).get("version"), "provenance", "loader version missing")
-    require(all(receipt.get("tools", {}).get(name) for name in ("yosys", "nextpnr-ecp5", "ecppack"))
-            and receipt.get("clock_constraint_mhz") == 25.0
+    archived_versions = parse_tool_versions(directory / "tool_versions.txt")
+    require(receipt.get("tools") == archived_versions, "provenance",
+            "receipt tools do not exactly match archived supported CAD versions")
+    require(receipt.get("clock_constraint_mhz") == 25.0
             and receipt.get("core_clock_mhz") == 10.0,
             "provenance", "tool versions or board/core clock constraint missing")
     require(receipt.get("timestamps", {}).get("reset") and receipt.get("timestamps", {}).get("capture_end"), "provenance", "capture timestamps missing")
@@ -203,10 +225,18 @@ def verify(directory: Path) -> None:
     require(artifacts.get("capture.json") == digest(capture_path), "provenance", "capture digest mismatch")
     require(artifacts.get("SOURCE_MANIFEST.txt") == digest(source_path), "provenance", "source manifest digest mismatch")
     bit_name = receipt.get("bitstream", {}).get("file", "")
-    bit_path = directory / bit_name
+    require(isinstance(bit_name, str) and bit_name not in ("", ".", "..")
+            and not PurePath(bit_name).is_absolute()
+            and not PureWindowsPath(bit_name).is_absolute()
+            and len(PurePath(bit_name).parts) == 1
+            and len(PureWindowsPath(bit_name).parts) == 1,
+            "provenance", "bitstream path is not a direct child of the evidence directory")
+    bit_path = (directory / bit_name).resolve()
+    require(bit_path.parent == directory.resolve(), "provenance",
+            "bitstream path is not a direct child of the evidence directory")
     require(bit_path.is_file(), "provenance", "bitstream is missing")
     require(receipt["bitstream"].get("sha256") == digest(bit_path), "provenance", "bitstream digest mismatch")
-    verify_checksums(directory)
+    verify_checksums(directory, bit_name)
 
     require(capture.get("transport") == "ULX3S UART to existing 8-bit ready/valid pins", "semantic", "capture does not bind the pin boundary")
     require(capture.get("reset") == "fresh hardware reset before first byte", "semantic", "fresh reset is not recorded")
