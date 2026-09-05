@@ -20,7 +20,13 @@ SET result, result CRC, and committed RETIRE state.
 The packet must include the raw clean-status string plus `preflight.json`,
 `tool_versions.txt`, `timing.txt`, synthesis/route logs, and `load.log`. The
 receipt's only accepted load command is `openFPGALoader -b ulx3s BITSTREAM`;
-`-f` and every flash option are rejected.
+`-f` and every flash option are rejected. `load.log` must independently contain
+exactly one `loader-command: openFPGALoader -b ulx3s BITSTREAM` line matching
+the receipt and exactly one `loader-exit-code: 0` line; missing, failed, or
+contradictory loader records are rejected.
+The source manifest must contain exactly the verifier's complete packet build
+input set (RTL, wrapper/UART/PLL sources, constraint, build recipe, and helper
+scripts), with every digest checked against the pinned Git revision.
 The SET result has exactly one write (`address=2`, `value=3`), no deferred
 equalities, and one access entry whose index 0 is address 2.
 

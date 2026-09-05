@@ -15,6 +15,7 @@ workflow-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lsc1_blake3_status_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_lsc1_scalar_status_workflow.py -v
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_oss_cad_suite_workflow.py -v
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $(PYTHON) test/test_lsc1_fpga_packet_evidence.py -v
 
 fabrication-bundle:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) tools/verify_fabrication_bundle.py

@@ -7,7 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.verify_lsc1_fpga_packet_evidence import ROOT, verify, EvidenceError
+from tools.verify_lsc1_fpga_packet_evidence import (
+    ROOT, PACKET_BUILD_INPUTS, verify, EvidenceError,
+)
 import lsc1_transaction as p
 
 
@@ -35,11 +37,14 @@ class PacketEvidenceTest(unittest.TestCase):
         capture = {"transport": "ULX3S UART to existing 8-bit ready/valid pins",
                    "reset": "fresh hardware reset before first byte", "exchanges": exchanges}
         (directory / "capture.json").write_text(json.dumps(capture, sort_keys=True) + "\n")
-        source_rel = "fpga/ulx3s/ulx3s_packet_top.sv"
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
         tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
-        source = subprocess.check_output(["git", "show", f"{head}:{source_rel}"], cwd=ROOT)
-        manifest = f"=== SOURCE PROVENANCE ===\nrevision: {head}\ninputs-match-revision: yes\n{hashlib.sha256(source).hexdigest()}  {source_rel}\n"
+        entries = []
+        for source_rel in sorted(PACKET_BUILD_INPUTS):
+            source = subprocess.check_output(["git", "show", f"{head}:{source_rel}"], cwd=ROOT)
+            entries.append(f"{hashlib.sha256(source).hexdigest()}  {source_rel}\n")
+        manifest = (f"=== SOURCE PROVENANCE ===\nrevision: {head}\n"
+                    "inputs-match-revision: yes\n" + "".join(entries))
         (directory / "SOURCE_MANIFEST.txt").write_text(manifest)
         (directory / "image.bit").write_bytes(b"synthetic-test-only")
         preflight = {"schema": "lean-silicon.ulx3s-preflight.v1", "git": {"commit": head, "clean": True},
@@ -55,7 +60,11 @@ class PacketEvidenceTest(unittest.TestCase):
         )
         (directory / "yosys.log").write_text("synthetic test log\n")
         (directory / "nextpnr.log").write_text("synthetic test log\n")
-        (directory / "load.log").write_text("synthetic test only; no loader was run\n")
+        (directory / "load.log").write_text(
+            "loader-command: openFPGALoader -b ulx3s image.bit\n"
+            "synthetic fixture; command execution is modeled only\n"
+            "loader-exit-code: 0\n"
+        )
         sha = lambda name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
         receipt = {"schema": "lean-silicon.lsc1-09-ulx3s.v1", "physical_capture": True,
                    "source_head": head, "source_tree": tree, "source_clean": True,
@@ -113,6 +122,34 @@ class PacketEvidenceTest(unittest.TestCase):
             )
             self.refresh_checksums(d)
             with self.assertRaisesRegex(EvidenceError, "provenance: timing report does not pass"): verify(d)
+
+    def test_loader_log_must_reconcile_with_receipt_and_success(self):
+        mutations = {
+            "no invocation": "synthetic test only; no loader was run\n",
+            "different command": ("loader-command: openFPGALoader -b ulx3s other.bit\n"
+                                  "loader-exit-code: 0\n"),
+            "failed invocation": ("loader-command: openFPGALoader -b ulx3s image.bit\n"
+                                  "loader-exit-code: 1\n"),
+        }
+        for name, log in mutations.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as td:
+                d = Path(td); self.fixture(d); (d / "load.log").write_text(log)
+                self.refresh_checksums(d)
+                with self.assertRaisesRegex(EvidenceError, "provenance: load.log"): verify(d)
+
+    def test_each_packet_build_input_is_required(self):
+        for omitted in sorted(PACKET_BUILD_INPUTS):
+            with self.subTest(omitted=omitted), tempfile.TemporaryDirectory() as td:
+                d = Path(td); self.fixture(d)
+                path = d / "SOURCE_MANIFEST.txt"
+                lines = path.read_text().splitlines(keepends=True)
+                path.write_text("".join(line for line in lines if not line.rstrip().endswith(f"  {omitted}")))
+                receipt = json.loads((d / "receipt.json").read_text())
+                receipt["artifacts"]["SOURCE_MANIFEST.txt"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                (d / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+                self.refresh_checksums(d)
+                with self.assertRaisesRegex(EvidenceError, "provenance: source manifest does not contain exactly"):
+                    verify(d)
 
 
 if __name__ == "__main__": unittest.main()

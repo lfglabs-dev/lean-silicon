@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +19,38 @@ from host.runtime import decode_result_payload  # noqa: E402
 
 class EvidenceError(RuntimeError):
     pass
+
+
+# Every tracked input consumed by fpga/ulx3s/build_packet_uart.sh.  Keeping this
+# list in the independent evidence verifier makes omission fail closed; the
+# build's self-reported manifest is not allowed to define its own completeness.
+PACKET_BUILD_INPUTS = frozenset({
+    "asic_core/rtl/gf128_mul_bitstream.sv",
+    "asic_core/rtl/gf2n_mul_bitstream.sv",
+    "asic_core/rtl/lean_silicon_lsc1.sv",
+    "asic_core/rtl/lean_silicon_lsc1_mincore.sv",
+    "asic_core/rtl/leanvm_b_stream_alu.sv",
+    "asic_core/rtl/lsc1_blake3_alias_check.sv",
+    "asic_core/rtl/lsc1_blake3_lifecycle.sv",
+    "asic_core/rtl/lsc1_cell_alias_check.sv",
+    "asic_core/rtl/lsc1_field_encoder.sv",
+    "asic_core/rtl/lsc1_packet_frontend.sv",
+    "asic_core/rtl/lsc1_packet_rx.sv",
+    "asic_core/rtl/lsc1_packet_tx.sv",
+    "asic_core/rtl/lsc1_request_validator.sv",
+    "asic_core/rtl/lsc1_response_payload_mux.sv",
+    "asic_core/rtl/lsc1_stream_adapter.sv",
+    "fpga/ulx3s/build_packet_uart.sh",
+    "fpga/ulx3s/uart_bridge.sv",
+    "fpga/ulx3s/uart_rx.sv",
+    "fpga/ulx3s/uart_tx.sv",
+    "fpga/ulx3s/ulx3s_core_pll.sv",
+    "fpga/ulx3s/ulx3s_packet_top.sv",
+    "fpga/ulx3s/ulx3s_v318_smoke.lpf",
+    "tools/atomic_publish.py",
+    "tools/portable_build_support.py",
+    "tools/source_provenance.py",
+})
 
 
 def digest(path: Path) -> str:
@@ -56,6 +89,27 @@ def parse_source_manifest(path: Path) -> tuple[str, dict[str, str]]:
     require(len(revision) == 40 and matched == "yes", "provenance", "source manifest is not pinned to clean revision inputs")
     require(bool(entries), "provenance", "source manifest has no inputs")
     return revision, entries
+
+
+def verify_load_log(path: Path, expected_command: list[str]) -> None:
+    """Require a machine-readable command/exit receipt inside the raw log."""
+    commands: list[list[str]] = []
+    exit_codes: list[int] = []
+    for line in path.read_text(errors="replace").splitlines():
+        if line.startswith("loader-command: "):
+            try:
+                commands.append(shlex.split(line.removeprefix("loader-command: ")))
+            except ValueError as error:
+                raise EvidenceError("provenance: malformed loader command in load.log") from error
+        elif line.startswith("loader-exit-code: "):
+            try:
+                exit_codes.append(int(line.removeprefix("loader-exit-code: ")))
+            except ValueError as error:
+                raise EvidenceError("provenance: malformed loader exit code in load.log") from error
+    require(commands == [expected_command], "provenance",
+            "load.log does not record the exact receipt loader command")
+    require(exit_codes == [0], "provenance",
+            "load.log does not record one successful loader execution")
 
 
 def verify_checksums(directory: Path) -> None:
@@ -117,6 +171,7 @@ def verify(directory: Path) -> None:
             "provenance", "loader command is not the exact SRAM-only form")
     require(not any("flash" in str(arg).lower() or arg == "-f" for arg in load_command),
             "provenance", "persistent programming option is forbidden")
+    verify_load_log(directory / "load.log", load_command)
 
     preflight = json.loads((directory / "preflight.json").read_text())
     require(preflight.get("schema") == "lean-silicon.ulx3s-preflight.v1", "provenance", "wrong preflight schema")
@@ -137,6 +192,8 @@ def verify(directory: Path) -> None:
 
     revision, sources = parse_source_manifest(source_path)
     require(revision == receipt["source_head"], "provenance", "manifest revision differs from receipt")
+    require(set(sources) == PACKET_BUILD_INPUTS, "provenance",
+            "source manifest does not contain exactly every packet build input")
     for rel, expected in sources.items():
         candidate = (ROOT / rel).resolve()
         require(candidate.is_relative_to(ROOT), "provenance", f"manifest path escapes repository: {rel}")
