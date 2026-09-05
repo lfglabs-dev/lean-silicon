@@ -464,6 +464,15 @@ ceceba3b9bc693c4b5a87f799e91ee36f93c483dd32d6e32514eb2a3e02779ad  ./results/seri
 efdda181505ba6beeefc0a9ba1e94026f3acad0babeeca11df0490b50b486ca9  ./results/tt-fpga-asic-simulator-20260801/README.md
 c151a05473b9e5ef47d7c4e0626955890fc0976cc149c4fc260b1fb943df85bf  ./results/tt-fpga-asic-simulator-20260801/artifact-SHA256SUMS
 f55e0edb9360e72d6de00fd4bae5c2ec11cf650a0ca9aaccffb7ed2d9f1029d7  ./results/tt-fpga-asic-simulator-20260801/local-build.log.gz
+cfe3dd6c384c54aedef2221263aa7b401ccf677e874e320b567a0359aaa515cf  ./results/ulx3s-lsc1-packet-20260726/SHA256SUMS
+bd86d1c1b265d4ee34d4aa152b7a86cba6cea36b2fde3d29bc48e3852e5f8f81  ./results/ulx3s-lsc1-packet-20260726/SOURCE_MANIFEST.txt
+33667023da2ec54ad3ef76f9483a2596bba23b6526943b1108b38f0d2ce17af8  ./results/ulx3s-lsc1-packet-20260726/nextpnr.log
+47341676d69dd768b09e816679652101ec997dca651dfacdb90a3da8cad2c9ba  ./results/ulx3s-lsc1-packet-20260726/timing.txt
+20c35745164c92dbfb448d7a7c10262da373daadf38aa97c1f57cca24129ffe2  ./results/ulx3s-lsc1-packet-20260726/tool_versions.txt
+226514183384b875821426b8c4d338508d8cff08cd12cb8e39c9162db37e3b9e  ./results/ulx3s-lsc1-packet-20260726/ulx3s_lsc1_packet.bit
+0737bbafae6704139ad9de2669a4e43f64d02644ce7cb9fc7bef336b28b7bf6b  ./results/ulx3s-lsc1-packet-20260726/ulx3s_lsc1_packet.config
+0ad6510adeb1afbc3b20bdbc96528211a2d2e38ebcee398fdeb82acb3b1ad0ee  ./results/ulx3s-lsc1-packet-20260726/ulx3s_lsc1_packet.svf
+52ce1e49a83327c5aa9f461cf849a3cbd82489c74233e8c0b2667f06a418b66e  ./results/ulx3s-lsc1-packet-20260726/yosys.log
 0d617e2e80e8749ea5f1b0a48f2da7ddac62dcb5f8def09126d60971f26dbf36  ./results/ulx3s-smoke-uart-20260725/SHA256SUMS
 ecd004f3008420bdf304a9d8f1084202847f65836bafed2aef69b858db180628  ./results/ulx3s-smoke-uart-20260725/SHA256SUMS_bridge.txt
 7b45b067f30eb0a477f2eea894f79b0694ee3dcfb78752c935a2aa13c2a53d51  ./results/ulx3s-smoke-uart-20260725/SOURCE_MANIFEST.txt
