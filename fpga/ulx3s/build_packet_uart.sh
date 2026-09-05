@@ -4,6 +4,7 @@ set -eu
 
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT=$(CDPATH= cd -- "$HERE/../.." && pwd)
+SCRIPT="$HERE/$(basename -- "$0")"
 cd "$HERE"
 
 TOP=ulx3s_packet_top
@@ -14,7 +15,7 @@ LOCK="$ROOT/results/.ulx3s-lsc1-packet.publish.lock"
 mkdir -p "$OUTDIR"
 if [ "${ULX3S_PACKET_BUILD_LOCKED:-}" != 1 ]; then
     export ULX3S_PACKET_BUILD_LOCKED=1
-    exec python3 "$SUPPORT" lock "$LOCK" -- "$0" "$@"
+    exec python3 "$SUPPORT" lock "$LOCK" -- "$SCRIPT" "$@"
 fi
 STAGE=$(mktemp -d "$(dirname "$OUTDIR")/.packet-build.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
@@ -69,8 +70,13 @@ synth_ecp5 -top ${TOP};
 write_json ${TOP}.json
 " > "$STAGE/yosys.log" 2>&1
 
-nextpnr-ecp5 --85k --package CABGA381 --json "${TOP}.json" \
-    --lpf "$LPF" --textcfg "${TOP}.config" > "$STAGE/nextpnr.log" 2>&1
+nextpnr-ecp5 --85k --package CABGA381 --seed 1 --router router2 \
+    --json "${TOP}.json" --lpf "$LPF" --textcfg "${TOP}.config" \
+    > "$STAGE/nextpnr.log" 2>&1 || {
+    status=$?
+    cat "$STAGE/nextpnr.log" >&2
+    exit "$status"
+}
 
 ecppack --svf "${TOP}.svf" "${TOP}.config" "${TOP}.bit" \
     > "$STAGE/ecppack.log" 2>&1
