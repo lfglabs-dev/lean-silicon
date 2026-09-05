@@ -9,6 +9,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from pathlib import Path, PurePath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +60,20 @@ SUPPORTED_CAD_VERSIONS = {
     "ecppack": "Project Trellis ecppack Version 1.4-2build4",
 }
 
+# This is the reviewed output of the deterministic recipe above.  A packet's
+# own hashes cannot establish build provenance: an author can put arbitrary
+# bytes in a file and repeat that digest in receipt.json and SHA256SUMS.  The
+# verifier therefore anchors generated outputs and raw CAD receipts to this
+# Git-tracked bundle, whose SOURCE_MANIFEST names the exact clean input commit.
+PINNED_BUILD_DIR = "results/ulx3s-lsc1-packet-20260726"
+PINNED_BUILD_FILES = frozenset({
+    "tool_versions.txt",
+    "timing.txt",
+    "yosys.log",
+    "nextpnr.log",
+})
+PINNED_BITSTREAM = "ulx3s_lsc1_packet.bit"
+
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -73,6 +88,29 @@ def git_bytes(*args: str) -> bytes:
         return subprocess.check_output(["git", *args], cwd=ROOT)
     except subprocess.CalledProcessError as error:
         raise EvidenceError(f"provenance: unavailable Git object {' '.join(args)}") from error
+
+
+def pinned_build_bytes(name: str) -> bytes:
+    """Read an immutable canonical build artifact, never a dirty worktree file."""
+    return git_bytes("show", f"HEAD:{PINNED_BUILD_DIR}/{name}")
+
+
+def verify_pinned_build(directory: Path, source_head: str, bit_name: str) -> None:
+    """Bind attacker-supplied evidence to the reviewed deterministic build."""
+    canonical_manifest = pinned_build_bytes("SOURCE_MANIFEST.txt")
+    with tempfile.NamedTemporaryFile() as manifest_file:
+        manifest_file.write(canonical_manifest)
+        manifest_file.flush()
+        build_revision, _ = parse_source_manifest(Path(manifest_file.name))
+    require(source_head == build_revision, "provenance",
+            "source HEAD is not the pinned build input revision")
+    require(bit_name == PINNED_BITSTREAM, "provenance",
+            "bitstream name is not the pinned build output")
+    require((directory / bit_name).read_bytes() == pinned_build_bytes(PINNED_BITSTREAM),
+            "provenance", "bitstream does not match pinned build output")
+    for name in sorted(PINNED_BUILD_FILES):
+        require((directory / name).read_bytes() == pinned_build_bytes(name),
+                "provenance", f"{name} does not match pinned build receipt")
 
 
 def require(condition: bool, category: str, message: str) -> None:
@@ -237,6 +275,7 @@ def verify(directory: Path) -> None:
     require(bit_path.is_file(), "provenance", "bitstream is missing")
     require(receipt["bitstream"].get("sha256") == digest(bit_path), "provenance", "bitstream digest mismatch")
     verify_checksums(directory, bit_name)
+    verify_pinned_build(directory, source_head, bit_name)
 
     require(capture.get("transport") == "ULX3S UART to existing 8-bit ready/valid pins", "semantic", "capture does not bind the pin boundary")
     require(capture.get("reset") == "fresh hardware reset before first byte", "semantic", "fresh reset is not recorded")

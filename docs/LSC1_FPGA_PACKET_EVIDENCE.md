@@ -16,6 +16,14 @@ timing receipt must show that nextpnr recognized both clocks and passed the
 10 MHz core constraint. It independently replays all four encoded frames through the
 executable model and checks the exact initial state, negotiated scalar subset,
 SET result, result CRC, and committed RETIRE state.
+Packet-local digests are integrity checks, not self-authenticating provenance.
+The verifier therefore also requires the bitstream and the raw Yosys, nextpnr,
+timing, and tool-version files to be byte-for-byte equal to the immutable
+Git-tracked deterministic build bundle in
+`results/ulx3s-lsc1-packet-20260726/`, and requires `source_head` to equal that
+bundle's clean input revision. Repeating an arbitrary bitstream digest in
+`receipt.json` and `SHA256SUMS`, or independently authoring plausible CAD log
+strings, is rejected even when all packet-local checksums are recomputed.
 `SHA256SUMS` must cover every regular evidence file other than itself.
 The packet must include the raw clean-status string plus `preflight.json`,
 `tool_versions.txt`, `timing.txt`, synthesis/route logs, and `load.log`. The
@@ -30,11 +38,21 @@ scripts), with every digest checked against the pinned Git revision.
 The SET result has exactly one write (`address=2`, `value=3`), no deferred
 equalities, and one access entry whose index 0 is address 2.
 
-The verifier tests use a synthetic fixture only to prove rejection behavior.
-They do not constitute FPGA, UART, loader, or physical evidence. Exactly one
-SET result-value bit, the RETIRED committed-PC bit changing 1 to 0, and one
-provenance digest are mutated in separate tests; each must fail in its intended
-semantic or provenance category.
+The verifier tests combine the pinned host-build files with synthetic capture,
+preflight, loader, and receipt fields only to prove acceptance and rejection
+behavior. They do not constitute UART/JTAG activity, loading, FPGA execution,
+or physical evidence. Family-level regressions replace the bitstream while
+recomputing both attacker-controlled digest layers, and replace nextpnr/timing
+receipts with independently authored trusted-looking strings; both families
+must fail provenance validation. Separate single-bit semantic and digest
+mutations must also fail in their intended category.
+
+This anchoring proves only which host-generated netlist/bitstream and P&R
+receipts a future packet names. The executable Python model, Lean sources,
+authored RTL, generated build artifacts, place-and-route results, loader
+records, and physical hardware observations remain distinct evidence layers.
+Nothing here turns bounded checks into unbounded proof, demonstrates that a
+board was attached or programmed, or establishes end-to-end execution.
 
 The real result directory is reserved as
 `results/lsc1-09-s1-ulx3s/`. It must not be created or populated until a board

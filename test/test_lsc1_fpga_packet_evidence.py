@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 
 from tools.verify_lsc1_fpga_packet_evidence import (
-    ROOT, PACKET_BUILD_INPUTS, SUPPORTED_CAD_VERSIONS, verify, EvidenceError,
+    ROOT, PACKET_BUILD_INPUTS, PINNED_BITSTREAM, PINNED_BUILD_FILES,
+    SUPPORTED_CAD_VERSIONS, pinned_build_bytes, verify, EvidenceError,
 )
 import lsc1_transaction as p
 
@@ -37,8 +38,8 @@ class PacketEvidenceTest(unittest.TestCase):
         capture = {"transport": "ULX3S UART to existing 8-bit ready/valid pins",
                    "reset": "fresh hardware reset before first byte", "exchanges": exchanges}
         (directory / "capture.json").write_text(json.dumps(capture, sort_keys=True) + "\n")
-        head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-        tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
+        head = "fde1b885a56b98391833f4632676f14d1e3e2f9c"
+        tree = subprocess.check_output(["git", "rev-parse", f"{head}^{{tree}}"], cwd=ROOT, text=True).strip()
         entries = []
         for source_rel in sorted(PACKET_BUILD_INPUTS):
             source = subprocess.check_output(["git", "show", f"{head}:{source_rel}"], cwd=ROOT)
@@ -46,26 +47,16 @@ class PacketEvidenceTest(unittest.TestCase):
         manifest = (f"=== SOURCE PROVENANCE ===\nrevision: {head}\n"
                     "inputs-match-revision: yes\n" + "".join(entries))
         (directory / "SOURCE_MANIFEST.txt").write_text(manifest)
-        (directory / "image.bit").write_bytes(b"synthetic-test-only")
+        (directory / PINNED_BITSTREAM).write_bytes(pinned_build_bytes(PINNED_BITSTREAM))
         preflight = {"schema": "lean-silicon.ulx3s-preflight.v1", "git": {"commit": head, "clean": True},
                      "jtag": {"idcode": "0x41113043"},
                      "usb": [{"vid": "0x0403", "pid": "0x6015"}],
                      "uart": {"candidates": [{"path": "/dev/test-ulx3s"}]}}
         (directory / "preflight.json").write_text(json.dumps(preflight) + "\n")
-        (directory / "tool_versions.txt").write_text(
-            "=== TOOL VERSIONS (LSC-1 PACKET UART) ===\n"
-            + "\n".join(SUPPORTED_CAD_VERSIONS.values())
-            + "\ndate: 2026-09-05T19:51:10Z\n"
-        )
-        (directory / "timing.txt").write_text(
-            "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
-            "Derived frequency constraint of 10.0 MHz for net core_clk\n"
-            "Max frequency for clock '$glbnet$core_clk': 15.21 MHz (PASS at 10.00 MHz)\n"
-        )
-        (directory / "yosys.log").write_text("synthetic test log\n")
-        (directory / "nextpnr.log").write_text("synthetic test log\n")
+        for name in PINNED_BUILD_FILES:
+            (directory / name).write_bytes(pinned_build_bytes(name))
         (directory / "load.log").write_text(
-            "loader-command: openFPGALoader -b ulx3s image.bit\n"
+            f"loader-command: openFPGALoader -b ulx3s {PINNED_BITSTREAM}\n"
             "synthetic fixture; command execution is modeled only\n"
             "loader-exit-code: 0\n"
         )
@@ -76,11 +67,11 @@ class PacketEvidenceTest(unittest.TestCase):
                    "board_revision": "v3.1.8", "ecp5_idcode": "0x41113043", "programming": "SRAM-only",
                    "uart": {"path": "/dev/test-ulx3s", "baud": 1_000_000},
                    "loader": {"name": "openFPGALoader", "version": "test",
-                              "command": ["openFPGALoader", "-b", "ulx3s", "image.bit"]},
+                              "command": ["openFPGALoader", "-b", "ulx3s", PINNED_BITSTREAM]},
                    "tools": dict(SUPPORTED_CAD_VERSIONS),
                    "clock_constraint_mhz": 25.0, "core_clock_mhz": 10.0,
                    "timestamps": {"reset": "test", "capture_end": "test"},
-                   "bitstream": {"file": "image.bit", "sha256": sha("image.bit")},
+                   "bitstream": {"file": PINNED_BITSTREAM, "sha256": sha(PINNED_BITSTREAM)},
                    "artifacts": {"capture.json": sha("capture.json"), "SOURCE_MANIFEST.txt": sha("SOURCE_MANIFEST.txt")}}
         (directory / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
         self.refresh_checksums(directory)
@@ -116,6 +107,40 @@ class PacketEvidenceTest(unittest.TestCase):
             self.refresh_checksums(d)
             with self.assertRaisesRegex(EvidenceError, "provenance: bitstream digest mismatch"): verify(d)
 
+    def test_forged_bitstream_family_cannot_self_attest_with_copied_digests(self):
+        """P1 family: mutually consistent attacker-controlled hashes are insufficient."""
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td); self.fixture(d)
+            bit_path = d / PINNED_BITSTREAM
+            bit_path.write_bytes(b"arbitrary synthetic bitstream\n")
+            receipt = json.loads((d / "receipt.json").read_text())
+            receipt["bitstream"]["sha256"] = hashlib.sha256(bit_path.read_bytes()).hexdigest()
+            (d / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
+            self.refresh_checksums(d)
+            with self.assertRaisesRegex(EvidenceError,
+                                        "provenance: bitstream does not match pinned build output"):
+                verify(d)
+
+    def test_forged_cad_receipt_family_cannot_self_attest_with_trusted_strings(self):
+        """P1 family: independently authored plausible CAD text is not a build receipt."""
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td); self.fixture(d)
+            (d / "nextpnr.log").write_text(
+                "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
+                "Derived frequency constraint of 10.0 MHz for net core_clk\n"
+                "Max frequency for clock '$glbnet$core_clk': 15.32 MHz (PASS at 10.00 MHz)\n"
+                "Program finished normally.\n"
+            )
+            (d / "timing.txt").write_text(
+                "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
+                "Derived frequency constraint of 10.0 MHz for net core_clk\n"
+                "Max frequency for clock '$glbnet$core_clk': 15.32 MHz (PASS at 10.00 MHz)\n"
+            )
+            self.refresh_checksums(d)
+            with self.assertRaisesRegex(EvidenceError,
+                                        "provenance: nextpnr.log does not match pinned build receipt"):
+                verify(d)
+
     def test_missing_core_clock_pass_is_provenance(self):
         with tempfile.TemporaryDirectory() as td:
             d = Path(td); self.fixture(d)
@@ -132,7 +157,7 @@ class PacketEvidenceTest(unittest.TestCase):
             "no invocation": "synthetic test only; no loader was run\n",
             "different command": ("loader-command: openFPGALoader -b ulx3s other.bit\n"
                                   "loader-exit-code: 0\n"),
-            "failed invocation": ("loader-command: openFPGALoader -b ulx3s image.bit\n"
+            "failed invocation": (f"loader-command: openFPGALoader -b ulx3s {PINNED_BITSTREAM}\n"
                                   "loader-exit-code: 1\n"),
         }
         for name, log in mutations.items():
@@ -160,7 +185,9 @@ class PacketEvidenceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             d = Path(td); self.fixture(d)
             lines = (d / "SHA256SUMS").read_text().splitlines(keepends=True)
-            (d / "SHA256SUMS").write_text("".join(line for line in lines if not line.rstrip().endswith("./image.bit")))
+            (d / "SHA256SUMS").write_text(
+                "".join(line for line in lines if not line.rstrip().endswith(f"./{PINNED_BITSTREAM}"))
+            )
             with self.assertRaisesRegex(EvidenceError, "provenance: archived bitstream is not listed"):
                 verify(d)
 
