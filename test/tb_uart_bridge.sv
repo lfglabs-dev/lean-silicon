@@ -24,6 +24,7 @@ module tb_uart_bridge;
 
     uart_bridge dut (
         .clk(clk),
+        .reset_hold(1'b0),
         .uart_rx(uart_rx),
         .uart_tx(uart_tx)
     );

@@ -1,0 +1,5 @@
+=== TOOL VERSIONS (LSC-1 PACKET UART) ===
+Yosys 0.33 (git sha1 2584903a060)
+"nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.11.1)
+Project Trellis ecppack Version 1.4-2build4
+date: 2026-09-05T19:51:10Z

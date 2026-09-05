@@ -115,9 +115,6 @@ module lsc1_packet_frontend (
     reg state_valid;
     reg [31:0] committed_pc, committed_fp, retire_seq;
     reg [7:0] active_profile, last_status, last_fault;
-    reg [127:0] staged_message [0:3];
-    reg [127:0] staged_cv [0:1];
-    reg [127:0] staged_metadata;
     reg [31:0] staged_access [0:7];
     reg [7:0] staged_out_present [0:1];
     reg [127:0] staged_out_value [0:1];
@@ -254,7 +251,9 @@ module lsc1_packet_frontend (
         .done_pulse(blake_done_pulse)
     );
 
-    assign rx_ready = parser_rx_ready && lane_enable;
+    // Responses are serialized from the accepted frame buffer.  Hold off the
+    // next request until TX completes so a new SOF cannot clear that buffer.
+    assign rx_ready = parser_rx_ready && lane_enable && !tx_busy && !tx_start;
     assign busy = rx_busy || tx_busy || tx_start || event_valid || result_pending ||
                   blake_result_pending || blake_service_pending ||
                   compute_state != C_IDLE || alu_busy || encoder_busy;
@@ -274,9 +273,13 @@ module lsc1_packet_frontend (
         .kind(tx_external_kind), .payload_index(tx_payload_index),
         .blake_staged_txn_id(blake_staged_txn_id), .blake_staged_service_id(blake_staged_service_id),
         .blake_staged_next_pc(blake_staged_next_pc), .blake_staged_next_fp(blake_staged_next_fp),
-        .staged_message_0(staged_message[0]), .staged_message_1(staged_message[1]),
-        .staged_message_2(staged_message[2]), .staged_message_3(staged_message[3]),
-        .staged_cv_0(staged_cv[0]), .staged_cv_1(staged_cv[1]), .staged_metadata(staged_metadata),
+        .staged_message_0(frame_payload[55*8 +: 128]),
+        .staged_message_1(frame_payload[72*8 +: 128]),
+        .staged_message_2(frame_payload[89*8 +: 128]),
+        .staged_message_3(frame_payload[106*8 +: 128]),
+        .staged_cv_0(frame_payload[123*8 +: 128]),
+        .staged_cv_1(frame_payload[140*8 +: 128]),
+        .staged_metadata(frame_payload[38*8 +: 128]),
         .staged_write_count(staged_write_count),
         .staged_write_address_0(staged_write_address[0]), .staged_write_address_1(staged_write_address[1]),
         .staged_write_value_0(staged_write_value[0]), .staged_write_value_1(staged_write_value[1]),
@@ -545,6 +548,14 @@ module lsc1_packet_frontend (
                 staged_result_crc <= tx_payload_crc;
                 capture_result_crc <= 1'b0;
             end
+            // Companion service addresses are not consumed until the external
+            // payload reaches their later words.  Derive them from the captured
+            // bases on the service-start cycle instead of cascading two adders
+            // into the request-accept edge.
+            if (blake_service_start) begin
+                staged_access[5] <= staged_access[4] + 1'b1;
+                staged_access[7] <= staged_access[6] + 1'b1;
+            end
 
             if (encoder_done && compute_state == C_DEREF_POINTER) begin
                 finish_deref_pointer();
@@ -805,9 +816,7 @@ module lsc1_packet_frontend (
                         staged_access[2] = fp + frame_payload[22*8 +: 32];
                         staged_access[3] = fp + frame_payload[26*8 +: 32];
                         staged_access[4] = fp + frame_payload[30*8 +: 32];
-                        staged_access[5] = staged_access[4] + 1'b1;
                         staged_access[6] = fp + frame_payload[34*8 +: 32];
-                        staged_access[7] = staged_access[6] + 1'b1;
                         if (blake_service_seq >= 32'hfffffffe) begin
                             decision_ok = 0; decision_fault = BAD_SERVICE;
                         end else if (frame_payload[46*8 +: 32] > 32'd64 ||
@@ -826,13 +835,6 @@ module lsc1_packet_frontend (
                             decision_ok = 0; decision_fault = INDEX_RANGE;
                         end
                         if (decision_ok) begin
-                            staged_message[0] <= frame_payload[55*8 +: 128];
-                            staged_message[1] <= frame_payload[72*8 +: 128];
-                            staged_message[2] <= frame_payload[89*8 +: 128];
-                            staged_message[3] <= frame_payload[106*8 +: 128];
-                            staged_cv[0] <= frame_payload[123*8 +: 128];
-                            staged_cv[1] <= frame_payload[140*8 +: 128];
-                            staged_metadata <= frame_payload[38*8 +: 128];
                             staged_out_present[0] <= frame_payload[156*8 +: 8];
                             staged_out_value[0] <= frame_payload[157*8 +: 128];
                             staged_out_present[1] <= frame_payload[173*8 +: 8];

@@ -25,6 +25,7 @@ module ulx3s_top #(
         end else begin : g_uart
             uart_bridge #(.PACKET_MODE(1'b0)) u_bridge (
                 .clk(clk),
+                .reset_hold(1'b0),
                 .uart_rx(uart_rx),
                 .uart_tx(uart_tx)
             );

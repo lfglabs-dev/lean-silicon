@@ -6,12 +6,18 @@ module ulx3s_packet_top (
     input  wire uart_rx,
     output wire uart_tx
 );
-    uart_bridge #(.PACKET_MODE(1'b1)) bridge (
-        .clk(clk), .uart_rx(uart_rx), .uart_tx(uart_tx)
+    wire core_clk, pll_locked;
+    ulx3s_core_pll core_pll (
+        .clk_25mhz(clk), .clk_10mhz(core_clk), .locked(pll_locked)
+    );
+
+    uart_bridge #(.PACKET_MODE(1'b1), .CLK_HZ(10_000_000)) bridge (
+        .clk(core_clk), .reset_hold(!pll_locked),
+        .uart_rx(uart_rx), .uart_tx(uart_tx)
     );
 
     reg [23:0] heartbeat = 0;
-    always @(posedge clk)
+    always @(posedge core_clk)
         heartbeat <= heartbeat + 1'b1;
     assign led = ~heartbeat[23];
 endmodule

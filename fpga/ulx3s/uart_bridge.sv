@@ -11,9 +11,11 @@
  * Pin contract preserved: every byte crosses ui_in / uo_out / uio_* exactly.
  */
 module uart_bridge #(
-    parameter bit PACKET_MODE = 1'b0
+    parameter bit PACKET_MODE = 1'b0,
+    parameter integer CLK_HZ = 25_000_000
 ) (
-    input  wire clk,       // 25 MHz
+    input  wire clk,
+    input  wire reset_hold,
     input  wire uart_rx,   // async from FTDI (M1)
     output wire uart_tx    // to FTDI (L4)
 );
@@ -23,7 +25,10 @@ module uart_bridge #(
     // which leaves every register in this file and in the core undefined.
     localparam integer POR_CYCLES = 8;
     reg [POR_CYCLES-1:0] por_shift = {POR_CYCLES{1'b0}};
-    always @(posedge clk) por_shift <= {por_shift[POR_CYCLES-2:0], 1'b1};
+    always @(posedge clk) begin
+        if (reset_hold) por_shift <= {POR_CYCLES{1'b0}};
+        else por_shift <= {por_shift[POR_CYCLES-2:0], 1'b1};
+    end
     wire rst_n = por_shift[POR_CYCLES-1];
 
     // UART RX
@@ -32,7 +37,7 @@ module uart_bridge #(
     wire       uart_framing_err;
 
     uart_rx #(
-        .CLK_HZ(25_000_000),
+        .CLK_HZ(CLK_HZ),
         .BAUD(1_000_000)
     ) urx (
         .clk(clk),
@@ -49,7 +54,7 @@ module uart_bridge #(
     wire       uart_tx_ready;
 
     uart_tx #(
-        .CLK_HZ(25_000_000),
+        .CLK_HZ(CLK_HZ),
         .BAUD(1_000_000)
     ) utx (
         .clk(clk),

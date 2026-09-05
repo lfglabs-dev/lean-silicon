@@ -350,7 +350,9 @@ scalar-result-mutation:
 differential-mutation:
 	@set -e; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
 	  cp $(RTL) "$$d/"; \
-	  sed -i.bak 's/body_index < 16'"'"'d190/body_index < 16'"'"'d94/' "$$d/lsc1_packet_rx.sv"; \
+	  test "$$(grep -Fxc '                            for (payload_byte = 0; payload_byte < 190;' "$$d/lsc1_packet_rx.sv")" -eq 1; \
+	  sed -i.bak 's/payload_byte < 190/payload_byte < 94/' "$$d/lsc1_packet_rx.sv"; \
+	  test "$$(grep -Fxc '                            for (payload_byte = 0; payload_byte < 94;' "$$d/lsc1_packet_rx.sv")" -eq 1; \
 	  if PYTHONPATH=../.. LSC1_RTL_DIR="$$d" $(PYTHON) -m unittest sim.test_packet_frontend_rtl_differential.PacketFrontendRtlDifferentialTests.test_adversarial_jump_inverse_and_xor_backsolve_match_model >"$$d/jump.out" 2>&1; then \
 	    echo "JUMP inverse payload-bound mutation unexpectedly survived" >&2; exit 1; \
 	  fi; \

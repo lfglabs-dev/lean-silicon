@@ -9,7 +9,8 @@ module tb_packet_uart_bridge;
     wire uart_tx;
 
     uart_bridge #(.PACKET_MODE(1'b1)) dut (
-        .clk(clk), .uart_rx(uart_rx), .uart_tx(uart_tx)
+        .clk(clk), .reset_hold(1'b0),
+        .uart_rx(uart_rx), .uart_tx(uart_tx)
     );
 
     reg [7:0] payload [0:255];
