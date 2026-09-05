@@ -34,6 +34,10 @@ module lsc1_packet_rx (
     reg [31:0] crc;
     reg [31:0] received_crc;
     reg [1519:0] frame_payload_prefix;
+    // Initialized on every accepted header before S_BODY can observe it; do
+    // not add this cursor to the already high-fanout reset control set.
+    reg [189:0] payload_write_enable;
+    integer payload_byte;
     assign frame_payload[1519:0] = frame_payload_prefix;
     assign frame_payload[2047:1520] = 528'b0;
     assign busy = state != S_SOF || frame_valid || fault_valid;
@@ -115,8 +119,12 @@ module lsc1_packet_rx (
                                 body_index <= 0;
                                 if ({rx_data, declared_length[7:0]} > MAX_PAYLOAD)
                                     raise_fault(8'h83); // BAD_LENGTH
-                                else
+                                else begin
+                                    payload_write_enable <=
+                                        {rx_data, declared_length[7:0]} != 0
+                                        ? {{189{1'b0}}, 1'b1} : 190'b0;
                                     state <= S_BODY;
+                                end
                             end
                             default: state <= S_SOF;
                         endcase
@@ -124,8 +132,14 @@ module lsc1_packet_rx (
                     end
                     S_BODY: begin
                         if (body_index < declared_length) begin
-                            if (body_index < 16'd190)
-                                frame_payload_prefix[body_index*8 +: 8] <= rx_data;
+                            // A sequential one-hot byte cursor avoids a
+                            // 16-bit indexed-write decoder fanning one enable
+                            // across all 1,520 payload flip-flops.
+                            for (payload_byte = 0; payload_byte < 190;
+                                 payload_byte = payload_byte + 1)
+                                if (payload_write_enable[payload_byte])
+                                    frame_payload_prefix[payload_byte*8 +: 8] <= rx_data;
+                            payload_write_enable <= {payload_write_enable[188:0], 1'b0};
                             crc <= crc_byte(crc, rx_data);
                         end else begin
                             case (body_index - declared_length)
