@@ -24,6 +24,7 @@ class Ulx3sPacketBuildRecipeTest(unittest.TestCase):
         self.assertIn('synth_ecp5 -abc9 -nodffe', self.recipe)
         self.assertIn('nextpnr-0.11.1', self.recipe)
         self.assertIn('Yosys 0.33 (git sha1 2584903a060)', self.recipe)
+        self.assertIn('ECPPACK_VERSION=$(ecppack --version 2>&1)', self.recipe)
         self.assertNotIn('--timing-allow-fail', self.recipe)
 
     def test_nextpnr_failure_log_is_emitted(self) -> None:

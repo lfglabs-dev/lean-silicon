@@ -31,7 +31,7 @@ fi
 
 YOSYS_VERSION=$(yosys -V)
 NEXTPNR_VERSION=$(nextpnr-ecp5 --version 2>&1)
-ECPPACK_VERSION=$(ecppack --version)
+ECPPACK_VERSION=$(ecppack --version 2>&1)
 [ "$YOSYS_VERSION" = "Yosys 0.33 (git sha1 2584903a060)" ] || {
     echo "unsupported yosys: $YOSYS_VERSION" >&2; exit 1;
 }
