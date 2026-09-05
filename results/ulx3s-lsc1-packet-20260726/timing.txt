@@ -1,0 +1,6 @@
+Info:     Input frequency of PLL 'core_pll.pll_i' is constrained to 25.0 MHz
+Info:     Derived frequency constraint of 10.0 MHz for net core_clk
+Info: Max frequency for clock '$glbnet$core_clk': 13.43 MHz (PASS at 10.00 MHz)
+Info: Slack histogram:
+Info: Max frequency for clock '$glbnet$core_clk': 15.32 MHz (PASS at 10.00 MHz)
+Info: Slack histogram:
