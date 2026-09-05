@@ -10,8 +10,10 @@ and 8-bit ready/valid endpoint pins; hierarchical or wide injection is invalid.
 gate. It binds `capture.json`, `SOURCE_MANIFEST.txt`, the archived bitstream,
 the exact captured source commit/tree and its Git blobs (the later evidence
 commit is expected to differ), clean build inputs, v3.1.8/85F IDCODE, explicit
-UART path, loader/CAD versions, 25 MHz constraint, timestamps, and SRAM-only
-programming. It independently replays all four encoded frames through the
+UART path, loader/CAD versions, the 25 MHz board input and PLL-derived 10 MHz
+full-LSC1/UART core constraints, timestamps, and SRAM-only programming. The
+timing receipt must show that nextpnr recognized both clocks and passed the
+10 MHz core constraint. It independently replays all four encoded frames through the
 executable model and checks the exact initial state, negotiated scalar subset,
 SET result, result CRC, and committed RETIRE state.
 `SHA256SUMS` must cover every regular evidence file other than itself.

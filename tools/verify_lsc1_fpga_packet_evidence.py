@@ -108,7 +108,9 @@ def verify(directory: Path) -> None:
     require(receipt.get("uart", {}).get("baud") == 1_000_000 and receipt.get("uart", {}).get("path"), "provenance", "UART path/baud missing")
     require(receipt.get("loader", {}).get("name") == "openFPGALoader" and receipt.get("loader", {}).get("version"), "provenance", "loader version missing")
     require(all(receipt.get("tools", {}).get(name) for name in ("yosys", "nextpnr-ecp5", "ecppack"))
-            and receipt.get("clock_constraint_mhz") == 25.0, "provenance", "tool versions or clock constraint missing")
+            and receipt.get("clock_constraint_mhz") == 25.0
+            and receipt.get("core_clock_mhz") == 10.0,
+            "provenance", "tool versions or board/core clock constraint missing")
     require(receipt.get("timestamps", {}).get("reset") and receipt.get("timestamps", {}).get("capture_end"), "provenance", "capture timestamps missing")
     load_command = receipt.get("loader", {}).get("command")
     require(load_command == ["openFPGALoader", "-b", "ulx3s", receipt.get("bitstream", {}).get("file")],
@@ -126,7 +128,12 @@ def verify(directory: Path) -> None:
     require(any(item.get("path") == receipt["uart"]["path"] for item in preflight.get("uart", {}).get("candidates", [])),
             "provenance", "preflight does not contain the captured UART path")
     timing = (directory / "timing.txt").read_text(errors="replace")
-    require("PASS at 25.00 MHz" in timing, "provenance", "timing report does not pass the 25 MHz constraint")
+    require("constrained to 25.0 MHz" in timing,
+            "provenance", "timing report does not bind the PLL input to the 25 MHz board clock")
+    require("Derived frequency constraint of 10.0 MHz for net core_clk" in timing,
+            "provenance", "timing report does not bind the full-LSC1 core clock to 10 MHz")
+    require("PASS at 10.00 MHz" in timing,
+            "provenance", "timing report does not pass the full-LSC1 core clock constraint")
 
     revision, sources = parse_source_manifest(source_path)
     require(revision == receipt["source_head"], "provenance", "manifest revision differs from receipt")

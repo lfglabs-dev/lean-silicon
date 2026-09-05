@@ -35,10 +35,11 @@ class PacketEvidenceTest(unittest.TestCase):
         capture = {"transport": "ULX3S UART to existing 8-bit ready/valid pins",
                    "reset": "fresh hardware reset before first byte", "exchanges": exchanges}
         (directory / "capture.json").write_text(json.dumps(capture, sort_keys=True) + "\n")
-        source = ROOT / "fpga/ulx3s/ulx3s_packet_top.sv"
+        source_rel = "fpga/ulx3s/ulx3s_packet_top.sv"
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
         tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
-        manifest = f"=== SOURCE PROVENANCE ===\nrevision: {head}\ninputs-match-revision: yes\n{hashlib.sha256(source.read_bytes()).hexdigest()}  fpga/ulx3s/ulx3s_packet_top.sv\n"
+        source = subprocess.check_output(["git", "show", f"{head}:{source_rel}"], cwd=ROOT)
+        manifest = f"=== SOURCE PROVENANCE ===\nrevision: {head}\ninputs-match-revision: yes\n{hashlib.sha256(source).hexdigest()}  {source_rel}\n"
         (directory / "SOURCE_MANIFEST.txt").write_text(manifest)
         (directory / "image.bit").write_bytes(b"synthetic-test-only")
         preflight = {"schema": "lean-silicon.ulx3s-preflight.v1", "git": {"commit": head, "clean": True},
@@ -47,7 +48,11 @@ class PacketEvidenceTest(unittest.TestCase):
                      "uart": {"candidates": [{"path": "/dev/test-ulx3s"}]}}
         (directory / "preflight.json").write_text(json.dumps(preflight) + "\n")
         (directory / "tool_versions.txt").write_text("synthetic test versions\n")
-        (directory / "timing.txt").write_text("Max frequency: 100 MHz (PASS at 25.00 MHz)\n")
+        (directory / "timing.txt").write_text(
+            "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
+            "Derived frequency constraint of 10.0 MHz for net core_clk\n"
+            "Max frequency for clock '$glbnet$core_clk': 15.21 MHz (PASS at 10.00 MHz)\n"
+        )
         (directory / "yosys.log").write_text("synthetic test log\n")
         (directory / "nextpnr.log").write_text("synthetic test log\n")
         (directory / "load.log").write_text("synthetic test only; no loader was run\n")
@@ -60,7 +65,8 @@ class PacketEvidenceTest(unittest.TestCase):
                    "loader": {"name": "openFPGALoader", "version": "test",
                               "command": ["openFPGALoader", "-b", "ulx3s", "image.bit"]},
                    "tools": {"yosys": "test", "nextpnr-ecp5": "test", "ecppack": "test"},
-                   "clock_constraint_mhz": 25.0, "timestamps": {"reset": "test", "capture_end": "test"},
+                   "clock_constraint_mhz": 25.0, "core_clock_mhz": 10.0,
+                   "timestamps": {"reset": "test", "capture_end": "test"},
                    "bitstream": {"file": "image.bit", "sha256": sha("image.bit")},
                    "artifacts": {"capture.json": sha("capture.json"), "SOURCE_MANIFEST.txt": sha("SOURCE_MANIFEST.txt")}}
         (directory / "receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
@@ -96,6 +102,17 @@ class PacketEvidenceTest(unittest.TestCase):
             (d / "receipt.json").write_text(json.dumps(receipt) + "\n")
             self.refresh_checksums(d)
             with self.assertRaisesRegex(EvidenceError, "provenance: bitstream digest mismatch"): verify(d)
+
+    def test_missing_core_clock_pass_is_provenance(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td); self.fixture(d)
+            (d / "timing.txt").write_text(
+                "Input frequency of PLL 'pll' constrained to 25.0 MHz\n"
+                "Derived frequency constraint of 10.0 MHz for net core_clk\n"
+                "Max frequency for clock '$glbnet$core_clk': 9.99 MHz (FAIL at 10.00 MHz)\n"
+            )
+            self.refresh_checksums(d)
+            with self.assertRaisesRegex(EvidenceError, "provenance: timing report does not pass"): verify(d)
 
 
 if __name__ == "__main__": unittest.main()

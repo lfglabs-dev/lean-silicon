@@ -29,16 +29,28 @@ if [ -d "$OSS_CAD_BIN" ]; then
     export PATH
 fi
 
+YOSYS_VERSION=$(yosys -V)
+NEXTPNR_VERSION=$(nextpnr-ecp5 --version 2>&1)
+ECPPACK_VERSION=$(ecppack --version)
+[ "$YOSYS_VERSION" = "Yosys 0.33 (git sha1 2584903a060)" ] || {
+    echo "unsupported yosys: $YOSYS_VERSION" >&2; exit 1;
+}
+[ "$NEXTPNR_VERSION" = '"nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.11.1)' ] || {
+    echo "unsupported nextpnr-ecp5: $NEXTPNR_VERSION" >&2; exit 1;
+}
+[ "$ECPPACK_VERSION" = "Project Trellis ecppack Version 1.4-2build4" ] || {
+    echo "unsupported ecppack: $ECPPACK_VERSION" >&2; exit 1;
+}
 {
     echo "=== TOOL VERSIONS (LSC-1 PACKET UART) ==="
-    yosys -V
-    nextpnr-ecp5 --version
-    ecppack --version
+    echo "$YOSYS_VERSION"
+    echo "$NEXTPNR_VERSION"
+    echo "$ECPPACK_VERSION"
     echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$STAGE/tool_versions.txt" 2>&1
 cat "$STAGE/tool_versions.txt"
 
-SOURCES="ulx3s_packet_top.sv uart_bridge.sv uart_rx.sv uart_tx.sv \
+SOURCES="ulx3s_packet_top.sv ulx3s_core_pll.sv uart_bridge.sv uart_rx.sv uart_tx.sv \
          ../../asic_core/rtl/lean_silicon_lsc1.sv \
          ../../asic_core/rtl/lean_silicon_lsc1_mincore.sv \
          ../../asic_core/rtl/lsc1_packet_frontend.sv \
@@ -63,14 +75,16 @@ python3 "$ROOT/tools/source_provenance.py" "$STAGE/SOURCE_MANIFEST.txt" \
     "$ROOT/tools/atomic_publish.py" "$ROOT/tools/source_provenance.py"
 
 yosys -p "
+read_verilog -lib +/ecp5/cells_sim.v +/ecp5/cells_bb.v;
 read_verilog -sv $SOURCES;
 hierarchy -check -top ${TOP};
 proc; check;
-synth_ecp5 -top ${TOP};
+synth_ecp5 -abc9 -nodffe -top ${TOP};
 write_json ${TOP}.json
 " > "$STAGE/yosys.log" 2>&1
 
-nextpnr-ecp5 --85k --package CABGA381 --seed 1 --router router2 \
+nextpnr-ecp5 --85k --package CABGA381 --seed 2 --placer static \
+    --no-tmdriv --router router1 \
     --json "${TOP}.json" --lpf "$LPF" --textcfg "${TOP}.config" \
     > "$STAGE/nextpnr.log" 2>&1 || {
     status=$?
@@ -83,7 +97,8 @@ ecppack --svf "${TOP}.svf" "${TOP}.config" "${TOP}.bit" \
 cp "${TOP}.bit" "$STAGE/$BIT_NAME"
 cp "${TOP}.config" "$STAGE/$CONFIG_NAME"
 cp "${TOP}.svf" "$STAGE/$SVF_NAME"
-grep -E 'Max frequency|Slack' "$STAGE/nextpnr.log" | tail -5 \
+grep -E 'Input frequency of PLL|Derived frequency constraint|Max frequency|Slack' \
+    "$STAGE/nextpnr.log" | tail -8 \
     > "$STAGE/timing.txt" || true
 python3 "$SUPPORT" manifest "$STAGE" SHA256SUMS \
     "$BIT_NAME" "$CONFIG_NAME" "$SVF_NAME"
