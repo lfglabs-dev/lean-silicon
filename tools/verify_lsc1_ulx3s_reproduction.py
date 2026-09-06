@@ -28,6 +28,33 @@ TOOLS = {
     "ecppack": "Project Trellis ecppack Version 1.4-2build4",
 }
 OPTIONS = ["--85k", "--package", "CABGA381", "--seed", "2", "--placer", "static", "--no-tmdriv", "--router", "router1"]
+PACKET_BUILD_INPUTS = frozenset({
+    "asic_core/rtl/gf128_mul_bitstream.sv",
+    "asic_core/rtl/gf2n_mul_bitstream.sv",
+    "asic_core/rtl/lean_silicon_lsc1.sv",
+    "asic_core/rtl/lean_silicon_lsc1_mincore.sv",
+    "asic_core/rtl/leanvm_b_stream_alu.sv",
+    "asic_core/rtl/lsc1_blake3_alias_check.sv",
+    "asic_core/rtl/lsc1_blake3_lifecycle.sv",
+    "asic_core/rtl/lsc1_cell_alias_check.sv",
+    "asic_core/rtl/lsc1_field_encoder.sv",
+    "asic_core/rtl/lsc1_packet_frontend.sv",
+    "asic_core/rtl/lsc1_packet_rx.sv",
+    "asic_core/rtl/lsc1_packet_tx.sv",
+    "asic_core/rtl/lsc1_request_validator.sv",
+    "asic_core/rtl/lsc1_response_payload_mux.sv",
+    "asic_core/rtl/lsc1_stream_adapter.sv",
+    "fpga/ulx3s/build_packet_uart.sh",
+    "fpga/ulx3s/uart_bridge.sv",
+    "fpga/ulx3s/uart_rx.sv",
+    "fpga/ulx3s/uart_tx.sv",
+    "fpga/ulx3s/ulx3s_core_pll.sv",
+    "fpga/ulx3s/ulx3s_packet_top.sv",
+    "fpga/ulx3s/ulx3s_v318_smoke.lpf",
+    "tools/atomic_publish.py",
+    "tools/portable_build_support.py",
+    "tools/source_provenance.py",
+})
 RUN_FILES = {
     "SHA256SUMS", "SOURCE_MANIFEST.txt", "build.stderr", "build.stdout",
     "ecppack.log", "nextpnr.log", "timing.txt", "tool_versions.txt",
@@ -70,7 +97,7 @@ def verify_source_manifest(path: Path) -> None:
                 "malformed source manifest")
         require(fields[1] not in entries, f"duplicate source input {fields[1]}")
         entries[fields[1]] = fields[0]
-    require(len(entries) == 25, "complete source manifest")
+    require(set(entries) == PACKET_BUILD_INPUTS, "complete source manifest")
     for name, expected in entries.items():
         try:
             payload = subprocess.check_output(["git", "show", f"{BASE}:{name}"], cwd=ROOT)

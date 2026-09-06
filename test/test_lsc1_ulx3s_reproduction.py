@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.verify_lsc1_ulx3s_reproduction import EVIDENCE, RECEIPT, verify
+from tools.verify_lsc1_ulx3s_reproduction import BASE, EVIDENCE, RECEIPT, verify
 
 
 class ReproductionReceiptTest(unittest.TestCase):
@@ -86,6 +86,20 @@ class ReproductionReceiptTest(unittest.TestCase):
             receipt["runs"][0]["evidence_sha256"]["SOURCE_MANIFEST.txt"] = hashlib.sha256(payload).hexdigest()
         self.rejected(mutate_evidence=substitute, message="source manifest identity")
 
+    def test_rehashed_source_input_name_substitution_rejected(self):
+        def substitute(evidence: Path, receipt: dict) -> None:
+            path = evidence / "clean-build-1" / "SOURCE_MANIFEST.txt"
+            lines = path.read_text().splitlines()
+            removed = next(i for i, line in enumerate(lines)
+                           if line.endswith("  asic_core/rtl/gf128_mul_bitstream.sv"))
+            del lines[removed]
+            readme = subprocess.check_output(["git", "show", f"{BASE}:README.md"], cwd=RECEIPT.parents[2])
+            lines.append(f"{hashlib.sha256(readme).hexdigest()}  README.md")
+            payload = ("\n".join(lines) + "\n").encode()
+            self.replace(path, payload)
+            receipt["runs"][0]["evidence_sha256"]["SOURCE_MANIFEST.txt"] = hashlib.sha256(payload).hexdigest()
+        self.rejected(mutate_evidence=substitute, message="complete source manifest")
+
     def test_nonzero_exit_rejected(self):
         self.rejected(mutate_receipt=lambda r: r["runs"][1].update(exit_code=1), message="normal exit")
 
@@ -97,16 +111,24 @@ class ReproductionReceiptTest(unittest.TestCase):
         self.rejected(mutate_receipt=lambda r: r["nextpnr_options"].remove("--no-tmdriv"),
                       message="nextpnr options")
 
-    def test_post_squash_single_branch_checkout_accepts(self):
-        """P1 family: verification cannot depend on an intermediate PR commit."""
-        source = RECEIPT.parents[2]
+    def assert_post_squash_single_branch_checkout_accepts(self, source: Path) -> None:
         intermediate = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
-        base = "5610ea221dd82b5749690043e8c3665b2be9ced8"
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             staging = root / "staging.git"
             checkout = root / "checkout"
-            subprocess.run(["git", "clone", "--bare", "--shared", str(source), str(staging)],
+            # upload-pack deliberately disables lazy fetching while serving a
+            # partial clone.  Materialize its promised blobs in one fetch
+            # before asking it to create an independent bare repository; do
+            # not borrow the source's incomplete object store.
+            promisor = subprocess.run(
+                ["git", "-C", str(source), "config", "--get", "remote.origin.promisor"],
+                text=True, stdout=subprocess.PIPE)
+            if promisor.returncode == 0 and promisor.stdout.strip() == "true":
+                subprocess.run(
+                    ["git", "-C", str(source), "fetch", "--refetch", "--no-filter", "origin"],
+                    check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["git", "clone", "--bare", "--no-local", str(source), str(staging)],
                            check=True, stdout=subprocess.DEVNULL)
             tree = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD^{tree}"],
                                            text=True).strip()
@@ -117,7 +139,7 @@ class ReproductionReceiptTest(unittest.TestCase):
                 "GIT_COMMITTER_EMAIL": "regression@example.invalid",
             }
             squash = subprocess.check_output(
-                ["git", f"--git-dir={staging}", "commit-tree", tree, "-p", base, "-m", "squash"],
+                ["git", f"--git-dir={staging}", "commit-tree", tree, "-p", BASE, "-m", "squash"],
                 env=env, text=True).strip()
             refs = subprocess.check_output(
                 ["git", f"--git-dir={staging}", "for-each-ref", "--format=%(refname)"],
@@ -135,6 +157,32 @@ class ReproductionReceiptTest(unittest.TestCase):
                            cwd=checkout, check=True)
             subprocess.run([sys.executable, "test/test_lsc1_fpga_packet_evidence.py", "-v"],
                            cwd=checkout, env=os.environ | {"PYTHONPATH": "."}, check=True)
+
+    def test_post_squash_single_branch_checkout_accepts(self):
+        """P1 family: verification cannot depend on an intermediate PR commit."""
+        self.assert_post_squash_single_branch_checkout_accepts(RECEIPT.parents[2])
+
+    def test_post_squash_checkout_accepts_from_blob_filtered_source(self):
+        """The squash fixture must copy/fetch objects from a partial checkout."""
+        source = RECEIPT.parents[2]
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            upstream = root / "upstream.git"
+            partial = root / "partial"
+            subprocess.run(["git", "clone", "--bare", "--no-local", str(source), str(upstream)],
+                           check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["git", f"--git-dir={upstream}", "config", "uploadpack.allowFilter", "true"],
+                           check=True)
+            subprocess.run(["git", "clone", "--no-local", "--filter=blob:none", str(upstream),
+                            str(partial)], check=True, stdout=subprocess.DEVNULL)
+            self.assertEqual(subprocess.check_output(
+                ["git", "-C", str(partial), "config", "--bool", "remote.origin.promisor"],
+                text=True).strip(), "true")
+            missing = subprocess.check_output(
+                ["git", "-C", str(partial), "rev-list", "--objects", "--missing=print",
+                 BASE], text=True).splitlines()
+            self.assertTrue(any(line.startswith("?") for line in missing))
+            self.assert_post_squash_single_branch_checkout_accepts(partial)
 
 
 if __name__ == "__main__":
