@@ -111,6 +111,17 @@ class ReproductionReceiptTest(unittest.TestCase):
         self.rejected(mutate_receipt=lambda r: r["nextpnr_options"].remove("--no-tmdriv"),
                       message="nextpnr options")
 
+    @staticmethod
+    def materialize_promised_objects(source: Path) -> None:
+        """Make an independent clone safe to serve without lazy fetching."""
+        promisor = subprocess.run(
+            ["git", "-C", str(source), "config", "--get", "remote.origin.promisor"],
+            text=True, stdout=subprocess.PIPE)
+        if promisor.returncode == 0 and promisor.stdout.strip() == "true":
+            subprocess.run(
+                ["git", "-C", str(source), "fetch", "--refetch", "--no-filter", "origin"],
+                check=True, stdout=subprocess.DEVNULL)
+
     def assert_post_squash_single_branch_checkout_accepts(self, source: Path) -> None:
         intermediate = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
         with tempfile.TemporaryDirectory() as td:
@@ -121,13 +132,7 @@ class ReproductionReceiptTest(unittest.TestCase):
             # partial clone.  Materialize its promised blobs in one fetch
             # before asking it to create an independent bare repository; do
             # not borrow the source's incomplete object store.
-            promisor = subprocess.run(
-                ["git", "-C", str(source), "config", "--get", "remote.origin.promisor"],
-                text=True, stdout=subprocess.PIPE)
-            if promisor.returncode == 0 and promisor.stdout.strip() == "true":
-                subprocess.run(
-                    ["git", "-C", str(source), "fetch", "--refetch", "--no-filter", "origin"],
-                    check=True, stdout=subprocess.DEVNULL)
+            self.materialize_promised_objects(source)
             subprocess.run(["git", "clone", "--bare", "--no-local", str(source), str(staging)],
                            check=True, stdout=subprocess.DEVNULL)
             tree = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD^{tree}"],
@@ -169,6 +174,10 @@ class ReproductionReceiptTest(unittest.TestCase):
             root = Path(td)
             upstream = root / "upstream.git"
             partial = root / "partial"
+            # This test itself may be running from a genuine blob-filtered
+            # checkout.  Materialize that source before the first independent
+            # bare clone, just as the nested squash helper does below.
+            self.materialize_promised_objects(source)
             subprocess.run(["git", "clone", "--bare", "--no-local", str(source), str(upstream)],
                            check=True, stdout=subprocess.DEVNULL)
             subprocess.run(["git", f"--git-dir={upstream}", "config", "uploadpack.allowFilter", "true"],
