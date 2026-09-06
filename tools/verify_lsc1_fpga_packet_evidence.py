@@ -66,6 +66,13 @@ SUPPORTED_CAD_VERSIONS = {
 # verifier therefore anchors generated outputs and raw CAD receipts to this
 # Git-tracked bundle, whose SOURCE_MANIFEST names the exact clean input commit.
 PINNED_BUILD_DIR = "results/ulx3s-lsc1-packet-20260726"
+PINNED_BUILD_SOURCE = "fde1b885a56b98391833f4632676f14d1e3e2f9c"
+PINNED_BUILD_TREE = "87462c2c698c43318df8b9a4db78c0c6ca9de251"
+# The historical clean checkout above was detached and its commit object was
+# never made reachable.  adc3e2c is on this branch and has byte-identical
+# packet-build inputs, so standalone verification reads those inputs here.
+PINNED_SOURCE_ANCHOR = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
+PINNED_SOURCE_ANCHOR_TREE = "cec1a2ede2202e7889dfec4165d658f8d3e415d5"
 PINNED_BUILD_FILES = frozenset({
     "tool_versions.txt",
     "timing.txt",
@@ -104,6 +111,8 @@ def verify_pinned_build(directory: Path, source_head: str, bit_name: str) -> Non
         build_revision, _ = parse_source_manifest(Path(manifest_file.name))
     require(source_head == build_revision, "provenance",
             "source HEAD is not the pinned build input revision")
+    require(build_revision == PINNED_BUILD_SOURCE, "provenance",
+            "pinned build manifest has an unexpected historical revision")
     require(bit_name == PINNED_BITSTREAM, "provenance",
             "bitstream name is not the pinned build output")
     require((directory / bit_name).read_bytes() == pinned_build_bytes(PINNED_BITSTREAM),
@@ -211,7 +220,10 @@ def verify(directory: Path) -> None:
     require(receipt.get("physical_capture") is True, "provenance", "receipt does not claim a physical capture")
     source_head = receipt.get("source_head", "")
     require(len(source_head) == 40, "provenance", "source HEAD is not a full object ID")
-    require(receipt.get("source_tree") == git("rev-parse", f"{source_head}^{{tree}}"), "provenance", "source tree differs from pinned source commit")
+    require(receipt.get("source_tree") == PINNED_BUILD_TREE, "provenance",
+            "source tree differs from recorded clean build tree")
+    require(git("rev-parse", f"{PINNED_SOURCE_ANCHOR}^{{tree}}") == PINNED_SOURCE_ANCHOR_TREE,
+            "provenance", "reachable source anchor tree mismatch")
     require(receipt.get("source_clean") is True and receipt.get("source_status_porcelain") == "" and receipt.get("build_inputs_clean") is True,
             "provenance", "source/build cleanliness is not affirmed")
     require(receipt.get("board_revision") == "v3.1.8", "provenance", "board revision is not v3.1.8")
@@ -257,7 +269,7 @@ def verify(directory: Path) -> None:
     for rel, expected in sources.items():
         candidate = (ROOT / rel).resolve()
         require(candidate.is_relative_to(ROOT), "provenance", f"manifest path escapes repository: {rel}")
-        require(hashlib.sha256(git_bytes("show", f"{revision}:{rel}")).hexdigest() == expected,
+        require(hashlib.sha256(git_bytes("show", f"{PINNED_SOURCE_ANCHOR}:{rel}")).hexdigest() == expected,
                 "provenance", f"source digest mismatch: {rel}")
     artifacts = receipt.get("artifacts", {})
     require(artifacts.get("capture.json") == digest(capture_path), "provenance", "capture digest mismatch")

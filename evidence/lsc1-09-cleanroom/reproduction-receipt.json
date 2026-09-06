@@ -1,10 +1,10 @@
 {
-  "schema": "lean-silicon.lsc1-ulx3s-cleanroom-reproduction.v1",
+  "schema": "lean-silicon.lsc1-ulx3s-cleanroom-reproduction.v2",
   "scoper": "99f65947-0cdb-4d83-a569-d3bf3d1458ae",
   "base_commit": "5610ea221dd82b5749690043e8c3665b2be9ced8",
   "build_source": {
-    "commit": "fde1b885a56b98391833f4632676f14d1e3e2f9c",
-    "tree": "87462c2c698c43318df8b9a4db78c0c6ca9de251",
+    "commit": "adc3e2c5b86fb08e1b0225573486ae08af4ac194",
+    "tree": "cec1a2ede2202e7889dfec4165d658f8d3e415d5",
     "inputs_match_revision": true
   },
   "scope": {
@@ -20,8 +20,8 @@
     "executable_model": "not exercised by the reproduction builds",
     "lean": "validated separately; does not prove the bitstream",
     "authored_rtl": "build input only",
-    "netlist": "generated intermediate only",
-    "place_and_route": "two host executions with archived timing receipts",
+    "netlist": "generated logical intermediate only",
+    "place_and_route": "two preserved host executions with timing receipts",
     "physical_hardware": "no board attached, programmed, or observed"
   },
   "toolchain": {
@@ -35,50 +35,44 @@
   "runs": [
     {
       "id": "clean-build-1",
-      "checkout": "independent detached worktree",
+      "checkout": "separate clean clone detached at build_source",
       "pre_build_tracked_clean": true,
       "exit_code": 0,
-      "source_manifest_sha256": "bd86d1c1b265d4ee34d4aa152b7a86cba6cea36b2fde3d29bc48e3852e5f8f81",
-      "artifact_manifest_complete": true,
-      "program_finished_normally": true,
-      "core_clock_pass": true,
-      "achieved_core_clock_mhz": 15.32,
-      "raw_receipt_sha256": {
+      "evidence_sha256": {
         "SHA256SUMS": "cfe3dd6c384c54aedef2221263aa7b401ccf677e874e320b567a0359aaa515cf",
-        "tool_versions.txt": "2e986e53019b3d9e7b8229739010f1cf7e7140184f0026bb3cbfb99116a8f1fe",
-        "yosys.log": "54813f13acb695472ce71450f9f94d5a6118274c47332866cea1ed9b4271149f",
-        "nextpnr.log": "8a161adaf61e8d97c25a7bacadcbcb82144ed8c0392e31445c0d8cec754c8fb0",
-        "timing.txt": "47341676d69dd768b09e816679652101ec997dca651dfacdb90a3da8cad2c9ba"
-      },
-      "artifacts": {
+        "SOURCE_MANIFEST.txt": "0bc16e2f0a9ac2898397b294ee8598bab14d2e3e365b639ed14e3a2d3406dab8",
+        "build.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "build.stdout": "6f7d74f3be9705e033495da9fb32f471f94f96dea3aba12186e9439840155e18",
+        "ecppack.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "nextpnr.log": "07b91105557953e74ad07c1abcd79b644580301eddb470bbfa1a9c2f3a9fcf17",
+        "timing.txt": "47341676d69dd768b09e816679652101ec997dca651dfacdb90a3da8cad2c9ba",
+        "tool_versions.txt": "e026fa9460991757e1d8f6a077ae81a6e36607c93887d8b17979b3e0edf38f26",
         "ulx3s_lsc1_packet.bit": "226514183384b875821426b8c4d338508d8cff08cd12cb8e39c9162db37e3b9e",
         "ulx3s_lsc1_packet.config": "0737bbafae6704139ad9de2669a4e43f64d02644ce7cb9fc7bef336b28b7bf6b",
-        "ulx3s_lsc1_packet.svf": "0ad6510adeb1afbc3b20bdbc96528211a2d2e38ebcee398fdeb82acb3b1ad0ee"
+        "ulx3s_lsc1_packet.svf": "0ad6510adeb1afbc3b20bdbc96528211a2d2e38ebcee398fdeb82acb3b1ad0ee",
+        "yosys.log": "bbfbb242f6bc0f3b02f1b105c1b3f7c981cab7be08deb71a995e69fe09acfdd7"
       }
     },
     {
       "id": "clean-build-2",
-      "checkout": "independent detached worktree",
+      "checkout": "separate clean clone detached at build_source",
       "pre_build_tracked_clean": true,
       "exit_code": 0,
-      "source_manifest_sha256": "bd86d1c1b265d4ee34d4aa152b7a86cba6cea36b2fde3d29bc48e3852e5f8f81",
-      "artifact_manifest_complete": true,
-      "program_finished_normally": true,
-      "core_clock_pass": true,
-      "achieved_core_clock_mhz": 15.32,
-      "raw_receipt_sha256": {
+      "evidence_sha256": {
         "SHA256SUMS": "cfe3dd6c384c54aedef2221263aa7b401ccf677e874e320b567a0359aaa515cf",
-        "tool_versions.txt": "2e986e53019b3d9e7b8229739010f1cf7e7140184f0026bb3cbfb99116a8f1fe",
-        "yosys.log": "a6ad59bf36b5acd48fe7448132d687730118a33c5181ff9185d7358d8e840028",
-        "nextpnr.log": "2d01813e70101a4dfc7a376f8234c4a3d92007e6c97e0ea1b428fbaf579f65c2",
-        "timing.txt": "47341676d69dd768b09e816679652101ec997dca651dfacdb90a3da8cad2c9ba"
-      },
-      "artifacts": {
+        "SOURCE_MANIFEST.txt": "0bc16e2f0a9ac2898397b294ee8598bab14d2e3e365b639ed14e3a2d3406dab8",
+        "build.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "build.stdout": "667c264f5ceb3a207c1e0b8deda6020d700963c2d60f7f50385acb8c2d5db38b",
+        "ecppack.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "nextpnr.log": "3dc26a9f8dca3b968e034728fd453eb5234b148b8f039792f844d0395d4f6139",
+        "timing.txt": "47341676d69dd768b09e816679652101ec997dca651dfacdb90a3da8cad2c9ba",
+        "tool_versions.txt": "e026fa9460991757e1d8f6a077ae81a6e36607c93887d8b17979b3e0edf38f26",
         "ulx3s_lsc1_packet.bit": "226514183384b875821426b8c4d338508d8cff08cd12cb8e39c9162db37e3b9e",
         "ulx3s_lsc1_packet.config": "0737bbafae6704139ad9de2669a4e43f64d02644ce7cb9fc7bef336b28b7bf6b",
-        "ulx3s_lsc1_packet.svf": "0ad6510adeb1afbc3b20bdbc96528211a2d2e38ebcee398fdeb82acb3b1ad0ee"
+        "ulx3s_lsc1_packet.svf": "0ad6510adeb1afbc3b20bdbc96528211a2d2e38ebcee398fdeb82acb3b1ad0ee",
+        "yosys.log": "189e5d6c46bacdc04b208684042a95ce8f4f8887daece94e58bfdf7f71148b10"
       }
     }
   ],
-  "conclusion": "two clean host builds reproduced the archived packet bitstream artifacts byte-for-byte"
+  "conclusion": "two isolated clean host builds reproduced the archived packet bitstream artifacts byte-for-byte"
 }
