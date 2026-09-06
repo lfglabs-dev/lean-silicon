@@ -3,6 +3,9 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -93,6 +96,45 @@ class ReproductionReceiptTest(unittest.TestCase):
     def test_unpinned_option_rejected(self):
         self.rejected(mutate_receipt=lambda r: r["nextpnr_options"].remove("--no-tmdriv"),
                       message="nextpnr options")
+
+    def test_post_squash_single_branch_checkout_accepts(self):
+        """P1 family: verification cannot depend on an intermediate PR commit."""
+        source = RECEIPT.parents[2]
+        intermediate = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
+        base = "5610ea221dd82b5749690043e8c3665b2be9ced8"
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            staging = root / "staging.git"
+            checkout = root / "checkout"
+            subprocess.run(["git", "clone", "--bare", "--shared", str(source), str(staging)],
+                           check=True, stdout=subprocess.DEVNULL)
+            tree = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD^{tree}"],
+                                           text=True).strip()
+            env = os.environ | {
+                "GIT_AUTHOR_NAME": "post-squash regression",
+                "GIT_AUTHOR_EMAIL": "regression@example.invalid",
+                "GIT_COMMITTER_NAME": "post-squash regression",
+                "GIT_COMMITTER_EMAIL": "regression@example.invalid",
+            }
+            squash = subprocess.check_output(
+                ["git", f"--git-dir={staging}", "commit-tree", tree, "-p", base, "-m", "squash"],
+                env=env, text=True).strip()
+            refs = subprocess.check_output(
+                ["git", f"--git-dir={staging}", "for-each-ref", "--format=%(refname)"],
+                text=True).splitlines()
+            for ref in refs:
+                subprocess.run(["git", f"--git-dir={staging}", "update-ref", "-d", ref], check=True)
+            subprocess.run(["git", f"--git-dir={staging}", "update-ref", "refs/heads/squash", squash],
+                           check=True)
+            subprocess.run(["git", "clone", "--no-local", "--single-branch", "--branch", "squash",
+                            str(staging), str(checkout)], check=True, stdout=subprocess.DEVNULL)
+            missing = subprocess.run(["git", "-C", str(checkout), "cat-file", "-e", intermediate],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.assertNotEqual(missing.returncode, 0)
+            subprocess.run([sys.executable, "tools/verify_lsc1_ulx3s_reproduction.py"],
+                           cwd=checkout, check=True)
+            subprocess.run([sys.executable, "test/test_lsc1_fpga_packet_evidence.py", "-v"],
+                           cwd=checkout, env=os.environ | {"PYTHONPATH": "."}, check=True)
 
 
 if __name__ == "__main__":

@@ -69,10 +69,10 @@ PINNED_BUILD_DIR = "results/ulx3s-lsc1-packet-20260726"
 PINNED_BUILD_SOURCE = "fde1b885a56b98391833f4632676f14d1e3e2f9c"
 PINNED_BUILD_TREE = "87462c2c698c43318df8b9a4db78c0c6ca9de251"
 # The historical clean checkout above was detached and its commit object was
-# never made reachable.  adc3e2c is on this branch and has byte-identical
-# packet-build inputs, so standalone verification reads those inputs here.
-PINNED_SOURCE_ANCHOR = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
-PINNED_SOURCE_ANCHOR_TREE = "cec1a2ede2202e7889dfec4165d658f8d3e415d5"
+# never made reachable.  The exact base of this evidence change has
+# byte-identical packet-build inputs and remains reachable after squash merge.
+PINNED_SOURCE_ANCHOR = "5610ea221dd82b5749690043e8c3665b2be9ced8"
+PINNED_SOURCE_ANCHOR_TREE = "50a1741b7377a1649540af6431056b3da53320e8"
 PINNED_BUILD_FILES = frozenset({
     "tool_versions.txt",
     "timing.txt",

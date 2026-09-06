@@ -16,6 +16,7 @@ ARCHIVE = ROOT / "results/ulx3s-lsc1-packet-20260726"
 SOURCE = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
 SOURCE_TREE = "cec1a2ede2202e7889dfec4165d658f8d3e415d5"
 BASE = "5610ea221dd82b5749690043e8c3665b2be9ced8"
+BASE_TREE = "50a1741b7377a1649540af6431056b3da53320e8"
 ARTIFACTS = {
     "ulx3s_lsc1_packet.bit": "226514183384b875821426b8c4d338508d8cff08cd12cb8e39c9162db37e3b9e",
     "ulx3s_lsc1_packet.config": "0737bbafae6704139ad9de2669a4e43f64d02644ce7cb9fc7bef336b28b7bf6b",
@@ -72,11 +73,11 @@ def verify_source_manifest(path: Path) -> None:
     require(len(entries) == 25, "complete source manifest")
     for name, expected in entries.items():
         try:
-            payload = subprocess.check_output(["git", "show", f"{SOURCE}:{name}"], cwd=ROOT)
+            payload = subprocess.check_output(["git", "show", f"{BASE}:{name}"], cwd=ROOT)
         except subprocess.CalledProcessError as error:
-            raise ValueError(f"source input absent at pinned commit: {name}") from error
+            raise ValueError(f"source input absent at durable base anchor: {name}") from error
         require(hashlib.sha256(payload).hexdigest() == expected,
-                f"source input differs from pinned commit: {name}")
+                f"source input differs from durable base anchor: {name}")
 
 
 def verify_run(run: dict, evidence_root: Path) -> dict[str, str]:
@@ -128,7 +129,7 @@ def verify(path: Path = RECEIPT, evidence_root: Path = EVIDENCE) -> None:
     require(r.get("base_commit") == BASE, "base commit")
     source = r.get("build_source", {})
     require(source == {"commit": SOURCE, "tree": SOURCE_TREE, "inputs_match_revision": True}, "source identity")
-    require(git("rev-parse", f"{SOURCE}^{{tree}}") == SOURCE_TREE, "source tree object")
+    require(git("rev-parse", f"{BASE}^{{tree}}") == BASE_TREE, "durable base anchor tree")
     scope = r.get("scope", {})
     require(scope.get("design") == "full LSC-1 host-prepared packet UART endpoint", "full LSC-1 scope")
     for key in ("host_fetch", "memory_expansion", "physical_hardware", "end_to_end", "universal_or_unbounded", "later_roadmap_work"):
