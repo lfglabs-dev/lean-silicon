@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tools.verify_lsc1_ulx3s_reproduction import BASE, EVIDENCE, RECEIPT, verify
 
@@ -119,7 +120,8 @@ class ReproductionReceiptTest(unittest.TestCase):
             text=True, stdout=subprocess.PIPE)
         if promisor.returncode == 0 and promisor.stdout.strip() == "true":
             subprocess.run(
-                ["git", "-C", str(source), "fetch", "--refetch", "--no-filter", "origin"],
+                ["git", "-C", str(source), "fetch", "--no-auto-maintenance", "--refetch",
+                 "--no-filter", "origin"],
                 check=True, stdout=subprocess.DEVNULL)
 
     def assert_post_squash_single_branch_checkout_accepts(self, source: Path) -> None:
@@ -167,6 +169,14 @@ class ReproductionReceiptTest(unittest.TestCase):
         """P1 family: verification cannot depend on an intermediate PR commit."""
         self.assert_post_squash_single_branch_checkout_accepts(RECEIPT.parents[2])
 
+    def test_promised_object_fetch_cannot_start_background_maintenance(self):
+        """A serving clone must not race an auto-repack of fetched objects."""
+        completed = subprocess.CompletedProcess([], 0, stdout="true\n")
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            self.materialize_promised_objects(Path("partial"))
+        fetch = run.call_args_list[1].args[0]
+        self.assertIn("--no-auto-maintenance", fetch)
+
     def test_post_squash_checkout_accepts_from_blob_filtered_source(self):
         """The squash fixture must copy/fetch objects from a partial checkout."""
         source = RECEIPT.parents[2]
@@ -191,7 +201,11 @@ class ReproductionReceiptTest(unittest.TestCase):
                 ["git", "-C", str(partial), "rev-list", "--objects", "--missing=print",
                  BASE], text=True).splitlines()
             self.assertTrue(any(line.startswith("?") for line in missing))
-            self.assert_post_squash_single_branch_checkout_accepts(partial)
+            # Match hermetic runners: explicit fetches remain allowed, but Git
+            # may not hide an incomplete source by fetching lazily while it is
+            # serving the nested independent clone.
+            with mock.patch.dict(os.environ, {"GIT_NO_LAZY_FETCH": "1"}):
+                self.assert_post_squash_single_branch_checkout_accepts(partial)
 
 
 if __name__ == "__main__":
