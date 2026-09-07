@@ -28,6 +28,23 @@ TOOLS = {
     "ecppack": "Project Trellis ecppack Version 1.4-2build4",
 }
 OPTIONS = ["--85k", "--package", "CABGA381", "--seed", "2", "--placer", "static", "--no-tmdriv", "--router", "router1"]
+SCOPE = {
+    "design": "full LSC-1 host-prepared packet UART endpoint",
+    "host_fetch": False,
+    "memory_expansion": False,
+    "physical_hardware": False,
+    "end_to_end": False,
+    "universal_or_unbounded": False,
+    "later_roadmap_work": False,
+}
+EVIDENCE_LAYERS = {
+    "executable_model": "not exercised by the reproduction builds",
+    "lean": "validated separately; does not prove the bitstream",
+    "authored_rtl": "build input only",
+    "netlist": "generated logical intermediate only",
+    "place_and_route": "two preserved host executions with timing receipts",
+    "physical_hardware": "no board attached, programmed, or observed",
+}
 PACKET_BUILD_INPUTS = frozenset({
     "asic_core/rtl/gf128_mul_bitstream.sv",
     "asic_core/rtl/gf2n_mul_bitstream.sv",
@@ -157,12 +174,8 @@ def verify(path: Path = RECEIPT, evidence_root: Path = EVIDENCE) -> None:
     source = r.get("build_source", {})
     require(source == {"commit": SOURCE, "tree": SOURCE_TREE, "inputs_match_revision": True}, "source identity")
     require(git("rev-parse", f"{BASE}^{{tree}}") == BASE_TREE, "durable base anchor tree")
-    scope = r.get("scope", {})
-    require(scope.get("design") == "full LSC-1 host-prepared packet UART endpoint", "full LSC-1 scope")
-    for key in ("host_fetch", "memory_expansion", "physical_hardware", "end_to_end", "universal_or_unbounded", "later_roadmap_work"):
-        require(scope.get(key) is False, f"scope boundary {key}")
-    layers = r.get("evidence_layers", {})
-    require(set(layers) == {"executable_model", "lean", "authored_rtl", "netlist", "place_and_route", "physical_hardware"}, "evidence layer separation")
+    require(r.get("scope") == SCOPE, "scope boundaries")
+    require(r.get("evidence_layers") == EVIDENCE_LAYERS, "evidence layer claims")
     require(r.get("toolchain") == TOOLS, "toolchain")
     require(r.get("command") == ["./fpga/ulx3s/build_packet_uart.sh"], "command")
     require(r.get("nextpnr_options") == OPTIONS, "nextpnr options")

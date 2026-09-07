@@ -11,7 +11,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from tools.verify_lsc1_ulx3s_reproduction import BASE, EVIDENCE, RECEIPT, verify
+from tools.verify_lsc1_ulx3s_reproduction import (
+    BASE, EVIDENCE, EVIDENCE_LAYERS, RECEIPT, SCOPE, verify,
+)
 
 
 class ReproductionReceiptTest(unittest.TestCase):
@@ -104,9 +106,33 @@ class ReproductionReceiptTest(unittest.TestCase):
     def test_nonzero_exit_rejected(self):
         self.rejected(mutate_receipt=lambda r: r["runs"][1].update(exit_code=1), message="normal exit")
 
-    def test_scope_expansion_rejected(self):
-        self.rejected(mutate_receipt=lambda r: r["scope"].update(physical_hardware=True),
-                      message="scope boundary physical_hardware")
+    def test_scope_claim_family_rejected(self):
+        mutations = {
+            "physical hardware": lambda scope: scope.update(physical_hardware=True),
+            "unbounded correspondence": lambda scope: scope.update(universal_or_unbounded=True),
+            "unknown physical board claim":
+                lambda scope: scope.update(physical_board_validated=True),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name):
+                self.rejected(mutate_receipt=lambda r, m=mutation: m(r["scope"]),
+                              message="scope boundaries")
+
+    def test_evidence_layer_claim_family_rejected(self):
+        mutations = {
+            "physical board validation": ("physical_hardware", "validated on a physical board"),
+            "false place and route status": ("place_and_route", "not run"),
+            "unbounded Lean to RTL": ("lean", "unbounded Lean-to-RTL correspondence proved"),
+        }
+        for name, (layer, claim) in mutations.items():
+            with self.subTest(name=name):
+                self.rejected(
+                    mutate_receipt=lambda r, key=layer, value=claim:
+                        r["evidence_layers"].update({key: value}),
+                    message="evidence layer claims")
+
+        self.assertEqual(self.receipt()["scope"], SCOPE)
+        self.assertEqual(self.receipt()["evidence_layers"], EVIDENCE_LAYERS)
 
     def test_unpinned_option_rejected(self):
         self.rejected(mutate_receipt=lambda r: r["nextpnr_options"].remove("--no-tmdriv"),
@@ -115,13 +141,20 @@ class ReproductionReceiptTest(unittest.TestCase):
     @staticmethod
     def materialize_promised_objects(source: Path) -> None:
         """Make an independent clone safe to serve without lazy fetching."""
-        promisor = subprocess.run(
-            ["git", "-C", str(source), "config", "--get", "remote.origin.promisor"],
+        configured = subprocess.run(
+            ["git", "-C", str(source), "config", "--get-regexp",
+             r"^remote\..*\.promisor$"],
             text=True, stdout=subprocess.PIPE)
-        if promisor.returncode == 0 and promisor.stdout.strip() == "true":
+        if configured.returncode not in (0, 1):
+            configured.check_returncode()
+        for line in configured.stdout.splitlines():
+            key, separator, value = line.rpartition(" ")
+            if not separator or value.strip().lower() != "true":
+                continue
+            remote = key.removeprefix("remote.").removesuffix(".promisor")
             subprocess.run(
                 ["git", "-C", str(source), "fetch", "--no-auto-maintenance", "--refetch",
-                 "--no-filter", "origin"],
+                 "--no-filter", remote],
                 check=True, stdout=subprocess.DEVNULL)
 
     def assert_post_squash_single_branch_checkout_accepts(self, source: Path) -> None:
@@ -171,11 +204,13 @@ class ReproductionReceiptTest(unittest.TestCase):
 
     def test_promised_object_fetch_cannot_start_background_maintenance(self):
         """A serving clone must not race an auto-repack of fetched objects."""
-        completed = subprocess.CompletedProcess([], 0, stdout="true\n")
+        completed = subprocess.CompletedProcess(
+            [], 0, stdout="remote.evidence-upstream.promisor true\n")
         with mock.patch("subprocess.run", return_value=completed) as run:
             self.materialize_promised_objects(Path("partial"))
         fetch = run.call_args_list[1].args[0]
         self.assertIn("--no-auto-maintenance", fetch)
+        self.assertEqual(fetch[-1], "evidence-upstream")
 
     def test_post_squash_checkout_accepts_from_blob_filtered_source(self):
         """The squash fixture must copy/fetch objects from a partial checkout."""
@@ -192,10 +227,12 @@ class ReproductionReceiptTest(unittest.TestCase):
                            check=True, stdout=subprocess.DEVNULL)
             subprocess.run(["git", f"--git-dir={upstream}", "config", "uploadpack.allowFilter", "true"],
                            check=True)
-            subprocess.run(["git", "clone", "--no-local", "--filter=blob:none", str(upstream),
-                            str(partial)], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["git", "clone", "--no-local", "--filter=blob:none", "--origin",
+                            "evidence-upstream", str(upstream), str(partial)], check=True,
+                           stdout=subprocess.DEVNULL)
             self.assertEqual(subprocess.check_output(
-                ["git", "-C", str(partial), "config", "--bool", "remote.origin.promisor"],
+                ["git", "-C", str(partial), "config", "--bool",
+                 "remote.evidence-upstream.promisor"],
                 text=True).strip(), "true")
             missing = subprocess.check_output(
                 ["git", "-C", str(partial), "rev-list", "--objects", "--missing=print",
