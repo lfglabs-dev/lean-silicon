@@ -17,6 +17,8 @@ from tools.verify_lsc1_ulx3s_reproduction import (
 
 
 class ReproductionReceiptTest(unittest.TestCase):
+    HISTORICAL_PROMISED_BLOB = "18861aa826de9eb97f0b6db62538507f501788cd"
+
     def receipt(self) -> dict:
         return json.loads(RECEIPT.read_text())
 
@@ -156,6 +158,16 @@ class ReproductionReceiptTest(unittest.TestCase):
                 ["git", "-C", str(source), "fetch", "--no-auto-maintenance", "--refetch",
                  "--no-filter", remote],
                 check=True, stdout=subprocess.DEVNULL)
+            objects = subprocess.check_output(
+                ["git", "-C", str(source), "rev-list", "--objects", "--all",
+                 "--missing=print"], text=True)
+            missing = [line[1:] for line in objects.splitlines() if line.startswith("?")]
+            if missing:
+                subprocess.run(
+                    ["git", "-C", str(source), "fetch", "--no-auto-maintenance",
+                     "--no-tags", "--no-write-fetch-head", "--stdin", remote],
+                    input="\n".join(missing) + "\n", check=True, text=True,
+                    stdout=subprocess.DEVNULL)
 
     def assert_post_squash_single_branch_checkout_accepts(self, source: Path) -> None:
         intermediate = "adc3e2c5b86fb08e1b0225573486ae08af4ac194"
@@ -206,11 +218,16 @@ class ReproductionReceiptTest(unittest.TestCase):
         """A serving clone must not race an auto-repack of fetched objects."""
         completed = subprocess.CompletedProcess(
             [], 0, stdout="remote.evidence-upstream.promisor true\n")
-        with mock.patch("subprocess.run", return_value=completed) as run:
+        with (mock.patch("subprocess.run", return_value=completed) as run,
+              mock.patch("subprocess.check_output",
+                         return_value=f"?{self.HISTORICAL_PROMISED_BLOB}\n")):
             self.materialize_promised_objects(Path("partial"))
-        fetch = run.call_args_list[1].args[0]
-        self.assertIn("--no-auto-maintenance", fetch)
-        self.assertEqual(fetch[-1], "evidence-upstream")
+        fetches = [call.args[0] for call in run.call_args_list[1:]]
+        self.assertEqual(len(fetches), 2)
+        for fetch in fetches:
+            self.assertIn("--no-auto-maintenance", fetch)
+            self.assertEqual(fetch[-1], "evidence-upstream")
+        self.assertIn("--stdin", fetches[1])
 
     def test_post_squash_checkout_accepts_from_blob_filtered_source(self):
         """The squash fixture must copy/fetch objects from a partial checkout."""
@@ -242,6 +259,16 @@ class ReproductionReceiptTest(unittest.TestCase):
             # may not hide an incomplete source by fetching lazily while it is
             # serving the nested independent clone.
             with mock.patch.dict(os.environ, {"GIT_NO_LAZY_FETCH": "1"}):
+                promised = subprocess.run(
+                    ["git", "-C", str(partial), "cat-file", "-e",
+                     self.HISTORICAL_PROMISED_BLOB],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                self.assertNotEqual(promised.returncode, 0)
+                self.materialize_promised_objects(partial)
+                subprocess.run(
+                    ["git", "-C", str(partial), "cat-file", "-e",
+                     self.HISTORICAL_PROMISED_BLOB],
+                    check=True, stdout=subprocess.DEVNULL)
                 self.assert_post_squash_single_branch_checkout_accepts(partial)
 
 
