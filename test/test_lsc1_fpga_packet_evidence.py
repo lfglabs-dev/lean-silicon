@@ -9,6 +9,7 @@ from pathlib import Path
 
 from tools.verify_lsc1_fpga_packet_evidence import (
     ROOT, PACKET_BUILD_INPUTS, PINNED_BITSTREAM, PINNED_BUILD_FILES,
+    PINNED_BUILD_SOURCE, PINNED_BUILD_TREE, PINNED_SOURCE_ANCHOR,
     SUPPORTED_CAD_VERSIONS, pinned_build_bytes, verify, EvidenceError,
 )
 import lsc1_transaction as p
@@ -38,11 +39,11 @@ class PacketEvidenceTest(unittest.TestCase):
         capture = {"transport": "ULX3S UART to existing 8-bit ready/valid pins",
                    "reset": "fresh hardware reset before first byte", "exchanges": exchanges}
         (directory / "capture.json").write_text(json.dumps(capture, sort_keys=True) + "\n")
-        head = "fde1b885a56b98391833f4632676f14d1e3e2f9c"
-        tree = subprocess.check_output(["git", "rev-parse", f"{head}^{{tree}}"], cwd=ROOT, text=True).strip()
+        head = PINNED_BUILD_SOURCE
+        tree = PINNED_BUILD_TREE
         entries = []
         for source_rel in sorted(PACKET_BUILD_INPUTS):
-            source = subprocess.check_output(["git", "show", f"{head}:{source_rel}"], cwd=ROOT)
+            source = subprocess.check_output(["git", "show", f"{PINNED_SOURCE_ANCHOR}:{source_rel}"], cwd=ROOT)
             entries.append(f"{hashlib.sha256(source).hexdigest()}  {source_rel}\n")
         manifest = (f"=== SOURCE PROVENANCE ===\nrevision: {head}\n"
                     "inputs-match-revision: yes\n" + "".join(entries))
