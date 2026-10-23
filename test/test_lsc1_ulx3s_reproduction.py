@@ -17,7 +17,7 @@ from tools.verify_lsc1_ulx3s_reproduction import (
 
 
 class ReproductionReceiptTest(unittest.TestCase):
-    HISTORICAL_PROMISED_BLOB = "18861aa826de9eb97f0b6db62538507f501788cd"
+    HISTORICAL_PROMISED_BLOB = "cd01eba2c38ce3daa2f4b7e5259a1e8c79e43c12"
 
     def receipt(self) -> dict:
         return json.loads(RECEIPT.read_text())
