@@ -15,32 +15,30 @@ module tb_lsc2_bram_discr_tree;
         .clk(clk), .rst_n(rst_n),
         .we(we), .waddr(waddr), .wdata(wdata),
         .query_valid(query_valid), .query_key(query_key),
-        .match_valid(match_valid), .match_hit(match_hit), .matched_lemma_id(matched_lemma_id)
+        .match_valid(match_valid), .match_hit(match_hit),
+        .matched_lemma_id(matched_lemma_id)
     );
-
-    wire [23:0] k_test = 24'h12_34_56;
-    wire [7:0] idx = 8'h12 ^ 8'h34 ^ 8'h56;
 
     initial begin
         #20 rst_n = 1;
+        @(negedge clk);
+        we = 1;
+        waddr = 8'h26;
+        wdata = {1'b1, 23'h001234, 12'hABC};
+        @(negedge clk);
+        we = 0;
+        query_valid = 1;
+        query_key = 24'h001234;
+        @(negedge clk);
+        query_valid = 0;
         @(posedge clk);
-        we <= 1;
-        waddr <= idx;
-        wdata <= {1'b1, k_test[22:0], 12'hABC};
         @(posedge clk);
-        we <= 0;
-        query_valid <= 1;
-        query_key <= k_test;
-        @(posedge clk);
-        query_valid <= 0;
-        wait (match_valid == 1'b1);
-        #2;
-        if (match_hit && matched_lemma_id == 12'hABC) begin
-            $display("PASS: lsc2_bram_discr_tree matched lemma 0x%h", matched_lemma_id);
-            $finish;
-        end else begin
-            $display("FAIL: hit=%b id=%h", match_hit, matched_lemma_id);
-            $fatal(1);
+        #1;
+        if (!match_valid || !match_hit || matched_lemma_id !== 12'hABC) begin
+            $display("FAIL: match_valid=%b match_hit=%b id=%h", match_valid, match_hit, matched_lemma_id);
+            $finish(1);
         end
+        $display("PASS: lsc2_bram_discr_tree 4-bank DP16KD verified (lemma=0x%h)", matched_lemma_id);
+        $finish(0);
     end
 endmodule

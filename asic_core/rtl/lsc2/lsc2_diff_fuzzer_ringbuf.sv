@@ -12,7 +12,7 @@ module lsc2_diff_fuzzer_ringbuf (
     output reg  [15:0] cycles_run,
     output reg  [63:0] trace_rd_word
 );
-    reg [63:0] ring_bram [0:255];
+    (* ram_style = "block" *) reg [63:0] ring_bram [0:511];
     reg [31:0] lfsr;
 
     // Golden reference vs DUT transition
@@ -22,9 +22,9 @@ module lsc2_diff_fuzzer_ringbuf (
 
     always @(posedge clk) begin
         if (running && !divergence_latched) begin
-            ring_bram[wr_ptr] <= {next_lfsr, dut_out};
+            ring_bram[{1'b0, wr_ptr}] <= {next_lfsr, dut_out};
         end
-        trace_rd_word <= ring_bram[rd_offset];
+        trace_rd_word <= ring_bram[{1'b0, rd_offset}];
     end
 
     always @(posedge clk or negedge rst_n) begin
