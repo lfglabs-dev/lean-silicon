@@ -88,7 +88,7 @@ jobs:
           echo "PDK_VERSION=$(jq -r '.PDK_VERSION' "$pdk_json")" >> "$GITHUB_ENV"
 
       - name: Install exact PDK
-        uses: TinyTapeout/ciel-action@b99510e18500019b919880a6d6d45714953dbc20 # v1
+        uses: TinyTapeout/ciel-action@11703802099012722109e39b7e353eae0fea88bb # v1
         with:
           pdk_name: ${{ env.PDK }}
           pdk_version: ${{ env.PDK_VERSION }}
